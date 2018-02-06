@@ -1,0 +1,66 @@
+#!/bin/bash
+
+set -e
+
+function sync_package() {
+  bosh_pkg=${1}
+
+  shift
+
+  (
+    set -e
+
+    cd packages/${bosh_pkg}
+
+    {
+      cat spec | grep -v '# gosub'
+
+      for package in $(gosub list "$@"); do
+        repo=$(echo ${2} | cut -f1-3 -d/)
+        if [ -d "../../src/${repo}/Godeps/_workspace/src/${package}" ]; then
+          package="${repo}/Godeps/_workspace/src/${package}"
+        fi
+        echo ${package} | sed -e 's/\(.*\)/  - \1\/*.go # gosub/g'
+        if ls ../../src/${package}/*.s >/dev/null 2>&1; then
+          echo ${package} | sed -e 's/\(.*\)/  - \1\/*.s # gosub/g'
+        fi
+      done
+    } > spec.new
+
+    mv spec.new spec
+  )
+}
+
+## Create a sync_package line for each BOSH package in this release
+## add a -app line or -test line to include a particular app or test
+## along with all of its dependencies
+
+sync_package vxlan-policy-agent \
+  -app vxlan-policy-agent/cmd/vxlan-policy-agent &
+
+sync_package netmon \
+  -app netmon/cmd/netmon &
+
+GOOS=linux sync_package runc-cni \
+  -app garden-external-networker &
+
+sync_package silk-controller \
+  -app code.cloudfoundry.org/silk/cmd/silk-controller &
+
+sync_package silk-daemon \
+  -app code.cloudfoundry.org/silk/cmd/silk-daemon \
+  -app silk-daemon-shutdown \
+  -app code.cloudfoundry.org/silk/cmd/silk-teardown &
+
+GOOS=linux sync_package cni \
+  -app code.cloudfoundry.org/silk/cmd/silk-cni \
+  -app github.com/containernetworking/plugins/plugins/ipam/host-local \
+  -app cni-wrapper-plugin \
+  -app cni-teardown &
+
+GOOS=linux sync_package iptables-logger \
+  -app iptables-logger/cmd/iptables-logger &
+
+wait
+
+git diff --name-only packages/*/spec

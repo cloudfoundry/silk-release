@@ -1,85 +1,85 @@
-#!/bin/bash
+# #!/bin/bash
 
-set -e -u
-set -o pipefail
+# set -e -u
+# set -o pipefail
 
-echo "building silk-teardown"
-go build -o /tmp/client/silk-teardown -race cmd/silk-teardown/main.go
+# echo "building silk-teardown"
+# go build -o /tmp/client/silk-teardown -race cmd/silk-teardown/main.go
 
-echo "building silk-daemon"
-go build -o /tmp/client/silk-daemon -race cmd/silk-daemon/main.go
+# echo "building silk-daemon"
+# go build -o /tmp/client/silk-daemon -race cmd/silk-daemon/main.go
 
-echo "building silk-controller"
-go build -o /tmp/client/silk-controller -race cmd/silk-controller/main.go
+# echo "building silk-controller"
+# go build -o /tmp/client/silk-controller -race cmd/silk-controller/main.go
 
-echo "building silk-cni"
-go build -o /tmp/cni/silk -ldflags="-extldflags=-Wl,--allow-multiple-definition" -race cmd/silk-cni/main.go
+# echo "building silk-cni"
+# go build -o /tmp/cni/silk -ldflags="-extldflags=-Wl,--allow-multiple-definition" -race cmd/silk-cni/main.go
 
-echo "building host-local ipam cni plugin"
-go build -o /tmp/cni/host-local -race code.cloudfoundry.org/silk/vendor/github.com/containernetworking/plugins/plugins/ipam/host-local
+# echo "building host-local ipam cni plugin"
+# go build -o /tmp/cni/host-local -race vendor/github.com/containernetworking/plugins/plugins/ipam/host-local
 
-mkdir -p /tmp/cni/data
+# mkdir -p /tmp/cni/data
 
-cp scripts/examples/subnet.env /tmp/cni/subnet.env
+# cp scripts/examples/subnet.env /tmp/cni/subnet.env
 
-echo -n "booting postgres..."
-(/docker-entrypoint.sh postgres &> /var/log/postgres-boot.log) &
-exitcode=1
-for i in `seq 1 30`; do
-    set +e
-    psql -h localhost -U postgres -c '\conninfo' &>/dev/null
-    exitcode=$?
-    set -e
-    if [ "$exitcode" -eq 0 ]; then
-        echo "connection established to postgres"
-        break
-    fi
-    echo -n "."
-    sleep 1
-done
-if [ "$exitcode" -ne 0 ]; then
-    echo "unable to connect to postgres!!!"
-fi
+# echo -n "booting postgres..."
+# (/docker-entrypoint.sh postgres &> /var/log/postgres-boot.log) &
+# exitcode=1
+# for i in `seq 1 30`; do
+#     set +e
+#     psql -h localhost -U postgres -c '\conninfo' &>/dev/null
+#     exitcode=$?
+#     set -e
+#     if [ "$exitcode" -eq 0 ]; then
+#         echo "connection established to postgres"
+#         break
+#     fi
+#     echo -n "."
+#     sleep 1
+# done
+# if [ "$exitcode" -ne 0 ]; then
+#     echo "unable to connect to postgres!!!"
+# fi
 
 
-set +e
-test_database_exists=$(psql -h localhost -p 5432 -U postgres -l | grep test_database | wc -l)
-set -e
-if [ $test_database_exists -eq 0 ]; then
-    echo -n "creating database..."
-    exitcode=1
-    for i in `seq 1 30`; do
-        set +e
-        psql -h localhost -p 5432 -U postgres -c 'CREATE DATABASE test_database' &>/dev/null
-        exitcode=$?
-        set -e
-        if [ $exitcode -eq 0 ]; then
-            echo "created database test_database"
-            break
-        fi
-        echo -n "."
-        sleep 1
-    done
-    if [ "$exitcode" -ne 0 ]; then
-        echo "unable to create test_database! is it already created?"
-    fi
-else
-    echo "already have database test_database"
-fi
+# set +e
+# test_database_exists=$(psql -h localhost -p 5432 -U postgres -l | grep test_database | wc -l)
+# set -e
+# if [ $test_database_exists -eq 0 ]; then
+#     echo -n "creating database..."
+#     exitcode=1
+#     for i in `seq 1 30`; do
+#         set +e
+#         psql -h localhost -p 5432 -U postgres -c 'CREATE DATABASE test_database' &>/dev/null
+#         exitcode=$?
+#         set -e
+#         if [ $exitcode -eq 0 ]; then
+#             echo "created database test_database"
+#             break
+#         fi
+#         echo -n "."
+#         sleep 1
+#     done
+#     if [ "$exitcode" -ne 0 ]; then
+#         echo "unable to create test_database! is it already created?"
+#     fi
+# else
+#     echo "already have database test_database"
+# fi
 
-echo ""
-echo "build succeeded, see: /tmp/cni"
-echo ""
-echo "to run silk-cni:"
-echo "  ip netns add apricot"
-echo "  source scripts/examples/silk-cni.env"
-echo "  /tmp/cni/silk < scripts/examples/silk-cni.conf"
-echo ""
-echo "to run silk-daemon:"
-echo "  /tmp/client/silk-daemon --config scripts/examples/silk-client.conf"
-echo ""
-echo "to run silk-teardown:"
-echo "  /tmp/client/silk-teardown --config scripts/examples/silk-client.conf"
-echo ""
-echo "to run silk-controller:"
-echo "  /tmp/client/silk-controller --config scripts/examples/silk-controller.conf &"
+# echo ""
+# echo "build succeeded, see: /tmp/cni"
+# echo ""
+# echo "to run silk-cni:"
+# echo "  ip netns add apricot"
+# echo "  source scripts/examples/silk-cni.env"
+# echo "  /tmp/cni/silk < scripts/examples/silk-cni.conf"
+# echo ""
+# echo "to run silk-daemon:"
+# echo "  /tmp/client/silk-daemon --config scripts/examples/silk-client.conf"
+# echo ""
+# echo "to run silk-teardown:"
+# echo "  /tmp/client/silk-teardown --config scripts/examples/silk-client.conf"
+# echo ""
+# echo "to run silk-controller:"
+# echo "  /tmp/client/silk-controller --config scripts/examples/silk-controller.conf &"

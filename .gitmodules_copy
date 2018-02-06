@@ -1,3 +1,6 @@
+[submodule "src/github.com/coreos/go-iptables"]
+	path = src/github.com/coreos/go-iptables
+	url = https://github.com/coreos/go-iptables
 [submodule "src/github.com/containernetworking/cni"]
 	path = src/github.com/containernetworking/cni
 	url = https://github.com/containernetworking/cni

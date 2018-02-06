@@ -4,6 +4,7 @@ set -eu
 set -o pipefail
 
 cd $(dirname $0)/..
+export GOPATH=$PWD
 
 function bootDB {
   db=$1
@@ -38,10 +39,53 @@ function bootDB {
   exit 1
 }
 
-go install ./vendor/github.com/onsi/ginkgo/ginkgo
+# go install ./vendor/github.com/onsi/ginkgo/ginkgo
 
 bootDB $DB
 
-ginkgo -r -p --race -randomizeAllSpecs -randomizeSuites \
-  -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
-  ${@}
+declare -a packages=(
+   "src/iptables-logger"
+   "src/lib"
+   "src/netmon"
+   )
+
+ declare -a serial_packages=(
+   "src/cni-teardown"
+   "src/cni-wrapper-plugin"
+   "src/garden-external-networker"
+   "src/vxlan-policy-agent"
+   )
+
+# ginkgo -r -p --race -randomizeAllSpecs -randomizeSuites \
+#   -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
+#   ${@}
+
+if [ "${1:-""}" = "" ]; then
+  for dir in "${packages[@]}"; do
+    pushd "$dir"
+      ginkgo -r -p --race -randomizeAllSpecs -randomizeSuites \
+        -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
+        ${@:2}
+    popd
+  done
+  for dir in "${serial_packages[@]}"; do
+    pushd "$dir"
+      ginkgo -r --race -randomizeAllSpecs -randomizeSuites -failFast \
+        -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
+        ${@:2}
+    popd
+  done
+else
+  dir=${@: -1}
+  for package in "${serial_packages[@]}"; do
+    if [ "$dir" = "$package" ] || [ "$dir" = "$package"/ ]; then
+      ginkgo -r -randomizeAllSpecs -randomizeSuites -failFast \
+        -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
+        "${@}"
+      exit $?
+    fi
+  done
+  ginkgo -r -p -randomizeAllSpecs -randomizeSuites -failFast \
+    -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
+    "${@}"
+fi

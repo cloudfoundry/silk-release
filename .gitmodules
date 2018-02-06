@@ -1,3 +1,6 @@
+[submodule "src/github.com/coreos/go-iptables"]
+	path = src/github.com/coreos/go-iptables
+	url = https://github.com/coreos/go-iptables
 [submodule "src/github.com/pivotal-cf-experimental/gomegamatchers"]
 	path = src/github.com/pivotal-cf-experimental/gomegamatchers
 	url = https://github.com/pivotal-cf-experimental/gomegamatchers.git
@@ -19,9 +22,6 @@
 [submodule "src/github.com/vishvananda/netns"]
 	path = src/github.com/vishvananda/netns
 	url = https://github.com/vishvananda/netns
-[submodule "src/github.com/rubenv/sql-migrate"]
-	path = src/github.com/rubenv/sql-migrate
-	url = https://github.com/rubenv/sql-migrate
 [submodule "src/gopkg.in/gorp.v1"]
 	path = src/gopkg.in/gorp.v1
 	url = https://gopkg.in/gorp.v1
@@ -34,9 +34,6 @@
 [submodule "src/github.com/lib/pq"]
 	path = src/github.com/lib/pq
 	url = https://github.com/lib/pq
-[submodule "src/github.com/ziutek/utils"]
-	path = src/github.com/ziutek/utils
-	url = https://github.com/ziutek/utils
 [submodule "src/code.cloudfoundry.org/lager"]
 	path = src/code.cloudfoundry.org/lager
 	url = https://github.com/cloudfoundry/lager
@@ -79,3 +76,21 @@
 [submodule "src/github.com/containernetworking/plugins"]
 	path = src/github.com/containernetworking/plugins
 	url = https://github.com/containernetworking/plugins
+[submodule "src/github.com/hpcloud/tail"]
+	path = src/github.com/hpcloud/tail
+	url = https://github.com/hpcloud/tail
+[submodule "src/code.cloudfoundry.org/localip"]
+	path = src/code.cloudfoundry.org/localip
+	url = https://github.com/cloudfoundry/localip
+[submodule "src/code.cloudfoundry.org/runtimeschema"]
+	path = src/code.cloudfoundry.org/runtimeschema
+	url = https://github.com/cloudfoundry/runtimeschema
+[submodule "src/code.cloudfoundry.org/garden"]
+	path = src/code.cloudfoundry.org/garden
+	url = https://github.com/cloudfoundry/garden
+[submodule "src/golang.org/x/sys"]
+	path = src/golang.org/x/sys
+	url = https://go.googlesource.com/sys
+[submodule "src/code.cloudfoundry.org/silk"]
+	path = src/code.cloudfoundry.org/silk
+	url = https://github.com/cloudfoundry/silk
