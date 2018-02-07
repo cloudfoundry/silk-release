@@ -91,3 +91,6 @@
 [submodule "src/code.cloudfoundry.org/silk"]
 	path = src/code.cloudfoundry.org/silk
 	url = https://github.com/cloudfoundry/silk
+[submodule "src/github.com/coreos/go-iptables"]
+	path = src/github.com/coreos/go-iptables
+	url = https://github.com/coreos/go-iptables
