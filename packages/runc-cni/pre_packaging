@@ -1,3 +1,0 @@
-set -e
-
-rm -rf src/github.com/containernetworking/cni/gopath

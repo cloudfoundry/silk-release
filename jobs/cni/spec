@@ -7,7 +7,6 @@ templates:
 
 packages:
   - cni
-  - runc-cni
 
 properties:
   cf_networking.disable:

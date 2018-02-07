@@ -1,8 +1,0 @@
-builds:
-  a57e60c855e278e99fec802fa4adb8f4bf59ced3:
-    version: a57e60c855e278e99fec802fa4adb8f4bf59ced3
-    sha1: 85d28bf1ae91fd0745cf303d93782750bd8bfa28
-  c81881571cbfe9dacc2da472c6f1d1cd6cac2621:
-    version: c81881571cbfe9dacc2da472c6f1d1cd6cac2621
-    sha1: af45aba8ee2b6858ebf6db1c951da3fc043783b3
-format-version: "2"
