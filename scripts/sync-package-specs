@@ -41,9 +41,6 @@ sync_package vxlan-policy-agent \
 sync_package netmon \
   -app netmon/cmd/netmon &
 
-GOOS=linux sync_package runc-cni \
-  -app garden-external-networker &
-
 sync_package silk-controller \
   -app code.cloudfoundry.org/silk/cmd/silk-controller &
 
