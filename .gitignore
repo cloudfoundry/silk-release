@@ -22,4 +22,6 @@ dev_releases
 /*.tgz
 .vagrant/
 /pkg
+pkg
 /bin
+bin
