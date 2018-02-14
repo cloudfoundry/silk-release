@@ -1,9 +1,8 @@
 #!/bin/bash -eu
 
-<% unless p("cf_networking.disable") %>
 source /var/vcap/packages/ctl-utils/ctl_util.sh
 
-PORT=<%= p("cf_networking.vxlan_policy_agent.debug_server_port")%>
+PORT=<%= p("debug_server_port")%>
 URL=127.0.0.1:"${PORT}"/log-level
 RUN_DIR=/var/vcap/sys/run/vxlan-policy-agent
 LOG_DIR=/var/vcap/sys/log/vxlan-policy-agent
@@ -47,4 +46,3 @@ case $1 in
     ;;
 
 esac
-<% end %>

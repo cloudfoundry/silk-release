@@ -1,17 +1,16 @@
-<% unless p("cf_networking.disable") %>
 <%=
     require 'json'
 
     toRender = {
-      "log_level" => p("cf_networking.vxlan_policy_agent.log_level"),
+      "log_level" => p("log_level"),
       "log_prefix" => "cfnetworking",
-      "iptables_c2c_logging" => p("cf_networking.iptables_logging"),
-      "iptables_accepted_udp_logs_per_sec" => p("cf_networking.iptables_accepted_udp_logs_per_sec"),
-      "poll_interval" => p("cf_networking.policy_poll_interval_seconds"),
+      "iptables_c2c_logging" => p("iptables_logging"),
+      "iptables_accepted_udp_logs_per_sec" => p("iptables_accepted_udp_logs_per_sec"),
+      "poll_interval" => p("policy_poll_interval_seconds"),
 
-      "policy_server_url" => "https://#{p("cf_networking.policy_server.hostname")}:#{p("cf_networking.policy_server.internal_listen_port")}",
-      "metron_address" => "127.0.0.1:#{p("cf_networking.vxlan_policy_agent.metron_port")}",
-      "debug_server_port" => p("cf_networking.vxlan_policy_agent.debug_server_port"),
+      "policy_server_url" => "https://#{p("policy_server.hostname")}:#{p("policy_server.internal_listen_port")}",
+      "metron_address" => "127.0.0.1:#{p("metron_port")}",
+      "debug_server_port" => p("debug_server_port"),
 
       # hard-coded values, not exposed as bosh spec properties
       "ca_cert_file" => "/var/vcap/jobs/vxlan-policy-agent/config/certs/ca.crt",
@@ -27,4 +26,3 @@
 
     JSON.pretty_generate(toRender)
 %>
-<% end %>

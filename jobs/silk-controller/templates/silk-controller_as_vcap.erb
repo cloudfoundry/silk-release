@@ -1,6 +1,5 @@
 #!/bin/bash -eu
 
-<% unless p("cf_networking.disable") %>
 set -o pipefail
 
 source /var/vcap/packages/ctl-utils/ctl_util.sh
@@ -16,4 +15,3 @@ pid=$!
 
 healthy=$(wait_for_server_to_become_healthy "${URL}" "${TIMEOUT}")
 write_pid "${healthy}" "${pid}"
-<% end %>
