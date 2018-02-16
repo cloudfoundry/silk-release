@@ -2,7 +2,7 @@
 name: cni
 
 dependencies:
-  - golang-1.9-linux
+  - golang
 
 files:
   - cni-teardown/*.go # gosub

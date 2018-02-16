@@ -2,7 +2,7 @@
 name: silk-controller
 
 dependencies:
-  - golang-1.9-linux
+  - golang
 
 files:
   - code.cloudfoundry.org/silk/cmd/silk-controller/*.go # gosub
