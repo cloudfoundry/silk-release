@@ -2,7 +2,7 @@
 name: netmon
 
 dependencies:
-  - golang
+  - golang-1.9-linux
 
 files:
   - code.cloudfoundry.org/lager/*.go # gosub
