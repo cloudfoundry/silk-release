@@ -1,10 +1,6 @@
 <%=
   require 'json'
 
-  def param_exists? param
-    p(param) != ""
-  end
-
   def subnet_prefix_length
     size = link("cf_network").p("subnet_prefix_length")
     if size < 1 || size > 30
@@ -38,6 +34,7 @@
     "metron_port" => p("metron_port"),
     "vtep_port" => p("vtep_port"),
     "log_prefix" => "cfnetworking",
+    "custom_underlay_interface_name" => p("vxlan_interface", ""),
   }
 
   JSON.pretty_generate(toRender)

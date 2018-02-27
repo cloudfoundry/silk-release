@@ -63,3 +63,6 @@ properties:
   silk_controller.listen_port:
     description: "Silk controller handles requests from the silk daemon on this port."
     default: 4103
+
+  vxlan_interface:
+    description: "Name of network interface which container traffic is sent to. If empty, the default network interface is used."
