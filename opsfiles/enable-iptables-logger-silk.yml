@@ -12,7 +12,7 @@
 # Turn on iptables-logger job
 # This job forwards iptables kernel logs to /var/vcap/sys/log/iptables-logger
 - type: replace
-  path: /instance_groups/name=diego-cell/jobs/-
+  path: /instance_groups/name=diego-cell/jobs/name=iptables-logger?
   value:
     name: iptables-logger
     release: silk
