@@ -17,6 +17,7 @@
 
   toRender = {
     "underlay_ip" => spec.ip,
+    "underlay_ips" => spec.networks.to_h.map { |name, net| net.ip },
     "subnet_prefix_length" => subnet_prefix_length,
     "overlay_network" => link("cf_network").p("network"),
     "health_check_port" => p("listen_port"),
