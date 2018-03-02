@@ -1,6 +1,6 @@
 ## Manifest changelog
 
-### 0.1.0
+### 0.2.0
 **New Properties**
   - An optional parameter has been added to the `silk-daemon` job to specify which bosh network should be used by the
     vxlan adapter.
@@ -10,4 +10,6 @@
     gateway will be chosen.
     - `vxlan_network`
 
-**This repo was extracted from [cf-networking-release](github.com/cloudfoundry/cf-netoworking-release). Refer to that release for prior changes.**
+### 0.1.0
+  - This release was extracted from [cf-networking-release](github.com/cloudfoundry/cf-netoworking-release).
+    Refer to that release for prior changes.
