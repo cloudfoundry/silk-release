@@ -10,8 +10,8 @@
   end
 
   def silk_controller_url
-    hostname = p('cf_networking.silk_controller.hostname')
-    port = p('cf_networking.silk_controller.listen_port')
+    hostname = p('silk_controller.hostname')
+    port = p('silk_controller.listen_port')
     "https://#{hostname}:#{port}"
   end
 
