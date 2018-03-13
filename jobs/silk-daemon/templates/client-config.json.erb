@@ -16,7 +16,10 @@
   end
 
   underlay_ip = nil
-  if_p('cf_networking.silk_daemon.vxlan_network') do |net_name|
+  if_p('temporary_vxlan_interface', 'vxlan_network') do |interface_name, net_name|
+    raise "Cannot specify both 'temporary_vxlan_interface' and 'vxlan_network' properties."
+  end
+  if_p('vxlan_network') do |net_name|
     networks_hash = spec.networks.to_h
     underlay_network = networks_hash[net_name.to_sym]
     raise "requested vxlan_network '#{net_name}' not found in available networks [#{networks_hash.keys.join(', ')}] " if underlay_network.nil?
