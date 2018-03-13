@@ -25,7 +25,6 @@ module Bosh::Template::Test
       ]
 
       describe 'silk-daemon job' do let(:job) {release.job('silk-daemon')}
-
         describe 'config/client-config.json' do
           let(:template) {job.template('config/client-config.json')}
 
@@ -41,6 +40,19 @@ module Bosh::Template::Test
               expect {
                 template.render(merged_manifest_properties, consumes: links)
               }.to raise_error("Cannot specify both 'temporary_vxlan_interface' and 'vxlan_network' properties.")
+            end
+          end
+
+          context 'when temporary_vxlan_interface is set' do
+            let(:merged_manifest_properties) do
+              {
+                'temporary_vxlan_interface' => 'some-vxlan-interface',
+              }
+            end
+
+            it 'sets custom_underlay_interface_name' do
+              clientConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links))
+              expect(clientConfig['custom_underlay_interface_name']).to eq("some-vxlan-interface")
             end
           end
         end

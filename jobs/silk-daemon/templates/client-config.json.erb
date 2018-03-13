@@ -19,6 +19,7 @@
   if_p('temporary_vxlan_interface', 'vxlan_network') do |interface_name, net_name|
     raise "Cannot specify both 'temporary_vxlan_interface' and 'vxlan_network' properties."
   end
+
   if_p('vxlan_network') do |net_name|
     networks_hash = spec.networks.to_h
     underlay_network = networks_hash[net_name.to_sym]
@@ -47,7 +48,7 @@
     "metron_port" => p("metron_port"),
     "vtep_port" => p("vtep_port"),
     "log_prefix" => "cfnetworking",
-    "custom_underlay_interface_name" => p("vxlan_interface", ""),
+    "custom_underlay_interface_name" => p("temporary_vxlan_interface", ""),
   }
 
   JSON.pretty_generate(toRender)
