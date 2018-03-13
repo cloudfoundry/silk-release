@@ -50,9 +50,9 @@ module Bosh::Template::Test
               }
             end
 
-            it 'sets custom_underlay_interface_name' do
+            it 'sets vxlan_interface_name' do
               clientConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links))
-              expect(clientConfig['custom_underlay_interface_name']).to eq("some-vxlan-interface")
+              expect(clientConfig['vxlan_interface_name']).to eq("some-vxlan-interface")
             end
           end
 

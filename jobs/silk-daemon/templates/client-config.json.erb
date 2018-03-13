@@ -48,7 +48,7 @@
     "metron_port" => p("metron_port"),
     "vtep_port" => p("vtep_port"),
     "log_prefix" => "cfnetworking",
-    "custom_underlay_interface_name" => p("temporary_vxlan_interface", ""),
+    "vxlan_interface_name" => p("temporary_vxlan_interface", ""),
   }
 
   JSON.pretty_generate(toRender)
