@@ -55,6 +55,21 @@ module Bosh::Template::Test
               expect(clientConfig['custom_underlay_interface_name']).to eq("some-vxlan-interface")
             end
           end
+
+          context 'when vxlan_network is set' do
+            let(:merged_manifest_properties) do
+              {
+                'vxlan_network' => 'fake-network'
+              }
+            end
+            networks = { 'fake-network' => { 'fake-network-settings' => {}, 'ip' => "192.74.65.4" } }
+            spec = InstanceSpec.new(address: 'cloudfoundry.org', bootstrap: true, networks: networks)
+
+            it 'sets the underlay_ip to the ip associated with vxlan_network' do
+              clientConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links, spec: spec))
+              expect(clientConfig['underlay_ip']).to eq("192.74.65.4")
+            end
+          end
         end
       end
     end
