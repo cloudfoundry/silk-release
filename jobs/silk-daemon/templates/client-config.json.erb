@@ -15,11 +15,11 @@
     "https://#{hostname}:#{port}"
   end
 
-  underlay_ip = nil
   if_p('temporary_vxlan_interface', 'vxlan_network') do |interface_name, net_name|
     raise "Cannot specify both 'temporary_vxlan_interface' and 'vxlan_network' properties."
   end
 
+  underlay_ip = nil
   if_p('vxlan_network') do |net_name|
     networks_hash = spec.networks.to_h
     underlay_network = networks_hash[net_name.to_sym]
