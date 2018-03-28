@@ -94,3 +94,6 @@
 [submodule "src/github.com/coreos/go-iptables"]
 	path = src/github.com/coreos/go-iptables
 	url = https://github.com/coreos/go-iptables
+[submodule "src/code.cloudfoundry.org/filelock"]
+	path = src/code.cloudfoundry.org/filelock
+	url = https://github.com/cloudfoundry/filelock.git
