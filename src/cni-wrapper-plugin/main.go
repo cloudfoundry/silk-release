@@ -95,6 +95,10 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return fmt.Errorf("discover default interface name: %s", err) // not tested
 	}
 
+	if args.ContainerID == "" {
+		return fmt.Errorf("invalid Container ID")
+	}
+
 	// Initialize NetOut
 	netOutProvider := legacynet.NetOut{
 		ChainNamer: &legacynet.ChainNamer{
@@ -109,8 +113,10 @@ func cmdAdd(args *skel.CmdArgs) error {
 		IngressTag:            n.IngressTag,
 		VTEPName:              n.VTEPName,
 		HostInterfaceName:     defaultIfaceName,
+		ContainerHandle:       args.ContainerID,
+		ContainerIP:           containerIP.String(),
 	}
-	if err := netOutProvider.Initialize(args.ContainerID, containerIP, localDNSServers); err != nil {
+	if err := netOutProvider.Initialize(localDNSServers); err != nil {
 		return fmt.Errorf("initialize net out: %s", err)
 	}
 
@@ -138,7 +144,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	// Create egress rules
 	netOutRules := n.RuntimeConfig.NetOutRules
-	if err := netOutProvider.BulkInsertRules(args.ContainerID, netOutRules); err != nil {
+	if err := netOutProvider.BulkInsertRules(netOutRules); err != nil {
 		return fmt.Errorf("bulk insert: %s", err) // not tested
 	}
 
@@ -210,9 +216,11 @@ func cmdDel(args *skel.CmdArgs) error {
 		IPTables:          pluginController.IPTables,
 		Converter:         &legacynet.NetOutRuleConverter{Logger: os.Stderr},
 		HostInterfaceName: defaultIfaceName,
+		ContainerHandle:   args.ContainerID,
+		ContainerIP:       container.IP,
 	}
 
-	if err = netOutProvider.Cleanup(args.ContainerID, container.IP); err != nil {
+	if err = netOutProvider.Cleanup(); err != nil {
 		fmt.Fprintf(os.Stderr, "net out cleanup: %s", err)
 	}
 

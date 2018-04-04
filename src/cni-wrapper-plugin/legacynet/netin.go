@@ -21,14 +21,14 @@ func (m *NetIn) Initialize(containerHandle string) error {
 	return initChains(m.IPTables, m.defaultNetInRules(containerHandle))
 }
 
-func (m *NetIn) defaultNetInRules(containerHandle string) []fullRule {
+func (m *NetIn) defaultNetInRules(containerHandle string) []IpTablesFullChain {
 	chain := m.ChainNamer.Prefix(prefixNetIn, containerHandle)
 
-	return []fullRule{
+	return []IpTablesFullChain{
 		{
 			Table:       "nat",
 			ParentChain: "PREROUTING",
-			Chain:       chain,
+			ChainName:   chain,
 			JumpConditions:       []rules.IPTablesRule{
 				{ "--jump", chain },
 			},
@@ -36,7 +36,7 @@ func (m *NetIn) defaultNetInRules(containerHandle string) []fullRule {
 		{
 			Table:       "mangle",
 			ParentChain: "PREROUTING",
-			Chain:       chain,
+			ChainName:   chain,
 			JumpConditions:       []rules.IPTablesRule{
 				{ "--jump", chain },
 			},
@@ -48,7 +48,7 @@ func (m *NetIn) Cleanup(containerHandle string) error {
 	var result error
 
 	for _, rule := range m.defaultNetInRules(containerHandle) {
-		err := cleanupChain(rule.Table, rule.ParentChain, rule.Chain, rule.JumpConditions, m.IPTables)
+		err := cleanupChain(rule.Table, rule.ParentChain, rule.ChainName, rule.JumpConditions, m.IPTables)
 		if err != nil {
 			result = multierror.Append(result, err)
 		}
@@ -70,11 +70,11 @@ func (m *NetIn) AddRule(containerHandle string, hostPort, containerPort int, hos
 		return fmt.Errorf("invalid ip: %s", containerIP)
 	}
 
-	containerIngressRules := []fullRule{
+	containerIngressRules := []IpTablesFullChain{
 		{
 			Table:       "nat",
 			ParentChain: "PREROUTING",
-			Chain:       chain,
+			ChainName:   chain,
 			Rules: []rules.IPTablesRule{
 				rules.NewPortForwardingRule(hostPort, containerPort, hostIP, containerIP),
 			},
@@ -82,7 +82,7 @@ func (m *NetIn) AddRule(containerHandle string, hostPort, containerPort int, hos
 		{
 			Table:       "mangle",
 			ParentChain: "PREROUTING",
-			Chain:       chain,
+			ChainName:   chain,
 			Rules: []rules.IPTablesRule{
 				rules.NewIngressMarkRule(m.HostInterfaceName, hostPort, hostIP, m.IngressTag),
 			},
@@ -92,9 +92,9 @@ func (m *NetIn) AddRule(containerHandle string, hostPort, containerPort int, hos
 	return applyRules(m.IPTables, containerIngressRules)
 }
 
-func initChains(iptables rules.IPTablesAdapter, fullRules []fullRule) error {
+func initChains(iptables rules.IPTablesAdapter, fullRules []IpTablesFullChain) error {
 	for _, rule := range fullRules {
-		err := iptables.NewChain(rule.Table, rule.Chain)
+		err := iptables.NewChain(rule.Table, rule.ChainName)
 		if err != nil {
 			return fmt.Errorf("creating chain: %s", err)
 		}
@@ -116,9 +116,9 @@ func initChains(iptables rules.IPTablesAdapter, fullRules []fullRule) error {
 	return nil
 }
 
-func applyRules(iptables rules.IPTablesAdapter, fullRules []fullRule) error {
+func applyRules(iptables rules.IPTablesAdapter, fullRules []IpTablesFullChain) error {
 	for _, rule := range fullRules {
-		err := iptables.BulkAppend(rule.Table, rule.Chain, rule.Rules...)
+		err := iptables.BulkAppend(rule.Table, rule.ChainName, rule.Rules...)
 		if err != nil {
 			return fmt.Errorf("appending rule: %s", err)
 		}
