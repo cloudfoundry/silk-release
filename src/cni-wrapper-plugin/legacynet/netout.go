@@ -6,7 +6,7 @@ import (
 	"lib/rules"
 	"net"
 
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 
 	"code.cloudfoundry.org/garden"
 )
@@ -39,7 +39,7 @@ type fullRule struct {
 	Table          string
 	ParentChain    string
 	Chain          string
-	JumpConditions rules.IPTablesRule
+	JumpConditions []rules.IPTablesRule
 	Rules          []rules.IPTablesRule
 }
 
@@ -61,9 +61,9 @@ func (m *NetOut) Initialize(containerHandle string, containerIP net.IP, dnsServe
 			Table:       "filter",
 			ParentChain: "INPUT",
 			Chain:       inputChain,
-			JumpConditions: rules.IPTablesRule{
+			JumpConditions: []rules.IPTablesRule{{
 				"-s", containerIP.String(),
-			},
+			}},
 			Rules: []rules.IPTablesRule{
 				rules.NewInputRelatedEstablishedRule(),
 				rules.NewInputDefaultRejectRule(),
@@ -73,10 +73,10 @@ func (m *NetOut) Initialize(containerHandle string, containerIP net.IP, dnsServe
 			Table:       "filter",
 			ParentChain: "FORWARD",
 			Chain:       forwardChain,
-			JumpConditions: rules.IPTablesRule{
+			JumpConditions: []rules.IPTablesRule{{
 				"-s", containerIP.String(),
 				"-o", m.HostInterfaceName,
-			},
+			}},
 			Rules: []rules.IPTablesRule{
 				rules.NewNetOutRelatedEstablishedRule(),
 				rules.NewNetOutDefaultRejectRule(),
@@ -160,18 +160,18 @@ func (m *NetOut) Cleanup(containerHandle, containerIP string) error {
 			Table:       "filter",
 			ParentChain: "FORWARD",
 			Chain:       forwardChain,
-			JumpConditions: rules.IPTablesRule{
+			JumpConditions: []rules.IPTablesRule{{
 				"-s", containerIP,
 				"-o", m.HostInterfaceName,
-			},
+			}},
 		},
 		{
 			Table:       "filter",
 			ParentChain: "INPUT",
 			Chain:       inputChain,
-			JumpConditions: rules.IPTablesRule{
+			JumpConditions: []rules.IPTablesRule{{
 				"-s", containerIP,
-			},
+			}},
 		},
 		{
 			Table:       "filter",
