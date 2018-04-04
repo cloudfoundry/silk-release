@@ -18,10 +18,10 @@ type NetIn struct {
 }
 
 func (m *NetIn) Initialize(containerHandle string) error {
-	return initChains(m.IPTables, m.DefaultRules(containerHandle))
+	return initChains(m.IPTables, m.defaultNetInRules(containerHandle))
 }
 
-func (m *NetIn) DefaultRules(containerHandle string) []fullRule {
+func (m *NetIn) defaultNetInRules(containerHandle string) []fullRule {
 	chain := m.ChainNamer.Prefix(prefixNetIn, containerHandle)
 
 	return []fullRule{
@@ -47,7 +47,7 @@ func (m *NetIn) DefaultRules(containerHandle string) []fullRule {
 func (m *NetIn) Cleanup(containerHandle string) error {
 	var result error
 
-	for _, rule := range m.DefaultRules(containerHandle) {
+	for _, rule := range m.defaultNetInRules(containerHandle) {
 		err := cleanupChain(rule.Table, rule.ParentChain, rule.Chain, rule.JumpConditions, m.IPTables)
 		if err != nil {
 			result = multierror.Append(result, err)
