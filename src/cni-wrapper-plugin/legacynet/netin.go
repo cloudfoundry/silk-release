@@ -18,38 +18,43 @@ type NetIn struct {
 }
 
 func (m *NetIn) Initialize(containerHandle string) error {
+
+	args := m.DefaultRules(containerHandle)
+
+	return initChains(m.IPTables, args)
+}
+
+func (m *NetIn) DefaultRules(containerHandle string) []fullRule {
 	chain := m.ChainNamer.Prefix(prefixNetIn, containerHandle)
 
-	args := []fullRule{
+	return []fullRule{
 		{
 			Table:       "nat",
 			ParentChain: "PREROUTING",
 			Chain:       chain,
-			Rules:       []rules.IPTablesRule{},
+			JumpConditions:       []rules.IPTablesRule{
+				{ "--jump", chain },
+			},
 		},
 		{
 			Table:       "mangle",
 			ParentChain: "PREROUTING",
 			Chain:       chain,
-			Rules:       []rules.IPTablesRule{},
+			JumpConditions:       []rules.IPTablesRule{
+				{ "--jump", chain },
+			},
 		},
 	}
-
-	return initChains(m.IPTables, args)
 }
 
 func (m *NetIn) Cleanup(containerHandle string) error {
-	chain := m.ChainNamer.Prefix(prefixNetIn, containerHandle)
-
 	var result error
-	err := cleanupChain("nat", "PREROUTING", chain, []rules.IPTablesRule{}, m.IPTables)
-	if err != nil {
-		result = multierror.Append(result, err)
-	}
 
-	err = cleanupChain("mangle", "PREROUTING", chain, []rules.IPTablesRule{}, m.IPTables)
-	if err != nil {
-		result = multierror.Append(result, err)
+	for _, rule := range m.DefaultRules(containerHandle) {
+		err := cleanupChain(rule.Table, rule.ParentChain, rule.Chain, rule.JumpConditions, m.IPTables)
+		if err != nil {
+			result = multierror.Append(result, err)
+		}
 	}
 
 	return result
@@ -99,21 +104,15 @@ func initChains(iptables rules.IPTablesAdapter, args []fullRule) error {
 		}
 
 		if arg.ParentChain == "INPUT" {
-			for _, condition := range arg.JumpConditions {
-				err = iptables.BulkAppend(arg.Table, arg.ParentChain, append(condition, rules.IPTablesRule{"--jump", arg.Chain}...))
-				if err != nil {
-					return fmt.Errorf("appending rule to INPUT chain: %s", err)
-				}
+			err = iptables.BulkAppend(arg.Table, arg.ParentChain, arg.JumpConditions...)
+			if err != nil {
+				return fmt.Errorf("appending rule to INPUT chain: %s", err)
 			}
 		} else if arg.ParentChain != "" {
-			if len(arg.JumpConditions) == 0 {
-				arg.JumpConditions = append(arg.JumpConditions, rules.IPTablesRule{})
-			}
-			for _, condition := range arg.JumpConditions {
-				err = iptables.BulkInsert(arg.Table, arg.ParentChain, 1, append(condition, rules.IPTablesRule{"--jump", arg.Chain}...))
-				if err != nil {
-					return fmt.Errorf("inserting rule: %s", err)
-				}
+
+			err = iptables.BulkInsert(arg.Table, arg.ParentChain, 1, arg.JumpConditions...)
+			if err != nil {
+				return fmt.Errorf("inserting rule: %s", err)
 			}
 		}
 	}
@@ -135,11 +134,8 @@ func applyRules(iptables rules.IPTablesAdapter, args []fullRule) error {
 func cleanupChain(table, parentChain, chain string, jumpConditions []rules.IPTablesRule, iptables rules.IPTablesAdapter) error {
 	var result error
 	if parentChain != "" {
-		if len(jumpConditions) == 0 {
-			jumpConditions = append(jumpConditions, rules.IPTablesRule{})
-		}
 		for _, condition := range jumpConditions {
-			if err := iptables.Delete(table, parentChain, append(condition, rules.IPTablesRule{"--jump", chain}...)); err != nil {
+			if err := iptables.Delete(table, parentChain, condition); err != nil {
 				result = multierror.Append(result, fmt.Errorf("delete rule: %s", err))
 			}
 		}

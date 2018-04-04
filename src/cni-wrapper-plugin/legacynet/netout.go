@@ -63,6 +63,7 @@ func (m *NetOut) Initialize(containerHandle string, containerIP net.IP, dnsServe
 			Chain:       inputChain,
 			JumpConditions: []rules.IPTablesRule{{
 				"-s", containerIP.String(),
+				"--jump", inputChain,
 			}},
 			Rules: []rules.IPTablesRule{
 				rules.NewInputRelatedEstablishedRule(),
@@ -76,6 +77,7 @@ func (m *NetOut) Initialize(containerHandle string, containerIP net.IP, dnsServe
 			JumpConditions: []rules.IPTablesRule{{
 				"-s", containerIP.String(),
 				"-o", m.HostInterfaceName,
+				"--jump", forwardChain,
 			}},
 			Rules: []rules.IPTablesRule{
 				rules.NewNetOutRelatedEstablishedRule(),
@@ -86,6 +88,9 @@ func (m *NetOut) Initialize(containerHandle string, containerIP net.IP, dnsServe
 			Table:       "filter",
 			ParentChain: "FORWARD",
 			Chain:       overlayChain,
+			JumpConditions: []rules.IPTablesRule{{
+				"--jump", overlayChain,
+			}},
 			Rules: []rules.IPTablesRule{
 				rules.NewOverlayAllowEgress(m.VTEPName, containerIP.String()),
 				rules.NewOverlayRelatedEstablishedRule(containerIP.String()),
@@ -96,6 +101,9 @@ func (m *NetOut) Initialize(containerHandle string, containerIP net.IP, dnsServe
 		{
 			Table: "filter",
 			Chain: logChain,
+			JumpConditions: []rules.IPTablesRule{{
+				"--jump", logChain,
+			}},
 			Rules: []rules.IPTablesRule{
 				rules.NewNetOutDefaultNonUDPLogRule(containerHandle),
 				rules.NewNetOutDefaultUDPLogRule(containerHandle, m.AcceptedUDPLogsPerSec),
@@ -155,6 +163,9 @@ func (m *NetOut) Cleanup(containerHandle, containerIP string) error {
 			Table:       "filter",
 			ParentChain: "FORWARD",
 			Chain:       overlayChain,
+			JumpConditions: []rules.IPTablesRule{{
+				"--jump", overlayChain,
+			}},
 		},
 		{
 			Table:       "filter",
@@ -163,6 +174,7 @@ func (m *NetOut) Cleanup(containerHandle, containerIP string) error {
 			JumpConditions: []rules.IPTablesRule{{
 				"-s", containerIP,
 				"-o", m.HostInterfaceName,
+				"--jump", forwardChain,
 			}},
 		},
 		{
@@ -171,12 +183,16 @@ func (m *NetOut) Cleanup(containerHandle, containerIP string) error {
 			Chain:       inputChain,
 			JumpConditions: []rules.IPTablesRule{{
 				"-s", containerIP,
+				"--jump", inputChain,
 			}},
 		},
 		{
 			Table:       "filter",
 			ParentChain: "",
 			Chain:       logChain,
+			JumpConditions: []rules.IPTablesRule{{
+				"--jump", logChain,
+			}},
 		},
 	}
 
