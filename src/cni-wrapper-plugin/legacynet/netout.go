@@ -28,7 +28,7 @@ type NetOut struct {
 	C2CLogging            bool
 	IngressTag            string
 	VTEPName              string
-	HostInterfaceName     string
+	HostInterfaceNames    []string
 	DeniedLogsPerSec      int
 	AcceptedUDPLogsPerSec int
 	ContainerHandle       string
@@ -115,7 +115,7 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 			forwardChainName,
 			[]rules.IPTablesRule{{
 				"-s", m.ContainerIP,
-				"-o", m.HostInterfaceName,
+				"-o", m.HostInterfaceNames[0],
 				"--jump", forwardChainName,
 			}},
 			[]rules.IPTablesRule{

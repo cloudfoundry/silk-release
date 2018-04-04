@@ -112,7 +112,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		AcceptedUDPLogsPerSec: n.IPTablesAcceptedUDPLogsPerSec,
 		IngressTag:            n.IngressTag,
 		VTEPName:              n.VTEPName,
-		HostInterfaceName:     defaultIfaceName,
+		HostInterfaceNames:    []string{defaultIfaceName},
 		ContainerHandle:       args.ContainerID,
 		ContainerIP:           containerIP.String(),
 	}
@@ -213,11 +213,11 @@ func cmdDel(args *skel.CmdArgs) error {
 		ChainNamer: &legacynet.ChainNamer{
 			MaxLength: 28,
 		},
-		IPTables:          pluginController.IPTables,
-		Converter:         &legacynet.NetOutRuleConverter{Logger: os.Stderr},
-		HostInterfaceName: defaultIfaceName,
-		ContainerHandle:   args.ContainerID,
-		ContainerIP:       container.IP,
+		IPTables:           pluginController.IPTables,
+		Converter:          &legacynet.NetOutRuleConverter{Logger: os.Stderr},
+		HostInterfaceNames: []string{defaultIfaceName},
+		ContainerHandle:    args.ContainerID,
+		ContainerIP:        container.IP,
 	}
 
 	if err = netOutProvider.Cleanup(); err != nil {

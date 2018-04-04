@@ -31,7 +31,7 @@ var _ = Describe("Netout", func() {
 			Converter:             converter,
 			IngressTag:            "FEEDBEEF",
 			VTEPName:              "vtep-name",
-			HostInterfaceName:     "some-device",
+			HostInterfaceNames:     []string {"some-device"},
 			DeniedLogsPerSec:      3,
 			AcceptedUDPLogsPerSec: 6,
 			ContainerIP:           "5.6.7.8",
