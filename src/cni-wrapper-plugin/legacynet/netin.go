@@ -18,10 +18,7 @@ type NetIn struct {
 }
 
 func (m *NetIn) Initialize(containerHandle string) error {
-
-	args := m.DefaultRules(containerHandle)
-
-	return initChains(m.IPTables, args)
+	return initChains(m.IPTables, m.DefaultRules(containerHandle))
 }
 
 func (m *NetIn) DefaultRules(containerHandle string) []fullRule {
@@ -60,8 +57,7 @@ func (m *NetIn) Cleanup(containerHandle string) error {
 	return result
 }
 
-func (m *NetIn) AddRule(containerHandle string,
-	hostPort, containerPort int, hostIP, containerIP string) error {
+func (m *NetIn) AddRule(containerHandle string, hostPort, containerPort int, hostIP, containerIP string) error {
 	chain := m.ChainNamer.Prefix(prefixNetIn, containerHandle)
 
 	parsedIP := net.ParseIP(hostIP)
@@ -74,7 +70,7 @@ func (m *NetIn) AddRule(containerHandle string,
 		return fmt.Errorf("invalid ip: %s", containerIP)
 	}
 
-	args := []fullRule{
+	containerIngressRules := []fullRule{
 		{
 			Table:       "nat",
 			ParentChain: "PREROUTING",
@@ -93,24 +89,24 @@ func (m *NetIn) AddRule(containerHandle string,
 		},
 	}
 
-	return applyRules(m.IPTables, args)
+	return applyRules(m.IPTables, containerIngressRules)
 }
 
-func initChains(iptables rules.IPTablesAdapter, args []fullRule) error {
-	for _, arg := range args {
-		err := iptables.NewChain(arg.Table, arg.Chain)
+func initChains(iptables rules.IPTablesAdapter, fullRules []fullRule) error {
+	for _, rule := range fullRules {
+		err := iptables.NewChain(rule.Table, rule.Chain)
 		if err != nil {
 			return fmt.Errorf("creating chain: %s", err)
 		}
 
-		if arg.ParentChain == "INPUT" {
-			err = iptables.BulkAppend(arg.Table, arg.ParentChain, arg.JumpConditions...)
+		if rule.ParentChain == "INPUT" {
+			err = iptables.BulkAppend(rule.Table, rule.ParentChain, rule.JumpConditions...)
 			if err != nil {
 				return fmt.Errorf("appending rule to INPUT chain: %s", err)
 			}
-		} else if arg.ParentChain != "" {
+		} else if rule.ParentChain != "" {
 
-			err = iptables.BulkInsert(arg.Table, arg.ParentChain, 1, arg.JumpConditions...)
+			err = iptables.BulkInsert(rule.Table, rule.ParentChain, 1, rule.JumpConditions...)
 			if err != nil {
 				return fmt.Errorf("inserting rule: %s", err)
 			}
@@ -120,9 +116,9 @@ func initChains(iptables rules.IPTablesAdapter, args []fullRule) error {
 	return nil
 }
 
-func applyRules(iptables rules.IPTablesAdapter, args []fullRule) error {
-	for _, arg := range args {
-		err := iptables.BulkAppend(arg.Table, arg.Chain, arg.Rules...)
+func applyRules(iptables rules.IPTablesAdapter, fullRules []fullRule) error {
+	for _, rule := range fullRules {
+		err := iptables.BulkAppend(rule.Table, rule.Chain, rule.Rules...)
 		if err != nil {
 			return fmt.Errorf("appending rule: %s", err)
 		}

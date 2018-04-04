@@ -48,97 +48,9 @@ func (m *NetOut) Initialize(containerHandle string, containerIP net.IP, dnsServe
 		return errors.New("invalid handle")
 	}
 
-	inputChain := m.ChainNamer.Prefix(prefixInput, containerHandle)
-	forwardChain := m.ChainNamer.Prefix(prefixNetOut, containerHandle)
-	overlayChain := m.ChainNamer.Prefix(prefixOverlay, containerHandle)
-	logChain, err := m.ChainNamer.Postfix(forwardChain, suffixNetOutLog)
+	args, err := m.DefaultNetOutRules(containerHandle, containerIP, dnsServers)
 	if err != nil {
-		return fmt.Errorf("getting chain name: %s", err)
-	}
-
-	args := []fullRule{
-		{
-			Table:       "filter",
-			ParentChain: "INPUT",
-			Chain:       inputChain,
-			JumpConditions: []rules.IPTablesRule{{
-				"-s", containerIP.String(),
-				"--jump", inputChain,
-			}},
-			Rules: []rules.IPTablesRule{
-				rules.NewInputRelatedEstablishedRule(),
-				rules.NewInputDefaultRejectRule(),
-			},
-		},
-		{
-			Table:       "filter",
-			ParentChain: "FORWARD",
-			Chain:       forwardChain,
-			JumpConditions: []rules.IPTablesRule{{
-				"-s", containerIP.String(),
-				"-o", m.HostInterfaceName,
-				"--jump", forwardChain,
-			}},
-			Rules: []rules.IPTablesRule{
-				rules.NewNetOutRelatedEstablishedRule(),
-				rules.NewNetOutDefaultRejectRule(),
-			},
-		},
-		{
-			Table:       "filter",
-			ParentChain: "FORWARD",
-			Chain:       overlayChain,
-			JumpConditions: []rules.IPTablesRule{{
-				"--jump", overlayChain,
-			}},
-			Rules: []rules.IPTablesRule{
-				rules.NewOverlayAllowEgress(m.VTEPName, containerIP.String()),
-				rules.NewOverlayRelatedEstablishedRule(containerIP.String()),
-				rules.NewOverlayTagAcceptRule(containerIP.String(), m.IngressTag),
-				rules.NewOverlayDefaultRejectRule(containerIP.String()),
-			},
-		},
-		{
-			Table: "filter",
-			Chain: logChain,
-			JumpConditions: []rules.IPTablesRule{{
-				"--jump", logChain,
-			}},
-			Rules: []rules.IPTablesRule{
-				rules.NewNetOutDefaultNonUDPLogRule(containerHandle),
-				rules.NewNetOutDefaultUDPLogRule(containerHandle, m.AcceptedUDPLogsPerSec),
-				rules.NewAcceptRule(),
-			},
-		},
-	}
-
-	if m.ASGLogging {
-		args[1].Rules = []rules.IPTablesRule{
-			rules.NewNetOutRelatedEstablishedRule(),
-			rules.NewNetOutDefaultRejectLogRule(containerHandle, m.DeniedLogsPerSec),
-			rules.NewNetOutDefaultRejectRule(),
-		}
-	}
-
-	if m.C2CLogging {
-		args[2].Rules = []rules.IPTablesRule{
-			rules.NewOverlayAllowEgress(m.VTEPName, containerIP.String()),
-			rules.NewOverlayRelatedEstablishedRule(containerIP.String()),
-			rules.NewOverlayTagAcceptRule(containerIP.String(), m.IngressTag),
-			rules.NewOverlayDefaultRejectLogRule(containerHandle, containerIP.String(), m.DeniedLogsPerSec),
-			rules.NewOverlayDefaultRejectRule(containerIP.String()),
-		}
-	}
-
-	if len(dnsServers) > 0 {
-		args[0].Rules = []rules.IPTablesRule{
-			rules.NewInputRelatedEstablishedRule(),
-		}
-		for _, dnsServer := range dnsServers {
-			args[0].Rules = append(args[0].Rules, rules.NewInputAllowRule("tcp", dnsServer, 53))
-			args[0].Rules = append(args[0].Rules, rules.NewInputAllowRule("udp", dnsServer, 53))
-		}
-		args[0].Rules = append(args[0].Rules, rules.NewInputDefaultRejectRule())
+		return err
 	}
 
 	err = initChains(m.IPTables, args)
@@ -239,4 +151,101 @@ func (m *NetOut) BulkInsertRules(containerHandle string, netOutRules []garden.Ne
 	}
 
 	return nil
+}
+
+func (m *NetOut) DefaultNetOutRules(containerHandle string, containerIP net.IP, dnsServers []string) ([]fullRule, error) {
+	inputChain := m.ChainNamer.Prefix(prefixInput, containerHandle)
+	forwardChain := m.ChainNamer.Prefix(prefixNetOut, containerHandle)
+	overlayChain := m.ChainNamer.Prefix(prefixOverlay, containerHandle)
+	logChain, err := m.ChainNamer.Postfix(forwardChain, suffixNetOutLog)
+	if err != nil {
+		return []fullRule{}, fmt.Errorf("getting chain name: %s", err)
+	}
+
+	args := []fullRule{
+		{
+			Table:       "filter",
+			ParentChain: "INPUT",
+			Chain:       inputChain,
+			JumpConditions: []rules.IPTablesRule{{
+				"-s", containerIP.String(),
+				"--jump", inputChain,
+			}},
+			Rules: []rules.IPTablesRule{
+				rules.NewInputRelatedEstablishedRule(),
+				rules.NewInputDefaultRejectRule(),
+			},
+		},
+		{
+			Table:       "filter",
+			ParentChain: "FORWARD",
+			Chain:       forwardChain,
+			JumpConditions: []rules.IPTablesRule{{
+				"-s", containerIP.String(),
+				"-o", m.HostInterfaceName,
+				"--jump", forwardChain,
+			}},
+			Rules: []rules.IPTablesRule{
+				rules.NewNetOutRelatedEstablishedRule(),
+				rules.NewNetOutDefaultRejectRule(),
+			},
+		},
+		{
+			Table:       "filter",
+			ParentChain: "FORWARD",
+			Chain:       overlayChain,
+			JumpConditions: []rules.IPTablesRule{{
+				"--jump", overlayChain,
+			}},
+			Rules: []rules.IPTablesRule{
+				rules.NewOverlayAllowEgress(m.VTEPName, containerIP.String()),
+				rules.NewOverlayRelatedEstablishedRule(containerIP.String()),
+				rules.NewOverlayTagAcceptRule(containerIP.String(), m.IngressTag),
+				rules.NewOverlayDefaultRejectRule(containerIP.String()),
+			},
+		},
+		{
+			Table: "filter",
+			Chain: logChain,
+			JumpConditions: []rules.IPTablesRule{{
+				"--jump", logChain,
+			}},
+			Rules: []rules.IPTablesRule{
+				rules.NewNetOutDefaultNonUDPLogRule(containerHandle),
+				rules.NewNetOutDefaultUDPLogRule(containerHandle, m.AcceptedUDPLogsPerSec),
+				rules.NewAcceptRule(),
+			},
+		},
+	}
+
+	if m.ASGLogging {
+		args[1].Rules = []rules.IPTablesRule{
+			rules.NewNetOutRelatedEstablishedRule(),
+			rules.NewNetOutDefaultRejectLogRule(containerHandle, m.DeniedLogsPerSec),
+			rules.NewNetOutDefaultRejectRule(),
+		}
+	}
+
+	if m.C2CLogging {
+		args[2].Rules = []rules.IPTablesRule{
+			rules.NewOverlayAllowEgress(m.VTEPName, containerIP.String()),
+			rules.NewOverlayRelatedEstablishedRule(containerIP.String()),
+			rules.NewOverlayTagAcceptRule(containerIP.String(), m.IngressTag),
+			rules.NewOverlayDefaultRejectLogRule(containerHandle, containerIP.String(), m.DeniedLogsPerSec),
+			rules.NewOverlayDefaultRejectRule(containerIP.String()),
+		}
+	}
+
+	if len(dnsServers) > 0 {
+		args[0].Rules = []rules.IPTablesRule{
+			rules.NewInputRelatedEstablishedRule(),
+		}
+		for _, dnsServer := range dnsServers {
+			args[0].Rules = append(args[0].Rules, rules.NewInputAllowRule("tcp", dnsServer, 53))
+			args[0].Rules = append(args[0].Rules, rules.NewInputAllowRule("udp", dnsServer, 53))
+		}
+		args[0].Rules = append(args[0].Rules, rules.NewInputDefaultRejectRule())
+	}
+
+	return args, nil
 }
