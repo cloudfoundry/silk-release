@@ -70,6 +70,7 @@ var _ = BeforeEach(func() {
 		},
 		IPTablesLockFile:              "does_not_matter",
 		InstanceAddress:               "does_not_matter",
+		UnderlayIPs:                   []string{"does_not_matter"},
 		IngressTag:                    "does_not_matter",
 		VTEPName:                      "does_not_matter",
 		IPTablesDeniedLogsPerSec:      2,
