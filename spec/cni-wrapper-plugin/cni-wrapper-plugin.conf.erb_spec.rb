@@ -15,7 +15,6 @@ module Bosh::Template::Test
           let(:template) {job.template('config/cni/cni-wrapper-plugin.conf')}
 
           context 'when multiple networks are present' do
-            let(:merged_manifest_properties) { {} }
             let(:instance_spec) { InstanceSpec.new(networks: networks) }
             let(:networks) do
               {
@@ -24,9 +23,22 @@ module Bosh::Template::Test
               }
             end
 
-            it 'renders the ips into the manifest' do
-              parsed_conf = JSON.parse(template.render(merged_manifest_properties, spec: instance_spec))
-              expect(parsed_conf['underlay_ips']).to contain_exactly('1.2.3.4', '2.3.4.5')
+            context 'and the temporary_underlay_interface_ips property is not set' do
+              let(:merged_manifest_properties) { {} }
+
+              it 'renders the bosh network ips into the manifest' do
+                parsed_conf = JSON.parse(template.render(merged_manifest_properties, spec: instance_spec))
+                expect(parsed_conf['underlay_ips']).to contain_exactly('1.2.3.4', '2.3.4.5')
+              end
+            end
+
+            context 'and the temporary_underlay_interface_ips property is set' do
+              let(:merged_manifest_properties) { {'temporary' => {'underlay_interface_ips' => ['5.5.5.5', '8.8.8.8'] }} }
+
+              it 'renders the given ips into the manifest' do
+                parsed_conf = JSON.parse(template.render(merged_manifest_properties, spec: instance_spec))
+                expect(parsed_conf['underlay_ips']).to contain_exactly('5.5.5.5', '8.8.8.8')
+              end
             end
           end
         end
