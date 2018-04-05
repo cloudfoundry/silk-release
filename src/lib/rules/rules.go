@@ -39,6 +39,20 @@ func NewIngressMarkRules(hostInterfaceNames []string, hostPort int, hostIP, tag 
 	return jumpConditions
 }
 
+func NewNetOutJumpConditions(hostInterfaceNames []string, hostIP, forwardChainName string) []IPTablesRule {
+	jumpConditions := make([]IPTablesRule, len(hostInterfaceNames))
+
+	for i, hostInterfaceName := range hostInterfaceNames {
+		jumpConditions[i] = IPTablesRule{
+			"-s", hostIP,
+			"-o", hostInterfaceName,
+			"--jump", forwardChainName,
+		}
+	}
+
+	return jumpConditions
+}
+
 func NewMarkAllowRule(destinationIP, protocol string, startPort, endPort int, tag string, sourceAppGUID, destinationAppGUID string) IPTablesRule {
 	return AppendComment(IPTablesRule{
 		"-d", destinationIP,
