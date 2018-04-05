@@ -258,7 +258,7 @@ func underlayInterfaceNames(underlayIPs []string) ([]string, error) {
 	for i, underlayIP := range underlayIPs {
 		name, err := underlayInterfaceName(underlayIP)
 		if err != nil {
-			return []string{}, fmt.Errorf("nope nope nope: %s", err) // not tested
+			return []string{}, err // not tested, bubble up error
 		}
 
 		names[i] = name
@@ -278,7 +278,7 @@ func underlayInterfaceName(underlayIPStr string) (string, error) {
 	for _, link := range links {
 		addresses, err := netlinkAdapter.AddrList(link, netlink.FAMILY_V4)
 		if err != nil {
-			return "", fmt.Errorf("nope nope nope: %s", err) // not tested
+			return "", fmt.Errorf("failed to get underlay interface name by link for %s: %s", link.Attrs().Name, err) // not tested
 		}
 
 		for _, address := range addresses {
