@@ -83,22 +83,11 @@ func (m *NetIn) AddRule(containerHandle string, hostPort, containerPort int, hos
 			Table:       "mangle",
 			ParentChain: "PREROUTING",
 			ChainName:   chain,
-			Rules: m.buildJumpConditionsPerUnderlayInterface(hostPort, hostIP),
+			Rules: rules.NewIngressMarkRules(m.HostInterfaceNames, hostPort, hostIP, m.IngressTag),
 		},
 	}
 
 	return applyRules(m.IPTables, containerIngressRules)
-}
-
-func (m *NetIn) buildJumpConditionsPerUnderlayInterface(hostPort int, hostIP string) []rules.IPTablesRule {
-
-	jumpConditions := make([]rules.IPTablesRule, len(m.HostInterfaceNames))
-
-	for i, hostInterfaceName := range m.HostInterfaceNames {
-		jumpConditions[i] = rules.NewIngressMarkRule(hostInterfaceName, hostPort, hostIP, m.IngressTag)
-	}
-
-	return jumpConditions
 }
 
 func initChains(iptables rules.IPTablesAdapter, fullRules []IpTablesFullChain) error {

@@ -24,13 +24,19 @@ func NewPortForwardingRule(hostPort, containerPort int, hostIP, containerIP stri
 	}
 }
 
-func NewIngressMarkRule(hostInterface string, hostPort int, hostIP, tag string) IPTablesRule {
-	return IPTablesRule{
-		"-i", hostInterface, "-d", hostIP, "-p", "tcp",
-		"-m", "tcp", "--dport", fmt.Sprintf("%d", hostPort),
-		"--jump", "MARK",
-		"--set-mark", fmt.Sprintf("0x%s", tag),
+func NewIngressMarkRules(hostInterfaceNames []string, hostPort int, hostIP, tag string) []IPTablesRule {
+	jumpConditions := make([]IPTablesRule, len(hostInterfaceNames))
+
+	for i, hostInterfaceName := range hostInterfaceNames {
+		jumpConditions[i] = IPTablesRule{
+			"-i", hostInterfaceName, "-d", hostIP, "-p", "tcp",
+			"-m", "tcp", "--dport", fmt.Sprintf("%d", hostPort),
+			"--jump", "MARK",
+			"--set-mark", fmt.Sprintf("0x%s", tag),
+		}
 	}
+
+	return jumpConditions
 }
 
 func NewMarkAllowRule(destinationIP, protocol string, startPort, endPort int, tag string, sourceAppGUID, destinationAppGUID string) IPTablesRule {

@@ -119,4 +119,31 @@ var _ = Describe("Rules", func() {
 			})
 		})
 	})
+
+	Describe("NewIngressMarkRules", func() {
+		It("creates a jump rule from when given one interface", func() {
+			jumpRule := rules.NewIngressMarkRules([]string{"eth0"}, 2000, "2.3.4.5", "1")
+			Expect(jumpRule[0]).To(Equal(rules.IPTablesRule{
+				"-i", "eth0", "-d", "2.3.4.5", "-p", "tcp",
+				"-m", "tcp", "--dport", "2000",
+				"--jump", "MARK",
+				"--set-mark", "0x1",
+			}))
+		})
+		It("creates the same jump rule for each interface", func() {
+			jumpRules := rules.NewIngressMarkRules([]string{"eth0", "gandalf"}, 2000, "2.3.4.5", "1")
+			Expect(jumpRules[0]).To(Equal(rules.IPTablesRule{
+				"-i", "eth0", "-d", "2.3.4.5", "-p", "tcp",
+				"-m", "tcp", "--dport", "2000",
+				"--jump", "MARK",
+				"--set-mark", "0x1",
+			}))
+			Expect(jumpRules[1]).To(Equal(rules.IPTablesRule{
+				"-i", "gandalf", "-d", "2.3.4.5", "-p", "tcp",
+				"-m", "tcp", "--dport", "2000",
+				"--jump", "MARK",
+				"--set-mark", "0x1",
+			}))
+		})
+	})
 })
