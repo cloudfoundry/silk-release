@@ -22,6 +22,7 @@ type WrapperConfig struct {
 	Delegate                      map[string]interface{} `json:"delegate"`
 	InstanceAddress               string                 `json:"instance_address"`
 	DNSServers                    []string               `json:"dns_servers"`
+	UnderlayIPs                   []string               `json:"underlay_ips"`
 	IPTablesASGLogging            bool                   `json:"iptables_asg_logging"`
 	IPTablesC2CLogging            bool                   `json:"iptables_c2c_logging"`
 	IPTablesDeniedLogsPerSec      int                    `json:"iptables_denied_logs_per_sec" validate:"min=1"`
@@ -47,6 +48,10 @@ func LoadWrapperConfig(bytes []byte) (*WrapperConfig, error) {
 
 	if n.InstanceAddress == "" {
 		return nil, fmt.Errorf("missing instance address")
+	}
+
+	if len(n.UnderlayIPs) < 1 {
+		return nil, fmt.Errorf("missing underlay ips")
 	}
 
 	if n.IngressTag == "" {

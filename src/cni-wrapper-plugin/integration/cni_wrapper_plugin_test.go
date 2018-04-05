@@ -46,6 +46,10 @@ var _ = Describe("CniWrapperPlugin", func() {
 		overlayChainName       string
 		netoutLoggingChainName string
 		defaultIface           *net.Interface
+		underlayName1          string
+		underlayName2          string
+		underlayIpAddr1        string
+		underlayIpAddr2        string
 	)
 
 	var cniCommand = func(command, input string) *exec.Cmd {
@@ -78,6 +82,20 @@ var _ = Describe("CniWrapperPlugin", func() {
 	}
 
 	BeforeEach(func() {
+		// create two dummy ifaces to be the underlay ifaces
+		// delete the dummy ifaces in aftereach
+		// add ips to dummy ifaces
+		// supply these ips in the config#underlay_ips
+
+		underlayName1 = "underlay1"
+		underlayIpAddr1 = "169.254.169.253"
+
+		underlayName2 = "underlay2"
+		underlayIpAddr2 = "169.254.169.254"
+
+		createDummyInterface(underlayName1, underlayIpAddr1)
+		createDummyInterface(underlayName2, underlayIpAddr2)
+
 		routes, err := netlink.RouteList(nil, netlink.FAMILY_V4)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -136,6 +154,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 				IPTablesASGLogging:            false,
 				IngressTag:                    "FFFF0000",
 				VTEPName:                      "some-device",
+				UnderlayIPs:                   []string{underlayIpAddr1, underlayIpAddr2},
 				IPTablesDeniedLogsPerSec:      5,
 				IPTablesAcceptedUDPLogsPerSec: 7,
 				RuntimeConfig: lib.RuntimeConfig{
@@ -253,6 +272,9 @@ var _ = Describe("CniWrapperPlugin", func() {
 		os.Remove(debugFileName)
 		os.Remove(datastorePath)
 		os.Remove(iptablesLockFilePath)
+
+		removeDummyInterface(underlayName1, underlayIpAddr1)
+		removeDummyInterface(underlayName2, underlayIpAddr2)
 	})
 
 	Describe("state lifecycle", func() {
@@ -508,8 +530,10 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(AllIPTablesRules("mangle")).To(ContainElement(`-A PREROUTING -j ` + netinChainName))
 
 				By("checking that mark rules were added to the netin chain")
-				Expect(AllIPTablesRules("mangle")).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -i " + defaultIface.Name + " -p tcp -m tcp --dport 1000 -j MARK --set-xmark 0xffff0000/0xffffffff"))
-				Expect(AllIPTablesRules("mangle")).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -i " + defaultIface.Name + " -p tcp -m tcp --dport 2000 -j MARK --set-xmark 0xffff0000/0xffffffff"))
+				Expect(AllIPTablesRules("mangle")).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -i " + underlayName1 + " -p tcp -m tcp --dport 1000 -j MARK --set-xmark 0xffff0000/0xffffffff"))
+				Expect(AllIPTablesRules("mangle")).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -i " + underlayName1 + " -p tcp -m tcp --dport 2000 -j MARK --set-xmark 0xffff0000/0xffffffff"))
+				Expect(AllIPTablesRules("mangle")).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -i " + underlayName2 + " -p tcp -m tcp --dport 1000 -j MARK --set-xmark 0xffff0000/0xffffffff"))
+				Expect(AllIPTablesRules("mangle")).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -i " + underlayName2 + " -p tcp -m tcp --dport 2000 -j MARK --set-xmark 0xffff0000/0xffffffff"))
 			})
 
 			Context("when a port mapping with hostport 0 is given", func() {
@@ -553,7 +577,8 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Eventually(session).Should(gexec.Exit(0))
 
 				By("checking that the jump rules are created for that container's netout chain")
-				Expect(AllIPTablesRules("filter")).To(ContainElement("-A FORWARD -s 1.2.3.4/32 -o " + defaultIface.Name + " -j " + netoutChainName))
+				Expect(AllIPTablesRules("filter")).To(ContainElement("-A FORWARD -s 1.2.3.4/32 -o " + underlayName1 + " -j " + netoutChainName))
+				Expect(AllIPTablesRules("filter")).To(ContainElement("-A FORWARD -s 1.2.3.4/32 -o " + underlayName2 + " -j " + netoutChainName))
 
 				By("checking that the default forwarding rules are created for that container")
 				Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
@@ -844,3 +869,31 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 	})
 })
+
+func createDummyInterface( interfaceName, ipAddress string) {
+	err := netlink.LinkAdd(&netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Name: interfaceName}})
+	Expect(err).ToNot(HaveOccurred())
+
+	link, err := netlink.LinkByName(interfaceName)
+	Expect(err).ToNot(HaveOccurred())
+
+	addr, err := netlink.ParseAddr(ipAddress+"/32")
+	Expect(err).ToNot(HaveOccurred())
+
+	err = netlink.AddrAdd(link, addr)
+	Expect(err).ToNot(HaveOccurred())
+}
+
+func removeDummyInterface(interfaceName, ipAddress string) {
+	link, err := netlink.LinkByName(interfaceName)
+	Expect(err).ToNot(HaveOccurred())
+
+	addr, err := netlink.ParseAddr(ipAddress+"/32")
+	Expect(err).ToNot(HaveOccurred())
+
+	err = netlink.AddrDel(link, addr)
+	Expect(err).ToNot(HaveOccurred())
+
+	err = netlink.LinkDel(link)
+	Expect(err).ToNot(HaveOccurred())
+}

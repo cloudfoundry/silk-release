@@ -31,7 +31,7 @@ var _ = Describe("Netout", func() {
 			Converter:             converter,
 			IngressTag:            "FEEDBEEF",
 			VTEPName:              "vtep-name",
-			HostInterfaceNames:     []string {"some-device"},
+			HostInterfaceNames:     []string {"some-device", "eth0"},
 			DeniedLogsPerSec:      3,
 			AcceptedUDPLogsPerSec: 6,
 			ContainerIP:           "5.6.7.8",
@@ -90,7 +90,10 @@ var _ = Describe("Netout", func() {
 			Expect(table).To(Equal("filter"))
 			Expect(chain).To(Equal("FORWARD"))
 			Expect(position).To(Equal(1))
-			Expect(rulespec).To(Equal([]rules.IPTablesRule{{"-s", "5.6.7.8", "-o", "some-device", "--jump", "netout-some-container-handle"}}))
+			Expect(rulespec).To(Equal([]rules.IPTablesRule{
+				{"-s", "5.6.7.8", "-o", "some-device", "--jump", "netout-some-container-handle"},
+				{"-s", "5.6.7.8", "-o", "eth0", "--jump", "netout-some-container-handle"},
+				}))
 
 			table, chain, position, rulespec = ipTables.BulkInsertArgsForCall(1)
 			Expect(table).To(Equal("filter"))
@@ -329,7 +332,7 @@ var _ = Describe("Netout", func() {
 			Expect(body).To(Equal("netout-some-container-handle"))
 			Expect(suffix).To(Equal("log"))
 
-			Expect(ipTables.DeleteCallCount()).To(Equal(3))
+			Expect(ipTables.DeleteCallCount()).To(Equal(4))
 			table, chain, extraArgs := ipTables.DeleteArgsForCall(0)
 			Expect(table).To(Equal("filter"))
 			Expect(chain).To(Equal("INPUT"))
@@ -341,6 +344,11 @@ var _ = Describe("Netout", func() {
 			Expect(extraArgs).To(Equal(rules.IPTablesRule{"-s", "5.6.7.8", "-o", "some-device", "--jump", "netout-some-container-handle"}))
 
 			table, chain, extraArgs = ipTables.DeleteArgsForCall(2)
+			Expect(table).To(Equal("filter"))
+			Expect(chain).To(Equal("FORWARD"))
+			Expect(extraArgs).To(Equal(rules.IPTablesRule{"-s", "5.6.7.8", "-o", "eth0", "--jump", "netout-some-container-handle"}))
+
+			table, chain, extraArgs = ipTables.DeleteArgsForCall(3)
 			Expect(table).To(Equal("filter"))
 			Expect(chain).To(Equal("FORWARD"))
 			Expect(extraArgs).To(Equal(rules.IPTablesRule{"--jump", "overlay-some-container-handle"}))

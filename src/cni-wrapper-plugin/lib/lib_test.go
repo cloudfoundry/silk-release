@@ -22,6 +22,7 @@ var _ = Describe("LoadWrapperConfig", func() {
 			"iptables_lock_file": "/some/other/path",
 			"health_check_url": "http://127.0.0.1:10007",
 			"instance_address": "10.244.20.1",
+			"underlay_ips": ["10.244.20.1", "10.244.20.2"],
 			"iptables_asg_logging": true,
 			"ingress_tag": "ffaa0000",
 			"vtep_name": "some-device",
@@ -40,6 +41,7 @@ var _ = Describe("LoadWrapperConfig", func() {
 			Datastore:          "/some/path",
 			IPTablesLockFile:   "/some/other/path",
 			InstanceAddress:    "10.244.20.1",
+			UnderlayIPs: 		[]string { "10.244.20.1", "10.244.20.2" },
 			IPTablesASGLogging: true,
 			Delegate: map[string]interface{}{
 				"cniVersion": "0.3.1",
@@ -109,6 +111,7 @@ var _ = Describe("LoadWrapperConfig", func() {
 	},
 		Entry("datastore", "datastore", "missing datastore path"),
 		Entry("ip tables lock file", "iptables_lock_file", "missing iptables lock file path"),
+		Entry("underlay ips", "underlay_ips", "missing underlay ips"),
 		Entry("instance address", "instance_address", "missing instance address"),
 		Entry("ingress tag", "ingress_tag", "missing ingress tag"),
 		Entry("vtep device name", "vtep_name", "missing vtep device name"),

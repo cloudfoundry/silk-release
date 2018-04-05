@@ -24,10 +24,10 @@ var _ = Describe("Netin", func() {
 		ipTables = &lib_fakes.IPTablesAdapter{}
 		chainNamer = &fakes.ChainNamer{}
 		netIn = &legacynet.NetIn{
-			ChainNamer:        chainNamer,
-			IPTables:          ipTables,
-			IngressTag:        "FEEDBEEF",
-			HostInterfaceName: "some-eth0",
+			ChainNamer:         chainNamer,
+			IPTables:           ipTables,
+			IngressTag:         "FEEDBEEF",
+			HostInterfaceNames: []string{"underlay1", "underlay2"},
 		}
 		chainNamer.PrefixReturns("some-chain-name")
 	})
@@ -221,11 +221,17 @@ var _ = Describe("Netin", func() {
 			Expect(table).To(Equal("mangle"))
 			Expect(chain).To(Equal("some-chain-name"))
 			Expect(rulespec).To(Equal([]rules.IPTablesRule{{
-				"-i", "some-eth0", "-d", "1.2.3.4", "-p", "tcp",
+				"-i", "underlay1", "-d", "1.2.3.4", "-p", "tcp",
 				"-m", "tcp", "--dport", "1111",
 				"--jump", "MARK",
 				"--set-mark", "0xFEEDBEEF",
-			}}))
+			}, {
+				"-i", "underlay2", "-d", "1.2.3.4", "-p", "tcp",
+				"-m", "tcp", "--dport", "1111",
+				"--jump", "MARK",
+				"--set-mark", "0xFEEDBEEF",
+			},
+			}))
 		})
 
 		Context("when writing the netin rule fails", func() {

@@ -87,6 +87,22 @@ func (m *NetOut) BulkInsertRules(netOutRules []garden.NetOutRule) error {
 	return nil
 }
 
+func (m *NetOut) buildJumpConditionsPerUnderlayInterface(forwardChainName string) []rules.IPTablesRule {
+
+	jumpConditions := make([]rules.IPTablesRule, len(m.HostInterfaceNames))
+
+	for i, hostInterfaceName := range m.HostInterfaceNames {
+		jumpConditions[i] = rules.IPTablesRule{
+			"-s", m.ContainerIP,
+			"-o", hostInterfaceName,
+			"--jump", forwardChainName,
+		}
+	}
+
+	return jumpConditions
+
+}
+
 func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 	inputChainName := m.ChainNamer.Prefix(prefixInput, m.ContainerHandle)
 	forwardChainName := m.ChainNamer.Prefix(prefixNetOut, m.ContainerHandle)
@@ -113,15 +129,12 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 			"filter",
 			"FORWARD",
 			forwardChainName,
-			[]rules.IPTablesRule{{
-				"-s", m.ContainerIP,
-				"-o", m.HostInterfaceNames[0],
-				"--jump", forwardChainName,
-			}},
+			m.buildJumpConditionsPerUnderlayInterface(forwardChainName),
 			[]rules.IPTablesRule{
 				rules.NewNetOutRelatedEstablishedRule(),
 				rules.NewNetOutDefaultRejectRule(),
-			}}),
+			},
+		}),
 		m.addC2CLogging(IpTablesFullChain{
 			"filter",
 			"FORWARD",

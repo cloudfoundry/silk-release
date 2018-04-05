@@ -11,10 +11,10 @@ import (
 const prefixNetIn = "netin"
 
 type NetIn struct {
-	ChainNamer        chainNamer
-	IPTables          rules.IPTablesAdapter
-	IngressTag        string
-	HostInterfaceName string
+	ChainNamer         chainNamer
+	IPTables           rules.IPTablesAdapter
+	IngressTag         string
+	HostInterfaceNames []string
 }
 
 func (m *NetIn) Initialize(containerHandle string) error {
@@ -29,16 +29,16 @@ func (m *NetIn) defaultNetInRules(containerHandle string) []IpTablesFullChain {
 			Table:       "nat",
 			ParentChain: "PREROUTING",
 			ChainName:   chain,
-			JumpConditions:       []rules.IPTablesRule{
-				{ "--jump", chain },
+			JumpConditions: []rules.IPTablesRule{
+				{"--jump", chain},
 			},
 		},
 		{
 			Table:       "mangle",
 			ParentChain: "PREROUTING",
 			ChainName:   chain,
-			JumpConditions:       []rules.IPTablesRule{
-				{ "--jump", chain },
+			JumpConditions: []rules.IPTablesRule{
+				{"--jump", chain},
 			},
 		},
 	}
@@ -83,13 +83,22 @@ func (m *NetIn) AddRule(containerHandle string, hostPort, containerPort int, hos
 			Table:       "mangle",
 			ParentChain: "PREROUTING",
 			ChainName:   chain,
-			Rules: []rules.IPTablesRule{
-				rules.NewIngressMarkRule(m.HostInterfaceName, hostPort, hostIP, m.IngressTag),
-			},
+			Rules: m.buildJumpConditionsPerUnderlayInterface(hostPort, hostIP),
 		},
 	}
 
 	return applyRules(m.IPTables, containerIngressRules)
+}
+
+func (m *NetIn) buildJumpConditionsPerUnderlayInterface(hostPort int, hostIP string) []rules.IPTablesRule {
+
+	jumpConditions := make([]rules.IPTablesRule, len(m.HostInterfaceNames))
+
+	for i, hostInterfaceName := range m.HostInterfaceNames {
+		jumpConditions[i] = rules.NewIngressMarkRule(hostInterfaceName, hostPort, hostIP, m.IngressTag)
+	}
+
+	return jumpConditions
 }
 
 func initChains(iptables rules.IPTablesAdapter, fullRules []IpTablesFullChain) error {
