@@ -86,15 +86,6 @@ func cmdAdd(args *skel.CmdArgs) error {
 		}
 	}
 
-	//defaultInterface := discover.DefaultInterface{
-	//	NetlinkAdapter: &adapter.NetlinkAdapter{},
-	//	NetAdapter:     &adapter.NetAdapter{},
-	//}
-	//defaultIfaceName, err := defaultInterface.Name()
-	//if err != nil {
-	//	return fmt.Errorf("discover default interface name: %s", err) // not tested
-	//}
-
 	interfaceNames, err := underlayInterfaceNames(n.UnderlayIPs)
 	if err != nil {
 		return fmt.Errorf("it is broken %s", err) // not tested
@@ -209,15 +200,6 @@ func cmdDel(args *skel.CmdArgs) error {
 	if err = netInProvider.Cleanup(args.ContainerID); err != nil {
 		fmt.Fprintf(os.Stderr, "net in cleanup: %s", err)
 	}
-
-	//defaultInterface := discover.DefaultInterface{
-	//	NetlinkAdapter: &adapter.NetlinkAdapter{},
-	//	NetAdapter:     &adapter.NetAdapter{},
-	//}
-	//defaultIfaceName, err := defaultInterface.Name()
-	//if err != nil {
-	//	return fmt.Errorf("discover default interface name: %s", err) // not tested
-	//}
 
 	interfaceNames, err := underlayInterfaceNames(n.UnderlayIPs)
 	if err != nil {

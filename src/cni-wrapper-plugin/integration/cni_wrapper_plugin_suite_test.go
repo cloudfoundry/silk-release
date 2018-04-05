@@ -14,7 +14,7 @@ import (
 
 func TestNoop(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "CNI wrapper plugin Suite")
+	RunSpecs(t, "Integration: CNI wrapper plugin Suite")
 }
 
 const packagePath = "cni-wrapper-plugin"

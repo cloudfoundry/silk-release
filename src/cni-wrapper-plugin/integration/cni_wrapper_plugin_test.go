@@ -29,6 +29,8 @@ type InputStruct struct {
 	lib.WrapperConfig
 }
 
+// Always run serially, this is setup in the test.sh file
+// Test writes to disk and modifies iptables
 var _ = Describe("CniWrapperPlugin", func() {
 
 	var (
@@ -45,7 +47,6 @@ var _ = Describe("CniWrapperPlugin", func() {
 		inputChainName         string
 		overlayChainName       string
 		netoutLoggingChainName string
-		defaultIface           *net.Interface
 		underlayName1          string
 		underlayName2          string
 		underlayIpAddr1        string
@@ -82,11 +83,6 @@ var _ = Describe("CniWrapperPlugin", func() {
 	}
 
 	BeforeEach(func() {
-		// create two dummy ifaces to be the underlay ifaces
-		// delete the dummy ifaces in aftereach
-		// add ips to dummy ifaces
-		// supply these ips in the config#underlay_ips
-
 		underlayName1 = "underlay1"
 		underlayIpAddr1 = "169.254.169.253"
 
@@ -95,19 +91,6 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 		createDummyInterface(underlayName1, underlayIpAddr1)
 		createDummyInterface(underlayName2, underlayIpAddr2)
-
-		routes, err := netlink.RouteList(nil, netlink.FAMILY_V4)
-		Expect(err).NotTo(HaveOccurred())
-
-		var defaultIfaceIndex int
-		for _, r := range routes {
-			if r.Dst == nil {
-				defaultIfaceIndex = r.LinkIndex
-			}
-		}
-
-		defaultIface, err = net.InterfaceByIndex(defaultIfaceIndex)
-		Expect(err).NotTo(HaveOccurred())
 
 		debugFile, err := ioutil.TempFile("", "cni_debug")
 		Expect(err).NotTo(HaveOccurred())
@@ -868,16 +851,17 @@ var _ = Describe("CniWrapperPlugin", func() {
 		})
 
 	})
+
 })
 
-func createDummyInterface( interfaceName, ipAddress string) {
+func createDummyInterface(interfaceName, ipAddress string) {
 	err := netlink.LinkAdd(&netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Name: interfaceName}})
 	Expect(err).ToNot(HaveOccurred())
 
 	link, err := netlink.LinkByName(interfaceName)
 	Expect(err).ToNot(HaveOccurred())
 
-	addr, err := netlink.ParseAddr(ipAddress+"/32")
+	addr, err := netlink.ParseAddr(ipAddress + "/32")
 	Expect(err).ToNot(HaveOccurred())
 
 	err = netlink.AddrAdd(link, addr)
@@ -888,7 +872,7 @@ func removeDummyInterface(interfaceName, ipAddress string) {
 	link, err := netlink.LinkByName(interfaceName)
 	Expect(err).ToNot(HaveOccurred())
 
-	addr, err := netlink.ParseAddr(ipAddress+"/32")
+	addr, err := netlink.ParseAddr(ipAddress + "/32")
 	Expect(err).ToNot(HaveOccurred())
 
 	err = netlink.AddrDel(link, addr)
