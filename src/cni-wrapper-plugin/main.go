@@ -90,9 +90,14 @@ func cmdAdd(args *skel.CmdArgs) error {
 		NetlinkAdapter: &adapter.NetlinkAdapter{},
 	}
 
-	interfaceNames, err := interfaceNameLookup.GetNamesFromIPs(n.UnderlayIPs)
-	if err != nil {
-		return fmt.Errorf("it is broken %s", err) // not tested
+	var interfaceNames []string
+	if len(n.TemporaryUnderlayInterfaceNames) > 0 {
+		interfaceNames = n.TemporaryUnderlayInterfaceNames
+	} else {
+		interfaceNames, err = interfaceNameLookup.GetNamesFromIPs(n.UnderlayIPs)
+		if err != nil {
+			return fmt.Errorf("looking up interface names: %s", err) // not tested
+		}
 	}
 
 	//given ips, find the adapters that have these ips
@@ -209,9 +214,14 @@ func cmdDel(args *skel.CmdArgs) error {
 		NetlinkAdapter: &adapter.NetlinkAdapter{},
 	}
 
-	interfaceNames, err := interfaceNameLookup.GetNamesFromIPs(n.UnderlayIPs)
-	if err != nil {
-		return fmt.Errorf("it is broken %s", err) // not tested
+	var interfaceNames []string
+	if len(n.TemporaryUnderlayInterfaceNames) > 0 {
+		interfaceNames = n.TemporaryUnderlayInterfaceNames
+	} else {
+		interfaceNames, err = interfaceNameLookup.GetNamesFromIPs(n.UnderlayIPs)
+		if err != nil {
+			return fmt.Errorf("looking up interface names: %s", err) // not tested
+		}
 	}
 
 	netOutProvider := legacynet.NetOut{

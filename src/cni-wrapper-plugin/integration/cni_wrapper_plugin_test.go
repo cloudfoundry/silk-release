@@ -519,6 +519,33 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(AllIPTablesRules("mangle")).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -i " + underlayName2 + " -p tcp -m tcp --dport 2000 -j MARK --set-xmark 0xffff0000/0xffffffff"))
 			})
 
+			Context("when temporary.underlay_interface_names is provided", func() {
+				var (
+					temporaryUnderlayName string
+				)
+
+				BeforeEach(func() {
+					temporaryUnderlayName = "meow-temporary"
+					inputStruct.TemporaryUnderlayInterfaceNames = []string{temporaryUnderlayName}
+					input = GetInput(inputStruct)
+					cmd = cniCommand("ADD", input)
+				})
+
+				It("creates mark rules for each port mapping rule", func() {
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(0))
+
+					By("checking that a netin chain was created for the container")
+					Expect(AllIPTablesRules("mangle")).To(ContainElement(`-N ` + netinChainName))
+					Expect(AllIPTablesRules("mangle")).To(ContainElement(`-A PREROUTING -j ` + netinChainName))
+
+					By("checking that mark rules were added to the netin chain")
+					Expect(AllIPTablesRules("mangle")).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -i " + temporaryUnderlayName + " -p tcp -m tcp --dport 1000 -j MARK --set-xmark 0xffff0000/0xffffffff"))
+					Expect(AllIPTablesRules("mangle")).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -i " + temporaryUnderlayName + " -p tcp -m tcp --dport 2000 -j MARK --set-xmark 0xffff0000/0xffffffff"))
+				})
+			})
+
 			Context("when a port mapping with hostport 0 is given", func() {
 				BeforeEach(func() {
 					inputStruct.WrapperConfig.RuntimeConfig.PortMappings = []garden.NetIn{

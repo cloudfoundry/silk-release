@@ -23,6 +23,7 @@ var _ = Describe("LoadWrapperConfig", func() {
 			"health_check_url": "http://127.0.0.1:10007",
 			"instance_address": "10.244.20.1",
 			"underlay_ips": ["10.244.20.1", "10.244.20.2"],
+			"temporary_underlay_interface_names": ["some-temporary-underlay-interface-name"],
 			"iptables_asg_logging": true,
 			"ingress_tag": "ffaa0000",
 			"vtep_name": "some-device",
@@ -38,11 +39,12 @@ var _ = Describe("LoadWrapperConfig", func() {
 		result, err := lib.LoadWrapperConfig(input)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(Equal(&lib.WrapperConfig{
-			Datastore:          "/some/path",
-			IPTablesLockFile:   "/some/other/path",
-			InstanceAddress:    "10.244.20.1",
-			UnderlayIPs: 		[]string { "10.244.20.1", "10.244.20.2" },
-			IPTablesASGLogging: true,
+			Datastore:                       "/some/path",
+			IPTablesLockFile:                "/some/other/path",
+			InstanceAddress:                 "10.244.20.1",
+			UnderlayIPs:                     []string{"10.244.20.1", "10.244.20.2"},
+			TemporaryUnderlayInterfaceNames: []string{"some-temporary-underlay-interface-name"},
+			IPTablesASGLogging:              true,
 			Delegate: map[string]interface{}{
 				"cniVersion": "0.3.1",
 				"some":       "info",

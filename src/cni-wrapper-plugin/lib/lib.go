@@ -17,19 +17,20 @@ type RuntimeConfig struct {
 }
 
 type WrapperConfig struct {
-	Datastore                     string                 `json:"datastore"`
-	IPTablesLockFile              string                 `json:"iptables_lock_file"`
-	Delegate                      map[string]interface{} `json:"delegate"`
-	InstanceAddress               string                 `json:"instance_address"`
-	DNSServers                    []string               `json:"dns_servers"`
-	UnderlayIPs                   []string               `json:"underlay_ips"`
-	IPTablesASGLogging            bool                   `json:"iptables_asg_logging"`
-	IPTablesC2CLogging            bool                   `json:"iptables_c2c_logging"`
-	IPTablesDeniedLogsPerSec      int                    `json:"iptables_denied_logs_per_sec" validate:"min=1"`
-	IPTablesAcceptedUDPLogsPerSec int                    `json:"iptables_accepted_udp_logs_per_sec" validate:"min=1"`
-	IngressTag                    string                 `json:"ingress_tag"`
-	VTEPName                      string                 `json:"vtep_name"`
-	RuntimeConfig                 RuntimeConfig          `json:"runtimeConfig,omitempty"`
+	Datastore                       string                 `json:"datastore"`
+	IPTablesLockFile                string                 `json:"iptables_lock_file"`
+	Delegate                        map[string]interface{} `json:"delegate"`
+	InstanceAddress                 string                 `json:"instance_address"`
+	DNSServers                      []string               `json:"dns_servers"`
+	UnderlayIPs                     []string               `json:"underlay_ips"`
+	TemporaryUnderlayInterfaceNames []string               `json:"temporary_underlay_interface_names"`
+	IPTablesASGLogging              bool                   `json:"iptables_asg_logging"`
+	IPTablesC2CLogging              bool                   `json:"iptables_c2c_logging"`
+	IPTablesDeniedLogsPerSec        int                    `json:"iptables_denied_logs_per_sec" validate:"min=1"`
+	IPTablesAcceptedUDPLogsPerSec   int                    `json:"iptables_accepted_udp_logs_per_sec" validate:"min=1"`
+	IngressTag                      string                 `json:"ingress_tag"`
+	VTEPName                        string                 `json:"vtep_name"`
+	RuntimeConfig                   RuntimeConfig          `json:"runtimeConfig,omitempty"`
 }
 
 func LoadWrapperConfig(bytes []byte) (*WrapperConfig, error) {

@@ -19,6 +19,7 @@
     "datastore" => "/var/vcap/data/container-metadata/store.json",
     "iptables_lock_file" => "/var/vcap/data/garden-cni/iptables.lock",
     "instance_address" => spec.ip,
+    "temporary_underlay_interface_names" => p("temporary.underlay_interface_names"),
     "underlay_ips" => spec.networks.to_h.values.map(&:ip),
     "iptables_asg_logging" => p("iptables_logging"),
     "iptables_c2c_logging" => p("iptables_logging"),
