@@ -44,3 +44,15 @@ func (i InterfaceNameLookup) GetNameFromIP(ip string) (string, error) {
 
 	return "", fmt.Errorf("unable to find link with ip addr: %s", ip)
 }
+
+func (i InterfaceNameLookup) GetNamesFromIPs(ips []string) ([]string, error) {
+	interfaceNames := make([]string, len(ips))
+	for c, ip := range ips {
+		var err error
+		interfaceNames[c], err = i.GetNameFromIP(ip)
+		if err != nil {
+			return []string{}, err
+		}
+	}
+	return interfaceNames, nil
+}

@@ -86,7 +86,11 @@ func cmdAdd(args *skel.CmdArgs) error {
 		}
 	}
 
-	interfaceNames, err := underlayInterfaceNames(n.UnderlayIPs)
+	interfaceNameLookup := interfacelookup.InterfaceNameLookup{
+		NetlinkAdapter: &adapter.NetlinkAdapter{},
+	}
+
+	interfaceNames, err := interfaceNameLookup.GetNamesFromIPs(n.UnderlayIPs)
 	if err != nil {
 		return fmt.Errorf("it is broken %s", err) // not tested
 	}
@@ -201,7 +205,11 @@ func cmdDel(args *skel.CmdArgs) error {
 		fmt.Fprintf(os.Stderr, "net in cleanup: %s", err)
 	}
 
-	interfaceNames, err := underlayInterfaceNames(n.UnderlayIPs)
+	interfaceNameLookup := interfacelookup.InterfaceNameLookup{
+		NetlinkAdapter: &adapter.NetlinkAdapter{},
+	}
+
+	interfaceNames, err := interfaceNameLookup.GetNamesFromIPs(n.UnderlayIPs)
 	if err != nil {
 		return fmt.Errorf("it is broken %s", err) // not tested
 	}
@@ -251,23 +259,6 @@ func newPluginController(iptablesLockFile string) (*lib.PluginController, error)
 		IPTables:  lockedIPTables,
 	}
 	return pluginController, nil
-}
-
-func underlayInterfaceNames(underlayIPs []string) ([]string, error) {
-	interfaceNameLookup := interfacelookup.InterfaceNameLookup{
-		NetlinkAdapter: &adapter.NetlinkAdapter{},
-	}
-
-	names := make([]string, len(underlayIPs))
-	for i, underlayIP := range underlayIPs {
-		name, err := interfaceNameLookup.GetNameFromIP(underlayIP)
-		if err != nil {
-			return []string{}, err // not tested, bubble up error
-		}
-
-		names[i] = name
-	}
-	return names, nil
 }
 
 func main() {
