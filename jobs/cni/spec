@@ -40,6 +40,3 @@ properties:
   iptables_accepted_udp_logs_per_sec:
     description: "Maximum number of iptables logs per second for accepted UDP packets."
     default: 100
-
-  temporary.underlay_interface_ips:
-    description: "Use with extreme caution. To be used only if there are network interfaces not created by BOSH. Provide IPs for all interfaces. If provided, only interfaces refereced here will be used. Will not use any bosh interface by default."
