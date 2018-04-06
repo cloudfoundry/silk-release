@@ -42,3 +42,12 @@ jobs:
   - task: test-mysql
     file: silk/ci/test-mysql-5.6.yml
     privileged: true
+
+- name: silk-test-templates
+  public: true
+  plan:
+  - aggregate:
+    - get: silk
+      trigger: true
+  - task: template-tests
+    file: silk/ci/test-templates.yml
