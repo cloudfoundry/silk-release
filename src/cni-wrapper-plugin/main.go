@@ -2,6 +2,7 @@ package main
 
 import (
 	"cni-wrapper-plugin/adapter"
+	"cni-wrapper-plugin/interfacelookup"
 	"cni-wrapper-plugin/legacynet"
 	"cni-wrapper-plugin/lib"
 	"encoding/json"
@@ -18,7 +19,6 @@ import (
 	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 	"github.com/coreos/go-iptables/iptables"
-	"github.com/vishvananda/netlink"
 )
 
 func cmdAdd(args *skel.CmdArgs) error {
@@ -126,8 +126,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 		ChainNamer: &legacynet.ChainNamer{
 			MaxLength: 28,
 		},
-		IPTables:          pluginController.IPTables,
-		IngressTag:        n.IngressTag,
+		IPTables:           pluginController.IPTables,
+		IngressTag:         n.IngressTag,
 		HostInterfaceNames: interfaceNames,
 	}
 	err = netinProvider.Initialize(args.ContainerID)
@@ -254,9 +254,13 @@ func newPluginController(iptablesLockFile string) (*lib.PluginController, error)
 }
 
 func underlayInterfaceNames(underlayIPs []string) ([]string, error) {
+	interfaceNameLookup := interfacelookup.InterfaceNameLookup{
+		NetlinkAdapter: &adapter.NetlinkAdapter{},
+	}
+
 	names := make([]string, len(underlayIPs))
 	for i, underlayIP := range underlayIPs {
-		name, err := underlayInterfaceName(underlayIP)
+		name, err := interfaceNameLookup.GetNameFromIP(underlayIP)
 		if err != nil {
 			return []string{}, err // not tested, bubble up error
 		}
@@ -264,31 +268,6 @@ func underlayInterfaceNames(underlayIPs []string) ([]string, error) {
 		names[i] = name
 	}
 	return names, nil
-}
-
-func underlayInterfaceName(underlayIPStr string) (string, error) {
-	links, err := netlink.LinkList()
-	if err != nil {
-		return "", fmt.Errorf("discover default interface name: %s", err) // not tested
-	}
-
-	underlayIP := net.ParseIP(underlayIPStr)
-	netlinkAdapter := &adapter.NetlinkAdapter{}
-
-	for _, link := range links {
-		addresses, err := netlinkAdapter.AddrList(link, netlink.FAMILY_V4)
-		if err != nil {
-			return "", fmt.Errorf("failed to get underlay interface name by link for %s: %s", link.Attrs().Name, err) // not tested
-		}
-
-		for _, address := range addresses {
-			if underlayIP.Equal(address.IP) {
-				return link.Attrs().Name, nil
-			}
-		}
-
-	}
-	return "", fmt.Errorf("unable to find link with ip addr: %s", underlayIP)
 }
 
 func main() {

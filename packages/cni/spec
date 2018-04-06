@@ -8,6 +8,7 @@ files:
   - cni-teardown/*.go # gosub
   - cni-wrapper-plugin/*.go # gosub
   - cni-wrapper-plugin/adapter/*.go # gosub
+  - cni-wrapper-plugin/interfacelookup/*.go # gosub
   - cni-wrapper-plugin/legacynet/*.go # gosub
   - cni-wrapper-plugin/lib/*.go # gosub
   - code.cloudfoundry.org/filelock/*.go # gosub
