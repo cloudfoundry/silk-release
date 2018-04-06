@@ -8,7 +8,6 @@ files:
   - cni-teardown/*.go # gosub
   - cni-wrapper-plugin/*.go # gosub
   - cni-wrapper-plugin/adapter/*.go # gosub
-  - cni-wrapper-plugin/discover/*.go # gosub
   - cni-wrapper-plugin/legacynet/*.go # gosub
   - cni-wrapper-plugin/lib/*.go # gosub
   - code.cloudfoundry.org/filelock/*.go # gosub
@@ -25,6 +24,7 @@ files:
   - code.cloudfoundry.org/silk/lib/serial/*.go # gosub
   - code.cloudfoundry.org/silk/vendor/code.cloudfoundry.org/cf-networking-helpers/json_client/*.go # gosub
   - code.cloudfoundry.org/silk/vendor/code.cloudfoundry.org/cf-networking-helpers/marshal/*.go # gosub
+  - code.cloudfoundry.org/silk/vendor/code.cloudfoundry.org/filelock/*.go # gosub
   - code.cloudfoundry.org/silk/vendor/code.cloudfoundry.org/lager/*.go # gosub
   - code.cloudfoundry.org/silk/vendor/github.com/containernetworking/cni/pkg/invoke/*.go # gosub
   - code.cloudfoundry.org/silk/vendor/github.com/containernetworking/cni/pkg/skel/*.go # gosub
