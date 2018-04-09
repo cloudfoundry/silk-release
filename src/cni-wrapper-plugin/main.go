@@ -60,7 +60,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		Metadata map[string]interface{}
 	}
 	if err := json.Unmarshal(args.StdinData, &cniAddData); err != nil {
-		panic(err) // not tested, this should be impossible
+		return err // not tested, this should be impossible
 	}
 
 	if err := store.Add(args.ContainerID, containerIP.String(), cniAddData.Metadata); err != nil {
