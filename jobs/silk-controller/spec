@@ -6,6 +6,7 @@ templates:
   silk-controller_ctl.erb: bin/silk-controller_ctl
   silk-controller_as_vcap.erb: bin/silk-controller_as_vcap
   silk-controller.json.erb: config/silk-controller.json
+  post-start.erb: bin/post-start
   ca.crt.erb: config/certs/ca.crt
   server.crt.erb: config/certs/server.crt
   server.key.erb: config/certs/server.key
@@ -49,7 +50,7 @@ properties:
     default: 19683
 
   connect_timeout_seconds:
-    description: "Connection timeout between the silk controller and the silk database.  Also used by Consul DNS health check."
+    description: "Connection timeout between the silk controller and the silk database. Also used for silk controller health check timeout."
     default: 120
 
   listen_ip:
