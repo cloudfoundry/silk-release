@@ -1,12 +1,12 @@
 <%=
   require 'json'
 
-  VXLAN_OVERHEAD = 50
 
   def compute_mtu
+    vxlan_overhead = 50
     mtu = p('mtu')
     if mtu > 0
-      return mtu - VXLAN_OVERHEAD
+      return mtu - vxlan_overhead
     else
       return mtu
     end
