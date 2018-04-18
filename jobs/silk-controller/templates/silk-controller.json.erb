@@ -24,8 +24,12 @@
     from_property = db_param 'host'
     return from_property if !from_property.nil?
 
-    from_link = link("database").instances[0].address
-    return from_link if !from_link.nil?
+    if_link("database") do |db_link|
+      instances = db_link.instances
+      if instances.size > 0
+        return instances[0].address
+      end
+    end
 
     raise "must provide database link or set #{db_param_path 'host'}"
   end
@@ -37,13 +41,13 @@
   driver = require_db_param 'type'
 
   unless driver == 'mysql' || driver == 'postgres'
-    raise "unknown driver  #{driver}"
+    raise "unknown driver #{driver}"
   end
 
   def subnet_prefix_length
     size = p("subnet_prefix_length")
     if size < 1 || size > 30
-      raise "'subnet_prefix_length' must be a value between 1-30"
+      raise "subnet_prefix_length must be a value between 1-30"
     end
     size
   end
