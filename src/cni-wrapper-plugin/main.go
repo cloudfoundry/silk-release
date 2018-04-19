@@ -67,7 +67,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		storeErr := fmt.Errorf("store add: %s", err)
 		fmt.Fprintf(os.Stderr, "%s", storeErr)
 		fmt.Fprintf(os.Stderr, "cleaning up from error")
-		err = pluginController.DelIPMasq(containerIP.String(), n.VTEPName)
+		err = pluginController.DelIPMasq(containerIP.String(), n.NoMasqueradeCIDRRange, n.VTEPName)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "during cleanup: removing IP masq: %s", err)
 		}
@@ -99,11 +99,6 @@ func cmdAdd(args *skel.CmdArgs) error {
 			return fmt.Errorf("looking up interface names: %s", err) // not tested
 		}
 	}
-
-	//given ips, find the adapters that have these ips
-	// map the adapters to their names and supply them to
-	// HostInterfaceNames
-	// generate a rule for each name
 
 	if args.ContainerID == "" {
 		return fmt.Errorf("invalid Container ID")
@@ -158,7 +153,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return fmt.Errorf("bulk insert: %s", err) // not tested
 	}
 
-	err = pluginController.AddIPMasq(containerIP.String(), n.VTEPName)
+	err = pluginController.AddIPMasq(containerIP.String(), n.NoMasqueradeCIDRRange, n.VTEPName)
 	if err != nil {
 		return fmt.Errorf("error setting up default ip masq rule: %s", err)
 	}
@@ -239,7 +234,7 @@ func cmdDel(args *skel.CmdArgs) error {
 		fmt.Fprintf(os.Stderr, "net out cleanup: %s", err)
 	}
 
-	err = pluginController.DelIPMasq(container.IP, n.VTEPName)
+	err = pluginController.DelIPMasq(container.IP, n.NoMasqueradeCIDRRange, n.VTEPName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "removing IP masq: %s", err)
 	}

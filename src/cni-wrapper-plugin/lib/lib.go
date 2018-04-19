@@ -21,6 +21,7 @@ type WrapperConfig struct {
 	IPTablesLockFile                string                 `json:"iptables_lock_file"`
 	Delegate                        map[string]interface{} `json:"delegate"`
 	InstanceAddress                 string                 `json:"instance_address"`
+	NoMasqueradeCIDRRange           string                 `json:"no_masquerade_cidr_range"`
 	DNSServers                      []string               `json:"dns_servers"`
 	UnderlayIPs                     []string               `json:"underlay_ips"`
 	TemporaryUnderlayInterfaceNames []string               `json:"temporary_underlay_interface_names"`
@@ -115,8 +116,8 @@ func (c *PluginController) DelegateDel(netconf map[string]interface{}) error {
 	return c.Delegator.DelegateDel(delegateType, netconfBytes)
 }
 
-func (c *PluginController) AddIPMasq(ip, deviceName string) error {
-	rule := rules.NewDefaultEgressRule(ip, deviceName)
+func (c *PluginController) AddIPMasq(ip, noMasqueradeCIDRRange, deviceName string) error {
+	rule := rules.NewDefaultEgressRule(ip, noMasqueradeCIDRRange, deviceName)
 
 	if err := c.IPTables.BulkAppend("nat", "POSTROUTING", rule); err != nil {
 		return err
@@ -125,8 +126,8 @@ func (c *PluginController) AddIPMasq(ip, deviceName string) error {
 	return nil
 }
 
-func (c *PluginController) DelIPMasq(ip, deviceName string) error {
-	rule := rules.NewDefaultEgressRule(ip, deviceName)
+func (c *PluginController) DelIPMasq(ip, noMasqueradeCIDRRange, deviceName string) error {
+	rule := rules.NewDefaultEgressRule(ip, noMasqueradeCIDRRange, deviceName)
 
 	if err := c.IPTables.Delete("nat", "POSTROUTING", rule); err != nil {
 		return err

@@ -5,6 +5,8 @@ import (
 	"cni-wrapper-plugin/lib"
 	"encoding/json"
 	"fmt"
+	lib_fakes "lib/fakes"
+	"lib/rules"
 	"net"
 
 	"github.com/containernetworking/cni/pkg/types"
@@ -22,6 +24,7 @@ var _ = Describe("LoadWrapperConfig", func() {
 			"iptables_lock_file": "/some/other/path",
 			"health_check_url": "http://127.0.0.1:10007",
 			"instance_address": "10.244.20.1",
+			"no_masquerade_cidr_range": "10.255.0.0/16",
 			"underlay_ips": ["10.244.20.1", "10.244.20.2"],
 			"temporary_underlay_interface_names": ["some-temporary-underlay-interface-name"],
 			"iptables_asg_logging": true,
@@ -42,6 +45,7 @@ var _ = Describe("LoadWrapperConfig", func() {
 			Datastore:                       "/some/path",
 			IPTablesLockFile:                "/some/other/path",
 			InstanceAddress:                 "10.244.20.1",
+			NoMasqueradeCIDRRange:           "10.255.0.0/16",
 			UnderlayIPs:                     []string{"10.244.20.1", "10.244.20.2"},
 			TemporaryUnderlayInterfaceNames: []string{"some-temporary-underlay-interface-name"},
 			IPTablesASGLogging:              true,
@@ -273,5 +277,55 @@ var _ = Describe("DelegateDel", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError("delegate config is missing type"))
 		})
+	})
+})
+
+var _ = Describe("AddIPMasq", func() {
+	var (
+		pluginController *lib.PluginController
+
+		fakeIPTablesAdapter *lib_fakes.IPTablesAdapter
+	)
+
+	BeforeEach(func() {
+		fakeIPTablesAdapter = &lib_fakes.IPTablesAdapter{}
+		pluginController = &lib.PluginController{
+			IPTables: fakeIPTablesAdapter,
+		}
+	})
+
+	It("should add the ip masquerade rules for egress traffic", func() {
+		err := pluginController.AddIPMasq("10.255.5.5/32", "10.255.0.0/16", "silk-vtep")
+		Expect(err).NotTo(HaveOccurred())
+
+		tableName, chainName, iptablesRule := fakeIPTablesAdapter.BulkAppendArgsForCall(0)
+		Expect(tableName).To(Equal("nat"))
+		Expect(chainName).To(Equal("POSTROUTING"))
+		Expect(iptablesRule).To(ContainElement(rules.NewDefaultEgressRule("10.255.5.5/32", "10.255.0.0/16", "silk-vtep")))
+	})
+})
+
+var _ = Describe("DelIPMasq", func() {
+	var (
+		pluginController *lib.PluginController
+
+		fakeIPTablesAdapter *lib_fakes.IPTablesAdapter
+	)
+
+	BeforeEach(func() {
+		fakeIPTablesAdapter = &lib_fakes.IPTablesAdapter{}
+		pluginController = &lib.PluginController{
+			IPTables: fakeIPTablesAdapter,
+		}
+	})
+
+	It("should delete the ip masquerade rules for egress traffic", func() {
+		err := pluginController.DelIPMasq("10.255.5.5/32", "10.255.0.0/16", "silk-vtep")
+		Expect(err).NotTo(HaveOccurred())
+
+		tableName, chainName, iptablesRule := fakeIPTablesAdapter.DeleteArgsForCall(0)
+		Expect(tableName).To(Equal("nat"))
+		Expect(chainName).To(Equal("POSTROUTING"))
+		Expect(iptablesRule).To(Equal(rules.NewDefaultEgressRule("10.255.5.5/32", "10.255.0.0/16", "silk-vtep")))
 	})
 })

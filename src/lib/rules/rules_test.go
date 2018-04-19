@@ -22,6 +22,29 @@ var _ = Describe("Rules", func() {
 		})
 	})
 
+	Describe("NewDefaultEgressRule", func() {
+		It("should generate a new rule from the source, not to the CIDR range, not to the device which causes a MASQUERADE", func() {
+			rule := rules.NewDefaultEgressRule("10.255.27.5/32", "10.255.0.0/16", "silk-vtep")
+			Expect(rule).To(Equal(rules.IPTablesRule{
+				"--source", "10.255.27.5/32",
+				"!", "-o", "silk-vtep",
+				"!", "--destination", "10.255.0.0/16",
+				"--jump", "MASQUERADE",
+			}))
+		})
+
+		Context("when no masquerade cidr range is not provided", func() {
+			It("should generate a rule that does not check the destination for the no masquerade cidr range", func() {
+				rule := rules.NewDefaultEgressRule("10.255.27.5/32", "", "silk-vtep")
+				Expect(rule).To(Equal(rules.IPTablesRule{
+					"--source", "10.255.27.5/32",
+					"!", "-o", "silk-vtep",
+					"--jump", "MASQUERADE",
+				}))
+			})
+		})
+	})
+
 	Describe("NewLogRule", func() {
 		Context("when the log prefix is greater than 28 characters", func() {
 			It("shortens the log-prefix to 28 characters and adds a space", func() {
@@ -169,7 +192,6 @@ var _ = Describe("Rules", func() {
 				"-o", "dumbledore",
 				"--jump", "side-chain",
 			}))
-
 		})
 	})
 })

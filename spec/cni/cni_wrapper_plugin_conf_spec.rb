@@ -16,6 +16,7 @@ module Bosh::Template::Test
             'listen_port' => 8080
           },
           'iptables_logging' => true,
+          'no_masquerade_cidr_range' => '222.22.0.0/16',
           'dns_servers' => ["8.8.8.8"],
           'rate' => 100,
           'burst' => 200,
@@ -44,6 +45,7 @@ module Bosh::Template::Test
               "datastore" => "/var/vcap/data/container-metadata/store.json",
               "iptables_lock_file" => "/var/vcap/data/garden-cni/iptables.lock",
               "instance_address" => "111.11.11.1",
+              "no_masquerade_cidr_range" => "222.22.0.0/16",
               "temporary_underlay_interface_names" => [],
               "underlay_ips" => ["192.74.65.4"],
               "iptables_asg_logging" => true,
@@ -67,6 +69,30 @@ module Bosh::Template::Test
                 }
                }
             })
+          end
+
+          context 'when no_masquerade_cidr_range is not provided' do
+            let(:merged_manifest_properties) { }
+            it 'does not set the no_masquerade_cidr_range' do
+              clientConfig = JSON.parse(template.render(merged_manifest_properties, spec: spec))
+              expect(clientConfig["no_masquerade_cidr_range"]).to eq('')
+            end
+
+            context 'when a cf_network.network link exists' do
+              let(:links) {[
+                Link.new(
+                  name: "cf_network",
+                  properties: {
+                    "network" => "10.255.0.0/16"
+                  }
+                )
+              ]}
+
+              it 'fallsback to the cf_network.network link property' do
+                clientConfig = JSON.parse(template.render(merged_manifest_properties, spec: spec, consumes: links))
+                expect(clientConfig["no_masquerade_cidr_range"]).to eq('10.255.0.0/16')
+              end
+            end
           end
 
           context 'when mtu is greater than 0' do

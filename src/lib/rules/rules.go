@@ -94,12 +94,16 @@ func NewMarkSetRule(sourceIP, tag, appGUID string) IPTablesRule {
 	}, fmt.Sprintf("src:%s", appGUID))
 }
 
-func NewDefaultEgressRule(localSubnet, deviceName string) IPTablesRule {
-	return IPTablesRule{
+func NewDefaultEgressRule(localSubnet, noMasqueradeCIDRRange, deviceName string) IPTablesRule {
+	ipTablesRule := IPTablesRule{
 		"--source", localSubnet,
 		"!", "-o", deviceName,
-		"--jump", "MASQUERADE",
 	}
+	if noMasqueradeCIDRRange != "" {
+		ipTablesRule = append(ipTablesRule, "!", "--destination", noMasqueradeCIDRRange)
+	}
+	ipTablesRule = append(ipTablesRule, "--jump", "MASQUERADE")
+	return ipTablesRule
 }
 
 func NewLogRule(rule IPTablesRule, name string) IPTablesRule {

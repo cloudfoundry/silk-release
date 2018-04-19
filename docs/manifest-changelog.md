@@ -1,5 +1,16 @@
 ## Manifest changelog
 
+### 0.4.0
+**New Properties**
+  - An optional parameter `no_masquerade_cidr_range` has been added to the `cni` job to specify which destination
+    CIDR to exempt MASQUERADEing traffic from containers.
+    If this is left unset and the bosh link `cf_network` is available with the property `network` set, it will use that value.
+    Otherwise, an empty default value will be applied. If empty it will not exclude any ranges.
+
+### 0.3.0
+
+**No manifest changes**
+
 ### 0.2.0
 **New Properties**
   - An optional parameter has been added to the `silk-daemon` job to specify which bosh network should be used by the

@@ -137,6 +137,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 				IPTablesASGLogging:            false,
 				IngressTag:                    "FFFF0000",
 				VTEPName:                      "some-device",
+				NoMasqueradeCIDRRange:         "10.255.0.0/16",
 				UnderlayIPs:                   []string{underlayIpAddr1, underlayIpAddr2},
 				IPTablesDeniedLogsPerSec:      5,
 				IPTablesAcceptedUDPLogsPerSec: 7,
@@ -228,7 +229,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 		Eventually(session, "5s").Should(gexec.Exit(0))
 
 		By("checking that ip masquerade rule is removed")
-		Expect(AllIPTablesRules("nat")).ToNot(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -o some-device -j MASQUERADE"))
+		Expect(AllIPTablesRules("nat")).ToNot(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.0.0/16 ! -o some-device -j MASQUERADE"))
 
 		By("checking that iptables netin rules are removed")
 		Expect(AllIPTablesRules("nat")).ToNot(ContainElement(`-N ` + netinChainName))
@@ -295,7 +296,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Eventually(session).Should(gexec.Exit(0))
 
 			By("check that ip masquerade rule is created")
-			Expect(AllIPTablesRules("nat")).To(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -o some-device -j MASQUERADE"))
+			Expect(AllIPTablesRules("nat")).To(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.0.0/16 ! -o some-device -j MASQUERADE"))
 
 			By("calling DEL")
 			cmd = cniCommand("DEL", input)
@@ -304,7 +305,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Eventually(session).Should(gexec.Exit(0))
 
 			By("check that ip masquerade rule is removed")
-			Expect(AllIPTablesRules("nat")).NotTo(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -o some-device -j MASQUERADE"))
+			Expect(AllIPTablesRules("nat")).NotTo(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.0.0/16 ! -o some-device -j MASQUERADE"))
 		})
 	})
 
@@ -337,7 +338,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
 			Expect(session.Out.Contents()).To(MatchJSON(`{ "cniVersion": "0.3.1", "ips": [{ "version": "4", "interface": -1, "address": "1.2.3.4/32" }], "dns":{} }`))
-			Expect(AllIPTablesRules("nat")).To(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -o some-device -j MASQUERADE"))
+			Expect(AllIPTablesRules("nat")).To(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.0.0/16 ! -o some-device -j MASQUERADE"))
 		})
 
 		It("writes default deny input chain rules to prevent connecting to things on the host", func() {
@@ -783,7 +784,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1))
 
-				Expect(AllIPTablesRules("nat")).NotTo(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -o some-device -j MASQUERADE"))
+				Expect(AllIPTablesRules("nat")).NotTo(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.0.0/16 ! -o some-device -j MASQUERADE"))
 			})
 		})
 
@@ -806,7 +807,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1))
 
-				Expect(AllIPTablesRules("nat")).NotTo(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -o some-device -j MASQUERADE"))
+				Expect(AllIPTablesRules("nat")).NotTo(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.0.0/16 ! -o some-device -j MASQUERADE"))
 			})
 		})
 	})

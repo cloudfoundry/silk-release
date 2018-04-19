@@ -12,6 +12,18 @@
     end
   end
 
+  def no_masquerade_cidr_range
+    if_p("no_masquerade_cidr_range") do |no_masquerade_cidr_range|
+      if no_masquerade_cidr_range.empty?
+        if_link("cf_network") do |link|
+          return link.p("network")
+        end
+      end
+
+      return no_masquerade_cidr_range
+    end
+  end
+
   toRender = {
     "name" => "cni-wrapper",
     "type" => "cni-wrapper-plugin",
@@ -19,6 +31,7 @@
     "datastore" => "/var/vcap/data/container-metadata/store.json",
     "iptables_lock_file" => "/var/vcap/data/garden-cni/iptables.lock",
     "instance_address" => spec.ip,
+    "no_masquerade_cidr_range" => no_masquerade_cidr_range,
     "temporary_underlay_interface_names" => p("temporary.underlay_interface_names"),
     "underlay_ips" => spec.networks.to_h.values.map(&:ip),
     "iptables_asg_logging" => p("iptables_logging"),

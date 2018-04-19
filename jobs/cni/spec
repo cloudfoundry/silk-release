@@ -8,7 +8,15 @@ templates:
 packages:
   - cni
 
+consumes:
+- name: cf_network
+  type: cf_network
+
 properties:
+  no_masquerade_cidr_range:
+    description: "CIDR address block that should not be masqueraded.  Fallsback to cf_network.network link property if property is not provided."
+    default: ""
+
   mtu:
     description: "Pre-encapsulation MTU for containers.  If set, the network interface inside the container will have an MTU that is 50 bytes less than this value, in order to account for VXLAN encap overhead.  If zero, MTU will be automatically configured to account for the VXLAN encapsulation, but it may not account for additional network encapsulations, e.g. IPSec."
     default: 0
