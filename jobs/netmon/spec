@@ -25,3 +25,7 @@ properties:
   log_level:
     description: "Log level"
     default: info
+
+  disable:
+    description: "Disable this monit job.  It will not run. Required for backwards compatability"
+    default: false

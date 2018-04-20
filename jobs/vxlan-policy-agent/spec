@@ -53,3 +53,7 @@ properties:
   iptables_accepted_udp_logs_per_sec:
     description: "Maximum number of iptables logs per second for accepted UDP packets."
     default: 100
+
+  disable:
+    description: "Disable this monit job.  It will not run. Required for backwards compatability"
+    default: false

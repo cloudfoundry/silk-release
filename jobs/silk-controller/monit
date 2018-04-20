@@ -1,3 +1,4 @@
+<% unless p("disable") %>
 check process silk-controller
   with pidfile /var/vcap/sys/run/silk-controller/silk-controller.pid
   start program "/var/vcap/jobs/silk-controller/bin/silk-controller_ctl start"
@@ -10,3 +11,4 @@ check process silk-controller
      request "/log-level"
      with timeout 10 seconds for 6 cycles
      then restart
+<% end %>

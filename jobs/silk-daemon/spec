@@ -69,3 +69,7 @@ properties:
 
   temporary_vxlan_interface:
     description: "Not recommended. Use vxlan_network instead. Name of network interface which container traffic is sent to. If empty, the default network interface is used. This cannot be set when vxlan_network is set."
+
+  disable:
+    description: "Disable this monit job.  It will not run. Required for backwards compatability"
+    default: false

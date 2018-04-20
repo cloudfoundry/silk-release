@@ -1,3 +1,4 @@
+<% unless p("disable") %>
 check process vxlan-policy-agent
   with pidfile /var/vcap/sys/run/vxlan-policy-agent/vxlan-policy-agent.pid
   start program "/var/vcap/jobs/vxlan-policy-agent/bin/vxlan-policy-agent_ctl start"
@@ -10,3 +11,4 @@ check process vxlan-policy-agent
      request "/log-level"
      with timeout 10 seconds for 6 cycles
      then restart
+<% end %>

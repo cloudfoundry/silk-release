@@ -16,3 +16,7 @@ properties:
   metron_port:
     description: "Port of metron agent on localhost. This is used to forward metrics."
     default: 3457
+
+  disable:
+    description: "Disable this monit job.  It will not run. Required for backwards compatability"
+    default: false
