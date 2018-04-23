@@ -1,5 +1,6 @@
 #!/bin/bash -eu
 
+<% unless p("disable") %>
 set -o pipefail
 
 LOG_DIR=/var/vcap/sys/log/silk-daemon
@@ -44,3 +45,4 @@ trap output_for_bosh EXIT
 
 shutdown_silk_daemon
 run_teardown
+<% end %>

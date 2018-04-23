@@ -1,5 +1,6 @@
 #!/bin/bash -eu
 
+<% unless p("disable") %>
 # remove the old flannel vtep device if it exists
 (ip link del dev flannel.1 || true) 2> /dev/null
 
@@ -8,3 +9,4 @@ set +e
 /var/vcap/packages/silk-daemon/bin/silk-teardown \
   -config=/var/vcap/jobs/silk-daemon/config/client-config.json
 set -e
+<% end %>

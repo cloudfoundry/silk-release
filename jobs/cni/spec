@@ -52,3 +52,7 @@ properties:
   temporary.underlay_interface_names:
     description: "Use with extreme caution. To be used only if there are network interfaces not created by BOSH. Provide names for all interfaces. If provided, only interfaces referenced here will be used. Will not use any bosh interface by default."
     default: []
+
+  disable:
+    description: "Disable this monit job.  It will not run. Required for backwards compatability"
+    default: false

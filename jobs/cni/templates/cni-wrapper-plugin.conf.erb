@@ -1,3 +1,4 @@
+<% unless p('disable') %>
 <%=
   require 'json'
 
@@ -58,3 +59,4 @@
 
   JSON.pretty_generate(toRender)
 %>
+<% end %>

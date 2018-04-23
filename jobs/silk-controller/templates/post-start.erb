@@ -3,6 +3,7 @@
 set -o pipefail
 source /var/vcap/packages/ctl-utils/ctl_util.sh
 
+<% unless p("disable") %>
 export PORT=<%= p("debug_port") %>
 export URL=127.0.0.1:"${PORT}"/log-level
 export TIMEOUT=<%= p("connect_timeout_seconds") %>
@@ -10,3 +11,4 @@ export TIMEOUT=<%= p("connect_timeout_seconds") %>
 healthy=$(wait_for_server_to_become_healthy "${URL}" "${TIMEOUT}")
 
 exit "${healthy}"
+<% end %>
