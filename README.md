@@ -17,3 +17,8 @@ This release contains the following jobs:
 
 For more information about what these jobs do, we recommend looking at the [silk repo](https://code.cloudfoundry.org/silk)
 and the [CF Networking Release repo](https://code.cloudfoundry.org/cf-networking-release).
+
+## Project links
+- [Engineering backlog](https://www.pivotaltracker.com/n/projects/1498342)
+- Chat with us at the `#container-networking` channel on [Cloud Foundry Slack](http://slack.cloudfoundry.org/)
+- [CI dashboard](http://dashboard.c2c.cf-app.com) and [config](https://github.com/cloudfoundry-incubator/cf-networking-ci)
