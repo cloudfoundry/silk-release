@@ -5,7 +5,7 @@ with [CF Networking Release](https://code.cloudfoundry.org/cf-networking-release
 and enforces policy that is stored in the Policy Server.
 
 The components in this release used to be a part of CF Networking Release. To use this release, you may deploy
-[CF Deployment](https://github.com/cloudfoundry/cf-deployment) with the [provided ops-file](opsfiles/use-silk-release.yml).
+[CF Deployment](https://github.com/cloudfoundry/cf-deployment) with the [provided ops-file](https://github.com/cloudfoundry/cf-deployment/tree/master/operations/experimental/use-silk-release.yml).
 
 This release contains the following jobs:
 - `silk-controller`
