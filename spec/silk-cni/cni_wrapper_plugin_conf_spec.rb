@@ -30,12 +30,12 @@ module Bosh::Template::Test
       let(:spec) {InstanceSpec.new(networks: networks, ip: "111.11.11.1")}
 
       describe 'cni job' do
-        let(:job) {release.job('cni')}
+        let(:job) {release.job('silk-cni')}
 
         describe 'cni-wrapper-plugin.conf' do
-          let(:template) {job.template('config/cni/cni-wrapper-plugin.conf')}
+          let(:template) {job.template('config/silk-cni/cni-wrapper-plugin.conf')}
 
-          it 'creates a config/cni/cni-wrapper-plugin.conf from properties' do
+          it 'creates a config/silk-cni/cni-wrapper-plugin.conf from properties' do
             clientConfig = JSON.parse(template.render(merged_manifest_properties, spec: spec))
 
             expect(clientConfig).to eq({
