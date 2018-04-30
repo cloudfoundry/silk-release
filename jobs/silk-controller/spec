@@ -6,7 +6,6 @@ templates:
   silk-controller_ctl.erb: bin/silk-controller_ctl
   silk-controller_as_vcap.erb: bin/silk-controller_as_vcap
   silk-controller.json.erb: config/silk-controller.json
-  post-start.erb: bin/post-start
   ca.crt.erb: config/certs/ca.crt
   server.crt.erb: config/certs/server.crt
   server.key.erb: config/certs/server.key
