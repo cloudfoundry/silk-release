@@ -30,7 +30,7 @@ module Bosh::Template::Test
       let(:spec) {InstanceSpec.new(networks: networks, ip: "111.11.11.1")}
 
       describe 'cni job' do
-        let(:job) {release.job('cni')}
+        let(:job) {release.job('silk-cni')}
 
         describe 'cni-wrapper-plugin.conf' do
           let(:template) {job.template('config/cni/cni-wrapper-plugin.conf')}
