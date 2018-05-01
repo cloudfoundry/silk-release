@@ -6,6 +6,7 @@
     CIDR to exempt MASQUERADEing traffic from containers.
     If this is left unset and the bosh link `cf_network` is available with the property `network` set, it will use that value.
     Otherwise, an empty default value will be applied. If empty it will not exclude any ranges.
+  - Add `disable` property to all jobs. When it is set to true the job will not start.
 
 ### 0.3.0
 
