@@ -1,17 +1,17 @@
 ## Manifest changelog
 
-### 0.4.0
+### 2.0.0
 **New Properties**
   - An optional parameter `no_masquerade_cidr_range` has been added to the `cni` job to specify which destination
     CIDR to exempt MASQUERADEing traffic from containers.
     If this is left unset and the bosh link `cf_network` is available with the property `network` set, it will use that value.
     Otherwise, an empty default value will be applied. If empty it will not exclude any ranges.
   - Add `disable` property to all jobs. When it is set to true the job will not start.
-  - Rename `cni` job to `silk-cni`.
-    This would require `cni_plugin_dir` and `cni_config_dir` to be set on the `garden-cni` job in `cf-networking` release
-    as follows:
-    - `cni_plugin_dir: /var/vcap/packages/silk-cni/bin`
-    - `cni_config_dir: /var/vcap/jobs/silk-cni/config/cni`
+  - To support third party integrators we have changed the cni job in `silk-release` to `silk-cni`
+    - To continue using `silk` the `cni_plugin_dir` and `cni_config_dir` on the `garden-cni`
+      job must be explicitly set in the manifest as follows:
+      - `cni_plugin_dir: /var/vcap/packages/silk-cni/bin`
+      - `cni_config_dir: /var/vcap/jobs/silk-cni/config/cni`
 
 ### 0.3.0
 
