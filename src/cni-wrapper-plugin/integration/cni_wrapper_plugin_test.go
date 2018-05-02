@@ -439,9 +439,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(AllIPTablesRules("filter")).NotTo(ContainElement(
 					"-A " + inputChainName + " -d 8.8.4.4/32 -p udp -m udp --dport 53 -j ACCEPT",
 				))
-
 			})
-
 		})
 
 		Context("when some of the DNS servers are not valid IPs", func() {
@@ -460,6 +458,27 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(json.Unmarshal(session.Out.Contents(), &errData)).To(Succeed())
 				Expect(errData["code"]).To(BeEquivalentTo(100))
 				Expect(errData["msg"]).To(ContainSubstring(`invalid DNS server "banana", must be valid IP address`))
+			})
+		})
+
+		Context("when host TCP services are configured", func() {
+			BeforeEach(func() {
+				inputStruct.HostTCPServices = []string{"169.254.0.5:9001", "169.254.0.8:8080"}
+				input = GetInput(inputStruct)
+
+				cmd = cniCommand("ADD", input)
+			})
+			It("writes input chain rules for host TCP services", func() {
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+
+				Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+					"-A " + inputChainName + " -m state --state RELATED,ESTABLISHED -j ACCEPT",
+					"-A " + inputChainName + " -d 169.254.0.5/32 -p tcp -m tcp --dport 9001 -j ACCEPT",
+					"-A " + inputChainName + " -d 169.254.0.8/32 -p tcp -m tcp --dport 8080 -j ACCEPT",
+					"-A " + inputChainName + " -j REJECT --reject-with icmp-port-unreachable",
+				}))
 			})
 		})
 

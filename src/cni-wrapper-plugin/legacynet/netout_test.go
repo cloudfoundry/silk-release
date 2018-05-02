@@ -31,7 +31,7 @@ var _ = Describe("Netout", func() {
 			Converter:             converter,
 			IngressTag:            "FEEDBEEF",
 			VTEPName:              "vtep-name",
-			HostInterfaceNames:     []string {"some-device", "eth0"},
+			HostInterfaceNames:    []string{"some-device", "eth0"},
 			DeniedLogsPerSec:      3,
 			AcceptedUDPLogsPerSec: 6,
 			ContainerIP:           "5.6.7.8",
@@ -93,7 +93,7 @@ var _ = Describe("Netout", func() {
 			Expect(rulespec).To(Equal([]rules.IPTablesRule{
 				{"-s", "5.6.7.8", "-o", "some-device", "--jump", "netout-some-container-handle"},
 				{"-s", "5.6.7.8", "-o", "eth0", "--jump", "netout-some-container-handle"},
-				}))
+			}))
 
 			table, chain, position, rulespec = ipTables.BulkInsertArgsForCall(1)
 			Expect(table).To(Equal("filter"))
@@ -306,6 +306,63 @@ var _ = Describe("Netout", func() {
 				}))
 
 			})
+		})
+
+		Context("when host TCP services are specified", func() {
+			It("creates rules for the host TCP services", func() {
+				netOut.HostTCPServices = []string{"169.125.0.4:9001", "169.125.0.9:8080"}
+				err := netOut.Initialize(nil)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+
+				table, chain, rulespec := ipTables.BulkAppendArgsForCall(1)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("input-some-container-handle"))
+				Expect(rulespec).To(Equal([]rules.IPTablesRule{
+					{"-m", "state", "--state", "RELATED,ESTABLISHED",
+						"--jump", "ACCEPT"},
+					{"-p", "tcp", "-d", "169.125.0.4", "--destination-port", "9001", "--jump", "ACCEPT"},
+					{"-p", "tcp", "-d", "169.125.0.9", "--destination-port", "8080", "--jump", "ACCEPT"},
+					{"--jump", "REJECT",
+						"--reject-with", "icmp-port-unreachable"},
+				}))
+
+			})
+			It("returns an error for improperly formatted host TCP services", func() {
+				netOut.HostTCPServices = []string{"169.125.0.123"}
+				err := netOut.Initialize(nil)
+				Expect(err).To(MatchError(MatchRegexp("host tcp services.*missing port in address")))
+
+				netOut.HostTCPServices = []string{"169.125.0.123:port"}
+				err = netOut.Initialize(nil)
+				Expect(err).To(MatchError(MatchRegexp("host tcp services.*parsing")))
+
+			})
+		})
+
+		Context("when both dns servers and host TCP services are specified", func() {
+			It("creates rules for both dns servers and the host TCP services", func() {
+				netOut.HostTCPServices = []string{"169.125.0.4:9001", "169.125.0.9:8080"}
+				err := netOut.Initialize([]string{"8.8.4.4", "1.2.3.4"})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+
+				table, chain, rulespec := ipTables.BulkAppendArgsForCall(1)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("input-some-container-handle"))
+				Expect(rulespec).To(Equal([]rules.IPTablesRule{
+					{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
+					{"-p", "tcp", "-d", "8.8.4.4", "--destination-port", "53", "--jump", "ACCEPT"},
+					{"-p", "udp", "-d", "8.8.4.4", "--destination-port", "53", "--jump", "ACCEPT"},
+					{"-p", "tcp", "-d", "1.2.3.4", "--destination-port", "53", "--jump", "ACCEPT"},
+					{"-p", "udp", "-d", "1.2.3.4", "--destination-port", "53", "--jump", "ACCEPT"},
+					{"-p", "tcp", "-d", "169.125.0.4", "--destination-port", "9001", "--jump", "ACCEPT"},
+					{"-p", "tcp", "-d", "169.125.0.9", "--destination-port", "8080", "--jump", "ACCEPT"},
+					{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
+				}))
+
+			})
+
 		})
 	})
 

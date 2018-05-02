@@ -3,8 +3,11 @@ package legacynet
 import (
 	"fmt"
 	"lib/rules"
+	"net"
 
 	"github.com/hashicorp/go-multierror"
+
+	"strconv"
 
 	"code.cloudfoundry.org/garden"
 )
@@ -33,6 +36,7 @@ type NetOut struct {
 	AcceptedUDPLogsPerSec int
 	ContainerHandle       string
 	ContainerIP           string
+	HostTCPServices       []string
 }
 
 func (m *NetOut) Initialize(dnsServers []string) error {
@@ -41,7 +45,10 @@ func (m *NetOut) Initialize(dnsServers []string) error {
 		return err
 	}
 
-	args = m.appendDnsRules(args, dnsServers)
+	args, err = m.appendInputRules(args, dnsServers, m.HostTCPServices)
+	if err != nil {
+		return fmt.Errorf("input rules: %s", err)
+	}
 
 	err = initChains(m.IPTables, args)
 	if err != nil {
@@ -175,17 +182,31 @@ func (m *NetOut) addC2CLogging(c IpTablesFullChain) IpTablesFullChain {
 	return c
 }
 
-func (m *NetOut) appendDnsRules(args []IpTablesFullChain, dnsServers []string) []IpTablesFullChain {
-	if len(dnsServers) > 0 {
-		args[0].Rules = []rules.IPTablesRule{
-			rules.NewInputRelatedEstablishedRule(),
-		}
-		for _, dnsServer := range dnsServers {
-			args[0].Rules = append(args[0].Rules, rules.NewInputAllowRule("tcp", dnsServer, 53))
-			args[0].Rules = append(args[0].Rules, rules.NewInputAllowRule("udp", dnsServer, 53))
-		}
-		args[0].Rules = append(args[0].Rules, rules.NewInputDefaultRejectRule())
+func (m *NetOut) appendInputRules(args []IpTablesFullChain, dnsServers []string, hostTCPServices []string) ([]IpTablesFullChain, error) {
+	args[0].Rules = []rules.IPTablesRule{
+		rules.NewInputRelatedEstablishedRule(),
 	}
 
-	return args
+	for _, dnsServer := range dnsServers {
+		args[0].Rules = append(args[0].Rules, rules.NewInputAllowRule("tcp", dnsServer, 53))
+		args[0].Rules = append(args[0].Rules, rules.NewInputAllowRule("udp", dnsServer, 53))
+	}
+
+	for _, hostService := range hostTCPServices {
+		host, port, err := net.SplitHostPort(hostService)
+		if err != nil {
+			return nil, fmt.Errorf("host tcp services: %s", err)
+		}
+
+		portInt, err := strconv.Atoi(port)
+		if err != nil {
+			return nil, fmt.Errorf("host tcp services: %s", err)
+		}
+
+		args[0].Rules = append(args[0].Rules, rules.NewInputAllowRule("tcp", host, portInt))
+	}
+
+	args[0].Rules = append(args[0].Rules, rules.NewInputDefaultRejectRule())
+
+	return args, nil
 }

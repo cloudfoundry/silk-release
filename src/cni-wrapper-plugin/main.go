@@ -22,17 +22,17 @@ import (
 )
 
 func cmdAdd(args *skel.CmdArgs) error {
-	n, err := lib.LoadWrapperConfig(args.StdinData)
+	cfg, err := lib.LoadWrapperConfig(args.StdinData)
 	if err != nil {
 		return err
 	}
 
-	pluginController, err := newPluginController(n.IPTablesLockFile)
+	pluginController, err := newPluginController(cfg.IPTablesLockFile)
 	if err != nil {
 		return err
 	}
 
-	result, err := pluginController.DelegateAdd(n.Delegate)
+	result, err := pluginController.DelegateAdd(cfg.Delegate)
 	if err != nil {
 		return fmt.Errorf("delegate call: %s", err)
 	}
@@ -48,11 +48,11 @@ func cmdAdd(args *skel.CmdArgs) error {
 	store := &datastore.Store{
 		Serializer: &serial.Serial{},
 		Locker: &filelock.Locker{
-			FileLocker: filelock.NewLocker(n.Datastore + "_lock"),
+			FileLocker: filelock.NewLocker(cfg.Datastore + "_lock"),
 			Mutex:      new(sync.Mutex),
 		},
-		DataFilePath:    n.Datastore,
-		VersionFilePath: n.Datastore + "_version",
+		DataFilePath:    cfg.Datastore,
+		VersionFilePath: cfg.Datastore + "_version",
 		CacheMutex:      new(sync.RWMutex),
 	}
 
@@ -67,7 +67,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		storeErr := fmt.Errorf("store add: %s", err)
 		fmt.Fprintf(os.Stderr, "%s", storeErr)
 		fmt.Fprintf(os.Stderr, "cleaning up from error")
-		err = pluginController.DelIPMasq(containerIP.String(), n.NoMasqueradeCIDRRange, n.VTEPName)
+		err = pluginController.DelIPMasq(containerIP.String(), cfg.NoMasqueradeCIDRRange, cfg.VTEPName)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "during cleanup: removing IP masq: %s", err)
 		}
@@ -77,7 +77,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	// Initialize dns
 	var localDNSServers []string
-	for _, entry := range n.DNSServers {
+	for _, entry := range cfg.DNSServers {
 		dnsIP := net.ParseIP(entry)
 		if dnsIP == nil {
 			return fmt.Errorf(`invalid DNS server "%s", must be valid IP address`, entry)
@@ -91,10 +91,10 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	var interfaceNames []string
-	if len(n.TemporaryUnderlayInterfaceNames) > 0 {
-		interfaceNames = n.TemporaryUnderlayInterfaceNames
+	if len(cfg.TemporaryUnderlayInterfaceNames) > 0 {
+		interfaceNames = cfg.TemporaryUnderlayInterfaceNames
 	} else {
-		interfaceNames, err = interfaceNameLookup.GetNamesFromIPs(n.UnderlayIPs)
+		interfaceNames, err = interfaceNameLookup.GetNamesFromIPs(cfg.UnderlayIPs)
 		if err != nil {
 			return fmt.Errorf("looking up interface names: %s", err) // not tested
 		}
@@ -111,15 +111,16 @@ func cmdAdd(args *skel.CmdArgs) error {
 		},
 		IPTables:              pluginController.IPTables,
 		Converter:             &legacynet.NetOutRuleConverter{Logger: os.Stderr},
-		ASGLogging:            n.IPTablesASGLogging,
-		C2CLogging:            n.IPTablesC2CLogging,
-		DeniedLogsPerSec:      n.IPTablesDeniedLogsPerSec,
-		AcceptedUDPLogsPerSec: n.IPTablesAcceptedUDPLogsPerSec,
-		IngressTag:            n.IngressTag,
-		VTEPName:              n.VTEPName,
+		ASGLogging:            cfg.IPTablesASGLogging,
+		C2CLogging:            cfg.IPTablesC2CLogging,
+		DeniedLogsPerSec:      cfg.IPTablesDeniedLogsPerSec,
+		AcceptedUDPLogsPerSec: cfg.IPTablesAcceptedUDPLogsPerSec,
+		IngressTag:            cfg.IngressTag,
+		VTEPName:              cfg.VTEPName,
 		HostInterfaceNames:    interfaceNames,
 		ContainerHandle:       args.ContainerID,
 		ContainerIP:           containerIP.String(),
+		HostTCPServices:       cfg.HostTCPServices,
 	}
 	if err := netOutProvider.Initialize(localDNSServers); err != nil {
 		return fmt.Errorf("initialize net out: %s", err)
@@ -131,34 +132,34 @@ func cmdAdd(args *skel.CmdArgs) error {
 			MaxLength: 28,
 		},
 		IPTables:           pluginController.IPTables,
-		IngressTag:         n.IngressTag,
+		IngressTag:         cfg.IngressTag,
 		HostInterfaceNames: interfaceNames,
 	}
 	err = netinProvider.Initialize(args.ContainerID)
 
 	// Create port mappings
-	portMappings := n.RuntimeConfig.PortMappings
+	portMappings := cfg.RuntimeConfig.PortMappings
 	for _, netIn := range portMappings {
 		if netIn.HostPort <= 0 {
 			return fmt.Errorf("cannot allocate port %d", netIn.HostPort)
 		}
-		if err := netinProvider.AddRule(args.ContainerID, int(netIn.HostPort), int(netIn.ContainerPort), n.InstanceAddress, containerIP.String()); err != nil {
+		if err := netinProvider.AddRule(args.ContainerID, int(netIn.HostPort), int(netIn.ContainerPort), cfg.InstanceAddress, containerIP.String()); err != nil {
 			return fmt.Errorf("adding netin rule: %s", err)
 		}
 	}
 
 	// Create egress rules
-	netOutRules := n.RuntimeConfig.NetOutRules
+	netOutRules := cfg.RuntimeConfig.NetOutRules
 	if err := netOutProvider.BulkInsertRules(netOutRules); err != nil {
 		return fmt.Errorf("bulk insert: %s", err) // not tested
 	}
 
-	err = pluginController.AddIPMasq(containerIP.String(), n.NoMasqueradeCIDRRange, n.VTEPName)
+	err = pluginController.AddIPMasq(containerIP.String(), cfg.NoMasqueradeCIDRRange, cfg.VTEPName)
 	if err != nil {
 		return fmt.Errorf("error setting up default ip masq rule: %s", err)
 	}
 
-	result030.DNS.Nameservers = n.DNSServers
+	result030.DNS.Nameservers = cfg.DNSServers
 	return result030.Print()
 }
 
