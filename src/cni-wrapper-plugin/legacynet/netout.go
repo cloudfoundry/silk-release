@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"code.cloudfoundry.org/garden"
-	multierror "github.com/hashicorp/go-multierror"
 )
 
 const prefixInput = "input"
@@ -66,16 +65,6 @@ func (m *NetOut) Cleanup() error {
 	}
 
 	return cleanupChains(args, m.IPTables)
-}
-
-func cleanupChains(args []IpTablesFullChain, iptables rules.IPTablesAdapter) error {
-	var result error
-	for _, arg := range args {
-		if err := cleanupChain(arg.Table, arg.ParentChain, arg.ChainName, arg.JumpConditions, iptables); err != nil {
-			result = multierror.Append(result, err)
-		}
-	}
-	return result
 }
 
 func (m *NetOut) BulkInsertRules(netOutRules []garden.NetOutRule) error {

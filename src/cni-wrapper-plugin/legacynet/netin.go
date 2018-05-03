@@ -83,64 +83,9 @@ func (m *NetIn) AddRule(containerHandle string, hostPort, containerPort int, hos
 			Table:       "mangle",
 			ParentChain: "PREROUTING",
 			ChainName:   chain,
-			Rules: rules.NewIngressMarkRules(m.HostInterfaceNames, hostPort, hostIP, m.IngressTag),
+			Rules:       rules.NewIngressMarkRules(m.HostInterfaceNames, hostPort, hostIP, m.IngressTag),
 		},
 	}
 
 	return applyRules(m.IPTables, containerIngressRules)
-}
-
-func initChains(iptables rules.IPTablesAdapter, fullRules []IpTablesFullChain) error {
-	for _, rule := range fullRules {
-		err := iptables.NewChain(rule.Table, rule.ChainName)
-		if err != nil {
-			return fmt.Errorf("creating chain: %s", err)
-		}
-
-		if rule.ParentChain == "INPUT" {
-			err = iptables.BulkAppend(rule.Table, rule.ParentChain, rule.JumpConditions...)
-			if err != nil {
-				return fmt.Errorf("appending rule to INPUT chain: %s", err)
-			}
-		} else if rule.ParentChain != "" {
-
-			err = iptables.BulkInsert(rule.Table, rule.ParentChain, 1, rule.JumpConditions...)
-			if err != nil {
-				return fmt.Errorf("inserting rule: %s", err)
-			}
-		}
-	}
-
-	return nil
-}
-
-func applyRules(iptables rules.IPTablesAdapter, fullRules []IpTablesFullChain) error {
-	for _, rule := range fullRules {
-		err := iptables.BulkAppend(rule.Table, rule.ChainName, rule.Rules...)
-		if err != nil {
-			return fmt.Errorf("appending rule: %s", err)
-		}
-	}
-
-	return nil
-}
-
-func cleanupChain(table, parentChain, chain string, jumpConditions []rules.IPTablesRule, iptables rules.IPTablesAdapter) error {
-	var result error
-	if parentChain != "" {
-		for _, condition := range jumpConditions {
-			if err := iptables.Delete(table, parentChain, condition); err != nil {
-				result = multierror.Append(result, fmt.Errorf("delete rule: %s", err))
-			}
-		}
-	}
-
-	if err := iptables.ClearChain(table, chain); err != nil {
-		result = multierror.Append(result, fmt.Errorf("clear chain: %s", err))
-	}
-
-	if err := iptables.DeleteChain(table, chain); err != nil {
-		result = multierror.Append(result, fmt.Errorf("delete chain: %s", err))
-	}
-	return result
 }
