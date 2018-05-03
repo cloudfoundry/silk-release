@@ -5,11 +5,10 @@ import (
 	"lib/rules"
 	"net"
 
-	"github.com/hashicorp/go-multierror"
-
 	"strconv"
 
 	"code.cloudfoundry.org/garden"
+	multierror "github.com/hashicorp/go-multierror"
 )
 
 const prefixInput = "input"
@@ -37,15 +36,16 @@ type NetOut struct {
 	ContainerHandle       string
 	ContainerIP           string
 	HostTCPServices       []string
+	DNSServers            []string
 }
 
-func (m *NetOut) Initialize(dnsServers []string) error {
+func (m *NetOut) Initialize() error {
 	args, err := m.defaultNetOutRules()
 	if err != nil {
 		return err
 	}
 
-	args, err = m.appendInputRules(args, dnsServers, m.HostTCPServices)
+	args, err = m.appendInputRules(args, m.DNSServers, m.HostTCPServices)
 	if err != nil {
 		return fmt.Errorf("input rules: %s", err)
 	}

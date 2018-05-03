@@ -75,15 +75,9 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return storeErr
 	}
 
-	// Initialize dns
-	var localDNSServers []string
-	for _, entry := range cfg.DNSServers {
-		dnsIP := net.ParseIP(entry)
-		if dnsIP == nil {
-			return fmt.Errorf(`invalid DNS server "%s", must be valid IP address`, entry)
-		} else if dnsIP.IsLinkLocalUnicast() {
-			localDNSServers = append(localDNSServers, entry)
-		}
+	localDNSServers, err := getLocalDNSServers(cfg.DNSServers)
+	if err != nil {
+		return err
 	}
 
 	interfaceNameLookup := interfacelookup.InterfaceNameLookup{
@@ -104,7 +98,6 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return fmt.Errorf("invalid Container ID")
 	}
 
-	// Initialize NetOut
 	netOutProvider := legacynet.NetOut{
 		ChainNamer: &legacynet.ChainNamer{
 			MaxLength: 28,
@@ -121,12 +114,12 @@ func cmdAdd(args *skel.CmdArgs) error {
 		ContainerHandle:       args.ContainerID,
 		ContainerIP:           containerIP.String(),
 		HostTCPServices:       cfg.HostTCPServices,
+		DNSServers:            localDNSServers,
 	}
-	if err := netOutProvider.Initialize(localDNSServers); err != nil {
+	if err := netOutProvider.Initialize(); err != nil {
 		return fmt.Errorf("initialize net out: %s", err)
 	}
 
-	// Initialize NetIn
 	netinProvider := legacynet.NetIn{
 		ChainNamer: &legacynet.ChainNamer{
 			MaxLength: 28,
@@ -137,7 +130,6 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 	err = netinProvider.Initialize(args.ContainerID)
 
-	// Create port mappings
 	portMappings := cfg.RuntimeConfig.PortMappings
 	for _, netIn := range portMappings {
 		if netIn.HostPort <= 0 {
@@ -148,7 +140,6 @@ func cmdAdd(args *skel.CmdArgs) error {
 		}
 	}
 
-	// Create egress rules
 	netOutRules := cfg.RuntimeConfig.NetOutRules
 	if err := netOutProvider.BulkInsertRules(netOutRules); err != nil {
 		return fmt.Errorf("bulk insert: %s", err) // not tested
@@ -161,6 +152,19 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	result030.DNS.Nameservers = cfg.DNSServers
 	return result030.Print()
+}
+
+func getLocalDNSServers(allDNSServers []string) ([]string, error) {
+	var localDNSServers []string
+	for _, entry := range allDNSServers {
+		dnsIP := net.ParseIP(entry)
+		if dnsIP == nil {
+			return nil, fmt.Errorf(`invalid DNS server "%s", must be valid IP address`, entry)
+		} else if dnsIP.IsLinkLocalUnicast() {
+			localDNSServers = append(localDNSServers, entry)
+		}
+	}
+	return localDNSServers, nil
 }
 
 func cmdDel(args *skel.CmdArgs) error {
