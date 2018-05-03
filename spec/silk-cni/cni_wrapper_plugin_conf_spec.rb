@@ -21,7 +21,8 @@ module Bosh::Template::Test
           'rate' => 100,
           'burst' => 200,
           'iptables_denied_logs_per_sec' => 2,
-          'iptables_accepted_udp_logs_per_sec' => 3
+          'iptables_accepted_udp_logs_per_sec' => 3,
+          'host_tcp_services' => ["169.254.0.2:9001", "169.254.0.2:9002" ]
         }
       end
       let(:mtu){ 0 }
@@ -55,6 +56,7 @@ module Bosh::Template::Test
               "ingress_tag" => "ffff0000",
               "vtep_name" => "silk-vtep",
               "dns_servers" => ["8.8.8.8"],
+              "host_tcp_services" => ["169.254.0.2:9001", "169.254.0.2:9002" ],
               "delegate" => {
                 "cniVersion" => "0.3.1",
                 "name" => "silk",
