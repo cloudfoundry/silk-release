@@ -21,8 +21,17 @@ In addition to the above steps to enable kernel logging, when the `iptables-logg
 Deploy [syslog-release](https://github.com/cloudfoundry/syslog-release) to forward your logs to an external syslog server.
 
 To avoid forwarding both the kernel logs and the augmented logs from the `iptables-logger` job:
-* Set [`syslog.custom_rule`](https://bosh.io/jobs/syslog_forwarder?source=github.com/cloudfoundry/syslog-release&version=11#p=syslog.custom_rule) on the `syslog_forwarder` job to `if $programname == 'kernel' then ~` 
-* Set [`syslog.blackbox.source_dir`](https://bosh.io/jobs/syslog_forwarder?source=github.com/cloudfoundry/syslog-release&version=11#p=syslog.blackbox.source_dir) on the `syslog_forwarder` job to `/var/vcap/sys/log`
+* Set [`syslog.custom_rule`](https://bosh.io/jobs/syslog_forwarder?source=github.com/cloudfoundry/syslog-release&version=11#p=syslog.custom_rule) on the `syslog_forwarder` job to contain the following custom rule:
+ ```
+   - name: syslog_forwarder
+    properties:
+      syslog:
+        custom_rule: |
+          if $programname == 'kernel' and ($msg contains "DENY_" or $msg contains "OK_") then {
+            -/var/log/kern.log
+            stop
+          }
+ ```
 
 Doing so will ignore logs in `/var/log/kern.log` but will still forward the augmented logs produced by `iptables-logger`.
 
