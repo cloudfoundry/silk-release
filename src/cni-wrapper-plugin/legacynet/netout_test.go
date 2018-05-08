@@ -31,7 +31,7 @@ var _ = Describe("Netout", func() {
 			Converter:             converter,
 			IngressTag:            "FEEDBEEF",
 			VTEPName:              "vtep-name",
-			HostInterfaceNames:     []string {"some-device", "eth0"},
+			HostInterfaceNames:    []string{"some-device", "eth0"},
 			DeniedLogsPerSec:      3,
 			AcceptedUDPLogsPerSec: 6,
 			ContainerIP:           "5.6.7.8",
@@ -45,7 +45,7 @@ var _ = Describe("Netout", func() {
 
 	Describe("Initialize", func() {
 		It("creates the input chain, netout forwarding chain, and the logging chain", func() {
-			err := netOut.Initialize(nil)
+			err := netOut.Initialize()
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(chainNamer.PrefixCallCount()).To(Equal(3))
@@ -82,7 +82,7 @@ var _ = Describe("Netout", func() {
 		})
 
 		It("inserts a jump rule for the new chains whose parent is not INPUT ", func() {
-			err := netOut.Initialize(nil)
+			err := netOut.Initialize()
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(ipTables.BulkInsertCallCount()).To(Equal(2))
@@ -93,7 +93,7 @@ var _ = Describe("Netout", func() {
 			Expect(rulespec).To(Equal([]rules.IPTablesRule{
 				{"-s", "5.6.7.8", "-o", "some-device", "--jump", "netout-some-container-handle"},
 				{"-s", "5.6.7.8", "-o", "eth0", "--jump", "netout-some-container-handle"},
-				}))
+			}))
 
 			table, chain, position, rulespec = ipTables.BulkInsertArgsForCall(1)
 			Expect(table).To(Equal("filter"))
@@ -103,7 +103,7 @@ var _ = Describe("Netout", func() {
 		})
 
 		It("appends a jump rule for the new chains whose parent is INPUT", func() {
-			err := netOut.Initialize(nil)
+			err := netOut.Initialize()
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
@@ -114,7 +114,7 @@ var _ = Describe("Netout", func() {
 		})
 
 		It("writes the default netout and logging rules", func() {
-			err := netOut.Initialize(nil)
+			err := netOut.Initialize()
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
@@ -177,7 +177,7 @@ var _ = Describe("Netout", func() {
 				ipTables.NewChainReturns(errors.New("potata"))
 			})
 			It("returns the error", func() {
-				err := netOut.Initialize(nil)
+				err := netOut.Initialize()
 				Expect(err).To(MatchError("creating chain: potata"))
 			})
 		})
@@ -187,7 +187,7 @@ var _ = Describe("Netout", func() {
 				chainNamer.PostfixReturns("", errors.New("banana"))
 			})
 			It("returns the error", func() {
-				err := netOut.Initialize(nil)
+				err := netOut.Initialize()
 				Expect(err).To(MatchError("getting chain name: banana"))
 			})
 		})
@@ -197,7 +197,7 @@ var _ = Describe("Netout", func() {
 				ipTables.BulkInsertReturns(errors.New("potato"))
 			})
 			It("returns the error", func() {
-				err := netOut.Initialize(nil)
+				err := netOut.Initialize()
 				Expect(err).To(MatchError("inserting rule: potato"))
 			})
 		})
@@ -207,7 +207,7 @@ var _ = Describe("Netout", func() {
 				ipTables.BulkAppendReturns(errors.New("potato"))
 			})
 			It("returns the error", func() {
-				err := netOut.Initialize(nil)
+				err := netOut.Initialize()
 				Expect(err).To(MatchError("appending rule to INPUT chain: potato"))
 			})
 		})
@@ -222,7 +222,7 @@ var _ = Describe("Netout", func() {
 				}
 			})
 			It("returns the error", func() {
-				err := netOut.Initialize(nil)
+				err := netOut.Initialize()
 				Expect(err).To(MatchError("appending rule: potato"))
 			})
 		})
@@ -232,7 +232,7 @@ var _ = Describe("Netout", func() {
 				netOut.ASGLogging = true
 			})
 			It("writes a log rule for denies", func() {
-				err := netOut.Initialize(nil)
+				err := netOut.Initialize()
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
@@ -256,7 +256,7 @@ var _ = Describe("Netout", func() {
 				netOut.C2CLogging = true
 			})
 			It("writes a log rule for denies", func() {
-				err := netOut.Initialize(nil)
+				err := netOut.Initialize()
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
@@ -286,8 +286,12 @@ var _ = Describe("Netout", func() {
 		})
 
 		Context("when dns servers are specified", func() {
+			BeforeEach(func() {
+				netOut.DNSServers = []string{"8.8.4.4", "1.2.3.4"}
+			})
+
 			It("creates rules for the dns servers", func() {
-				err := netOut.Initialize([]string{"8.8.4.4", "1.2.3.4"})
+				err := netOut.Initialize()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
 
@@ -304,8 +308,69 @@ var _ = Describe("Netout", func() {
 					{"--jump", "REJECT",
 						"--reject-with", "icmp-port-unreachable"},
 				}))
+			})
+		})
+
+		Context("when host TCP services are specified", func() {
+			BeforeEach(func() {
+				netOut.HostTCPServices = []string{"169.125.0.4:9001", "169.125.0.9:8080"}
+			})
+
+			It("creates rules for the host TCP services", func() {
+				err := netOut.Initialize()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+
+				table, chain, rulespec := ipTables.BulkAppendArgsForCall(1)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("input-some-container-handle"))
+				Expect(rulespec).To(Equal([]rules.IPTablesRule{
+					{"-m", "state", "--state", "RELATED,ESTABLISHED",
+						"--jump", "ACCEPT"},
+					{"-p", "tcp", "-d", "169.125.0.4", "--destination-port", "9001", "--jump", "ACCEPT"},
+					{"-p", "tcp", "-d", "169.125.0.9", "--destination-port", "8080", "--jump", "ACCEPT"},
+					{"--jump", "REJECT",
+						"--reject-with", "icmp-port-unreachable"},
+				}))
+			})
+
+			It("returns an error for improperly formatted host TCP services", func() {
+				netOut.HostTCPServices = []string{"169.125.0.123"}
+				err := netOut.Initialize()
+				Expect(err).To(MatchError(MatchRegexp("host tcp services.*missing port in address")))
+
+				netOut.HostTCPServices = []string{"169.125.0.123:port"}
+				err = netOut.Initialize()
+				Expect(err).To(MatchError(MatchRegexp("host tcp services.*parsing")))
+			})
+		})
+
+		Context("when both dns servers and host TCP services are specified", func() {
+			BeforeEach(func() {
+				netOut.DNSServers = []string{"8.8.4.4", "1.2.3.4"}
+				netOut.HostTCPServices = []string{"169.125.0.4:9001", "169.125.0.9:8080"}
+			})
+			It("creates rules for both dns servers and the host TCP services", func() {
+				err := netOut.Initialize()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+
+				table, chain, rulespec := ipTables.BulkAppendArgsForCall(1)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("input-some-container-handle"))
+				Expect(rulespec).To(Equal([]rules.IPTablesRule{
+					{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
+					{"-p", "tcp", "-d", "8.8.4.4", "--destination-port", "53", "--jump", "ACCEPT"},
+					{"-p", "udp", "-d", "8.8.4.4", "--destination-port", "53", "--jump", "ACCEPT"},
+					{"-p", "tcp", "-d", "1.2.3.4", "--destination-port", "53", "--jump", "ACCEPT"},
+					{"-p", "udp", "-d", "1.2.3.4", "--destination-port", "53", "--jump", "ACCEPT"},
+					{"-p", "tcp", "-d", "169.125.0.4", "--destination-port", "9001", "--jump", "ACCEPT"},
+					{"-p", "tcp", "-d", "169.125.0.9", "--destination-port", "8080", "--jump", "ACCEPT"},
+					{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
+				}))
 
 			})
+
 		})
 	})
 

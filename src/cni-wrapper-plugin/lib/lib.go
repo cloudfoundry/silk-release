@@ -23,6 +23,7 @@ type WrapperConfig struct {
 	InstanceAddress                 string                 `json:"instance_address"`
 	NoMasqueradeCIDRRange           string                 `json:"no_masquerade_cidr_range"`
 	DNSServers                      []string               `json:"dns_servers"`
+	HostTCPServices                 []string               `json:"host_tcp_services"`
 	UnderlayIPs                     []string               `json:"underlay_ips"`
 	TemporaryUnderlayInterfaceNames []string               `json:"temporary_underlay_interface_names"`
 	IPTablesASGLogging              bool                   `json:"iptables_asg_logging"`
