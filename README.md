@@ -10,7 +10,7 @@ The components in this release used to be a part of CF Networking Release. To us
 This release contains the following jobs:
 - `silk-controller`
 - `silk-daemon`
-- `cni`
+- `silk-cni`
 - `netmon`
 - `vxlan-policy-agent`
 - `iptables-logger`
