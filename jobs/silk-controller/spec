@@ -49,7 +49,7 @@ properties:
     default: 19683
 
   connect_timeout_seconds:
-    description: "Connection timeout between the silk controller and the silk database. Also used for silk controller health check timeout."
+    description: "Connection timeout between the silk controller and the silk database."
     default: 120
 
   listen_ip:
