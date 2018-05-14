@@ -10,6 +10,7 @@ templates:
   server.crt.erb: config/certs/server.crt
   server.key.erb: config/certs/server.key
   dns_health_check.erb: bin/dns_health_check
+  database_ca.crt.erb: config/certs/database_ca.crt
 
 packages:
   - silk-controller
@@ -90,6 +91,14 @@ properties:
 
   database.name:
     description: "Name of logical database to use."
+
+  database.require_ssl:
+    description: "Require ssl db connectivity when true"
+    default: false
+
+  database.ca_cert:
+    description: "ca cert for db connectivity. Requires 'database.require_ssl' to be true."
+    default: ~
 
   max_open_connections:
     description: "Maximum number of open connections to the SQL database"

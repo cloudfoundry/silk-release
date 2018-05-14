@@ -70,6 +70,8 @@
       "port" => port,
       "timeout" => p("connect_timeout_seconds"),
       "database_name" => name,
+      "require_ssl" => p("database.require_ssl"),
+      "ca_cert" => '/var/vcap/jobs/silk-controller/config/certs/database_ca.crt',
     },
     "lease_expiration_seconds" => p("subnet_lease_expiration_hours") * 60 * 60,
     "metron_port" => p("metron_port"),
