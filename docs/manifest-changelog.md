@@ -1,5 +1,12 @@
 ## Manifest changelog
 
+### 2.2.0
+**New Properties**
+  - A set of new optional properties have been added to the `silk-controller` job to support the `pxc-release`.
+    They requires using `pxc-release`. Both values *must* be set to use TLS connections to the pxc database.
+    - `database.require_ssl` is a boolean flag for requiring TLS on the database connections.
+    - `database.ca_cert` is the ca of the `pxc-release` database job.
+
 ### 2.1.0
 **New Properties**
   - An optional parameter `host_tcp_services` has been added to the `silk-cni` job to specify TCP addresses
