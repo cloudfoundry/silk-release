@@ -2,7 +2,7 @@
 name: silk-cni
 
 dependencies:
-  - golang-1.10-linux
+  - golang-1.9-linux
 
 files:
   - cni-teardown/*.go # gosub
