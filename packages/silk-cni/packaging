@@ -6,7 +6,7 @@ set -u
 mkdir ../src && cp -a * ../src/ && mv ../src ./src
 mkdir -p $BOSH_INSTALL_TARGET/bin
 
-source /var/vcap/packages/golang-1.9-linux/bosh/compile.env
+source /var/vcap/packages/golang-1.10-linux/bosh/compile.env
 
 go build -o "${BOSH_INSTALL_TARGET}/bin/host-local" github.com/containernetworking/plugins/plugins/ipam/host-local
 go build -o "${BOSH_INSTALL_TARGET}/bin/silk-cni" -ldflags="-extldflags=-Wl,--allow-multiple-definition" code.cloudfoundry.org/silk/cmd/silk-cni
