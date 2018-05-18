@@ -24,5 +24,5 @@ and the [CF Networking Release repo](https://code.cloudfoundry.org/cf-networking
 - [CI dashboard](http://dashboard.c2c.cf-app.com) and [config](https://github.com/cloudfoundry-incubator/cf-networking-ci)
 
 ## Known Issues
-For known issues related to both `silk-release` and `cf-networking-release` you can find them here
+For known issues related to both `silk-release` and `cf-networking-release` you can find them here:
 [cf-networking-release/docs/known-issues](https://github.com/cloudfoundry/cf-networking-release/blob/develop/docs/known-issues.md).
