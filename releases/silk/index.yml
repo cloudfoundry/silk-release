@@ -7,6 +7,8 @@ builds:
     version: 2.0.0
   cff75027-7a01-45e1-64d5-f7099e96b14b:
     version: 2.1.0
+  d24cb40e-9b82-49e6-7722-175afc1868ee:
+    version: 2.2.0
   e8226656-cc53-4ff3-4f15-79a23c10a3eb:
     version: 0.3.0
 format-version: "2"
