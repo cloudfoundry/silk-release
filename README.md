@@ -22,3 +22,7 @@ and the [CF Networking Release repo](https://code.cloudfoundry.org/cf-networking
 - [Engineering backlog](https://www.pivotaltracker.com/n/projects/1498342)
 - Chat with us at the `#container-networking` channel on [Cloud Foundry Slack](http://slack.cloudfoundry.org/)
 - [CI dashboard](http://dashboard.c2c.cf-app.com) and [config](https://github.com/cloudfoundry-incubator/cf-networking-ci)
+
+## Known Issues
+For known issues related to both `silk-release` and `cf-networking-release` you can find them here
+[cf-networking-release/docs/known-issues](https://github.com/cloudfoundry/cf-networking-release/blob/develop/docs/known-issues.md).
