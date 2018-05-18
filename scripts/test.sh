@@ -75,9 +75,10 @@ if [ "${1:-""}" = "" ]; then
     popd
   done
 else
-  dir=${@: -1}
+  dir="${@: -1}"
+  dir="${dir#./}"
   for package in "${serial_packages[@]}"; do
-    if [ "$dir" = "$package" ] || [ "$dir" = "$package"/ ]; then
+    if [[ "${dir##$package}" != "${dir}" ]]; then
       ginkgo -r -randomizeAllSpecs -randomizeSuites -failFast \
         -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
         "${@}"
