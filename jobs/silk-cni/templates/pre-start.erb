@@ -2,5 +2,5 @@
 
 <% unless p("disable") %>
 /var/vcap/packages/silk-cni/bin/cni-teardown \
-  --config /var/vcap/jobs/silk-cni/config/cni/cni-wrapper-plugin.conf
+  --config /var/vcap/jobs/silk-cni/config/teardown-config.json
 <% end %>
