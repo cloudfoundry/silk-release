@@ -1,7 +1,7 @@
 package integration_test
 
 import (
-	"cni-wrapper-plugin/lib"
+	"cni-teardown/config"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -18,97 +18,169 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var (
+const (
 	DEFAULT_TIMEOUT = "5s"
-
-	config                *lib.WrapperConfig
-	netlinkAdapter        *adapter.NetlinkAdapter
-	ifbName               string
-	notSilkCreatedIFBName string
-	dummyName             string
-	configFilePath        string
-	datastorePath         string
-	delegateDataDirPath   string
-	delegateDatastorePath string
 )
 
-var _ = BeforeEach(func() {
-	var err error
-
-	cmd := exec.Command("lsmod")
-	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-	Expect(err).ToNot(HaveOccurred())
-
-	session.Wait(5 * time.Second)
-	if !strings.Contains(string(session.Out.Contents()), "ifb") {
-		Skip("Docker for Mac does not contain IFB kernel module")
-	}
-
-	ifbName = fmt.Sprintf("i-some-ifb-%d", GinkgoParallelNode())
-	dummyName = fmt.Sprintf("ilololol-%d", GinkgoParallelNode())
-	notSilkCreatedIFBName = fmt.Sprintf("other-ifb-%d", GinkgoParallelNode())
-
-	netlinkAdapter = &adapter.NetlinkAdapter{}
-
-	// /var/vcap/data/container-metadata
-	datastorePath, err = ioutil.TempDir(os.TempDir(), fmt.Sprintf("container-metadata-%d", GinkgoParallelNode()))
-	Expect(err).NotTo(HaveOccurred())
-
-	// /var/vcap/data/host-local
-	delegateDataDirPath, err = ioutil.TempDir(os.TempDir(), fmt.Sprintf("host-local-%d", GinkgoParallelNode()))
-	Expect(err).NotTo(HaveOccurred())
-
-	// /var/vcap/data/silk/store.json
-	delegateDatastorePath, err = ioutil.TempDir(os.TempDir(), fmt.Sprintf("silk-%d", GinkgoParallelNode()))
-	Expect(err).NotTo(HaveOccurred())
-
-	config = &lib.WrapperConfig{
-		Datastore: filepath.Join(datastorePath, "store.json"),
-		Delegate: map[string]interface{}{
-			"dataDir":   delegateDataDirPath,
-			"datastore": filepath.Join(delegateDatastorePath, "store.json"),
-		},
-		IPTablesLockFile:              "does_not_matter",
-		InstanceAddress:               "does_not_matter",
-		UnderlayIPs:                   []string{"does_not_matter"},
-		IngressTag:                    "does_not_matter",
-		VTEPName:                      "does_not_matter",
-		IPTablesDeniedLogsPerSec:      2,
-		IPTablesAcceptedUDPLogsPerSec: 2,
-	}
-	// write config, pass it as flag to when we call teardown
-	configFilePath = writeConfigFile(*config)
-
-	mustSucceed("ip", "link", "add", ifbName, "type", "ifb")
-	mustSucceed("ip", "link", "add", notSilkCreatedIFBName, "type", "ifb")
-	mustSucceed("ip", "link", "add", dummyName, "type", "dummy")
-})
-
-var _ = AfterEach(func() {
-	exec.Command("ip", "link", "del", ifbName).Run()
-	mustSucceed("ip", "link", "del", notSilkCreatedIFBName)
-	mustSucceed("ip", "link", "del", dummyName)
-
-	Expect(os.RemoveAll(configFilePath)).To(Succeed())
-})
-
 var _ = Describe("Teardown", func() {
-	It("destroys only leftover IFB devices and removes the unneeded directories", func() {
+	var (
+		teardownConfig        *config.Config
+		configFilePath        string
+		datastorePath         string
+		delegateDataDirPath   string
+		delegateDatastorePath string
+	)
+
+	BeforeEach(func() {
+		var err error
+
+		// /var/vcap/data/container-metadata
+		datastorePath, err = ioutil.TempDir(os.TempDir(), fmt.Sprintf("container-metadata-%d", GinkgoParallelNode()))
+		Expect(err).NotTo(HaveOccurred())
+
+		// /var/vcap/data/host-local
+		delegateDataDirPath, err = ioutil.TempDir(os.TempDir(), fmt.Sprintf("host-local-%d", GinkgoParallelNode()))
+		Expect(err).NotTo(HaveOccurred())
+
+		// /var/vcap/data/silk/store.json
+		delegateDatastorePath, err = ioutil.TempDir(os.TempDir(), fmt.Sprintf("silk-%d", GinkgoParallelNode()))
+		Expect(err).NotTo(HaveOccurred())
+
+		teardownConfig = &config.Config{
+			PathsToDelete: []string{
+				datastorePath,
+				delegateDataDirPath,
+				delegateDatastorePath,
+			},
+		}
+
+		// write config, pass it as flag to when we call teardown
+		configFilePath = writeConfigFile(*teardownConfig)
+	})
+
+	AfterEach(func() {
+		Expect(os.RemoveAll(configFilePath)).To(Succeed())
+	})
+
+	Context("when an ifb device exists", func() {
+		var (
+			ifbName               string
+			notSilkCreatedIFBName string
+			netlinkAdapter        *adapter.NetlinkAdapter
+			dummyName             string
+		)
+
+		BeforeEach(func() {
+			cmd := exec.Command("lsmod")
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).ToNot(HaveOccurred())
+			session.Wait(5 * time.Second)
+			if !strings.Contains(string(session.Out.Contents()), "ifb") {
+				Skip("Docker for Mac does not contain IFB kernel module")
+			}
+
+			ifbName = fmt.Sprintf("i-some-ifb-%d", GinkgoParallelNode())
+			notSilkCreatedIFBName = fmt.Sprintf("other-ifb-%d", GinkgoParallelNode())
+			dummyName = fmt.Sprintf("ilololol-%d", GinkgoParallelNode())
+
+			netlinkAdapter = &adapter.NetlinkAdapter{}
+
+			mustSucceed("ip", "link", "add", ifbName, "type", "ifb")
+			mustSucceed("ip", "link", "add", notSilkCreatedIFBName, "type", "ifb")
+			mustSucceed("ip", "link", "add", dummyName, "type", "dummy")
+		})
+
+		AfterEach(func() {
+			exec.Command("ip", "link", "del", ifbName).Run()
+			mustSucceed("ip", "link", "del", notSilkCreatedIFBName)
+			mustSucceed("ip", "link", "del", dummyName)
+		})
+
+		It("destroys only leftover IFB devices", func() {
+			By("running teardown")
+			session := runTeardown(configFilePath)
+			Expect(session).To(gexec.Exit(0))
+			Expect(session.Out.Contents()).To(ContainSubstring("cni-teardown.starting"))
+
+			By("verifying that the ifb is no longer present")
+			_, err := netlinkAdapter.LinkByName(ifbName)
+			Expect(err).To(MatchError("Link not found"))
+
+			By("verifying that the other devices are not cleaned up")
+			_, err = netlinkAdapter.LinkByName(dummyName)
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = netlinkAdapter.LinkByName(notSilkCreatedIFBName)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(session.Out.Contents()).To(ContainSubstring("cni-teardown.complete"))
+		})
+
+		Context("when we fail to clean up the directories", func() {
+			BeforeEach(func() {
+				silkJsonPath := filepath.Join(delegateDatastorePath, "store.json")
+				metadataJsonPath := filepath.Join(datastorePath, "store.json")
+				hostLocalJsonPath := filepath.Join(delegateDataDirPath, "store.json")
+
+				makeImmutableFile(silkJsonPath)
+				makeImmutableFile(metadataJsonPath)
+				makeImmutableFile(hostLocalJsonPath)
+			})
+
+			It("logs the errors but still cleans up devices", func() {
+				By("running teardown")
+				session := runTeardown(configFilePath)
+				Expect(session).To(gexec.Exit(0))
+
+				By("verifying that the ifb is no longer present")
+				_, err := netlinkAdapter.LinkByName(ifbName)
+				Expect(err).To(MatchError("Link not found"))
+
+				By("checking the logs")
+				Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.starting"))
+				Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.failed-to-remove-path"))
+				Expect(string(session.Out.Contents())).To(ContainSubstring(datastorePath))
+				Expect(string(session.Out.Contents())).To(ContainSubstring(delegateDataDirPath))
+				Expect(string(session.Out.Contents())).To(ContainSubstring(delegateDatastorePath))
+				Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.complete"))
+			})
+		})
+
+		Context("when unable to delete an ifb device", func() {
+			BeforeEach(func() {
+				err := os.Chmod(configFilePath, 0777)
+				Expect(err).NotTo(HaveOccurred())
+
+				createUserCmd := exec.Command("useradd", "test-user")
+				session, err := gexec.Start(createUserCmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit())
+			})
+
+			AfterEach(func() {
+				delUserCmd := exec.Command("deluser", "test-user")
+				session, err := gexec.Start(delUserCmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit())
+			})
+
+			It("logs the errors", func() {
+				By("running teardown")
+				session := runTeardownNonRoot("test-user", configFilePath)
+				Expect(session).To(gexec.Exit(0))
+
+				By("checking the logs")
+				Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.starting"))
+				Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.failed-to-remove-ifb"))
+			})
+		})
+	})
+
+	It("removes the unneeded directories", func() {
 		By("running teardown")
-		session := runTeardown()
+		session := runTeardown(configFilePath)
 		Expect(session).To(gexec.Exit(0))
 		Expect(session.Out.Contents()).To(ContainSubstring("cni-teardown.starting"))
-
-		By("verifying that the ifb is no longer present")
-		_, err := netlinkAdapter.LinkByName(ifbName)
-		Expect(err).To(MatchError("Link not found"))
-
-		By("verifying that the other devices are not cleaned up")
-		_, err = netlinkAdapter.LinkByName(dummyName)
-		Expect(err).NotTo(HaveOccurred())
-
-		_, err = netlinkAdapter.LinkByName(notSilkCreatedIFBName)
-		Expect(err).NotTo(HaveOccurred())
 
 		By("verifying that the relevant directories no longer exist")
 		Expect(fileExists(datastorePath)).To(BeFalse())
@@ -118,28 +190,14 @@ var _ = Describe("Teardown", func() {
 		Expect(session.Out.Contents()).To(ContainSubstring("cni-teardown.complete"))
 	})
 
-	Context("when the config file does not exist", func() {
-		BeforeEach(func() {
-			configFilePath = "some/bad/path"
-		})
-
-		It("logs the errors and exits 1", func() {
-			session := runTeardown()
-			Expect(session).To(gexec.Exit(1))
-			Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.starting"))
-			Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.load-config-file"))
-			Expect(string(session.Out.Contents())).NotTo(ContainSubstring("cni-teardown.complete"))
-
-		})
-	})
-
 	Context("when the config file exists but cannot be read", func() {
 		BeforeEach(func() {
 			err := ioutil.WriteFile(configFilePath, []byte("some-bad-data"), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 		})
+
 		It("logs the errors but still cleans up devices", func() {
-			session := runTeardown()
+			session := runTeardown(configFilePath)
 			Expect(session).To(gexec.Exit(1))
 			Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.starting"))
 			Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.read-config-file"))
@@ -158,50 +216,18 @@ var _ = Describe("Teardown", func() {
 			makeImmutableFile(hostLocalJsonPath)
 		})
 
-		It("logs the errors but still cleans up devices", func() {
-			By("running teardown")
-			session := runTeardown()
-			Expect(session).To(gexec.Exit(0))
-
-			By("verifying that the ifb is no longer present")
-			_, err := netlinkAdapter.LinkByName(ifbName)
-			Expect(err).To(MatchError("Link not found"))
-
-			By("checking the logs")
-			Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.starting"))
-			Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.failed-to-remove-datastore-path"))
-			Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.failed-to-remove-delegate-datastore-path"))
-			Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.failed-to-remove-delegate-data-dir-path"))
-			Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.complete"))
-		})
-	})
-
-	Context("when unable to delete an ifb device", func() {
-		BeforeEach(func() {
-			err := os.Chmod(configFilePath, 0777)
-			Expect(err).NotTo(HaveOccurred())
-
-			createUserCmd := exec.Command("useradd", "test-user")
-			session, err := gexec.Start(createUserCmd, GinkgoWriter, GinkgoWriter)
-			Expect(err).NotTo(HaveOccurred())
-			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit())
-		})
-
-		AfterEach(func() {
-			delUserCmd := exec.Command("deluser", "test-user")
-			session, err := gexec.Start(delUserCmd, GinkgoWriter, GinkgoWriter)
-			Expect(err).NotTo(HaveOccurred())
-			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit())
-		})
-
 		It("logs the errors", func() {
 			By("running teardown")
-			session := runTeardownNonRoot("test-user")
+			session := runTeardown(configFilePath)
 			Expect(session).To(gexec.Exit(0))
 
 			By("checking the logs")
 			Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.starting"))
-			Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.failed-to-remove-ifb"))
+			Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.failed-to-remove-path"))
+			Expect(string(session.Out.Contents())).To(ContainSubstring(datastorePath))
+			Expect(string(session.Out.Contents())).To(ContainSubstring(delegateDataDirPath))
+			Expect(string(session.Out.Contents())).To(ContainSubstring(delegateDatastorePath))
+			Expect(string(session.Out.Contents())).To(ContainSubstring("cni-teardown.complete"))
 		})
 	})
 })
@@ -223,11 +249,12 @@ func fileExists(path string) bool {
 	}
 	return true
 }
-func writeConfigFile(config lib.WrapperConfig) string {
+
+func writeConfigFile(teardownConfig config.Config) string {
 	configFile, err := ioutil.TempFile("", "test-config")
 	Expect(err).NotTo(HaveOccurred())
 
-	configBytes, err := json.Marshal(config)
+	configBytes, err := json.Marshal(teardownConfig)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = ioutil.WriteFile(configFile.Name(), configBytes, os.ModePerm)
@@ -244,7 +271,7 @@ func mustSucceed(binary string, args ...string) string {
 	return string(sess.Out.Contents())
 }
 
-func runTeardown() *gexec.Session {
+func runTeardown(configFilePath string) *gexec.Session {
 	startCmd := exec.Command(paths.TeardownBin, "--config", configFilePath)
 	session, err := gexec.Start(startCmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).NotTo(HaveOccurred())
@@ -252,7 +279,7 @@ func runTeardown() *gexec.Session {
 	return session
 }
 
-func runTeardownNonRoot(user string) *gexec.Session {
+func runTeardownNonRoot(user, configFilePath string) *gexec.Session {
 	startCmd := exec.Command("su", user, "-c", fmt.Sprintf("%s --config %s", paths.TeardownBin, configFilePath))
 	session, err := gexec.Start(startCmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).NotTo(HaveOccurred())

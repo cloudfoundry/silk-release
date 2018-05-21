@@ -1,63 +1,12 @@
 <% unless p('disable') %>
 <%=
   require 'json'
-
-
-  def compute_mtu
-    vxlan_overhead = 50
-    mtu = p('mtu')
-    if mtu > 0
-      return mtu - vxlan_overhead
-    else
-      return mtu
-    end
-  end
-
-  def no_masquerade_cidr_range
-    if_p("no_masquerade_cidr_range") do |no_masquerade_cidr_range|
-      if no_masquerade_cidr_range.empty?
-        if_link("cf_network") do |link|
-          return link.p("network")
-        end
-      end
-
-      return no_masquerade_cidr_range
-    end
-  end
-
-  toRender = {
-    "name" => "cni-wrapper",
-    "type" => "cni-wrapper-plugin",
-    "cniVersion" => "0.3.1",
-    "datastore" => "/var/vcap/data/container-metadata/store.json",
-    "iptables_lock_file" => "/var/vcap/data/garden-cni/iptables.lock",
-    "instance_address" => spec.ip,
-    "no_masquerade_cidr_range" => no_masquerade_cidr_range,
-    "temporary_underlay_interface_names" => p("temporary.underlay_interface_names"),
-    "underlay_ips" => spec.networks.to_h.values.map(&:ip),
-    "iptables_asg_logging" => p("iptables_logging"),
-    "iptables_c2c_logging" => p("iptables_logging"),
-    "iptables_denied_logs_per_sec" => p("iptables_denied_logs_per_sec"),
-    "iptables_accepted_udp_logs_per_sec" => p("iptables_accepted_udp_logs_per_sec"),
-    "ingress_tag" => "ffff0000",
-    "vtep_name" => "silk-vtep",
-    "dns_servers" => p("dns_servers"),
-    "host_tcp_services" => p("host_tcp_services"),
-    "delegate" => {
-      "cniVersion" => "0.3.1",
-      "name" => "silk",
-      "type" => "silk-cni",
-      "daemonPort" => p('silk_daemon.listen_port'),
-      "dataDir" => "/var/vcap/data/host-local",
-      "datastore" => "/var/vcap/data/silk/store.json",
-      "mtu" => compute_mtu,
-      "bandwidthLimits"=> {
-        "rate" => p('rate') * 1024,
-        "burst" => p('burst') * 1024,
-      },
-     }
-  }
-
-  JSON.pretty_generate(toRender)
+  JSON.pretty_generate({
+    'paths_to_delete' => [
+      '/var/vcap/data/container-metadata',
+      '/var/vcap/data/host-local',
+      '/var/vcap/data/silk'
+    ]
+  })
 %>
 <% end %>

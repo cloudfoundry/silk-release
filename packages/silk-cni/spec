@@ -6,6 +6,7 @@ dependencies:
 
 files:
   - cni-teardown/*.go # gosub
+  - cni-teardown/config/*.go # gosub
   - cni-wrapper-plugin/*.go # gosub
   - cni-wrapper-plugin/adapter/*.go # gosub
   - cni-wrapper-plugin/interfacelookup/*.go # gosub

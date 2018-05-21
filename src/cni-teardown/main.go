@@ -1,11 +1,9 @@
 package main
 
 import (
-	"cni-wrapper-plugin/lib"
+	"cni-teardown/config"
 	"flag"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"code.cloudfoundry.org/lager"
@@ -37,36 +35,16 @@ func main() {
 	configFilePath := flag.String("config", "", "path to config file")
 	flag.Parse()
 
-	configBytes, err := ioutil.ReadFile(*configFilePath)
-	if err != nil {
-		logger.Error("load-config-file", err)
-		os.Exit(1)
-	}
-
-	cfg, err := lib.LoadWrapperConfig(configBytes)
+	cfg, err := config.LoadConfig(*configFilePath)
 	if err != nil {
 		logger.Error("read-config-file", err)
 		os.Exit(1)
 	}
 
-	containerMetadataDir := filepath.Dir(cfg.Datastore)
-	err = os.RemoveAll(containerMetadataDir)
-	if err != nil {
-		logger.Info("failed-to-remove-datastore-path", lager.Data{"path": containerMetadataDir, "err": err})
-	}
-
-	if delegateDataDirPath, ok := cfg.Delegate["dataDir"].(string); ok {
-		err = os.RemoveAll(delegateDataDirPath)
+	for _, path := range cfg.PathsToDelete {
+		err := os.RemoveAll(path)
 		if err != nil {
-			logger.Info("failed-to-remove-delegate-datastore-path", lager.Data{"path": delegateDataDirPath, "err": err})
-		}
-	}
-
-	if delegateDataStorePath, ok := cfg.Delegate["datastore"].(string); ok {
-		silkDir := filepath.Dir(delegateDataStorePath)
-		err = os.RemoveAll(silkDir)
-		if err != nil {
-			logger.Info("failed-to-remove-delegate-data-dir-path", lager.Data{"path": silkDir, "err": err})
+			logger.Info("failed-to-remove-path", lager.Data{"path": path, "err": err})
 		}
 	}
 
