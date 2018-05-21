@@ -51,11 +51,14 @@
         'dataDir' => '/var/vcap/data/host-local',
         'datastore' => '/var/vcap/data/silk/store.json',
         'mtu' => compute_mtu,
-        'bandwidthLimits' => {
-          'rate' => p('rate') * 1024,
-          'burst' => p('burst') * 1024,
-        },
        }
+    }, {
+      'name' => 'bandwidth-limit',
+      'type' => 'bandwidth',
+      'ingressRate' => p('rate') * 1024,
+      'ingressBurst' => p('burst') * 1024,
+      'egressRate' => p('rate') * 1024,
+      'egressBurst' => p('burst') * 1024
     }]
   }
 

@@ -66,6 +66,7 @@ files:
   - github.com/containernetworking/plugins/plugins/ipam/host-local/backend/*.go # gosub
   - github.com/containernetworking/plugins/plugins/ipam/host-local/backend/allocator/*.go # gosub
   - github.com/containernetworking/plugins/plugins/ipam/host-local/backend/disk/*.go # gosub
+  - github.com/containernetworking/plugins/plugins/meta/bandwidth/*.go # gosub
   - github.com/containernetworking/plugins/vendor/github.com/alexflint/go-filemutex/*.go # gosub
   - github.com/containernetworking/plugins/vendor/github.com/containernetworking/cni/pkg/skel/*.go # gosub
   - github.com/containernetworking/plugins/vendor/github.com/containernetworking/cni/pkg/types/*.go # gosub
@@ -73,6 +74,7 @@ files:
   - github.com/containernetworking/plugins/vendor/github.com/containernetworking/cni/pkg/types/current/*.go # gosub
   - github.com/containernetworking/plugins/vendor/github.com/containernetworking/cni/pkg/version/*.go # gosub
   - github.com/containernetworking/plugins/vendor/github.com/coreos/go-iptables/iptables/*.go # gosub
+  - github.com/containernetworking/plugins/vendor/github.com/safchain/ethtool/*.go # gosub
   - github.com/containernetworking/plugins/vendor/github.com/vishvananda/netlink/*.go # gosub
   - github.com/containernetworking/plugins/vendor/github.com/vishvananda/netlink/nl/*.go # gosub
   - github.com/containernetworking/plugins/vendor/github.com/vishvananda/netns/*.go # gosub

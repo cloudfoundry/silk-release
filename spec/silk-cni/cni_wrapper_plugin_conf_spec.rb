@@ -62,12 +62,15 @@ module Bosh::Template::Test
               'daemonPort' => 8080,
               'dataDir' => '/var/vcap/data/host-local',
               'datastore' => '/var/vcap/data/silk/store.json',
-              'mtu' => 0,
-              'bandwidthLimits' => {
-                'rate' => 100 * 1024,
-                'burst' => 200 * 1024
-              }
+              'mtu' => 0
             }
+          }, {
+            'name' => 'bandwidth-limit',
+            'type' => 'bandwidth',
+            'ingressRate' => 100 * 1024,
+            'ingressBurst' => 200 * 1024,
+            'egressRate' => 100 * 1024,
+            'egressBurst' => 200 * 1024
           }]
         })
       end
