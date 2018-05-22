@@ -10,7 +10,26 @@ module Bosh::Template::Test
       let(:release_path) {File.join(File.dirname(__FILE__), '../..')}
       let(:release) {ReleaseDir.new(release_path)}
       let(:merged_manifest_properties) do
-        {}
+        {
+          'listen_port' => 12345,
+          'vtep_name' => 'silk-vtep',
+          'silk_controller' => {
+            'hostname' => 'some-host',
+            'listen_port' => 12345,
+          },
+          'ca_cert_file' => '/var/vcap/jobs/silk-daemon/config/certs/ca.crt',
+          'client_cert_file' => '/var/vcap/jobs/silk-daemon/config/certs/client.crt',
+          'client_key_file' => '/var/vcap/jobs/silk-daemon/config/certs/client.key',
+          'lease_poll_interval_seconds' => 10,
+          'datastore' => '/var/vcap/data/silk/store.json',
+          'partition_tolerance_hours' => 1,
+          'client_timeout_seconds' => 5,
+          'debug_port' => 89,
+          'metron_port' => 5678,
+          'vtep_port' => 6666,
+          'log_prefix' => 'cfnetworking',
+          'single_ip_only' => true,
+        }
       end
 
       links = [
@@ -27,6 +46,32 @@ module Bosh::Template::Test
       describe 'silk-daemon job' do let(:job) {release.job('silk-daemon')}
         describe 'config/client-config.json' do
           let(:template) {job.template('config/client-config.json')}
+
+          it 'renders the template with the provided manifest properties' do
+            clientConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links))
+            expect(clientConfig).to eq({
+              'underlay_ip' => '192.168.0.0',
+              'subnet_prefix_length' => 24,
+              'overlay_network' => '10.255.0.0/16',
+              'health_check_port' => 12345,
+              'vtep_name' => 'silk-vtep',
+              'connectivity_server_url' => 'https://some-host:12345',
+              'ca_cert_file' => '/var/vcap/jobs/silk-daemon/config/certs/ca.crt',
+              'client_cert_file' => '/var/vcap/jobs/silk-daemon/config/certs/client.crt',
+              'client_key_file' => '/var/vcap/jobs/silk-daemon/config/certs/client.key',
+              'vni' => 1,
+              'poll_interval' => 10,
+              'debug_server_port' => 89,
+              'datastore' => '/var/vcap/data/silk/store.json',
+              'partition_tolerance_seconds' => 3600,
+              'client_timeout_seconds' => 5,
+              'metron_port' => 5678,
+              'vtep_port' => 6666,
+              'log_prefix' => 'cfnetworking',
+              'vxlan_interface_name' => '',
+              'single_ip_only' => true
+            })
+          end
 
           context 'when temporary_vxlan_interface and vxlan_network are set' do
             let(:merged_manifest_properties) do

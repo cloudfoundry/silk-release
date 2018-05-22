@@ -2,7 +2,7 @@
   require 'json'
 
   def subnet_prefix_length
-    size = link("cf_network").p("subnet_prefix_length")
+    size = link('cf_network').p('subnet_prefix_length')
     if size < 1 || size > 30
       raise "'subnet_prefix_length' must be a value between 1-30"
     end
@@ -30,25 +30,26 @@
   end
 
   toRender = {
-    "underlay_ip" => underlay_ip,
-    "subnet_prefix_length" => subnet_prefix_length,
-    "overlay_network" => link("cf_network").p("network"),
-    "health_check_port" => p("listen_port"),
-    "vtep_name" => "silk-vtep",
-    "connectivity_server_url" => silk_controller_url,
-    "ca_cert_file" => "/var/vcap/jobs/silk-daemon/config/certs/ca.crt",
-    "client_cert_file" => "/var/vcap/jobs/silk-daemon/config/certs/client.crt",
-    "client_key_file" => "/var/vcap/jobs/silk-daemon/config/certs/client.key",
-    "vni" => 1,
-    "poll_interval" => p("lease_poll_interval_seconds"),
-    "debug_server_port" => p("debug_port"),
-    "datastore" => "/var/vcap/data/silk/store.json",
-    "partition_tolerance_seconds" => p("partition_tolerance_hours") * 60 * 60, # convert hours to seconds
-    "client_timeout_seconds" => 5,
-    "metron_port" => p("metron_port"),
-    "vtep_port" => p("vtep_port"),
-    "log_prefix" => "cfnetworking",
-    "vxlan_interface_name" => p("temporary_vxlan_interface", ""),
+    'underlay_ip' => underlay_ip,
+    'subnet_prefix_length' => subnet_prefix_length,
+    'overlay_network' => link('cf_network').p('network'),
+    'health_check_port' => p('listen_port'),
+    'vtep_name' => 'silk-vtep',
+    'connectivity_server_url' => silk_controller_url,
+    'ca_cert_file' => '/var/vcap/jobs/silk-daemon/config/certs/ca.crt',
+    'client_cert_file' => '/var/vcap/jobs/silk-daemon/config/certs/client.crt',
+    'client_key_file' => '/var/vcap/jobs/silk-daemon/config/certs/client.key',
+    'vni' => 1,
+    'poll_interval' => p('lease_poll_interval_seconds'),
+    'debug_server_port' => p('debug_port'),
+    'datastore' => '/var/vcap/data/silk/store.json',
+    'partition_tolerance_seconds' => p('partition_tolerance_hours') * 60 * 60, # convert hours to seconds
+    'client_timeout_seconds' => 5,
+    'metron_port' => p('metron_port'),
+    'vtep_port' => p('vtep_port'),
+    'log_prefix' => 'cfnetworking',
+    'vxlan_interface_name' => p('temporary_vxlan_interface', ''),
+    'single_ip_only' => p('single_ip_only')
   }
 
   JSON.pretty_generate(toRender)

@@ -73,3 +73,7 @@ properties:
   disable:
     description: "Disable this monit job.  It will not run. Required for backwards compatability"
     default: false
+
+  single_ip_only:
+    description: "When true, this VM will get assigned exactly one IP address on the Silk network.  Use this to connect this VM to the Silk network without acquiring a whole block of addresses (as would be required for a Diego Cell)."
+    default: false
