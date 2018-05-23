@@ -100,6 +100,10 @@ properties:
     description: "ca cert for db connectivity. Requires 'database.require_ssl' to be true."
     default: ~
 
+  database.connect_timeout_seconds:
+    description: "Connection timeout between the silk controller and the silk database."
+    default: 120
+
   max_open_connections:
     description: "Maximum number of open connections to the SQL database"
     default: 0
