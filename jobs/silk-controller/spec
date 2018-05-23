@@ -49,9 +49,9 @@ properties:
     description: "Health check port for silk controller. Used by the Consul DNS health check."
     default: 19683
 
-  connect_timeout_seconds:
-    description: "Connection timeout between the silk controller and the silk database."
-    default: 120
+  health_check_timeout_seconds:
+    description: "Health check timeout for Consul DNS."
+    default: 5
 
   listen_ip:
     description: "IP address where the silk controller will serve its API."
