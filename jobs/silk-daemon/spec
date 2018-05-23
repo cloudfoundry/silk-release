@@ -12,7 +12,7 @@ templates:
 
 packages:
   - silk-daemon
-  - ctl-utils
+  - silk-ctl-utils
 
 consumes:
 - name: cf_network

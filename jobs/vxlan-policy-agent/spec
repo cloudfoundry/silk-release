@@ -10,7 +10,7 @@ templates:
 
 packages:
   - vxlan-policy-agent
-  - ctl-utils
+  - silk-ctl-utils
 
 properties:
   iptables_logging:

@@ -14,7 +14,7 @@ templates:
 
 packages:
   - silk-controller
-  - ctl-utils
+  - silk-ctl-utils
 
 consumes:
 - name: database
