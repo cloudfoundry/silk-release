@@ -1,20 +1,24 @@
 package main
 
 import (
+	"code.cloudfoundry.org/filelock"
+	"code.cloudfoundry.org/lager"
+	"errors"
 	"flag"
 	"fmt"
-	"log"
-	"net/http"
-	"time"
-	"syscall"
+	"github.com/coreos/go-iptables/iptables"
 	"io/ioutil"
-	"strconv"
+	"lib/rules"
+	"log"
 	"net"
+	"net/http"
 	neturl "net/url"
-	"errors"
-	"strings"
-	"code.cloudfoundry.org/lager"
 	"os"
+	"strconv"
+	"strings"
+	"sync"
+	"syscall"
+	"time"
 )
 
 var logger lager.Logger
@@ -32,6 +36,7 @@ func mainWithError() error {
 	silkDaemonTimeout := flag.Int("silkDaemonTimeout", 2, "timeout (seconds) between calls to silk daemon")
 	silkDaemonPidPath := flag.String("silkDaemonPidPath", "", "pid file of silk daemon")
 	pingServerTimeout := flag.Int("pingServerTimeout", 300, "timeout (seconds) when pinging if server is up")
+	iptablesLockFile := flag.String("iptablesLockFile", "", "path to iptablesLockFile")
 
 	flag.Parse()
 
@@ -71,7 +76,29 @@ func mainWithError() error {
 		return errors.New(fmt.Sprintf("Silk Daemon Server did not exit after %d ping attempts", silkDaemonMaxAttempts))
 	}
 
-	return nil
+	ipt, err := iptables.New()
+	if err != nil {
+		return err
+	}
+
+	iptLocker := &filelock.Locker{
+		FileLocker: filelock.NewLocker(*iptablesLockFile),
+		Mutex:      &sync.Mutex{},
+	}
+	restorer := &rules.Restorer{}
+	lockedIPTables := &rules.LockedIPTables{
+		IPTables: ipt,
+		Locker:   iptLocker,
+		Restorer: restorer,
+	}
+
+	overlayAccessMarkRule := rules.NewOverlayAccessMarkRule()
+	exists, err := lockedIPTables.Exists("filter", "OUTPUT", overlayAccessMarkRule)
+	if err == nil && exists {
+		return lockedIPTables.Delete("filter", "OUTPUT", overlayAccessMarkRule)
+	}
+
+	return err
 }
 
 func waitForServer(serverName string, serverUrl string, pollingTimeInSeconds int, maxAttempts int, pingTimeout int) (isServerUp bool, err error) {

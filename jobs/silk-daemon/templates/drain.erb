@@ -26,7 +26,8 @@ shutdown_silk_daemon() {
   /var/vcap/packages/silk-daemon/bin/silk-daemon-shutdown \
     --repUrl "http://${REP_ADDRESS}/ping" \
     --silkDaemonUrl "http://${SILK_DAEMON_HEALTH_CHECK_ADDRESS}/ping" \
-    --silkDaemonPidPath "${PIDFILE}"
+    --silkDaemonPidPath "${PIDFILE}" \
+    --iptablesLockFile "/var/vcap/data/garden-cni/iptables.lock"
 }
 
 output_for_bosh() {

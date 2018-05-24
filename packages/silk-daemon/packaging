@@ -11,3 +11,4 @@ source /var/vcap/packages/golang-1.10-linux/bosh/compile.env
 go build -o "${BOSH_INSTALL_TARGET}/bin/silk-daemon" code.cloudfoundry.org/silk/cmd/silk-daemon
 go build -o "${BOSH_INSTALL_TARGET}/bin/silk-teardown" -ldflags="-extldflags=-Wl,--allow-multiple-definition" code.cloudfoundry.org/silk/cmd/silk-teardown
 go build -o "${BOSH_INSTALL_TARGET}/bin/silk-daemon-shutdown" silk-daemon-shutdown
+go build -o "${BOSH_INSTALL_TARGET}/bin/silk-daemon-bootstrap" silk-daemon-bootstrap

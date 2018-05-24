@@ -54,6 +54,7 @@ declare -a packages=(
    "src/cni-wrapper-plugin"
    "src/vxlan-policy-agent"
    "src/silk-daemon-shutdown"
+   "src/silk-daemon-bootstrap"
    )
 
 # ginkgo -r -p --race -randomizeAllSpecs -randomizeSuites \

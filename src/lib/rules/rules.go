@@ -310,6 +310,14 @@ func NewNetOutDefaultRejectRule() IPTablesRule {
 	}
 }
 
+func NewOverlayAccessMarkRule() []string {
+	return []string{
+		"-o", "silk-vtep",
+		"-j", "MARK",
+		"--set-mark", "0x0/0xffffffff",
+	}
+}
+
 func trimAndPad(name string) string {
 	if len(name) > 28 {
 		name = name[:28]

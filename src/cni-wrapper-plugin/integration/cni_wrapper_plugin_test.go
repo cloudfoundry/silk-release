@@ -243,7 +243,6 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 		By("checking that all mark rules were removed from the netin chain")
 		Expect(AllIPTablesRules("mangle")).ToNot(ContainElement(ContainSubstring(netinChainName)))
-		Expect(AllIPTablesRules("mangle")).ToNot(ContainElement(ContainSubstring(netinChainName)))
 
 		By("checking that there are no more netout rules for this container")
 		Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(inputChainName)))

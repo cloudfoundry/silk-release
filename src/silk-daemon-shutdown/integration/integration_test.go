@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"net/http"
 	"time"
+	"strings"
 )
 
 var (
@@ -46,6 +47,13 @@ var _ = AfterEach(func() {
 })
 
 var _ = Describe("Teardown", func() {
+	AllIPTablesRules := func(tableName string) []string {
+		iptablesSession, err := gexec.Start(exec.Command("iptables", "-w", "-S", "-t", tableName), GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(iptablesSession).Should(gexec.Exit(0))
+		return strings.Split(string(iptablesSession.Out.Contents()), "\n")
+	}
+
 	BeforeEach(func() {
 		var err error
 		tempPidFile, err = ioutil.TempFile(os.TempDir(), "pid")
@@ -103,6 +111,21 @@ var _ = Describe("Teardown", func() {
 			Expect(fakeRepServer.ReceivedRequests()).To(HaveLen(2))
 			Expect(session.Out).To(gbytes.Say("waiting for the silk daemon to exit"))
 			Eventually(fakeSilkDaemonSession.ExitCode(), "5s").Should(Equal(143))
+		})
+	})
+
+	Context("when running in single ip mode", func() {
+		BeforeEach(func() {
+			iptablesSession, err := gexec.Start(exec.Command("iptables", "-I", "OUTPUT", "-o", "silk-vtep", "-j", "MARK", "--set-mark", "0"), GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(iptablesSession).Should(gexec.Exit(0))
+		})
+
+		It("deletes the iptables rule that marks overlay destined traffic", func() {
+			session := runTeardown(fakeRepServer.URL(), fakeSilkDaemonServer.URL(), tempPidFile.Name())
+			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(0))
+
+			Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring("-A OUTPUT -o silk-vtep -j MARK --set-xmark 0x0/0xffffffff")))
 		})
 	})
 
@@ -211,7 +234,8 @@ func runTeardown(url, silkDaemonUrl string, silkDaemonPidFile string) *gexec.Ses
 		"--silkDaemonUrl", silkDaemonUrl,
 		"--repTimeout", "0",
 		"--silkDaemonTimeout", "0",
-		"--silkDaemonPidPath", silkDaemonPidFile)
+		"--silkDaemonPidPath", silkDaemonPidFile,
+		"--iptablesLockFile", "/tmp/someLockWhoReallyCares.lock")
 	session, err := gexec.Start(startCmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).NotTo(HaveOccurred())
 	return session
