@@ -58,4 +58,5 @@ files:
   - code.cloudfoundry.org/silk/vendor/gopkg.in/validator.v2/*.go # gosub
   - github.com/coreos/go-iptables/iptables/*.go # gosub
   - lib/rules/*.go # gosub
+  - silk-daemon-bootstrap/*.go # gosub
   - silk-daemon-shutdown/*.go # gosub
