@@ -97,3 +97,6 @@
 [submodule "src/code.cloudfoundry.org/filelock"]
 	path = src/code.cloudfoundry.org/filelock
 	url = https://github.com/cloudfoundry/filelock.git
+[submodule "src/github.com/golang/protobuf"]
+	path = src/github.com/golang/protobuf
+	url = https://github.com/golang/protobuf
