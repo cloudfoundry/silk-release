@@ -81,13 +81,13 @@ else
   dir="${dir#./}"
   for package in "${serial_packages[@]}"; do
     if [[ "${dir##$package}" != "${dir}" ]]; then
-      ginkgo -r -randomizeAllSpecs -randomizeSuites -failFast \
+      ginkgo -r --race -randomizeAllSpecs -randomizeSuites -failFast \
         -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
         "${@}"
       exit $?
     fi
   done
-  ginkgo -r -p -randomizeAllSpecs -randomizeSuites -failFast \
+  ginkgo -r -p --race -randomizeAllSpecs -randomizeSuites -failFast \
     -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
     "${@}"
 fi
