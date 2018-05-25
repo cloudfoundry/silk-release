@@ -6,6 +6,19 @@ set -o pipefail
 cd $(dirname $0)/..
 export GOPATH=$PWD
 
+declare -a serial_packages=(
+    "src/cni-teardown"
+    "src/cni-wrapper-plugin"
+    "src/vxlan-policy-agent"
+    "src/silk-daemon-shutdown"
+    "src/silk-daemon-bootstrap"
+    )
+
+declare -a ignore_packages=(
+    "src/silk-ctl-utils"
+    "src/testsupport"
+    )
+
 function bootDB {
   db=$1
 
@@ -21,14 +34,13 @@ function bootDB {
   fi
 
   echo -n "booting $db"
-  eval "$launchDB"
-  trycount=0
-  for i in `seq 1 30`; do
+  eval "${launchDB}"
+  for _ in $(seq 1 60); do
     set +e
-    eval "$testConnection"
+    eval "${testConnection}"
     exitcode=$?
     set -e
-    if [ $exitcode -eq 0 ]; then
+    if [ ${exitcode} -eq 0 ]; then
       echo "connection established to $db"
       return 0
     fi
@@ -39,27 +51,27 @@ function bootDB {
   exit 1
 }
 
-# go install ./vendor/github.com/onsi/ginkgo/ginkgo
+bootDB ${DB}
 
-bootDB $DB
+# get all git submodule paths | print only the path without the extra info | cut the "package root" for go | deduplicate
+declare -a git_modules=($(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | cut -d'/' -f1,2 | sort -u))
 
-declare -a packages=(
-   "src/iptables-logger"
-   "src/lib"
-   "src/netmon"
-   )
+declare -a packages=($(ls -d src/*))
 
- declare -a serial_packages=(
-   "src/cni-teardown"
-   "src/cni-wrapper-plugin"
-   "src/vxlan-policy-agent"
-   "src/silk-daemon-shutdown"
-   "src/silk-daemon-bootstrap"
-   )
+# filter out git_modules from packages
+for i in "${git_modules[@]}"; do
+  packages=(${packages[@]//*$i*})
+done
 
-# ginkgo -r -p --race -randomizeAllSpecs -randomizeSuites \
-#   -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
-#   ${@}
+# filter out serial_packages from packages
+for i in "${serial_packages[@]}"; do
+  packages=(${packages[@]//*$i*})
+done
+
+# filter out ignore_packages from packages
+for i in "${ignore_packages[@]}"; do
+  packages=(${packages[@]//*$i*})
+done
 
 if [ "${1:-""}" = "" ]; then
   for dir in "${packages[@]}"; do
