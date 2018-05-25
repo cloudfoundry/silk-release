@@ -14,11 +14,6 @@ declare -a serial_packages=(
     "src/silk-daemon-bootstrap"
     )
 
-declare -a ignore_packages=(
-    "src/silk-ctl-utils"
-    "src/testsupport"
-    )
-
 function bootDB {
   db=$1
 
@@ -56,7 +51,7 @@ bootDB ${DB}
 # get all git submodule paths | print only the path without the extra info | cut the "package root" for go | deduplicate
 declare -a git_modules=($(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | cut -d'/' -f1,2 | sort -u))
 
-declare -a packages=($(ls -d src/*))
+declare -a packages=($(find src -type f -name "*_test.go" | cut -d'/' -f1,2 | sort -u))
 
 # filter out git_modules from packages
 for i in "${git_modules[@]}"; do
@@ -65,11 +60,6 @@ done
 
 # filter out serial_packages from packages
 for i in "${serial_packages[@]}"; do
-  packages=(${packages[@]//*$i*})
-done
-
-# filter out ignore_packages from packages
-for i in "${ignore_packages[@]}"; do
   packages=(${packages[@]//*$i*})
 done
 
