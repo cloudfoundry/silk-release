@@ -3,17 +3,18 @@ package integration_test
 import (
 	"os/exec"
 
+	"io/ioutil"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/gbytes"
+	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
-	"os"
-	"io/ioutil"
-	"strconv"
-	"net/http"
-	"time"
-	"strings"
 )
 
 var (
@@ -73,7 +74,7 @@ var _ = Describe("Teardown", func() {
 		Expect(ioutil.WriteFile(tempPidFile.Name(), []byte(strconv.Itoa(sleepCommand.Process.Pid)+"\n"), 0777)).To(Succeed())
 	})
 
-	PContext("when the servers eventually shutdown", func() {
+	Context("when the servers eventually shutdown", func() {
 		BeforeEach(func() {
 			fakeRepServer.AppendHandlers(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 				go func() {
@@ -89,7 +90,6 @@ var _ = Describe("Teardown", func() {
 		})
 
 		It("kills the silk-daemon and pings the silk daemon until it stops responding", func() {
-			Skip("Due to the lack of lock on URL() this test causes a data race to be detected. While not a real problem we will need to PR a fix. See: https://github.com/onsi/gomega/blob/master/ghttp/test_server.go#L193")
 			session := runTeardown(fakeRepServer.URL(), fakeSilkDaemonServer.URL(), tempPidFile.Name())
 			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(0))
 
