@@ -194,17 +194,4 @@ var _ = Describe("Rules", func() {
 			}))
 		})
 	})
-
-	Describe("NewIngressMarkAllowRule", func() {
-		It("creates a jump rule for traffic from the overlay with a 0x0 mark", func() {
-			jumpRule := rules.NewIngressMarkAllowRule(8080, "10.255.32.32")
-			Expect(jumpRule).To(Equal(rules.IPTablesRule{
-				"-p", "tcp",
-				"-i", "silk-vtep",
-				"-m", "mark", "--mark", "0x0",
-				"-m", "iprange", "--dst-range", "10.255.32.32", "--dport", "8080",
-				"--jump", "ACCEPT",
-			}))
-		})
-	})
 })

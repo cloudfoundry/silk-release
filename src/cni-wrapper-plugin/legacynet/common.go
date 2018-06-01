@@ -20,6 +20,7 @@ func initChains(iptables rules.IPTablesAdapter, fullRules []IpTablesFullChain) e
 				return fmt.Errorf("appending rule to INPUT chain: %s", err)
 			}
 		} else if rule.ParentChain != "" {
+
 			err = iptables.BulkInsert(rule.Table, rule.ParentChain, 1, rule.JumpConditions...)
 			if err != nil {
 				return fmt.Errorf("inserting rule: %s", err)

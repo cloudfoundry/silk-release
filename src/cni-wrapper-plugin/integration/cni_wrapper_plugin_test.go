@@ -514,13 +514,12 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Eventually(session).Should(gexec.Exit(0))
 
 				By("checking that a netin chain was created for the container")
-				natRules := AllIPTablesRules("nat")
-				Expect(natRules).To(ContainElement(`-N ` + netinChainName))
-				Expect(natRules).To(ContainElement(`-A PREROUTING -j ` + netinChainName))
+				Expect(AllIPTablesRules("nat")).To(ContainElement(`-N ` + netinChainName))
+				Expect(AllIPTablesRules("nat")).To(ContainElement(`-A PREROUTING -j ` + netinChainName))
 
 				By("checking that port forwarding rules were added to the netin chain")
-				Expect(natRules).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -p tcp -m tcp --dport 1000 -j DNAT --to-destination 1.2.3.4:1001"))
-				Expect(natRules).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -p tcp -m tcp --dport 2000 -j DNAT --to-destination 1.2.3.4:2001"))
+				Expect(AllIPTablesRules("nat")).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -p tcp -m tcp --dport 1000 -j DNAT --to-destination 1.2.3.4:1001"))
+				Expect(AllIPTablesRules("nat")).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -p tcp -m tcp --dport 2000 -j DNAT --to-destination 1.2.3.4:2001"))
 			})
 
 			It("creates mark rules for each port mapping rule", func() {
@@ -529,26 +528,14 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Eventually(session).Should(gexec.Exit(0))
 
 				By("checking that a netin chain was created for the container")
-				mangleRules := AllIPTablesRules("mangle")
-				Expect(mangleRules).To(ContainElement(`-N ` + netinChainName))
-				Expect(mangleRules).To(ContainElement(`-A PREROUTING -j ` + netinChainName))
+				Expect(AllIPTablesRules("mangle")).To(ContainElement(`-N ` + netinChainName))
+				Expect(AllIPTablesRules("mangle")).To(ContainElement(`-A PREROUTING -j ` + netinChainName))
 
 				By("checking that mark rules were added to the netin chain")
-				Expect(mangleRules).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -i " + underlayName1 + " -p tcp -m tcp --dport 1000 -j MARK --set-xmark 0xffff0000/0xffffffff"))
-				Expect(mangleRules).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -i " + underlayName1 + " -p tcp -m tcp --dport 2000 -j MARK --set-xmark 0xffff0000/0xffffffff"))
-				Expect(mangleRules).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -i " + underlayName2 + " -p tcp -m tcp --dport 1000 -j MARK --set-xmark 0xffff0000/0xffffffff"))
-				Expect(mangleRules).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -i " + underlayName2 + " -p tcp -m tcp --dport 2000 -j MARK --set-xmark 0xffff0000/0xffffffff"))
-			})
-
-			It("creates an ingress mark allow rule", func() {
-				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-				Expect(err).NotTo(HaveOccurred())
-				Eventually(session).Should(gexec.Exit(0))
-
-				By("checking that ingress mark allow rules were added to the netin chain")
-				filterRules := AllIPTablesRules("filter")
-				Expect(filterRules).To(ContainElement("-A " + netinChainName + " -i silk-vtep -p tcp -m mark --mark 0x0 -m iprange --dst-range 1.2.3.4-1.2.3.4 -m tcp --dport 1001 -j ACCEPT"))
-				Expect(filterRules).To(ContainElement("-A " + netinChainName + " -i silk-vtep -p tcp -m mark --mark 0x0 -m iprange --dst-range 1.2.3.4-1.2.3.4 -m tcp --dport 2001 -j ACCEPT"))
+				Expect(AllIPTablesRules("mangle")).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -i " + underlayName1 + " -p tcp -m tcp --dport 1000 -j MARK --set-xmark 0xffff0000/0xffffffff"))
+				Expect(AllIPTablesRules("mangle")).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -i " + underlayName1 + " -p tcp -m tcp --dport 2000 -j MARK --set-xmark 0xffff0000/0xffffffff"))
+				Expect(AllIPTablesRules("mangle")).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -i " + underlayName2 + " -p tcp -m tcp --dport 1000 -j MARK --set-xmark 0xffff0000/0xffffffff"))
+				Expect(AllIPTablesRules("mangle")).To(ContainElement("-A " + netinChainName + " -d 10.244.2.3/32 -i " + underlayName2 + " -p tcp -m tcp --dport 2000 -j MARK --set-xmark 0xffff0000/0xffffffff"))
 			})
 
 			Context("when temporary.underlay_interface_names is provided", func() {

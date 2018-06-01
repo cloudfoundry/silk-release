@@ -41,14 +41,6 @@ func (m *NetIn) defaultNetInRules(containerHandle string) []IpTablesFullChain {
 				{"--jump", chain},
 			},
 		},
-		{
-			Table:       "filter",
-			ParentChain: "FORWARD",
-			ChainName:   chain,
-			JumpConditions: []rules.IPTablesRule{
-				{"--jump", chain},
-			},
-		},
 	}
 }
 
@@ -85,14 +77,6 @@ func (m *NetIn) AddRule(containerHandle string, hostPort, containerPort int, hos
 			ChainName:   chain,
 			Rules: []rules.IPTablesRule{
 				rules.NewPortForwardingRule(hostPort, containerPort, hostIP, containerIP),
-			},
-		},
-		{
-			Table:       "filter",
-			ParentChain: "FORWARD",
-			ChainName:   chain,
-			Rules: []rules.IPTablesRule{
-				rules.NewIngressMarkAllowRule(containerPort, containerIP),
 			},
 		},
 		{

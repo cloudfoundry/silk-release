@@ -310,21 +310,11 @@ func NewNetOutDefaultRejectRule() IPTablesRule {
 	}
 }
 
-func NewOverlayAccessMarkRule() IPTablesRule {
-	return IPTablesRule{
+func NewOverlayAccessMarkRule() []string {
+	return []string{
 		"-o", "silk-vtep",
 		"-j", "MARK",
 		"--set-mark", "0x0/0xffffffff",
-	}
-}
-
-func NewIngressMarkAllowRule(containerPort int, containerIP string) IPTablesRule {
-	return IPTablesRule{
-		"-p", "tcp",
-		"-i", "silk-vtep",
-		"-m", "mark", "--mark", "0x0",
-		"-m", "iprange", "--dst-range", containerIP, "--dport", strconv.Itoa(containerPort),
-		"--jump", "ACCEPT",
 	}
 }
 
