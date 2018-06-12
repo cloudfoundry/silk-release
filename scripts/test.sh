@@ -7,11 +7,10 @@ cd $(dirname $0)/..
 export GOPATH=$PWD
 
 declare -a serial_packages=(
-    "src/cni-teardown"
-    "src/cni-wrapper-plugin"
-    "src/vxlan-policy-agent"
-    "src/silk-daemon-shutdown"
-    "src/silk-daemon-bootstrap"
+    "src/cni-wrapper-plugin/integration"
+    "src/vxlan-policy-agent/integration"
+    "src/silk-daemon-shutdown/integration"
+    "src/silk-daemon-bootstrap/integration"
     )
 
 function bootDB {
@@ -51,7 +50,7 @@ bootDB ${DB}
 # get all git submodule paths | print only the path without the extra info | cut the "package root" for go | deduplicate
 declare -a git_modules=($(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | cut -d'/' -f1,2 | sort -u))
 
-declare -a packages=($(find src -type f -name "*_test.go" | cut -d'/' -f1,2 | sort -u))
+declare -a packages=($(find src -type f -name "*_test.go" | xargs -L 1 -I{} dirname {} | sort -u))
 
 # filter out git_modules from packages
 for i in "${git_modules[@]}"; do
@@ -66,14 +65,14 @@ done
 if [ "${1:-""}" = "" ]; then
   for dir in "${packages[@]}"; do
     pushd "$dir"
-      ginkgo -r -p --race -randomizeAllSpecs -randomizeSuites \
+      ginkgo -p --race -randomizeAllSpecs -randomizeSuites \
         -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
         ${@:2}
     popd
   done
   for dir in "${serial_packages[@]}"; do
     pushd "$dir"
-      ginkgo -r --race -randomizeAllSpecs -randomizeSuites -failFast \
+      ginkgo --race -randomizeAllSpecs -randomizeSuites -failFast \
         -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
         ${@:2}
     popd
@@ -83,13 +82,13 @@ else
   dir="${dir#./}"
   for package in "${serial_packages[@]}"; do
     if [[ "${dir##$package}" != "${dir}" ]]; then
-      ginkgo -r --race -randomizeAllSpecs -randomizeSuites -failFast \
+      ginkgo --race -randomizeAllSpecs -randomizeSuites -failFast \
         -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
         "${@}"
       exit $?
     fi
   done
-  ginkgo -r -p --race -randomizeAllSpecs -randomizeSuites -failFast \
+  ginkgo -p --race -randomizeAllSpecs -randomizeSuites -failFast \
     -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
     "${@}"
 fi
