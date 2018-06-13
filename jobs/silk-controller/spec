@@ -3,7 +3,6 @@ name: silk-controller
 
 templates:
   bpm.yml.erb: config/bpm.yml
-  pre-start.erb: bin/pre-start
   post-start.erb: bin/post-start
   silk-controller.json.erb: config/silk-controller.json
   ca.crt.erb: config/certs/ca.crt
