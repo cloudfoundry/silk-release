@@ -2,9 +2,9 @@
 name: silk-controller
 
 templates:
+  bpm.yml.erb: config/bpm.yml
   pre-start.erb: bin/pre-start
-  silk-controller_ctl.erb: bin/silk-controller_ctl
-  silk-controller_as_vcap.erb: bin/silk-controller_as_vcap
+  post-start.erb: bin/post-start
   silk-controller.json.erb: config/silk-controller.json
   ca.crt.erb: config/certs/ca.crt
   server.crt.erb: config/certs/server.crt

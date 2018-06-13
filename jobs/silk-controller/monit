@@ -1,8 +1,8 @@
 <% unless p("disable") %>
 check process silk-controller
-  with pidfile /var/vcap/sys/run/silk-controller/silk-controller.pid
-  start program "/var/vcap/jobs/silk-controller/bin/silk-controller_ctl start"
-  stop program "/var/vcap/jobs/silk-controller/bin/silk-controller_ctl stop"
+  with pidfile /var/vcap/sys/run/bpm/silk-controller/silk-controller.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start silk-controller"
+  stop program "/var/vcap/jobs/bpm/bin/bpm stop silk-controller"
   group vcap
   if failed
      host 127.0.0.1
