@@ -1,10 +1,6 @@
 #!/bin/bash -eu
 
 <% unless p("disable") %>
-CERTS_DIR=/var/vcap/jobs/vxlan-policy-agent/config/certs
-
-chmod 600 "${CERTS_DIR}"/*
-
 # Completely cleanup IPTables Filter and NAT tables
 iptables-restore <( echo '
 *filter

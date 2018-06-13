@@ -1,8 +1,9 @@
 ---
 name: vxlan-policy-agent
 templates:
+  bpm.yml.erb: config/bpm.yml
   pre-start.erb: bin/pre-start
-  vxlan-policy-agent_ctl.erb: bin/vxlan-policy-agent_ctl
+  post-start.erb: bin/post-start
   vxlan-policy-agent.json.erb: config/vxlan-policy-agent.json
   ca.crt.erb: config/certs/ca.crt
   client.crt.erb: config/certs/client.crt

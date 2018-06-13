@@ -1,0 +1,10 @@
+---
+processes:
+  - name: vxlan-policy-agent
+    executable: "/var/vcap/packages/vxlan-policy-agent/bin/vxlan-policy-agent"
+    args:
+    - "-config-file=/var/vcap/jobs/vxlan-policy-agent/config/vxlan-policy-agent.json"
+    additional_volumes:
+    - path: /var/vcap/data/container-metadata
+    - path: /var/vcap/data/garden-cni
+      writable: true
