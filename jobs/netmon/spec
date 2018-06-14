@@ -2,7 +2,7 @@
 name: netmon
 
 templates:
-  netmon_ctl.erb: bin/netmon_ctl
+  bpm.yml.erb: config/bpm.yml
   netmon.json.erb: config/netmon.json
 
 packages:

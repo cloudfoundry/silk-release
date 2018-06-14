@@ -1,0 +1,8 @@
+---
+processes:
+  - name: netmon
+    executable: "/var/vcap/packages/netmon/bin/netmon"
+    args:
+    - "-config-file=/var/vcap/jobs/netmon/config/netmon.json"
+    unsafe:
+      privileged: true
