@@ -1,5 +1,10 @@
 #!/bin/bash -eu
 
+
+<% unless p("disable") %>
+source /var/vcap/packages/silk-ctl-utils/ctl_util.sh
+
 URL=127.0.0.1:<%= p("listen_port") %>
 TIMEOUT=20
-wait_for_server_to_become_healthy "${URL}" "${TIMEOUT}"
+exit $(wait_for_server_to_become_healthy "${URL}" "${TIMEOUT}")
+<% end %>

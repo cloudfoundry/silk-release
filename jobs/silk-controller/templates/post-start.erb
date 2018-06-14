@@ -6,5 +6,5 @@ source /var/vcap/packages/silk-ctl-utils/ctl_util.sh
 export URL="127.0.0.1:<%= p("debug_port") %>/log-level"
 export TIMEOUT=25
 
-wait_for_server_to_become_healthy "${URL}" "${TIMEOUT}"
+exit $(wait_for_server_to_become_healthy "${URL}" "${TIMEOUT}")
 <% end %>
