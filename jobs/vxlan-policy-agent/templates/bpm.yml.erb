@@ -6,5 +6,8 @@ processes:
     - "-config-file=/var/vcap/jobs/vxlan-policy-agent/config/vxlan-policy-agent.json"
     additional_volumes:
     - path: /var/vcap/data/container-metadata
+      writable: true
     - path: /var/vcap/data/garden-cni
       writable: true
+    unsafe:
+      privileged: true
