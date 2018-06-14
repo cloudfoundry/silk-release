@@ -2,9 +2,10 @@
 name: silk-daemon
 
 templates:
+  bpm.yml.erb: config/bpm.yml
   drain.erb: bin/drain
   pre-start.erb: bin/pre-start
-  silk-daemon_ctl.erb: bin/silk-daemon_ctl
+  post-start.erb: bin/post-start
   ca.crt.erb: config/certs/ca.crt
   client.crt.erb: config/certs/client.crt
   client.key.erb: config/certs/client.key

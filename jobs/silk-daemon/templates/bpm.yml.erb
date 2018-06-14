@@ -1,0 +1,8 @@
+---
+processes:
+  - name: silk-daemon
+    executable: "/var/vcap/packages/silk-daemon/bin/silk-daemon"
+    args:
+    - "-config=/var/vcap/jobs/silk-daemon/config/client-config.json"
+    unsafe:
+      privileged: true

@@ -1,0 +1,5 @@
+#!/bin/bash -eu
+
+URL=127.0.0.1:<%= p("listen_port") %>
+TIMEOUT=20
+wait_for_server_to_become_healthy "${URL}" "${TIMEOUT}"
