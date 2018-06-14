@@ -1,7 +1,7 @@
 <% unless p("disable") %>
 check process netmon
-  with pidfile /var/vcap/sys/run/netmon/netmon.pid
-  start program "/var/vcap/jobs/netmon/bin/netmon_ctl start"
-  stop program "/var/vcap/jobs/netmon/bin/netmon_ctl stop"
+  with pidfile /var/vcap/sys/run/bpm/netmon/netmon.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start netmon"
+  stop program "/var/vcap/jobs/bpm/bin/bpm stop netmon"
   group vcap
 <% end %>
