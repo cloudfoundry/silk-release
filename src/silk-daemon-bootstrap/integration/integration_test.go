@@ -37,14 +37,14 @@ var _ = Describe("Bootstrap", func() {
 				"-P INPUT ACCEPT",
 				"-P FORWARD ACCEPT",
 				"-P OUTPUT ACCEPT",
-				ContainSubstring("-A OUTPUT -o silk-vtep -j MARK --set-xmark 0x0/0xffffffff"),
+				ContainSubstring("-A OUTPUT -o silk-vtep -j MARK --set-xmark 0xffff/0xffffffff"),
 				"",
 			))
 		})
 
 		Context("when the iptables already exists", func() {
 			BeforeEach(func() {
-				mustSucceed("iptables", "-A", "OUTPUT", "-o", "silk-vtep", "-j", "MARK", "--set-xmark", "0x0/0xffffffff")
+				mustSucceed("iptables", "-A", "OUTPUT", "-o", "silk-vtep", "-j", "MARK", "--set-xmark", "0xffff/0xffffffff")
 			})
 
 			It("runs successfully", func() {
@@ -56,7 +56,7 @@ var _ = Describe("Bootstrap", func() {
 					"-P INPUT ACCEPT",
 					"-P FORWARD ACCEPT",
 					"-P OUTPUT ACCEPT",
-					ContainSubstring("-A OUTPUT -o silk-vtep -j MARK --set-xmark 0x0/0xffffffff"),
+					ContainSubstring("-A OUTPUT -o silk-vtep -j MARK --set-xmark 0xffff/0xffffffff"),
 					"",
 				))
 			})

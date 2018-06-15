@@ -314,7 +314,7 @@ func NewOverlayAccessMarkRule() []string {
 	return []string{
 		"-o", "silk-vtep",
 		"-j", "MARK",
-		"--set-mark", "0x0/0xffffffff",
+		"--set-mark", "0xffff/0xffffffff",
 	}
 }
 
