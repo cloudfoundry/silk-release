@@ -181,6 +181,10 @@ var _ = Describe("VXLAN Policy Agent", func() {
 				Expect(iptablesFilterRules()).NotTo(MatchRegexp(`.*--set-xmark.*\n.*--set-xmark.*`))
 			})
 
+			It("writes a 0xffff mark rule for a container", func() {
+				Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-d 10.255.100.21/32 -p tcp -m mark --mark 0xffff -j ACCEPT`))
+			})
+
 			It("emits metrics about durations", func() {
 				gatherMetricNames := func() map[string]bool {
 					events := fakeMetron.AllEvents()

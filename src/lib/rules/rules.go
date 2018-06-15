@@ -53,6 +53,15 @@ func NewNetOutJumpConditions(hostInterfaceNames []string, hostIP, forwardChainNa
 	return jumpConditions
 }
 
+func NewMarkAllowRuleNoComment(destinationIP, protocol string, tag string) IPTablesRule {
+	return IPTablesRule{
+		"-d", destinationIP,
+		"-p", protocol,
+		"-m", "mark", "--mark", fmt.Sprintf("0x%s", tag),
+		"--jump", "ACCEPT",
+	}
+}
+
 func NewMarkAllowRule(destinationIP, protocol string, startPort, endPort int, tag string, sourceAppGUID, destinationAppGUID string) IPTablesRule {
 	return AppendComment(IPTablesRule{
 		"-d", destinationIP,

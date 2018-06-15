@@ -169,6 +169,18 @@ var _ = Describe("Planner", func() {
 						"--jump", "ACCEPT",
 						"-m", "comment", "--comment", "src:some-app-guid_dst:some-other-app-guid",
 					},
+					{
+						"-d", "10.255.1.2",
+						"-p", "tcp",
+						"-m", "mark", "--mark", "0xFFFF",
+						"--jump", "ACCEPT",
+					},
+					{
+						"-d", "10.255.1.3",
+						"-p", "tcp",
+						"-m", "mark", "--mark", "0xFFFF",
+						"--jump", "ACCEPT",
+					},
 					// set tags on all outgoing packets, regardless of local vs remote
 					{
 						"--source", "10.255.1.2",
@@ -253,7 +265,7 @@ var _ = Describe("Planner", func() {
 		It("returns all mark set rules before any mark filter rules", func() {
 			rulesWithChain, err := policyPlanner.GetRulesAndChain()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rulesWithChain.Rules).To(HaveLen(4))
+			Expect(rulesWithChain.Rules).To(HaveLen(6))
 			Expect(rulesWithChain.Rules[0]).To(ContainElement("--set-xmark"))
 			Expect(rulesWithChain.Rules[1]).To(ContainElement("--set-xmark"))
 			Expect(rulesWithChain.Rules[2]).To(ContainElement("ACCEPT"))
@@ -328,7 +340,7 @@ var _ = Describe("Planner", func() {
 			It("writes only one set mark rule", func() {
 				rulesWithChain, err := policyPlanner.GetRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rulesWithChain.Rules).To(HaveLen(3))
+				Expect(rulesWithChain.Rules).To(HaveLen(5))
 				Expect(rulesWithChain.Rules[0]).To(ContainElement("--set-xmark"))
 				Expect(rulesWithChain.Rules[1]).To(ContainElement("ACCEPT"))
 				Expect(rulesWithChain.Rules[2]).To(ContainElement("ACCEPT"))
@@ -373,7 +385,7 @@ var _ = Describe("Planner", func() {
 			It("the order of the rules is not affected", func() {
 				rulesWithChain, err := policyPlanner.GetRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rulesWithChain.Rules).To(HaveLen(8))
+				Expect(rulesWithChain.Rules).To(HaveLen(12))
 				Expect(rulesWithChain.Rules[0]).To(ContainElement("10.255.1.2"))
 				Expect(rulesWithChain.Rules[1]).To(ContainElement("10.255.1.4"))
 				Expect(rulesWithChain.Rules[2]).To(ContainElement("10.255.1.3"))
@@ -385,13 +397,26 @@ var _ = Describe("Planner", func() {
 			BeforeEach(func() {
 				policyClient.GetPoliciesByIDReturns([]policy_client.Policy{}, nil)
 			})
-			It("returns an chain with no rules", func() {
+			It("returns an chain with only the ingress rules", func() {
 				rulesWithChain, err := policyPlanner.GetRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(policyClient.GetPoliciesByIDCallCount()).To(Equal(1))
 
 				Expect(rulesWithChain.Chain).To(Equal(chain))
-				Expect(rulesWithChain.Rules).To(HaveLen(0))
+				Expect(rulesWithChain.Rules).To(ConsistOf([]rules.IPTablesRule{
+					{
+						"-d", "10.255.1.2",
+						"-p", "tcp",
+						"-m", "mark", "--mark", "0xFFFF",
+						"--jump", "ACCEPT",
+					},
+					{
+						"-d", "10.255.1.3",
+						"-p", "tcp",
+						"-m", "mark", "--mark", "0xFFFF",
+						"--jump", "ACCEPT",
+					},
+				}))
 			})
 		})
 
@@ -428,7 +453,7 @@ var _ = Describe("Planner", func() {
 				Expect(logger).To(gbytes.Say("container-metadata-policy-group-id.*container-id-fruit.*Container.*metadata.*policy_group_id.*CloudController.*restage"))
 
 				Expect(rulesWithChain.Chain).To(Equal(chain))
-				Expect(rulesWithChain.Rules).To(HaveLen(4))
+				Expect(rulesWithChain.Rules).To(HaveLen(6))
 			})
 		})
 

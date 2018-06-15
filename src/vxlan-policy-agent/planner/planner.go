@@ -163,6 +163,25 @@ func (p *VxlanPolicyPlanner) GetRulesAndChain() (enforcer.RulesWithChain, error)
 			}
 		}
 	}
+
+	var containerIPs []string
+	for _, ips := range containers {
+		containerIPs = append(containerIPs, ips...)
+	}
+
+	ips := sort.StringSlice(containerIPs)
+	sort.Sort(ips)
+	for _, containerIP := range ips {
+		filterRuleset = append(
+			filterRuleset,
+			rules.NewMarkAllowRuleNoComment(
+				containerIP,
+				"tcp",
+				"FFFF",
+			),
+		)
+	}
+
 	ruleset := append(marksRuleset, filterRuleset...)
 	p.Logger.Debug("generated-rules", lager.Data{"rules": ruleset})
 	return enforcer.RulesWithChain{
