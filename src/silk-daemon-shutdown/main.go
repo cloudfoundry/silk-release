@@ -1,12 +1,9 @@
 package main
 
 import (
-	"code.cloudfoundry.org/filelock"
-	"code.cloudfoundry.org/lager"
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/coreos/go-iptables/iptables"
 	"io/ioutil"
 	"lib/rules"
 	"log"
@@ -19,6 +16,10 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"code.cloudfoundry.org/filelock"
+	"code.cloudfoundry.org/lager"
+	"github.com/coreos/go-iptables/iptables"
 )
 
 var logger lager.Logger

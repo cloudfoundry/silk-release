@@ -133,7 +133,7 @@ var _ = Describe("Teardown", func() {
 			session := runTeardown(fakeRepServer.URL(), fakeSilkDaemonServer.URL(), tempPidFile.Name())
 			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(0))
 
-			Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring("-A OUTPUT -o silk-vtep -j MARK --set-xmark 0x0/0xffffffff")))
+			Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring("-A OUTPUT -o silk-vtep -j MARK --set-xmark 0xffff/0xffffffff")))
 		})
 	})
 
