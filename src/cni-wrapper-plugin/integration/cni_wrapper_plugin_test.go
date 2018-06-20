@@ -611,6 +611,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 				By("checking that the default forwarding rules are created for that container")
 				Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+					`-A ` + netoutChainName + ` -p tcp -m state --state INVALID -j DROP`,
 					`-A ` + netoutChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
 					`-A ` + netoutChainName + ` -j REJECT --reject-with icmp-port-unreachable`,
 				}))

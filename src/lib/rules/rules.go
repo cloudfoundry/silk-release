@@ -253,6 +253,13 @@ func NewInputDefaultRejectRule() IPTablesRule {
 	}
 }
 
+func NewNetOutInvalidRule() IPTablesRule {
+	return IPTablesRule{
+		"-p", "tcp", "-m", "state", "--state", "INVALID",
+		"--jump", "DROP",
+	}
+}
+
 func NewNetOutRelatedEstablishedRule() IPTablesRule {
 	return IPTablesRule{
 		"-m", "state", "--state", "RELATED,ESTABLISHED",

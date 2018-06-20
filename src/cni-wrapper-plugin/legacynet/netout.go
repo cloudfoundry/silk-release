@@ -111,6 +111,7 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 			forwardChainName,
 			rules.NewNetOutJumpConditions(m.HostInterfaceNames, m.ContainerIP, forwardChainName),
 			[]rules.IPTablesRule{
+				rules.NewNetOutInvalidRule(),
 				rules.NewNetOutRelatedEstablishedRule(),
 				rules.NewNetOutDefaultRejectRule(),
 			},

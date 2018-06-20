@@ -133,6 +133,8 @@ var _ = Describe("Netout", func() {
 			Expect(table).To(Equal("filter"))
 			Expect(chain).To(Equal("netout-some-container-handle"))
 			Expect(rulespec).To(Equal([]rules.IPTablesRule{
+				{"-p", "tcp", "-m", "state", "--state", "INVALID",
+					"--jump", "DROP"},
 				{"-m", "state", "--state", "RELATED,ESTABLISHED",
 					"--jump", "ACCEPT"},
 				{"--jump", "REJECT",
