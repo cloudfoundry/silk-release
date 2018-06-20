@@ -1,0 +1,14 @@
+<%=
+  require 'json'
+
+  toRender = {
+    'policy_server_url' => p('policy_server_url'),
+    'policy_server_ca_cert_file' => '/var/vcap/jobs/silk-daemon/config/certs/policy-agent/ca.crt',
+    'policy_client_cert_file' => '/var/vcap/jobs/silk-daemon/config/certs/policy-agent/client.crt',
+    'policy_client_key_file' => '/var/vcap/jobs/silk-daemon/config/certs/policy-agent/client.key',
+    'iptables_lock_file' => '/var/vcap/data/garden-cni/iptables.lock',
+    'single_ip_only' => p('single_ip_only')
+  }
+
+  JSON.pretty_generate(toRender)
+%>

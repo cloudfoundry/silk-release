@@ -14,6 +14,7 @@ import (
 //go:generate counterfeiter -o fakes/policy_client.go --fake-name PolicyClient . policyClient
 type policyClient interface {
 	GetPoliciesByID(ids ...string) ([]policy_client.Policy, error)
+	CreateOrGetTag(id, groupType string) (string, error)
 }
 
 //go:generate counterfeiter -o fakes/dstore.go --fake-name Dstore . dstore
@@ -171,13 +172,20 @@ func (p *VxlanPolicyPlanner) GetRulesAndChain() (enforcer.RulesWithChain, error)
 
 	ips := sort.StringSlice(containerIPs)
 	sort.Sort(ips)
+
+	ingressTag, err := p.PolicyClient.CreateOrGetTag("INGRESS_ROUTER", "router")
+	if err != nil {
+		p.Logger.Error("policy-client-get-ingress-tags", err)
+		return enforcer.RulesWithChain{}, err
+	}
+
 	for _, containerIP := range ips {
 		filterRuleset = append(
 			filterRuleset,
 			rules.NewMarkAllowRuleNoComment(
 				containerIP,
 				"tcp",
-				"FFFF",
+				ingressTag,
 			),
 		)
 	}

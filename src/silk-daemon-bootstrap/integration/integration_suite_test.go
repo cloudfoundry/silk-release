@@ -10,15 +10,25 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 
+	"code.cloudfoundry.org/cf-networking-helpers/testsupport"
+	"io/ioutil"
 	"testing"
 )
 
 var (
-	paths testPaths
+	certDir string
+	paths   testPaths
 )
 
 type testPaths struct {
-	BoostrapBin string
+	BoostrapBin           string
+	ServerCACertFile      string
+	OtherServerCACertFile string
+	ClientCACertFile      string
+	ServerCertFile        string
+	ServerKeyFile         string
+	ClientCertFile        string
+	ClientKeyFile         string
 }
 
 func TestIntegration(t *testing.T) {
@@ -28,6 +38,24 @@ func TestIntegration(t *testing.T) {
 
 var _ = SynchronizedBeforeSuite(func() []byte {
 	var err error
+	certDir, err = ioutil.TempDir("", "policy-server-certs")
+	Expect(err).NotTo(HaveOccurred())
+
+	certWriter, err := testsupport.NewCertWriter(certDir)
+	Expect(err).NotTo(HaveOccurred())
+
+	paths.ServerCACertFile, err = certWriter.WriteCA("server-ca")
+	Expect(err).NotTo(HaveOccurred())
+	paths.ServerCertFile, paths.ServerKeyFile, err = certWriter.WriteAndSign("server", "server-ca")
+	Expect(err).NotTo(HaveOccurred())
+
+	paths.ClientCACertFile, err = certWriter.WriteCA("client-ca")
+	Expect(err).NotTo(HaveOccurred())
+	paths.ClientCertFile, paths.ClientKeyFile, err = certWriter.WriteAndSign("client", "client-ca")
+	Expect(err).NotTo(HaveOccurred())
+
+	paths.OtherServerCACertFile, err = certWriter.WriteCA("other-server-ca")
+	Expect(err).NotTo(HaveOccurred())
 
 	fmt.Fprintf(GinkgoWriter, "building binary...")
 	paths.BoostrapBin, err = gexec.Build("silk-daemon-bootstrap")

@@ -2,6 +2,7 @@
 name: silk-daemon
 
 templates:
+  bootstrap-config.json.erb: config/bootstrap-config.json
   bpm.yml.erb: config/bpm.yml
   drain.erb: bin/drain
   pre-start.erb: bin/pre-start
@@ -10,6 +11,9 @@ templates:
   client.crt.erb: config/certs/client.crt
   client.key.erb: config/certs/client.key
   client-config.json.erb: config/client-config.json
+  policy-agent-ca.crt.erb: config/certs/policy-agent/ca.crt
+  policy-agent-client.crt.erb: config/certs/policy-agent/client.crt
+  policy-agent-client.key.erb: config/certs/policy-agent/client.key
 
 packages:
   - silk-daemon
@@ -18,6 +22,9 @@ packages:
 consumes:
 - name: cf_network
   type: cf_network
+
+- name: vpa
+  type: certificates
 
 properties:
   vtep_port:
@@ -78,3 +85,7 @@ properties:
   single_ip_only:
     description: "When true, this VM will get assigned exactly one IP address on the Silk network.  Use this to connect this VM to the Silk network without acquiring a whole block of addresses (as would be required for a Diego Cell)."
     default: false
+
+  policy_server_url:
+    description: "The policy server internal hostname and port"
+    default: https://policy-server.service.cf.internal:4003

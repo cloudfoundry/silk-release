@@ -23,6 +23,10 @@ import (
 )
 
 var logger lager.Logger
+const (
+	ChainDoesNotExistErrorText = "No chain/target/match by that name."
+	IngressChainName = "istio-ingress"
+)
 
 func main() {
 	if err := mainWithError(); err != nil {
@@ -93,13 +97,31 @@ func mainWithError() error {
 		Restorer: restorer,
 	}
 
-	overlayAccessMarkRule := rules.NewOverlayAccessMarkRule()
-	exists, err := lockedIPTables.Exists("filter", "OUTPUT", overlayAccessMarkRule)
-	if err == nil && exists {
-		return lockedIPTables.Delete("filter", "OUTPUT", overlayAccessMarkRule)
+	err = flushAndDeleteChain(lockedIPTables)
+	if err != nil {
+		if strings.Contains(err.Error(), ChainDoesNotExistErrorText) {
+			return nil
+		}
+		return err
 	}
 
 	return err
+}
+
+func flushAndDeleteChain(lockedIPTables *rules.LockedIPTables) error {
+	jumpRule := rules.IPTablesRule{
+		"-j", IngressChainName,
+	}
+	exists, _ := lockedIPTables.Exists("filter", "OUTPUT", jumpRule)
+	if exists {
+		lockedIPTables.Delete("filter", "OUTPUT", jumpRule)
+	}
+
+	err := lockedIPTables.ClearChain("filter", "istio-ingress")
+	if err != nil {
+		return err
+	}
+	return lockedIPTables.DeleteChain("filter", "istio-ingress")
 }
 
 func waitForServer(serverName string, serverUrl string, pollingTimeInSeconds int, maxAttempts int, pingTimeout int) (isServerUp bool, err error) {

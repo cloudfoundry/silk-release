@@ -13,6 +13,14 @@ packages:
   - vxlan-policy-agent
   - silk-ctl-utils
 
+provides:
+  - name: vpa
+    type: certificates
+    properties:
+    - ca_cert
+    - client_cert
+    - client_key
+
 properties:
   iptables_logging:
     description: "Enables iptables logging for container to container traffic. Logs to the kernel log."

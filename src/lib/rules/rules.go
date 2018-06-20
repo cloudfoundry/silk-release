@@ -326,11 +326,11 @@ func NewNetOutDefaultRejectRule() IPTablesRule {
 	}
 }
 
-func NewOverlayAccessMarkRule() []string {
-	return []string{
+func NewOverlayAccessMarkRule(tag string) IPTablesRule {
+	return IPTablesRule{
 		"-o", "silk-vtep",
 		"-j", "MARK",
-		"--set-mark", "0xffff/0xffffffff",
+		"--set-mark", fmt.Sprintf("0x%s", tag),
 	}
 }
 

@@ -132,6 +132,41 @@ var _ = Describe("InternalClient", func() {
 		})
 	})
 
+	Describe("CreateOrGetTag", func() {
+		BeforeEach(func() {
+			jsonClient.DoStub = func(method, route string, reqData, respData interface{}, token string) error {
+				respBytes := []byte(`{ "id": "SOME_ID", "type": "some_type", "tag": "1234" }`)
+				json.Unmarshal(respBytes, respData)
+				return nil
+			}
+		})
+		It("returns a tag", func() {
+			tag, err := client.CreateOrGetTag("SOME_ID", "some_type")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(tag).To(Equal("1234"))
+
+			Expect(jsonClient.DoCallCount()).To(Equal(1))
+			method, route, reqData, _, token := jsonClient.DoArgsForCall(0)
+			Expect(method).To(Equal("PUT"))
+			Expect(route).To(Equal("/networking/v1/internal/tags"))
+			Expect(reqData).To(Equal(policy_client.TagRequest{
+				ID:   "SOME_ID",
+				Type: "some_type",
+			}))
+			Expect(token).To(BeEmpty())
+		})
+
+		Context("when the json client fails", func() {
+			BeforeEach(func() {
+				jsonClient.DoReturns(errors.New("banana"))
+			})
+			It("returns the error", func() {
+				_, err := client.CreateOrGetTag("", "")
+				Expect(err).To(MatchError("banana"))
+			})
+		})
+	})
+
 	Describe("HealthCheck", func() {
 		BeforeEach(func() {
 			jsonClient.DoStub = func(method, route string, reqData, respData interface{}, token string) error {

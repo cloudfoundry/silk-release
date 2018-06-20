@@ -1,13 +1,26 @@
 package main
 
 import (
-	"code.cloudfoundry.org/filelock"
 	"flag"
-	"github.com/coreos/go-iptables/iptables"
+	"fmt"
+	policyClient "lib/policy_client"
 	"lib/rules"
 	"log"
-	"strconv"
+	"net/http"
+	"os"
+	"silk-daemon-bootstrap/config"
 	"sync"
+	"time"
+
+	"code.cloudfoundry.org/cf-networking-helpers/mutualtls"
+	"code.cloudfoundry.org/filelock"
+	"code.cloudfoundry.org/lager"
+	"github.com/coreos/go-iptables/iptables"
+)
+
+const (
+	ClientTimeoutSeconds = 5 * time.Second
+	IngressChainName = "istio-ingress"
 )
 
 func main() {
@@ -17,27 +30,86 @@ func main() {
 }
 
 func mainWithError() error {
-	iptablesLockFile := flag.String("iptablesLockFile", "", "path to iptablesLockFile")
-	singleIpOnlyFlag := flag.String("singleIpOnly", "false", "single ip mode")
+	configFilePath := flag.String("config", "", "path to config file")
 	flag.Parse()
 
-	var singleIpOnly bool
-
-	singleIpOnly, err := strconv.ParseBool(*singleIpOnlyFlag)
+	bootstrapConfig, err := config.New(*configFilePath)
 	if err != nil {
 		return err
 	}
 
-	if singleIpOnly {
-		ipTablesAdapter, err := createIpTablesAdapter(*iptablesLockFile)
+	logger := lager.NewLogger(fmt.Sprintf("%s.silk-daemon-bootstrap", "cfnetworking"))
+	logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.DEBUG))
+
+	if bootstrapConfig.SingleIPOnly {
+		internalClient, err := createPolicyClient(bootstrapConfig, logger.Session("policy-client"))
 		if err != nil {
 			return err
 		}
 
-		return addOverlayAccessMarkRule(ipTablesAdapter)
+		tag, err := getTagFromPolicyServer(internalClient)
+		if err != nil {
+			return err
+		}
+
+		ipTablesAdapter, err := createIpTablesAdapter(bootstrapConfig.IPTablesLockFile)
+		if err != nil {
+			return err
+		}
+
+		err = createNewChain(ipTablesAdapter)
+		if err != nil {
+			return err
+		}
+
+		return addOverlayAccessMarkRule(ipTablesAdapter, tag)
 	}
 
 	return nil
+}
+
+func createNewChain(ipTablesAdapter rules.IPTablesAdapter) error {
+	// NewChain only returns an error if the chain already exists, so we ignore it :(
+	ipTablesAdapter.NewChain("filter", IngressChainName)
+
+	jumpRule := rules.IPTablesRule{
+		"-j", IngressChainName,
+	}
+	exists, err := ipTablesAdapter.Exists("filter", "OUTPUT", jumpRule)
+	if err == nil && !exists {
+		return ipTablesAdapter.BulkInsert("filter", "OUTPUT", 1, jumpRule)
+	}
+
+	return err
+}
+
+
+func createPolicyClient(bootstrapConfig *config.SilkDaemonBootstrap, logger lager.Logger) (*policyClient.InternalClient, error) {
+	clientTLSConfig, err := mutualtls.NewClientTLSConfig(bootstrapConfig.PolicyClientCertFile, bootstrapConfig.PolicyClientKeyFile, bootstrapConfig.PolicyServerCACertFile)
+	if err != nil {
+		return nil, err
+	}
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: clientTLSConfig,
+		},
+		Timeout: ClientTimeoutSeconds,
+	}
+
+	return policyClient.NewInternal(
+		logger,
+		httpClient,
+		bootstrapConfig.PolicyServerURL,
+	), nil
+}
+
+func getTagFromPolicyServer(policyClient *policyClient.InternalClient) (string, error) {
+	tag, err := policyClient.CreateOrGetTag("INGRESS_ROUTER", "router")
+	if err != nil {
+		return "", err
+	}
+	return tag, nil
 }
 
 func createIpTablesAdapter(iptablesLockFile string) (rules.IPTablesAdapter, error) {
@@ -60,11 +132,22 @@ func createIpTablesAdapter(iptablesLockFile string) (rules.IPTablesAdapter, erro
 	return tables, nil
 }
 
-func addOverlayAccessMarkRule(iptables rules.IPTablesAdapter) error {
-	overlayAccessMarkRule := rules.NewOverlayAccessMarkRule()
-	exists, err := iptables.Exists("filter", "OUTPUT", overlayAccessMarkRule)
+func addOverlayAccessMarkRule(iptables rules.IPTablesAdapter, tag string) error {
+	overlayAccessMarkRule := rules.NewOverlayAccessMarkRule(tag)
+	exists, err := iptables.Exists("filter", IngressChainName, overlayAccessMarkRule)
 	if err == nil && !exists {
-		return iptables.BulkInsert("filter", "OUTPUT", 1, overlayAccessMarkRule)
+		err = iptables.BulkAppend("filter", IngressChainName, overlayAccessMarkRule)
+		if err != nil {
+			return err
+		}
+	}
+	overlayAccessAllowRule := rules.IPTablesRule{ "-o", "silk-vtep", "-j", "ACCEPT" }
+	exists, err = iptables.Exists("filter", IngressChainName, overlayAccessAllowRule)
+	if err == nil && !exists {
+		err = iptables.BulkAppend("filter", IngressChainName, overlayAccessAllowRule)
+		if err != nil {
+			return err
+		}
 	}
 
 	return err

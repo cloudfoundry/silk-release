@@ -10,11 +10,9 @@ set +e
   -config=/var/vcap/jobs/silk-daemon/config/client-config.json
 set -e
 
+<% if p('single_ip_only') %>
 # run bootstrapper
-set +e
 /var/vcap/packages/silk-daemon/bin/silk-daemon-bootstrap \
-  --iptablesLockFile="/var/vcap/data/garden-cni/iptables.lock" \
-  --singleIpOnly=<%= p('single_ip_only') %>
-set -e
-  
+    --config=/var/vcap/jobs/silk-daemon/config/bootstrap-config.json
+<% end %>
 <% end %>

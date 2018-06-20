@@ -194,4 +194,15 @@ var _ = Describe("Rules", func() {
 			}))
 		})
 	})
+
+	Describe("NewOverlayAccessMarkRule", func() {
+		It("create a overlay rule to mark the packet with a tag", func() {
+			rule := rules.NewOverlayAccessMarkRule("0009")
+			Expect(rule).To(Equal(rules.IPTablesRule{
+				"-o", "silk-vtep",
+				"-j", "MARK",
+				"--set-mark", "0x0009",
+			}))
+		})
+	})
 })

@@ -106,6 +106,7 @@ var _ = Describe("Planner", func() {
 			},
 		}
 		policyClient.GetPoliciesByIDReturns(policyServerResponse, nil)
+		policyClient.CreateOrGetTagReturns("5476", nil)
 
 		chain = enforcer.Chain{
 			Table:       "some-table",
@@ -172,13 +173,13 @@ var _ = Describe("Planner", func() {
 					{
 						"-d", "10.255.1.2",
 						"-p", "tcp",
-						"-m", "mark", "--mark", "0xFFFF",
+						"-m", "mark", "--mark", "0x5476",
 						"--jump", "ACCEPT",
 					},
 					{
 						"-d", "10.255.1.3",
 						"-p", "tcp",
-						"-m", "mark", "--mark", "0xFFFF",
+						"-m", "mark", "--mark", "0x5476",
 						"--jump", "ACCEPT",
 					},
 					// set tags on all outgoing packets, regardless of local vs remote
@@ -407,13 +408,13 @@ var _ = Describe("Planner", func() {
 					{
 						"-d", "10.255.1.2",
 						"-p", "tcp",
-						"-m", "mark", "--mark", "0xFFFF",
+						"-m", "mark", "--mark", "0x5476",
 						"--jump", "ACCEPT",
 					},
 					{
 						"-d", "10.255.1.3",
 						"-p", "tcp",
-						"-m", "mark", "--mark", "0xFFFF",
+						"-m", "mark", "--mark", "0x5476",
 						"--jump", "ACCEPT",
 					},
 				}))
@@ -478,6 +479,18 @@ var _ = Describe("Planner", func() {
 				_, err := policyPlanner.GetRulesAndChain()
 				Expect(err).To(MatchError("kiwi"))
 				Expect(logger).To(gbytes.Say("policy-client-get-policies.*kiwi"))
+			})
+		})
+
+		Context("when getting INGRESS_ROUTER tag fails", func(){
+			BeforeEach(func() {
+				policyClient.CreateOrGetTagReturns("", errors.New("sad kumquat"))
+			})
+
+			It("logs and returns the error", func() {
+				_, err := policyPlanner.GetRulesAndChain()
+				Expect(err).To(MatchError("sad kumquat"))
+				Expect(logger).To(gbytes.Say("policy-client-get-ingress-tags.*sad kumquat"))
 			})
 		})
 	})

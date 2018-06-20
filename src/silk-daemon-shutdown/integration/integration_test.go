@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"fmt"
 	"os/exec"
 
 	"io/ioutil"
@@ -18,15 +19,14 @@ import (
 )
 
 var (
-	DEFAULT_TIMEOUT = "10s"
+	fakeRepServer         *ghttp.Server
+	fakeSilkDaemonServer  *ghttp.Server
+	tempPidFile           *os.File
+	fakeSilkDaemonSession *gexec.Session
+	tag                   string
 )
 
-var fakeRepServer *ghttp.Server
-var fakeSilkDaemonServer *ghttp.Server
-var tempPidFile *os.File
-var fakeSilkDaemonSession *gexec.Session
-var fakeRepServerUrl string
-var fakeSilkDaemonServerUrl string
+const DEFAULT_TIMEOUT = "10s"
 
 var _ = BeforeEach(func() {
 	fakeRepServer = ghttp.NewUnstartedServer()
@@ -124,7 +124,16 @@ var _ = Describe("Teardown", func() {
 
 	Context("when running in single ip mode", func() {
 		BeforeEach(func() {
-			iptablesSession, err := gexec.Start(exec.Command("iptables", "-I", "OUTPUT", "-o", "silk-vtep", "-j", "MARK", "--set-mark", "0"), GinkgoWriter, GinkgoWriter)
+			iptablesSession, err := gexec.Start(exec.Command("iptables", "-N", "istio-ingress"), GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(iptablesSession).Should(gexec.Exit(0))
+			iptablesSession, err = gexec.Start(exec.Command("iptables", "-A", "OUTPUT", "-j", "istio-ingress"), GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(iptablesSession).Should(gexec.Exit(0))
+			iptablesSession, err = gexec.Start(exec.Command("iptables", "-A", "istio-ingress", "-o", "silk-vtep", "-j", "MARK", "--set-mark", "0"), GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(iptablesSession).Should(gexec.Exit(0))
+			iptablesSession, err = gexec.Start(exec.Command("iptables", "-A", "istio-ingress", "-o", "silk-vtep", "-j", "ACCEPT"), GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(iptablesSession).Should(gexec.Exit(0))
 		})
@@ -133,7 +142,11 @@ var _ = Describe("Teardown", func() {
 			session := runTeardown(fakeRepServer.URL(), fakeSilkDaemonServer.URL(), tempPidFile.Name())
 			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(0))
 
-			Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring("-A OUTPUT -o silk-vtep -j MARK --set-xmark 0xffff/0xffffffff")))
+			rules := AllIPTablesRules("filter")
+			Expect(rules).ToNot(ContainElement(ContainSubstring("-N istio-ingress")))
+			Expect(rules).ToNot(ContainElement(ContainSubstring("-A OUTPUT -j istio-ingress")))
+			Expect(rules).ToNot(ContainElement(ContainSubstring(fmt.Sprintf("-A istio-ingress -o silk-vtep -j MARK --set-xmark 0x%s/0xffffffff", tag))))
+			Expect(rules).ToNot(ContainElement(ContainSubstring("-A istio-ingress -o silk-vtep -j ACCEPT")))
 		})
 	})
 
@@ -236,7 +249,7 @@ var _ = Describe("Teardown", func() {
 	})
 })
 
-func runTeardown(url, silkDaemonUrl string, silkDaemonPidFile string) *gexec.Session {
+func runTeardown(url, silkDaemonUrl, silkDaemonPidFile string) *gexec.Session {
 	startCmd := exec.Command(paths.TeardownBin,
 		"--repUrl", url,
 		"--silkDaemonUrl", silkDaemonUrl,

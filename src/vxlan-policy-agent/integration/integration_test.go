@@ -181,8 +181,8 @@ var _ = Describe("VXLAN Policy Agent", func() {
 				Expect(iptablesFilterRules()).NotTo(MatchRegexp(`.*--set-xmark.*\n.*--set-xmark.*`))
 			})
 
-			It("writes a 0xffff mark rule for a container", func() {
-				Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-d 10.255.100.21/32 -p tcp -m mark --mark 0xffff -j ACCEPT`))
+			It("writes a ingress allow mark rule for a container", func() {
+				Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-d 10.255.100.21/32 -p tcp -m mark --mark 0x6 -j ACCEPT`))
 			})
 
 			It("emits metrics about durations", func() {
@@ -367,6 +367,16 @@ func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 				{"source": {"id":"yet-another-app-guid", "tag":"D"},
 				"destination": {"id": "some-very-very-long-app-guid", "tag":"A", "protocol":"udp", "ports":{"start":7000, "end":8000}}}
 					]}`))
+			return
+		}
+
+		if r.URL.Path == "/networking/v1/internal/tags" {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte((`{
+					"id": "some-id",
+					"type": "some-type",
+					"tag": "6"
+				}`)))
 			return
 		}
 
