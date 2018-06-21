@@ -1,0 +1,22 @@
+---
+- type: replace
+  path: /instance_groups/name=fake-istio-router?
+  value:
+    azs: [z1]
+    instances: 1
+    jobs:
+    - name: silk-daemon
+      properties:
+        ca_cert: "((silk_ca.certificate))"
+        client_cert: "((silk_daemon.certificate))"
+        client_key: "((silk_daemon.private_key))"
+        vtep_port: 4800
+        single_ip_only: true
+      release: silk
+    name: fake-istio-router
+    networks:
+    - name: default
+    stemcell: default
+    update:
+      serial: true
+    vm_type: minimal
