@@ -148,11 +148,12 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 
 func (m *NetOut) addASGLogging(c IpTablesFullChain) IpTablesFullChain {
 	if m.ASGLogging {
-		c.Rules = []rules.IPTablesRule{
-			rules.NewNetOutRelatedEstablishedRule(),
+		lastIndex := len(c.Rules) - 1
+		c.Rules = append(
+			c.Rules[:lastIndex],
 			rules.NewNetOutDefaultRejectLogRule(m.ContainerHandle, m.DeniedLogsPerSec),
-			rules.NewNetOutDefaultRejectRule(),
-		}
+			c.Rules[lastIndex],
+		)
 	}
 
 	return c
@@ -160,13 +161,12 @@ func (m *NetOut) addASGLogging(c IpTablesFullChain) IpTablesFullChain {
 
 func (m *NetOut) addC2CLogging(c IpTablesFullChain) IpTablesFullChain {
 	if m.C2CLogging {
-		c.Rules = []rules.IPTablesRule{
-			rules.NewOverlayAllowEgress(m.VTEPName, m.ContainerIP),
-			rules.NewOverlayRelatedEstablishedRule(m.ContainerIP),
-			rules.NewOverlayTagAcceptRule(m.ContainerIP, m.IngressTag),
+		lastIndex := len(c.Rules) - 1
+		c.Rules = append(
+			c.Rules[:lastIndex],
 			rules.NewOverlayDefaultRejectLogRule(m.ContainerHandle, m.ContainerIP, m.DeniedLogsPerSec),
-			rules.NewOverlayDefaultRejectRule(m.ContainerIP),
-		}
+			c.Rules[lastIndex],
+		)
 	}
 
 	return c
