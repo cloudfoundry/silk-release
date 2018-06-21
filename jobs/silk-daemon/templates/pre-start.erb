@@ -11,6 +11,9 @@ set +e
 set -e
 
 <% if p('single_ip_only') %>
+# ensure bosh-dns is up and running
+/var/vcap/jobs/bosh-dns/bin/wait
+
 # run bootstrapper
 /var/vcap/packages/silk-daemon/bin/silk-daemon-bootstrap \
     --config=/var/vcap/jobs/silk-daemon/config/bootstrap-config.json
