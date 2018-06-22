@@ -15,6 +15,8 @@ import (
 	"github.com/onsi/gomega/types"
 
 	"netmon/config"
+	"io/ioutil"
+	"os"
 )
 
 func discoverInterfaceName() string {
@@ -40,9 +42,15 @@ var _ = Describe("Integration", func() {
 		conf       config.Netmon
 		fakeMetron metrics.FakeMetron
 		ifName     string
+		iptablesLockFilePath string
 	)
 
 	BeforeEach(func() {
+		iptablesLockFile, err := ioutil.TempFile("", "iptables-lock")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(iptablesLockFile.Close()).To(Succeed())
+		iptablesLockFilePath = iptablesLockFile.Name()
+
 		fakeMetron = metrics.NewFakeMetron()
 
 		ifName = discoverInterfaceName()
@@ -52,10 +60,10 @@ var _ = Describe("Integration", func() {
 			InterfaceName: ifName,
 			LogLevel:      "info",
 			LogPrefix:     "cfnetworking",
+			IPTablesLockFile: iptablesLockFilePath,
 		}
 		configFilePath := WriteConfigFile(conf)
 
-		var err error
 		netmonCmd := exec.Command(binaryPath, "-config-file", configFilePath)
 		session, err = gexec.Start(netmonCmd, GinkgoWriter, GinkgoWriter)
 		Expect(err).NotTo(HaveOccurred())
@@ -63,7 +71,7 @@ var _ = Describe("Integration", func() {
 
 	AfterEach(func() {
 		runAndWait("ip", "link", "set", "dev", ifName, "mtu", "1500")
-
+		os.Remove(iptablesLockFilePath)
 		session.Interrupt()
 		Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit())
 

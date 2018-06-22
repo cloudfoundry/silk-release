@@ -60,7 +60,8 @@ var _ = Describe("Config", func() {
 					"metron_address": "http://1.2.3.4:1234",
 					"interface_name": "eth0",
 					"log_level": "debug",
-					"log_prefix": "cfnetworking"
+					"log_prefix": "cfnetworking",
+					"iptables_lock_file": "iptables-lock-file"
 				}`)
 				c, err := config.New(file.Name())
 				Expect(err).NotTo(HaveOccurred())
@@ -69,6 +70,7 @@ var _ = Describe("Config", func() {
 				Expect(c.InterfaceName).To(Equal("eth0"))
 				Expect(c.LogLevel).To(Equal("debug"))
 				Expect(c.LogPrefix).To(Equal("cfnetworking"))
+				Expect(c.IPTablesLockFile).To(Equal("iptables-lock-file"))
 			})
 		})
 
@@ -113,6 +115,7 @@ var _ = Describe("Config", func() {
 			Entry("missing metron address", "metron_address", "MetronAddress: zero value"),
 			Entry("missing interface name", "interface_name", "InterfaceName: zero value"),
 			Entry("missing log prefix", "log_prefix", "LogPrefix: zero value"),
+			Entry("missing iptables lock file name", "iptables_lock_file", "IPTablesLockFile: zero value"),
 		)
 	})
 })

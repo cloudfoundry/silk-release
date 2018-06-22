@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -13,6 +12,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/runtimeschema/metric"
+	"lib/rules"
 )
 
 const netInterfaceCount = metric.Metric("NetInterfaceCount")
@@ -23,9 +23,10 @@ const overlayTxDropped = metric.Metric("OverlayTxDropped")
 const overlayRxDropped = metric.Metric("OverlayRxDropped")
 
 type SystemMetrics struct {
-	Logger        lager.Logger
-	PollInterval  time.Duration
-	InterfaceName string
+	Logger          lager.Logger
+	PollInterval    time.Duration
+	InterfaceName   string
+	IPTablesAdapter rules.IPTablesAdapter
 }
 
 func (m *SystemMetrics) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
@@ -48,8 +49,7 @@ func countNetworkInterfaces() (int, error) {
 	return len(ifaces), nil
 }
 
-func lineCount(data []byte) int {
-	lines := strings.Split(string(data), "\n")
+func lineCount(lines []string) int {
 	counter := 0
 	for _, line := range lines {
 		if len(strings.TrimSpace(line)) > 0 {
@@ -59,16 +59,14 @@ func lineCount(data []byte) int {
 	return counter
 }
 
-func countIPTablesRules(logger lager.Logger) (int, error) {
-	cmd := exec.Command("iptables", "-w", "-S")
-	filterRules, err := cmd.CombinedOutput()
+func countIPTablesRules(ipTablesAdapter rules.IPTablesAdapter, logger lager.Logger) (int, error) {
+	filterRules, err := ipTablesAdapter.List("filter", "")
 	if err != nil {
 		logger.Error("failed-getting-filter-rules", err)
 		return 0, err
 	}
 
-	cmd = exec.Command("iptables", "-w", "-t", "nat", "-S")
-	natRules, err := cmd.CombinedOutput()
+	natRules, err := ipTablesAdapter.List("nat", "")
 	if err != nil {
 		logger.Error("failed-getting-nat-rules", err)
 		return 0, err
@@ -109,7 +107,7 @@ func (m *SystemMetrics) measure(logger lager.Logger) {
 	}
 	logger.Debug("metric-sent", lager.Data{"NetInterfaceCount": nInterfaces})
 
-	nIpTablesRule, err := countIPTablesRules(logger)
+	nIpTablesRule, err := countIPTablesRules(m.IPTablesAdapter, logger)
 	if err != nil {
 		logger.Error("count-iptables-rules", err)
 		return

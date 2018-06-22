@@ -14,6 +14,10 @@ import (
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
+	"sync"
+	"github.com/coreos/go-iptables/iptables"
+	"code.cloudfoundry.org/filelock"
+	"lib/rules"
 )
 
 var (
@@ -49,11 +53,29 @@ func main() {
 		pollInterval = time.Second
 	}
 
+	ipt, err := iptables.New()
+	if err != nil {
+		logger.Fatal("iptables-new", err)
+	}
+
+	iptLocker := &filelock.Locker{
+		FileLocker: filelock.NewLocker(conf.IPTablesLockFile),
+		Mutex:      &sync.Mutex{},
+	}
+	restorer := &rules.Restorer{}
+	lockedIPTables := &rules.LockedIPTables{
+		IPTables: ipt,
+		Locker:   iptLocker,
+		Restorer: restorer,
+	}
+
+
 	dropsonde.Initialize(conf.MetronAddress, "netmon")
 	systemMetrics := &poller.SystemMetrics{
 		Logger:        logger,
 		PollInterval:  pollInterval,
 		InterfaceName: conf.InterfaceName,
+		IPTablesAdapter: lockedIPTables,
 	}
 
 	members := grouper.Members{
