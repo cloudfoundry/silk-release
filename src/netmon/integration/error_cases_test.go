@@ -9,6 +9,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	"io/ioutil"
+	"os"
 )
 
 var _ = Describe("Integration", func() {
@@ -18,8 +20,14 @@ var _ = Describe("Integration", func() {
 		fakeMetron     metrics.FakeMetron
 		ifName         string
 		configFilePath string
+		iptablesLockFilePath string
 	)
 	BeforeEach(func() {
+		iptablesLockFile, err := ioutil.TempFile("", "iptables-lock")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(iptablesLockFile.Close()).To(Succeed())
+		iptablesLockFilePath = iptablesLockFile.Name()
+
 		fakeMetron = metrics.NewFakeMetron()
 
 		ifName = discoverInterfaceName()
@@ -29,8 +37,13 @@ var _ = Describe("Integration", func() {
 			InterfaceName: ifName,
 			LogLevel:      "info",
 			LogPrefix:     "cfnetworking",
+			IPTablesLockFile: iptablesLockFilePath,
 		}
 	})
+	AfterEach(func() {
+		os.Remove(iptablesLockFilePath)
+	})
+
 	Context("when the config file is invalid", func() {
 		BeforeEach(func() {
 			conf.InterfaceName = ""
