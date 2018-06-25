@@ -49,30 +49,20 @@ func countNetworkInterfaces() (int, error) {
 	return len(ifaces), nil
 }
 
-func lineCount(lines []string) int {
-	counter := 0
-	for _, line := range lines {
-		if len(strings.TrimSpace(line)) > 0 {
-			counter++
-		}
-	}
-	return counter
-}
-
 func countIPTablesRules(ipTablesAdapter rules.IPTablesAdapter, logger lager.Logger) (int, error) {
-	filterRules, err := ipTablesAdapter.List("filter", "")
+	filterRules, err := ipTablesAdapter.ListAll("filter")
 	if err != nil {
 		logger.Error("failed-getting-filter-rules", err)
 		return 0, err
 	}
 
-	natRules, err := ipTablesAdapter.List("nat", "")
+	natRules, err := ipTablesAdapter.ListAll("nat")
 	if err != nil {
 		logger.Error("failed-getting-nat-rules", err)
 		return 0, err
 	}
 
-	return lineCount(filterRules) + lineCount(natRules), nil
+	return len(filterRules) + len(natRules), nil
 }
 
 func readStatsFile(ifName, stat string) (int, error) {

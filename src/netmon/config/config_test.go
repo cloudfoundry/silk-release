@@ -104,6 +104,7 @@ var _ = Describe("Config", func() {
 					"interface_name": "eth0",
 					"log_level":      "debug",
 					"log_prefix":     "cfnetworking",
+					"iptables_lock_file": "some-lockfile",
 				}
 				delete(allData, missingFlag)
 				Expect(json.NewEncoder(file).Encode(allData)).To(Succeed())

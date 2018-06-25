@@ -24,8 +24,8 @@ var _ = Describe("Poller Run", func() {
 
 		filterRules := []string {"rule 1", "meow rule"}
 		natRules := []string {"rule fish", "hampster rule"}
-		iptables.ListReturnsOnCall(0, filterRules, nil)
-		iptables.ListReturnsOnCall(1, natRules, nil)
+		iptables.ListAllReturnsOnCall(0, filterRules, nil)
+		iptables.ListAllReturnsOnCall(1, natRules, nil)
 
 		metrics := &poller.SystemMetrics{
 			Logger:          logger,
@@ -55,14 +55,12 @@ var _ = Describe("Poller Run", func() {
 	})
 
 	It("should use the iptables adapter when checking the rules", func() {
-		Expect(iptables.ListCallCount()).To(Equal(2))
+		Expect(iptables.ListAllCallCount()).To(Equal(2))
 
-		table, chain := iptables.ListArgsForCall(0)
+		table := iptables.ListAllArgsForCall(0)
 		Expect(table).To(Equal("filter"))
-		Expect(chain).To(Equal(""))
-		table, chain = iptables.ListArgsForCall(1)
+		table = iptables.ListAllArgsForCall(1)
 		Expect(table).To(Equal("nat"))
-		Expect(chain).To(Equal(""))
 
 		iptablesLog := logger.Logs()[2]
 		Expect(iptablesLog.Data["IPTablesRuleCount"]).To(Equal(float64(4)))
