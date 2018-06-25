@@ -436,4 +436,111 @@ var _ = Describe("LockedIptables", func() {
 			})
 		})
 	})
+
+	Describe("ListAll", func() {
+		BeforeEach(func() {
+			ipt.ListChainsReturns([]string{
+				"a chain",
+				"another chain",
+				"a third chain",
+			}, nil)
+
+			ipt.ListReturnsOnCall(0, []string{
+				"a rule",
+				"another rule",
+				"a third rule",
+			}, nil)
+
+			ipt.ListReturnsOnCall(1, []string{
+				"a rule",
+			}, nil)
+
+			ipt.ListReturnsOnCall(2, []string{
+				"a rule",
+				"another rule",
+			}, nil)
+		})
+		It("should return all the rows", func() {
+			rows, err := lockedIPT.ListAll("some-table")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(lock.LockCallCount()).To(Equal(1))
+			Expect(lock.UnlockCallCount()).To(Equal(1))
+			Expect(ipt.ListChainsCallCount()).To(Equal(1))
+			table := ipt.ListChainsArgsForCall(0)
+			Expect(table).To(Equal("some-table"))
+
+			Expect(ipt.ListCallCount()).To(Equal(3))
+			table, chain := ipt.ListArgsForCall(0)
+			Expect(table).To(Equal("some-table"))
+			Expect(chain).To(Equal("a chain"))
+			table, chain = ipt.ListArgsForCall(1)
+			Expect(table).To(Equal("some-table"))
+			Expect(chain).To(Equal("another chain"))
+			table, chain = ipt.ListArgsForCall(2)
+			Expect(table).To(Equal("some-table"))
+			Expect(chain).To(Equal("a third chain"))
+
+			Expect(rows).To(Equal([]string{
+				"a rule",
+				"another rule",
+				"a third rule",
+				"a rule",
+				"a rule",
+				"another rule",
+			}))
+		})
+
+		Context("when locking fails", func() {
+			BeforeEach(func() {
+				lock.LockReturns(errors.New("banana"))
+			})
+			It("returns an error", func() {
+				_, err := lockedIPT.ListAll("some-table")
+				Expect(err).To(MatchError("lock: banana"))
+			})
+		})
+
+		Context("when list chains call fails and unlock succeeds", func() {
+			BeforeEach(func() {
+				ipt.ListChainsReturns(nil, errors.New("fig"))
+			})
+			It("returns an error", func() {
+				_, err := lockedIPT.ListAll("some-table")
+				Expect(err).To(MatchError("iptables call: fig and unlock: <nil>"))
+			})
+		})
+
+		Context("when list chains call fails and unlock fails", func() {
+			BeforeEach(func() {
+				lock.UnlockReturns(errors.New("apple"))
+				ipt.ListChainsReturns(nil, errors.New("patato"))
+			})
+			It("returns an error", func() {
+				_, err := lockedIPT.ListAll("some-table")
+				Expect(err).To(MatchError("iptables call: patato and unlock: apple"))
+			})
+		})
+
+		Context("when list call fails and unlock succeeds", func() {
+			BeforeEach(func() {
+				ipt.ListReturnsOnCall(0, nil, errors.New("kumquat"))
+			})
+			It("returns an error", func() {
+				_, err := lockedIPT.ListAll("some-table")
+				Expect(err).To(MatchError("iptables call: kumquat and unlock: <nil>"))
+			})
+		})
+
+		Context("when list call fails and unlock fails", func() {
+			BeforeEach(func() {
+				lock.UnlockReturns(errors.New("cherry"))
+				ipt.ListReturnsOnCall(0, nil, errors.New("avacado"))
+			})
+			It("returns an error", func() {
+				_, err := lockedIPT.ListAll("some-table")
+				Expect(err).To(MatchError("iptables call: avacado and unlock: cherry"))
+			})
+		})
+	})
 })

@@ -73,6 +73,19 @@ type IPTablesAdapter struct {
 	clearChainReturnsOnCall map[int]struct {
 		result1 error
 	}
+	ListAllStub        func(table string) ([]string, error)
+	listAllMutex       sync.RWMutex
+	listAllArgsForCall []struct {
+		table string
+	}
+	listAllReturns struct {
+		result1 []string
+		result2 error
+	}
+	listAllReturnsOnCall map[int]struct {
+		result1 []string
+		result2 error
+	}
 	DeleteChainStub        func(table, chain string) error
 	deleteChainMutex       sync.RWMutex
 	deleteChainArgsForCall []struct {
@@ -369,6 +382,57 @@ func (fake *IPTablesAdapter) ClearChainReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *IPTablesAdapter) ListAll(table string) ([]string, error) {
+	fake.listAllMutex.Lock()
+	ret, specificReturn := fake.listAllReturnsOnCall[len(fake.listAllArgsForCall)]
+	fake.listAllArgsForCall = append(fake.listAllArgsForCall, struct {
+		table string
+	}{table})
+	fake.recordInvocation("ListAll", []interface{}{table})
+	fake.listAllMutex.Unlock()
+	if fake.ListAllStub != nil {
+		return fake.ListAllStub(table)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.listAllReturns.result1, fake.listAllReturns.result2
+}
+
+func (fake *IPTablesAdapter) ListAllCallCount() int {
+	fake.listAllMutex.RLock()
+	defer fake.listAllMutex.RUnlock()
+	return len(fake.listAllArgsForCall)
+}
+
+func (fake *IPTablesAdapter) ListAllArgsForCall(i int) string {
+	fake.listAllMutex.RLock()
+	defer fake.listAllMutex.RUnlock()
+	return fake.listAllArgsForCall[i].table
+}
+
+func (fake *IPTablesAdapter) ListAllReturns(result1 []string, result2 error) {
+	fake.ListAllStub = nil
+	fake.listAllReturns = struct {
+		result1 []string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *IPTablesAdapter) ListAllReturnsOnCall(i int, result1 []string, result2 error) {
+	fake.ListAllStub = nil
+	if fake.listAllReturnsOnCall == nil {
+		fake.listAllReturnsOnCall = make(map[int]struct {
+			result1 []string
+			result2 error
+		})
+	}
+	fake.listAllReturnsOnCall[i] = struct {
+		result1 []string
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *IPTablesAdapter) DeleteChain(table string, chain string) error {
 	fake.deleteChainMutex.Lock()
 	ret, specificReturn := fake.deleteChainReturnsOnCall[len(fake.deleteChainArgsForCall)]
@@ -532,6 +596,8 @@ func (fake *IPTablesAdapter) Invocations() map[string][][]interface{} {
 	defer fake.newChainMutex.RUnlock()
 	fake.clearChainMutex.RLock()
 	defer fake.clearChainMutex.RUnlock()
+	fake.listAllMutex.RLock()
+	defer fake.listAllMutex.RUnlock()
 	fake.deleteChainMutex.RLock()
 	defer fake.deleteChainMutex.RUnlock()
 	fake.bulkInsertMutex.RLock()
