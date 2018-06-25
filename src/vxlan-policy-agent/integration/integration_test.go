@@ -56,7 +56,8 @@ var _ = Describe("VXLAN Policy Agent", func() {
 		"handle":"some-handle",
 		"ip":"10.255.100.21",
 		"metadata": {
-			"policy_group_id":"some-very-very-long-app-guid"
+			"policy_group_id":"some-very-very-long-app-guid",
+			"ports": "8080, 9090"
 		}
 	}
 }
@@ -181,8 +182,9 @@ var _ = Describe("VXLAN Policy Agent", func() {
 				Expect(iptablesFilterRules()).NotTo(MatchRegexp(`.*--set-xmark.*\n.*--set-xmark.*`))
 			})
 
-			It("writes a ingress allow mark rule for a container", func() {
-				Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-d 10.255.100.21/32 -p tcp -m mark --mark 0x6 -j ACCEPT`))
+			It("writes a ingress allow mark rule for a container to its exposed ports", func() {
+				Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-d 10.255.100.21/32 -p tcp -m tcp --dport 8080 -m mark --mark 0x6 -j ACCEPT`))
+				Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-d 10.255.100.21/32 -p tcp -m tcp --dport 9090 -m mark --mark 0x6 -j ACCEPT`))
 			})
 
 			It("emits metrics about durations", func() {

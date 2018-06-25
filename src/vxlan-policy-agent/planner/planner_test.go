@@ -45,6 +45,7 @@ var _ = Describe("Planner", func() {
 			IP:     "10.255.1.2",
 			Metadata: map[string]interface{}{
 				"policy_group_id": "some-app-guid",
+				"ports":           "8080",
 			},
 		}
 		data["container-id-2"] = datastore.Container{
@@ -52,6 +53,7 @@ var _ = Describe("Planner", func() {
 			IP:     "10.255.1.3",
 			Metadata: map[string]interface{}{
 				"policy_group_id": "some-other-app-guid",
+				"ports":           " 8181 , 9090",
 			},
 		}
 		data["container-id-3"] = datastore.Container{
@@ -173,12 +175,21 @@ var _ = Describe("Planner", func() {
 					{
 						"-d", "10.255.1.2",
 						"-p", "tcp",
+						"-m", "tcp", "--dport", "8080",
 						"-m", "mark", "--mark", "0x5476",
 						"--jump", "ACCEPT",
 					},
 					{
 						"-d", "10.255.1.3",
 						"-p", "tcp",
+						"-m", "tcp", "--dport", "9090",
+						"-m", "mark", "--mark", "0x5476",
+						"--jump", "ACCEPT",
+					},
+					{
+						"-d", "10.255.1.3",
+						"-p", "tcp",
+						"-m", "tcp", "--dport", "8181",
 						"-m", "mark", "--mark", "0x5476",
 						"--jump", "ACCEPT",
 					},
@@ -266,7 +277,7 @@ var _ = Describe("Planner", func() {
 		It("returns all mark set rules before any mark filter rules", func() {
 			rulesWithChain, err := policyPlanner.GetRulesAndChain()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rulesWithChain.Rules).To(HaveLen(6))
+			Expect(rulesWithChain.Rules).To(HaveLen(7))
 			Expect(rulesWithChain.Rules[0]).To(ContainElement("--set-xmark"))
 			Expect(rulesWithChain.Rules[1]).To(ContainElement("--set-xmark"))
 			Expect(rulesWithChain.Rules[2]).To(ContainElement("ACCEPT"))
@@ -341,7 +352,7 @@ var _ = Describe("Planner", func() {
 			It("writes only one set mark rule", func() {
 				rulesWithChain, err := policyPlanner.GetRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rulesWithChain.Rules).To(HaveLen(5))
+				Expect(rulesWithChain.Rules).To(HaveLen(6))
 				Expect(rulesWithChain.Rules[0]).To(ContainElement("--set-xmark"))
 				Expect(rulesWithChain.Rules[1]).To(ContainElement("ACCEPT"))
 				Expect(rulesWithChain.Rules[2]).To(ContainElement("ACCEPT"))
@@ -356,6 +367,7 @@ var _ = Describe("Planner", func() {
 					IP:     "10.255.1.2",
 					Metadata: map[string]interface{}{
 						"policy_group_id": "some-app-guid",
+						"ports":           "8080",
 					},
 				}
 				data["container-id-2"] = datastore.Container{
@@ -363,6 +375,7 @@ var _ = Describe("Planner", func() {
 					IP:     "10.255.1.3",
 					Metadata: map[string]interface{}{
 						"policy_group_id": "some-other-app-guid",
+						"ports":           "8080",
 					},
 				}
 				data["container-id-3"] = datastore.Container{
@@ -370,6 +383,7 @@ var _ = Describe("Planner", func() {
 					IP:     "10.255.1.4",
 					Metadata: map[string]interface{}{
 						"policy_group_id": "some-app-guid",
+						"ports":           "8080",
 					},
 				}
 				data["container-id-4"] = datastore.Container{
@@ -377,6 +391,7 @@ var _ = Describe("Planner", func() {
 					IP:     "10.255.1.5",
 					Metadata: map[string]interface{}{
 						"policy_group_id": "some-other-app-guid",
+						"ports":           "8080",
 					},
 				}
 
@@ -408,12 +423,21 @@ var _ = Describe("Planner", func() {
 					{
 						"-d", "10.255.1.2",
 						"-p", "tcp",
+						"-m", "tcp", "--dport", "8080",
 						"-m", "mark", "--mark", "0x5476",
 						"--jump", "ACCEPT",
 					},
 					{
 						"-d", "10.255.1.3",
 						"-p", "tcp",
+						"-m", "tcp", "--dport", "8181",
+						"-m", "mark", "--mark", "0x5476",
+						"--jump", "ACCEPT",
+					},
+					{
+						"-d", "10.255.1.3",
+						"-p", "tcp",
+						"-m", "tcp", "--dport", "9090",
 						"-m", "mark", "--mark", "0x5476",
 						"--jump", "ACCEPT",
 					},
@@ -454,7 +478,28 @@ var _ = Describe("Planner", func() {
 				Expect(logger).To(gbytes.Say("container-metadata-policy-group-id.*container-id-fruit.*Container.*metadata.*policy_group_id.*CloudController.*restage"))
 
 				Expect(rulesWithChain.Chain).To(Equal(chain))
-				Expect(rulesWithChain.Rules).To(HaveLen(6))
+				Expect(rulesWithChain.Rules).To(HaveLen(7))
+			})
+		})
+
+		Context("when a container's metadata is missing required key ports", func() {
+			BeforeEach(func() {
+				data["container-id-2"] = datastore.Container{
+					Handle: "container-id-2",
+					IP:     "10.255.1.3",
+					Metadata: map[string]interface{}{
+						"policy_group_id": "some-other-app-guid",
+					},
+				}
+			})
+
+			It("logs an error for that container and returns non ingress rules", func() {
+				rulesWithChain, err := policyPlanner.GetRulesAndChain()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(logger).To(gbytes.Say("container-metadata-policy-group-id.*container-id-2.*Container.*metadata.*ports.*CloudController.*restage"))
+
+				Expect(rulesWithChain.Chain).To(Equal(chain))
+				Expect(rulesWithChain.Rules).To(HaveLen(5))
 			})
 		})
 
@@ -482,7 +527,7 @@ var _ = Describe("Planner", func() {
 			})
 		})
 
-		Context("when getting INGRESS_ROUTER tag fails", func(){
+		Context("when getting INGRESS_ROUTER tag fails", func() {
 			BeforeEach(func() {
 				policyClient.CreateOrGetTagReturns("", errors.New("sad kumquat"))
 			})
@@ -491,6 +536,25 @@ var _ = Describe("Planner", func() {
 				_, err := policyPlanner.GetRulesAndChain()
 				Expect(err).To(MatchError("sad kumquat"))
 				Expect(logger).To(gbytes.Say("policy-client-get-ingress-tags.*sad kumquat"))
+			})
+		})
+
+		Context("when container metadata port is invalid", func() {
+			BeforeEach(func() {
+				data["container-id-1"] = datastore.Container{
+					Handle: "container-id-1",
+					IP:     "10.255.1.2",
+					Metadata: map[string]interface{}{
+						"policy_group_id": "some-app-guid",
+						"ports":           "invalid-port",
+					},
+				}
+			})
+
+			It("logs and returns the error", func() {
+				_, err := policyPlanner.GetRulesAndChain()
+				Expect(err).To(MatchError(`converting container metadata port to int: strconv.Atoi: parsing "invalid-port": invalid syntax`))
+				Expect(logger).To(gbytes.Say(`policy-client-get-ingress-tags.*converting container metadata port to int*`))
 			})
 		})
 	})

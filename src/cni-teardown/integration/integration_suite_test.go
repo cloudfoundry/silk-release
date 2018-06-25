@@ -10,9 +10,9 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 
-	"testing"
 	"os"
 	"path/filepath"
+	"testing"
 )
 
 var (
@@ -40,7 +40,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Expect(err).NotTo(HaveOccurred())
 
 	dir := filepath.Dir(paths.TeardownBin)
-	for ; dir != filepath.Dir(dir); {
+	for dir != filepath.Dir(dir) {
 		Expect(os.Chmod(dir, 0777)).To(Succeed())
 		dir = filepath.Dir(dir)
 	}

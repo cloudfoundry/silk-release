@@ -1,10 +1,13 @@
 package planner
 
 import (
+	"fmt"
 	"lib/datastore"
 	"lib/policy_client"
 	"lib/rules"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 	"vxlan-policy-agent/enforcer"
 
@@ -44,16 +47,15 @@ type VxlanPolicyPlanner struct {
 }
 
 type Container struct {
-	Handle  string
-	IP      string
-	GroupID string
+	IP    string
+	Ports []string
 }
 
 const metricContainerMetadata = "containerMetadataTime"
 const metricPolicyServerPoll = "policyServerPollTime"
 
-func (p *VxlanPolicyPlanner) getContainersMap(allContainers map[string]datastore.Container) (map[string][]string, error) {
-	containers := map[string][]string{}
+func (p *VxlanPolicyPlanner) getContainersMap(allContainers map[string]datastore.Container) (map[string][]Container, error) {
+	containersMap := map[string][]Container{}
 	for _, container := range allContainers {
 		if container.Metadata == nil {
 			continue
@@ -64,9 +66,22 @@ func (p *VxlanPolicyPlanner) getContainersMap(allContainers map[string]datastore
 			p.Logger.Debug("container-metadata-policy-group-id", lager.Data{"container_handle": container.Handle, "message": message})
 			continue
 		}
-		containers[groupID] = append(containers[groupID], container.IP)
+
+		var ports []string
+		stringPorts, ok := container.Metadata["ports"].(string)
+		if ok {
+			ports = strings.Split(stringPorts, ",")
+		} else {
+			message := "Container metadata is missing key ports. CloudController version may be out of date or apps may need to be restaged."
+			p.Logger.Debug("container-metadata-policy-group-id", lager.Data{"container_handle": container.Handle, "message": message})
+		}
+
+		containersMap[groupID] = append(containersMap[groupID], Container{
+			IP:    container.IP,
+			Ports: ports,
+		})
 	}
-	return containers, nil
+	return containersMap, nil
 }
 
 func (p *VxlanPolicyPlanner) GetRulesAndChain() (enforcer.RulesWithChain, error) {
@@ -77,10 +92,10 @@ func (p *VxlanPolicyPlanner) GetRulesAndChain() (enforcer.RulesWithChain, error)
 		return enforcer.RulesWithChain{}, err
 	}
 
-	containers, err := p.getContainersMap(containerMetadata)
-	groupIDs := make([]string, len(containers))
+	containersMap, err := p.getContainersMap(containerMetadata)
+	groupIDs := make([]string, len(containersMap))
 	i := 0
-	for groupID := range containers {
+	for groupID := range containersMap {
 		groupIDs[i] = groupID
 		i++
 	}
@@ -89,7 +104,7 @@ func (p *VxlanPolicyPlanner) GetRulesAndChain() (enforcer.RulesWithChain, error)
 		return enforcer.RulesWithChain{}, err
 	}
 	containerMetadataDuration := time.Now().Sub(containerMetadataStartTime)
-	p.Logger.Debug("got-containers", lager.Data{"containers": containers})
+	p.Logger.Debug("got-containers", lager.Data{"containers": containersMap})
 
 	policyServerStartRequestTime := time.Now()
 	var policies []policy_client.Policy
@@ -113,10 +128,15 @@ func (p *VxlanPolicyPlanner) GetRulesAndChain() (enforcer.RulesWithChain, error)
 	policySlice := policy_client.PolicySlice(policies)
 	sort.Sort(policySlice)
 	for _, policy := range policySlice {
-		srcContainerIPs, srcOk := containers[policy.Source.ID]
-		dstContainerIPs, dstOk := containers[policy.Destination.ID]
+		srcContainers, srcOk := containersMap[policy.Source.ID]
+		dstContainers, dstOk := containersMap[policy.Destination.ID]
 
 		if dstOk {
+			var dstContainerIPs []string
+			for _, container := range dstContainers {
+				dstContainerIPs = append(dstContainerIPs, container.IP)
+			}
+
 			// there are some containers on this host that are dests for the policy
 			ips := sort.StringSlice(dstContainerIPs)
 			sort.Sort(ips)
@@ -152,26 +172,29 @@ func (p *VxlanPolicyPlanner) GetRulesAndChain() (enforcer.RulesWithChain, error)
 
 		if srcOk {
 			// there are some containers on this host that are sources for the policy
-			ips := sort.StringSlice(srcContainerIPs)
-			sort.Sort(ips)
-			for _, srcContainerIP := range ips {
-				_, added := markedSourceIPs[srcContainerIP]
+			sort.Slice(srcContainers, func(i, j int) bool {
+				return srcContainers[i].IP < srcContainers[j].IP
+			})
+
+			for _, srcContainer := range srcContainers {
+				_, added := markedSourceIPs[srcContainer.IP]
 				if !added {
-					rule := rules.NewMarkSetRule(srcContainerIP, policy.Source.Tag, policy.Source.ID)
+					rule := rules.NewMarkSetRule(srcContainer.IP, policy.Source.Tag, policy.Source.ID)
 					marksRuleset = append(marksRuleset, rule)
-					markedSourceIPs[srcContainerIP] = struct{}{}
+					markedSourceIPs[srcContainer.IP] = struct{}{}
 				}
 			}
 		}
 	}
 
-	var containerIPs []string
-	for _, ips := range containers {
-		containerIPs = append(containerIPs, ips...)
+	var allContainers []Container
+	for _, containers := range containersMap {
+		allContainers = append(allContainers, containers...)
 	}
 
-	ips := sort.StringSlice(containerIPs)
-	sort.Sort(ips)
+	sort.Slice(allContainers, func(i, j int) bool {
+		return allContainers[i].IP < allContainers[j].IP
+	})
 
 	ingressTag, err := p.PolicyClient.CreateOrGetTag("INGRESS_ROUTER", "router")
 	if err != nil {
@@ -179,15 +202,27 @@ func (p *VxlanPolicyPlanner) GetRulesAndChain() (enforcer.RulesWithChain, error)
 		return enforcer.RulesWithChain{}, err
 	}
 
-	for _, containerIP := range ips {
-		filterRuleset = append(
-			filterRuleset,
-			rules.NewMarkAllowRuleNoComment(
-				containerIP,
-				"tcp",
-				ingressTag,
-			),
-		)
+	for _, container := range allContainers {
+		ports := sort.StringSlice(container.Ports)
+		sort.Sort(ports)
+		for _, port := range ports {
+			portNumber, err := strconv.Atoi(strings.TrimSpace(port))
+			if err != nil {
+				err = fmt.Errorf("converting container metadata port to int: %s", err)
+				p.Logger.Error("policy-client-get-ingress-tags", err)
+				return enforcer.RulesWithChain{}, err
+			}
+
+			filterRuleset = append(
+				filterRuleset,
+				rules.NewMarkAllowRuleNoComment(
+					container.IP,
+					"tcp",
+					portNumber,
+					ingressTag,
+				),
+			)
+		}
 	}
 
 	ruleset := append(marksRuleset, filterRuleset...)
