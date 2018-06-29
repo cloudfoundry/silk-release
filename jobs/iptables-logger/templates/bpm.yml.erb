@@ -1,0 +1,13 @@
+---
+processes:
+  - name: iptables-logger
+    executable: "/var/vcap/packages/iptables-logger/bin/iptables-logger"
+    args:
+    - "-config-file=/var/vcap/jobs/iptables-logger/config/iptables-logger.json"
+    additional_volumes:
+    - path: /var/vcap/data/container-metadata
+      writable: true
+    unsafe:
+      privileged: true
+      unrestricted_volumes:
+      - path: /var/log

@@ -2,7 +2,7 @@
 name: iptables-logger
 
 templates:
-  iptables-logger_ctl.erb: bin/iptables-logger_ctl
+  bpm.yml.erb: config/bpm.yml
   iptables-logger.json.erb: config/iptables-logger.json
 
 packages:
