@@ -104,7 +104,8 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 			[]rules.IPTablesRule{
 				rules.NewInputRelatedEstablishedRule(),
 				rules.NewInputDefaultRejectRule(),
-			}},
+			},
+		},
 		m.addASGLogging(IpTablesFullChain{
 			"filter",
 			"FORWARD",
@@ -128,7 +129,8 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 				rules.NewOverlayRelatedEstablishedRule(m.ContainerIP),
 				rules.NewOverlayTagAcceptRule(m.ContainerIP, m.IngressTag),
 				rules.NewOverlayDefaultRejectRule(m.ContainerIP),
-			}}),
+			},
+		}),
 		{
 			"filter",
 			"",
@@ -140,7 +142,8 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 				rules.NewNetOutDefaultNonUDPLogRule(m.ContainerHandle),
 				rules.NewNetOutDefaultUDPLogRule(m.ContainerHandle, m.AcceptedUDPLogsPerSec),
 				rules.NewAcceptRule(),
-			}},
+			},
+		},
 	}
 
 	return args, nil

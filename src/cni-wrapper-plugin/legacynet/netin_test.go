@@ -56,17 +56,15 @@ var _ = Describe("Netin", func() {
 			err := netIn.Initialize("some-container-handle")
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(ipTables.BulkInsertCallCount()).To(Equal(2))
-			table, chain, position, rulespec := ipTables.BulkInsertArgsForCall(0)
+			Expect(ipTables.BulkAppendCallCount()).To(Equal(2))
+			table, chain, rulespec := ipTables.BulkAppendArgsForCall(0)
 			Expect(table).To(Equal("nat"))
 			Expect(chain).To(Equal("PREROUTING"))
-			Expect(position).To(Equal(1))
 			Expect(rulespec).To(Equal([]rules.IPTablesRule{{"--jump", "some-chain-name"}}))
 
-			table, chain, position, rulespec = ipTables.BulkInsertArgsForCall(1)
+			table, chain, rulespec = ipTables.BulkAppendArgsForCall(1)
 			Expect(table).To(Equal("mangle"))
 			Expect(chain).To(Equal("PREROUTING"))
-			Expect(position).To(Equal(1))
 			Expect(rulespec).To(Equal([]rules.IPTablesRule{{"--jump", "some-chain-name"}}))
 		})
 
@@ -82,11 +80,11 @@ var _ = Describe("Netin", func() {
 
 		Context("when adding the jump rule fails", func() {
 			BeforeEach(func() {
-				ipTables.BulkInsertReturns(errors.New("sweet potato"))
+				ipTables.BulkAppendReturns(errors.New("sweet potato"))
 			})
 			It("returns an error", func() {
 				err := netIn.Initialize("some-container-handle")
-				Expect(err).To(MatchError("inserting rule: sweet potato"))
+				Expect(err).To(MatchError("appending rule to chain: sweet potato"))
 			})
 		})
 	})

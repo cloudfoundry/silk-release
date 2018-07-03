@@ -14,16 +14,10 @@ func initChains(iptables rules.IPTablesAdapter, fullRules []IpTablesFullChain) e
 			return fmt.Errorf("creating chain: %s", err)
 		}
 
-		if rule.ParentChain == "INPUT" {
+		if rule.ParentChain != "" {
 			err = iptables.BulkAppend(rule.Table, rule.ParentChain, rule.JumpConditions...)
 			if err != nil {
-				return fmt.Errorf("appending rule to INPUT chain: %s", err)
-			}
-		} else if rule.ParentChain != "" {
-
-			err = iptables.BulkInsert(rule.Table, rule.ParentChain, 1, rule.JumpConditions...)
-			if err != nil {
-				return fmt.Errorf("inserting rule: %s", err)
+				return fmt.Errorf("appending rule to chain: %s", err)
 			}
 		}
 	}
