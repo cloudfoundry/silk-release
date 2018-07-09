@@ -144,6 +144,7 @@ func main() {
 		},
 		LoggingState:                  iptablesLoggingState,
 		IPTablesAcceptedUDPLogsPerSec: conf.IPTablesAcceptedUDPLogsPerSec,
+		EnableOverlayIngressRules:     conf.EnableOverlayIngressRules,
 	}
 
 	timestamper := &enforcer.Timestamper{}

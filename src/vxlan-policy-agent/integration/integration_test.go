@@ -82,9 +82,12 @@ var _ = Describe("VXLAN Policy Agent", func() {
 			LogPrefix:                     "testprefix",
 			ClientTimeoutSeconds:          5,
 			IPTablesAcceptedUDPLogsPerSec: 7,
+			EnableOverlayIngressRules:     true,
 		}
 
-		Expect(conf.Validate()).To(Succeed())
+	})
+
+	JustBeforeEach(func() {
 		configFilePath = WriteConfigFile(conf)
 	})
 
@@ -130,7 +133,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 				return respStruct.Enabled, nil
 			}
 
-			BeforeEach(func() {
+			JustBeforeEach(func() {
 				mockPolicyServer = startServer(serverListenAddr, serverTLSConfig)
 				session = startAgent(paths.VxlanPolicyAgentPath, configFilePath)
 
@@ -182,9 +185,22 @@ var _ = Describe("VXLAN Policy Agent", func() {
 				Expect(iptablesFilterRules()).NotTo(MatchRegexp(`.*--set-xmark.*\n.*--set-xmark.*`))
 			})
 
-			It("writes a ingress allow mark rule for a container to its exposed ports", func() {
-				Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-d 10.255.100.21/32 -p tcp -m tcp --dport 8080 -m mark --mark 0x6 -j ACCEPT`))
-				Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-d 10.255.100.21/32 -p tcp -m tcp --dport 9090 -m mark --mark 0x6 -j ACCEPT`))
+			Context("when 'enable_overlay_ingress_rules' is true", func() {
+				It("writes an ingress allow mark rule for a container to its exposed ports", func() {
+					Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-d 10.255.100.21/32 -p tcp -m tcp --dport 8080 -m mark --mark 0x6 -j ACCEPT`))
+					Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-d 10.255.100.21/32 -p tcp -m tcp --dport 9090 -m mark --mark 0x6 -j ACCEPT`))
+				})
+			})
+
+			Context("when 'enable_overlay_ingress_rules' is false", func() {
+				BeforeEach(func() {
+					conf.EnableOverlayIngressRules = false
+				})
+
+				It("does not write an ingress allow mark rule for a container to its exposed ports", func() {
+					Consistently(iptablesFilterRules, "4s", "1s").ShouldNot(ContainSubstring(`-d 10.255.100.21/32 -p tcp -m tcp --dport 8080 -m mark --mark 0x6 -j ACCEPT`))
+					Consistently(iptablesFilterRules, "4s", "1s").ShouldNot(ContainSubstring(`-d 10.255.100.21/32 -p tcp -m tcp --dport 9090 -m mark --mark 0x6 -j ACCEPT`))
+				})
 			})
 
 			It("emits metrics about durations", func() {
@@ -217,7 +233,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 			})
 		})
 		Context("when the policy server is unavailable", func() {
-			BeforeEach(func() {
+			JustBeforeEach(func() {
 				session = startAgent(paths.VxlanPolicyAgentPath, configFilePath)
 			})
 
@@ -237,7 +253,6 @@ var _ = Describe("VXLAN Policy Agent", func() {
 		Context("when requests to the policy server time out", func() {
 			BeforeEach(func() {
 				conf.ClientTimeoutSeconds = 1
-				configFilePath = WriteConfigFile(conf)
 				mustSucceed("iptables", "-A", "INPUT", "-p", "tcp", "--dport", strconv.Itoa(serverListenPort), "-j", "DROP")
 			})
 
@@ -255,7 +270,9 @@ var _ = Describe("VXLAN Policy Agent", func() {
 			BeforeEach(func() {
 				conf.IPTablesLogging = true
 				Expect(conf.Validate()).To(Succeed())
-				configFilePath = WriteConfigFile(conf)
+			})
+
+			JustBeforeEach(func() {
 				mockPolicyServer = startServer(serverListenAddr, serverTLSConfig)
 				session = startAgent(paths.VxlanPolicyAgentPath, configFilePath)
 			})
@@ -285,13 +302,15 @@ var _ = Describe("VXLAN Policy Agent", func() {
 		Context("when the vxlan policy agent cannot connect to the server upon start", func() {
 			BeforeEach(func() {
 				conf.PolicyServerURL = "some-bad-url"
-				configFilePath = WriteConfigFile(conf)
+			})
+
+			JustBeforeEach(func() {
 				session = startAgent(paths.VxlanPolicyAgentPath, configFilePath)
 			})
 
 			It("crashes and logs a useful error message", func() {
 				Eventually(session).Should(gexec.Exit())
-				Eventually(session.Out.Contents).Should(MatchRegexp("policy-client-get-policies.*http client do.*unsupported protocol scheme"))
+				Expect(string(session.Out.Contents())).To(MatchRegexp("policy-client-get-policies.*http client do.*unsupported protocol scheme"))
 			})
 		})
 
@@ -299,7 +318,6 @@ var _ = Describe("VXLAN Policy Agent", func() {
 			BeforeEach(func() {
 				conf.ClientCertFile = "totally"
 				conf.ClientKeyFile = "not-cool"
-				configFilePath = WriteConfigFile(conf)
 			})
 
 			It("does not start", func() {
@@ -312,9 +330,8 @@ var _ = Describe("VXLAN Policy Agent", func() {
 		Context("when the config file is invalid", func() {
 			BeforeEach(func() {
 				conf.PollInterval = 0
-				configFilePath = WriteConfigFile(conf)
-
 			})
+
 			It("crashes and logs a useful error message", func() {
 				session = startAgent(paths.VxlanPolicyAgentPath, configFilePath)
 				Eventually(session).Should(gexec.Exit(1))

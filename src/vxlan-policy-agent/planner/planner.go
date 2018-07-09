@@ -1,17 +1,17 @@
 package planner
 
 import (
-	"fmt"
 	"lib/datastore"
 	"lib/policy_client"
 	"lib/rules"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 	"vxlan-policy-agent/enforcer"
 
 	"code.cloudfoundry.org/lager"
+	"fmt"
+	"strconv"
 )
 
 //go:generate counterfeiter -o fakes/policy_client.go --fake-name PolicyClient . policyClient
@@ -44,6 +44,7 @@ type VxlanPolicyPlanner struct {
 	Chain                         enforcer.Chain
 	LoggingState                  loggingStateGetter
 	IPTablesAcceptedUDPLogsPerSec int
+	EnableOverlayIngressRules     bool
 }
 
 type Container struct {
@@ -187,41 +188,43 @@ func (p *VxlanPolicyPlanner) GetRulesAndChain() (enforcer.RulesWithChain, error)
 		}
 	}
 
-	var allContainers []Container
-	for _, containers := range containersMap {
-		allContainers = append(allContainers, containers...)
-	}
+	if p.EnableOverlayIngressRules {
+		var allContainers []Container
+		for _, containers := range containersMap {
+			allContainers = append(allContainers, containers...)
+		}
 
-	sort.Slice(allContainers, func(i, j int) bool {
-		return allContainers[i].IP < allContainers[j].IP
-	})
+		sort.Slice(allContainers, func(i, j int) bool {
+			return allContainers[i].IP < allContainers[j].IP
+		})
 
-	ingressTag, err := p.PolicyClient.CreateOrGetTag("INGRESS_ROUTER", "router")
-	if err != nil {
-		p.Logger.Error("policy-client-get-ingress-tags", err)
-		return enforcer.RulesWithChain{}, err
-	}
+		ingressTag, err := p.PolicyClient.CreateOrGetTag("INGRESS_ROUTER", "router")
+		if err != nil {
+			p.Logger.Error("policy-client-get-ingress-tags", err)
+			return enforcer.RulesWithChain{}, err
+		}
 
-	for _, container := range allContainers {
-		ports := sort.StringSlice(container.Ports)
-		sort.Sort(ports)
-		for _, port := range ports {
-			portNumber, err := strconv.Atoi(strings.TrimSpace(port))
-			if err != nil {
-				err = fmt.Errorf("converting container metadata port to int: %s", err)
-				p.Logger.Error("policy-client-get-ingress-tags", err)
-				return enforcer.RulesWithChain{}, err
+		for _, container := range allContainers {
+			ports := sort.StringSlice(container.Ports)
+			sort.Sort(ports)
+			for _, port := range ports {
+				portNumber, err := strconv.Atoi(strings.TrimSpace(port))
+				if err != nil {
+					err = fmt.Errorf("converting container metadata port to int: %s", err)
+					p.Logger.Error("policy-client-get-ingress-tags", err)
+					return enforcer.RulesWithChain{}, err
+				}
+
+				filterRuleset = append(
+					filterRuleset,
+					rules.NewMarkAllowRuleNoComment(
+						container.IP,
+						"tcp",
+						portNumber,
+						ingressTag,
+					),
+				)
 			}
-
-			filterRuleset = append(
-				filterRuleset,
-				rules.NewMarkAllowRuleNoComment(
-					container.IP,
-					"tcp",
-					portNumber,
-					ingressTag,
-				),
-			)
 		}
 	}
 

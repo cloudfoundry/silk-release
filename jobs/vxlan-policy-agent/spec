@@ -63,6 +63,10 @@ properties:
     description: "Maximum number of iptables logs per second for accepted UDP packets."
     default: 100
 
+  enable_overlay_ingress_rules:
+    description: "Experimental feature. Allows ingress over the overlay network, from a vm running silk-daemon in singleIPMode"
+    default: false
+
   disable:
     description: "Disable this monit job.  It will not run. Required for backwards compatability"
     default: false

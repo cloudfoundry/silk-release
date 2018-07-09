@@ -26,6 +26,7 @@ type VxlanPolicyAgent struct {
 	LogPrefix                     string `json:"log_prefix" validate:"nonzero"`
 	IPTablesLogging               bool   `json:"iptables_c2c_logging"`
 	IPTablesAcceptedUDPLogsPerSec int    `json:"iptables_accepted_udp_logs_per_sec" validate:"min=1"`
+	EnableOverlayIngressRules     bool   `json:"enable_overlay_ingress_rules"`
 }
 
 func (c *VxlanPolicyAgent) Validate() error {

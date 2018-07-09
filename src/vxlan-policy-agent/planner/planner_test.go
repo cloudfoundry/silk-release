@@ -125,6 +125,7 @@ var _ = Describe("Planner", func() {
 			Chain:                         chain,
 			LoggingState:                  loggingStateGetter,
 			IPTablesAcceptedUDPLogsPerSec: 3,
+			EnableOverlayIngressRules:     true,
 		}
 	})
 
@@ -149,63 +150,114 @@ var _ = Describe("Planner", func() {
 			BeforeEach(func() {
 				loggingStateGetter.IsEnabledReturns(false)
 			})
-			It("returns all the rules but no logging rules", func() {
-				rulesWithChain, err := policyPlanner.GetRulesAndChain()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rulesWithChain.Chain).To(Equal(chain))
 
-				Expect(rulesWithChain.Rules).To(ConsistOf([]rules.IPTablesRule{
-					// allow based on mark
-					{
-						"-d", "10.255.1.3",
-						"-p", "udp",
-						"--dport", "5555:5555",
-						"-m", "mark", "--mark", "0xBB",
-						"--jump", "ACCEPT",
-						"-m", "comment", "--comment", "src:another-app-guid_dst:some-other-app-guid",
-					},
-					{
-						"-d", "10.255.1.3",
-						"-p", "tcp",
-						"--dport", "1234:1234",
-						"-m", "mark", "--mark", "0xAA",
-						"--jump", "ACCEPT",
-						"-m", "comment", "--comment", "src:some-app-guid_dst:some-other-app-guid",
-					},
-					{
-						"-d", "10.255.1.2",
-						"-p", "tcp",
-						"-m", "tcp", "--dport", "8080",
-						"-m", "mark", "--mark", "0x5476",
-						"--jump", "ACCEPT",
-					},
-					{
-						"-d", "10.255.1.3",
-						"-p", "tcp",
-						"-m", "tcp", "--dport", "9090",
-						"-m", "mark", "--mark", "0x5476",
-						"--jump", "ACCEPT",
-					},
-					{
-						"-d", "10.255.1.3",
-						"-p", "tcp",
-						"-m", "tcp", "--dport", "8181",
-						"-m", "mark", "--mark", "0x5476",
-						"--jump", "ACCEPT",
-					},
-					// set tags on all outgoing packets, regardless of local vs remote
-					{
-						"--source", "10.255.1.2",
-						"--jump", "MARK", "--set-xmark", "0xAA",
-						"-m", "comment", "--comment", "src:some-app-guid",
-					},
-					{
-						"--source", "10.255.1.3",
-						"--jump", "MARK", "--set-xmark", "0xCC",
-						"-m", "comment", "--comment", "src:some-other-app-guid",
-					},
-				}))
+			Context("when EnableOverlayIngressRules is enabled", func() {
+				BeforeEach(func() {
+					policyPlanner.EnableOverlayIngressRules = true
+				})
+
+				It("returns all the rules but no logging rules", func() {
+					rulesWithChain, err := policyPlanner.GetRulesAndChain()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rulesWithChain.Chain).To(Equal(chain))
+
+					Expect(rulesWithChain.Rules).To(ConsistOf([]rules.IPTablesRule{
+						// allow based on mark
+						{
+							"-d", "10.255.1.3",
+							"-p", "udp",
+							"--dport", "5555:5555",
+							"-m", "mark", "--mark", "0xBB",
+							"--jump", "ACCEPT",
+							"-m", "comment", "--comment", "src:another-app-guid_dst:some-other-app-guid",
+						},
+						{
+							"-d", "10.255.1.3",
+							"-p", "tcp",
+							"--dport", "1234:1234",
+							"-m", "mark", "--mark", "0xAA",
+							"--jump", "ACCEPT",
+							"-m", "comment", "--comment", "src:some-app-guid_dst:some-other-app-guid",
+						},
+						{
+							"-d", "10.255.1.2",
+							"-p", "tcp",
+							"-m", "tcp", "--dport", "8080",
+							"-m", "mark", "--mark", "0x5476",
+							"--jump", "ACCEPT",
+						},
+						{
+							"-d", "10.255.1.3",
+							"-p", "tcp",
+							"-m", "tcp", "--dport", "9090",
+							"-m", "mark", "--mark", "0x5476",
+							"--jump", "ACCEPT",
+						},
+						{
+							"-d", "10.255.1.3",
+							"-p", "tcp",
+							"-m", "tcp", "--dport", "8181",
+							"-m", "mark", "--mark", "0x5476",
+							"--jump", "ACCEPT",
+						},
+						// set tags on all outgoing packets, regardless of local vs remote
+						{
+							"--source", "10.255.1.2",
+							"--jump", "MARK", "--set-xmark", "0xAA",
+							"-m", "comment", "--comment", "src:some-app-guid",
+						},
+						{
+							"--source", "10.255.1.3",
+							"--jump", "MARK", "--set-xmark", "0xCC",
+							"-m", "comment", "--comment", "src:some-other-app-guid",
+						},
+					}))
+				})
 			})
+
+			Context("when EnableOverlayIngressRules is disabled", func() {
+				BeforeEach(func() {
+					policyPlanner.EnableOverlayIngressRules = false
+				})
+
+				It("returns the rules without overlay ingress and no logging rules", func() {
+					rulesWithChain, err := policyPlanner.GetRulesAndChain()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rulesWithChain.Chain).To(Equal(chain))
+
+					Expect(rulesWithChain.Rules).To(ConsistOf([]rules.IPTablesRule{
+						// allow based on mark
+						{
+							"-d", "10.255.1.3",
+							"-p", "udp",
+							"--dport", "5555:5555",
+							"-m", "mark", "--mark", "0xBB",
+							"--jump", "ACCEPT",
+							"-m", "comment", "--comment", "src:another-app-guid_dst:some-other-app-guid",
+						},
+						{
+							"-d", "10.255.1.3",
+							"-p", "tcp",
+							"--dport", "1234:1234",
+							"-m", "mark", "--mark", "0xAA",
+							"--jump", "ACCEPT",
+							"-m", "comment", "--comment", "src:some-app-guid_dst:some-other-app-guid",
+						},
+						// set tags on all outgoing packets, regardless of local vs remote
+						{
+							"--source", "10.255.1.2",
+							"--jump", "MARK", "--set-xmark", "0xAA",
+							"-m", "comment", "--comment", "src:some-app-guid",
+						},
+						{
+							"--source", "10.255.1.3",
+							"--jump", "MARK", "--set-xmark", "0xCC",
+							"-m", "comment", "--comment", "src:some-other-app-guid",
+						},
+					}))
+				})
+			})
+
 		})
 
 		Context("when iptables logging is enabled", func() {
@@ -442,6 +494,18 @@ var _ = Describe("Planner", func() {
 						"--jump", "ACCEPT",
 					},
 				}))
+			})
+
+			Context("when overlay ingress rules are disabled", func() {
+				It("returns a chain with no rules", func() {
+					policyPlanner.EnableOverlayIngressRules = false
+					rulesWithChain, err := policyPlanner.GetRulesAndChain()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(policyClient.GetPoliciesByIDCallCount()).To(Equal(1))
+
+					Expect(rulesWithChain.Chain).To(Equal(chain))
+					Expect(rulesWithChain.Rules).To(BeEmpty())
+				})
 			})
 		})
 

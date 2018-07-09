@@ -42,7 +42,8 @@ var _ = Describe("Config", func() {
 					"log_prefix": "cfnetworking",
 					"iptables_c2c_logging": true,
 					"client_timeout_seconds":5,
-					"iptables_accepted_udp_logs_per_sec":4
+					"iptables_accepted_udp_logs_per_sec":4,
+					"enable_overlay_ingress_rules": true
 				}`)
 				c, err := config.New(file.Name())
 				Expect(err).NotTo(HaveOccurred())
@@ -62,6 +63,7 @@ var _ = Describe("Config", func() {
 				Expect(c.IPTablesLogging).To(Equal(true))
 				Expect(c.ClientTimeoutSeconds).To(Equal(5))
 				Expect(c.IPTablesAcceptedUDPLogsPerSec).To(Equal(4))
+				Expect(c.EnableOverlayIngressRules).To(Equal(true))
 			})
 		})
 
