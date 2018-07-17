@@ -74,7 +74,13 @@ func (m *NetOut) BulkInsertRules(netOutRules []garden.NetOutRule) error {
 		return fmt.Errorf("getting chain name: %s", err)
 	}
 
+
 	ruleSpec := m.Converter.BulkConvert(netOutRules, logChain, m.ASGLogging)
+	ruleSpec = append( ruleSpec, []rules.IPTablesRule{
+		{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
+		{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
+	}...)
+
 	err = m.IPTables.BulkInsert("filter", chain, 1, ruleSpec...)
 	if err != nil {
 		return fmt.Errorf("bulk inserting net-out rules: %s", err)
@@ -112,8 +118,6 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 			forwardChainName,
 			rules.NewNetOutJumpConditions(m.HostInterfaceNames, m.ContainerIP, forwardChainName),
 			[]rules.IPTablesRule{
-				rules.NewNetOutInvalidRule(),
-				rules.NewNetOutRelatedEstablishedRule(),
 				rules.NewNetOutDefaultRejectRule(),
 			},
 		}),

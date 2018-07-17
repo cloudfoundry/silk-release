@@ -496,6 +496,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 				By("checking that the default forwarding rules are created for that container")
 				Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
 					`-A ` + netoutChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
+					`-A ` + netoutChainName + ` -p tcp -m state --state INVALID -j DROP`,
 					`-A ` + netoutChainName + ` -j REJECT --reject-with icmp-port-unreachable`,
 				}))
 
@@ -611,8 +612,12 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 				By("checking that the default forwarding rules are created for that container")
 				Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
-					`-A ` + netoutChainName + ` -p tcp -m state --state INVALID -j DROP`,
 					`-A ` + netoutChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
+					`-A ` + netoutChainName + ` -p tcp -m state --state INVALID -j DROP`,
+					`-A ` + netoutChainName + ` -p icmp -m iprange --dst-range 5.5.5.5-6.6.6.6 -m icmp --icmp-type 8/0 -j ACCEPT`,
+					`-A ` + netoutChainName + ` -p udp -m iprange --dst-range 11.11.11.11-22.22.22.22 -m udp --dport 53:54 -j ACCEPT`,
+					`-A ` + netoutChainName + ` -p tcp -m iprange --dst-range 8.8.8.8-9.9.9.9 -m tcp --dport 53:54 -j ACCEPT`,
+					`-A ` + netoutChainName + ` -m iprange --dst-range 3.3.3.3-4.4.4.4 -j ACCEPT`,
 					`-A ` + netoutChainName + ` -j REJECT --reject-with icmp-port-unreachable`,
 				}))
 
@@ -669,9 +674,13 @@ var _ = Describe("CniWrapperPlugin", func() {
 					Eventually(session).Should(gexec.Exit(0))
 
 					By("checking that the filter rule was installed and that logging can be enabled")
-					Expect(AllIPTablesRules("filter")).To(ContainElement(`-A ` + netoutChainName + ` -p tcp -m iprange --dst-range 8.8.8.8-9.9.9.9 -m tcp --dport 53:54 -g ` + netoutLoggingChainName))
-					Expect(AllIPTablesRules("filter")).To(ContainElement(`-A ` + netoutChainName + ` -p udp -m iprange --dst-range 11.11.11.11-22.22.22.22 -m udp --dport 53:54 -g ` + netoutLoggingChainName))
-					Expect(AllIPTablesRules("filter")).To(ContainElement(`-A ` + netoutChainName + ` -p icmp -m iprange --dst-range 5.5.5.5-6.6.6.6 -m icmp --icmp-type 8/0 -g ` + netoutLoggingChainName))
+					Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+						`-A ` + netoutChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
+						`-A ` + netoutChainName + ` -p tcp -m state --state INVALID -j DROP`,
+						`-A ` + netoutChainName + ` -p icmp -m iprange --dst-range 5.5.5.5-6.6.6.6 -m icmp --icmp-type 8/0 -g ` + netoutLoggingChainName,
+						`-A ` + netoutChainName + ` -p udp -m iprange --dst-range 11.11.11.11-22.22.22.22 -m udp --dport 53:54 -g ` + netoutLoggingChainName,
+						`-A ` + netoutChainName + ` -p tcp -m iprange --dst-range 8.8.8.8-9.9.9.9 -m tcp --dport 53:54 -g ` + netoutLoggingChainName,
+					}))
 
 					By("checking that it writes the logging rules")
 					Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
@@ -691,7 +700,6 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 					By("checking that a default deny log rule was written")
 					Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
-						`-A ` + netoutChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
 						expectedDenyLogRule,
 						`-A ` + netoutChainName + ` -j REJECT --reject-with icmp-port-unreachable`,
 					}))

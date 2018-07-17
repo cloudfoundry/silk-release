@@ -118,12 +118,7 @@ var _ = Describe("Netout", func() {
 			Expect(table).To(Equal("filter"))
 			Expect(chain).To(Equal("netout-some-container-handle"))
 			Expect(rulespec).To(Equal([]rules.IPTablesRule{
-				{"-p", "tcp", "-m", "state", "--state", "INVALID",
-					"--jump", "DROP"},
-				{"-m", "state", "--state", "RELATED,ESTABLISHED",
-					"--jump", "ACCEPT"},
-				{"--jump", "REJECT",
-					"--reject-with", "icmp-port-unreachable"},
+				{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
 			}))
 
 			table, chain, rulespec = ipTables.BulkAppendArgsForCall(5)
@@ -218,10 +213,6 @@ var _ = Describe("Netout", func() {
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("netout-some-container-handle"))
 				Expect(rulespec).To(Equal([]rules.IPTablesRule{
-					{"-p", "tcp", "-m", "state", "--state", "INVALID",
-						"--jump", "DROP"},
-					{"-m", "state", "--state", "RELATED,ESTABLISHED",
-						"--jump", "ACCEPT"},
 					{"-m", "limit", "--limit", "3/s", "--limit-burst", "3",
 						"--jump", "LOG", "--log-prefix", `"DENY_some-container-handle "`},
 					{"--jump", "REJECT",
@@ -541,7 +532,13 @@ var _ = Describe("Netout", func() {
 			Expect(table).To(Equal("filter"))
 			Expect(chain).To(Equal("netout-some-container-handle"))
 			Expect(pos).To(Equal(1))
-			Expect(rulespec).To(Equal(genericRules))
+
+			rulesWithDefaultAcceptReject := append(genericRules, []rules.IPTablesRule{
+				{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
+				{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
+			}...)
+
+			Expect(rulespec).To(Equal(rulesWithDefaultAcceptReject))
 		})
 
 		Context("when the chain namer fails", func() {
