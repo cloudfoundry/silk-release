@@ -16,7 +16,7 @@ import (
 
 //go:generate counterfeiter -o fakes/policy_client.go --fake-name PolicyClient . policyClient
 type policyClient interface {
-	GetPoliciesByID(ids ...string) ([]policy_client.Policy, error)
+	GetPoliciesByID(ids ...string) ([]policy_client.Policy, []policy_client.EgressPolicy, error)
 	CreateOrGetTag(id, groupType string) (string, error)
 }
 
@@ -109,8 +109,9 @@ func (p *VxlanPolicyPlanner) GetRulesAndChain() (enforcer.RulesWithChain, error)
 
 	policyServerStartRequestTime := time.Now()
 	var policies []policy_client.Policy
+	var egressPolicies []policy_client.EgressPolicy
 	if len(groupIDs) > 0 {
-		policies, err = p.PolicyClient.GetPoliciesByID(groupIDs...)
+		policies, egressPolicies, err = p.PolicyClient.GetPoliciesByID(groupIDs...)
 		if err != nil {
 			p.Logger.Error("policy-client-get-policies", err)
 			return enforcer.RulesWithChain{}, err
@@ -225,6 +226,24 @@ func (p *VxlanPolicyPlanner) GetRulesAndChain() (enforcer.RulesWithChain, error)
 					),
 				)
 			}
+		}
+	}
+
+	egressPolicySlice := policy_client.EgressPolicySlice(egressPolicies)
+	sort.Sort(egressPolicySlice)
+	for _, policy := range egressPolicySlice {
+		sourceContainers := containersMap[policy.Source.ID]
+
+		for _, container := range sourceContainers {
+			filterRuleset = append(filterRuleset,
+				rules.IPTablesRule{
+					"-s", container.IP,
+					"-p", policy.Destination.Protocol,
+					"-m", "iprange",
+					"--dst-range", fmt.Sprintf("%s-%s", policy.Destination.IPRanges[0].Start, policy.Destination.IPRanges[0].End),
+					"-m", policy.Destination.Protocol,
+					"-j", "ACCEPT",
+				})
 		}
 	}
 

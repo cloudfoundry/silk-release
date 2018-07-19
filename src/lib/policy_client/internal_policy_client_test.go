@@ -76,13 +76,28 @@ var _ = Describe("InternalClient", func() {
 	Describe("GetPoliciesByID", func() {
 		BeforeEach(func() {
 			jsonClient.DoStub = func(method, route string, reqData, respData interface{}, token string) error {
-				respBytes := []byte(`{ "policies": [ {"source": { "id": "some-app-guid", "tag": "BEEF" }, "destination": { "id": "some-other-app-guid", "protocol": "tcp", "port": 8090, "ports": { "start": 8090, "end": 8090 } } } ] }`)
+				respBytes := []byte(`
+					{ 
+						"policies": [ 
+							{
+								"source": { "id": "some-app-guid", "tag": "BEEF" }, 
+								"destination": { "id": "some-other-app-guid", "protocol": "tcp", "port": 8090, "ports": { "start": 8090, "end": 8090 } } 
+							} 
+						],
+						"egress_policies": [
+							{
+								"source": { "id": "some-other-app-guid" },
+								"destination": { "protocol": "tcp", "ips": [{ "start": "1.2.3.4", "end": "1.2.3.5" }] }
+							}
+						]
+					}`)
 				json.Unmarshal(respBytes, respData)
 				return nil
 			}
 		})
+
 		It("does the right json http client request", func() {
-			policies, err := client.GetPoliciesByID("some-app-guid", "some-other-app-guid")
+			policies, egressPolicies, err := client.GetPoliciesByID("some-app-guid", "some-other-app-guid")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(jsonClient.DoCallCount()).To(Equal(1))
@@ -108,6 +123,20 @@ var _ = Describe("InternalClient", func() {
 				},
 			},
 			))
+			Expect(egressPolicies).To(Equal([]policy_client.EgressPolicy{
+				{
+					Source: &policy_client.EgressSource{
+						ID: "some-other-app-guid",
+					},
+					Destination: &policy_client.EgressDestination{
+						Protocol: "tcp",
+						IPRanges: []policy_client.IPRange{
+							{Start: "1.2.3.4", End: "1.2.3.5"},
+						},
+					},
+				},
+			}))
+
 			Expect(token).To(BeEmpty())
 		})
 
@@ -116,7 +145,7 @@ var _ = Describe("InternalClient", func() {
 				jsonClient.DoReturns(errors.New("banana"))
 			})
 			It("returns the error", func() {
-				_, err := client.GetPoliciesByID("foo")
+				_, _, err := client.GetPoliciesByID("foo")
 				Expect(err).To(MatchError("banana"))
 			})
 		})
@@ -124,9 +153,10 @@ var _ = Describe("InternalClient", func() {
 		Context("when ids is empty", func() {
 			BeforeEach(func() {})
 			It("returns an error and does not call the json http client", func() {
-				policies, err := client.GetPoliciesByID()
+				policies, egressPolicies, err := client.GetPoliciesByID()
 				Expect(err).To(MatchError("ids cannot be empty"))
 				Expect(policies).To(BeNil())
+				Expect(egressPolicies).To(BeNil())
 				Expect(jsonClient.DoCallCount()).To(Equal(0))
 			})
 		})

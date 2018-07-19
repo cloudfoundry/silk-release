@@ -180,6 +180,10 @@ var _ = Describe("VXLAN Policy Agent", func() {
 				Expect(iptablesFilterRules()).To(ContainSubstring(`-d 10.255.100.21/32 -p udp -m udp --dport 7000:8000 -m mark --mark 0xd -m comment --comment "src:yet-another-app-guid_dst:some-very-very-long-app-guid" -j ACCEPT`))
 			})
 
+			It("enforces egress policies", func() {
+				Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m tcp -j ACCEPT`))
+			})
+
 			It("writes only one mark rule for a single container", func() {
 				Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -m comment --comment "src:some-very-very-long-app-guid" -j MARK --set-xmark 0xa/0xffffffff`))
 				Expect(iptablesFilterRules()).NotTo(MatchRegexp(`.*--set-xmark.*\n.*--set-xmark.*`))
@@ -376,7 +380,9 @@ func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/networking/v1/internal/policies" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"policies": [
+			w.Write([]byte(`{
+				"total_policies": 4,
+				"policies": [
 				{"source": {"id":"some-very-very-long-app-guid", "tag":"A"},
 				"destination": {"id": "some-other-app-guid", "tag":"B", "protocol":"tcp", "ports":{"start":3333, "end":3333}}},
 				{"source": {"id":"some-very-very-long-app-guid", "tag":"A"},
@@ -384,8 +390,14 @@ func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 				{"source": {"id":"another-app-guid", "tag":"C"},
 				"destination": {"id": "some-very-very-long-app-guid", "tag":"A", "protocol":"tcp", "ports":{"start":9999, "end":9999}}},
 				{"source": {"id":"yet-another-app-guid", "tag":"D"},
-				"destination": {"id": "some-very-very-long-app-guid", "tag":"A", "protocol":"udp", "ports":{"start":7000, "end":8000}}}
-					]}`))
+				"destination": {"id": "some-very-very-long-app-guid", "tag":"A", "protocol":"udp", "ports":{"start":7000, "end":8000}}}],
+				"total_egress_policies": 2,
+				"egress_policies": [
+				{"source": {"id": "some-very-very-long-app-guid" }, 
+				"destination": {"ips": [{"start": "10.27.1.1", "end": "10.27.1.2"}], "protocol": "tcp"}},
+				{"source": {"id": "not-deployed-on-this-cell-why-did-you-query-for-this-id" }, 
+				"destination": {"ips": [{"start": "10.27.2.3", "end": "10.27.2.5"}], "protocol": "udp"}}]
+				}`))
 			return
 		}
 

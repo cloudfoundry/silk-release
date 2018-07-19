@@ -20,15 +20,16 @@ import (
 
 var _ = Describe("Planner", func() {
 	var (
-		policyPlanner        *planner.VxlanPolicyPlanner
-		policyClient         *fakes.PolicyClient
-		policyServerResponse []policy_client.Policy
-		store                *libfakes.Datastore
-		metricsSender        *fakes.MetricsSender
-		logger               *lagertest.TestLogger
-		chain                enforcer.Chain
-		data                 map[string]datastore.Container
-		loggingStateGetter   *fakes.LoggingStateGetter
+		policyPlanner              *planner.VxlanPolicyPlanner
+		policyClient               *fakes.PolicyClient
+		policyServerResponse       []policy_client.Policy
+		egressPolicyServerResponse []policy_client.EgressPolicy
+		store                      *libfakes.Datastore
+		metricsSender              *fakes.MetricsSender
+		logger                     *lagertest.TestLogger
+		chain                      enforcer.Chain
+		data                       map[string]datastore.Container
+		loggingStateGetter         *fakes.LoggingStateGetter
 	)
 
 	BeforeEach(func() {
@@ -107,7 +108,34 @@ var _ = Describe("Planner", func() {
 				},
 			},
 		}
-		policyClient.GetPoliciesByIDReturns(policyServerResponse, nil)
+
+		egressPolicyServerResponse = []policy_client.EgressPolicy{
+			{
+				Source: &policy_client.EgressSource{
+					ID: "some-app-guid",
+				},
+				Destination: &policy_client.EgressDestination{
+					Protocol: "udp",
+					IPRanges: []policy_client.IPRange{
+						{Start: "1.2.3.4", End: "1.2.3.5"},
+					},
+				},
+			},
+			{
+				Source: &policy_client.EgressSource{
+					ID: "some-other-app-guid",
+				},
+				Destination: &policy_client.EgressDestination{
+					Protocol: "tcp",
+					IPRanges: []policy_client.IPRange{
+						{Start: "1.2.3.6", End: "1.2.3.7"},
+					},
+				},
+
+			},
+		}
+
+		policyClient.GetPoliciesByIDReturns(policyServerResponse, egressPolicyServerResponse, nil)
 		policyClient.CreateOrGetTagReturns("5476", nil)
 
 		chain = enforcer.Chain{
@@ -160,8 +188,23 @@ var _ = Describe("Planner", func() {
 					rulesWithChain, err := policyPlanner.GetRulesAndChain()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(rulesWithChain.Chain).To(Equal(chain))
-
 					Expect(rulesWithChain.Rules).To(ConsistOf([]rules.IPTablesRule{
+						{
+							"-s", "10.255.1.2",
+							"-p", "udp",
+							"-m", "iprange",
+							"--dst-range", "1.2.3.4-1.2.3.5",
+							"-m", "udp",
+							"-j", "ACCEPT",
+						},
+						{
+							"-s", "10.255.1.3",
+							"-p", "tcp",
+							"-m", "iprange",
+							"--dst-range", "1.2.3.6-1.2.3.7",
+							"-m", "tcp",
+							"-j", "ACCEPT",
+						},
 						// allow based on mark
 						{
 							"-d", "10.255.1.3",
@@ -226,6 +269,22 @@ var _ = Describe("Planner", func() {
 					Expect(rulesWithChain.Chain).To(Equal(chain))
 
 					Expect(rulesWithChain.Rules).To(ConsistOf([]rules.IPTablesRule{
+						{
+							"-s", "10.255.1.2",
+							"-p", "udp",
+							"-m", "iprange",
+							"--dst-range", "1.2.3.4-1.2.3.5",
+							"-m", "udp",
+							"-j", "ACCEPT",
+						},
+						{
+							"-s", "10.255.1.3",
+							"-p", "tcp",
+							"-m", "iprange",
+							"--dst-range", "1.2.3.6-1.2.3.7",
+							"-m", "tcp",
+							"-j", "ACCEPT",
+						},
 						// allow based on mark
 						{
 							"-d", "10.255.1.3",
@@ -329,7 +388,7 @@ var _ = Describe("Planner", func() {
 		It("returns all mark set rules before any mark filter rules", func() {
 			rulesWithChain, err := policyPlanner.GetRulesAndChain()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rulesWithChain.Rules).To(HaveLen(7))
+			Expect(rulesWithChain.Rules).To(HaveLen(9))
 			Expect(rulesWithChain.Rules[0]).To(ContainElement("--set-xmark"))
 			Expect(rulesWithChain.Rules[1]).To(ContainElement("--set-xmark"))
 			Expect(rulesWithChain.Rules[2]).To(ContainElement("ACCEPT"))
@@ -348,16 +407,20 @@ var _ = Describe("Planner", func() {
 
 		Context("when the policies are returned from the server in a different order", func() {
 			var reversed []policy_client.Policy
+			var reversedEgress []policy_client.EgressPolicy
 			BeforeEach(func() {
-				for i, _ := range policyServerResponse {
+				for i := range policyServerResponse {
 					reversed = append(reversed, policyServerResponse[len(policyServerResponse)-i-1])
+				}
+				for i := range egressPolicyServerResponse {
+					reversedEgress = append(reversedEgress, egressPolicyServerResponse[len(egressPolicyServerResponse)-i-1])
 				}
 			})
 
 			It("the order of the rules is not affected", func() {
 				rulesWithChain, err := policyPlanner.GetRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
-				policyClient.GetPoliciesByIDReturns(reversed, nil)
+				policyClient.GetPoliciesByIDReturns(reversed, reversedEgress, nil)
 				rulesWithChain2, err := policyPlanner.GetRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
 
@@ -398,7 +461,7 @@ var _ = Describe("Planner", func() {
 						},
 					},
 				}
-				policyClient.GetPoliciesByIDReturns(policyServerResponse, nil)
+				policyClient.GetPoliciesByIDReturns(policyServerResponse, nil, nil)
 			})
 
 			It("writes only one set mark rule", func() {
@@ -453,7 +516,7 @@ var _ = Describe("Planner", func() {
 			It("the order of the rules is not affected", func() {
 				rulesWithChain, err := policyPlanner.GetRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rulesWithChain.Rules).To(HaveLen(12))
+				Expect(rulesWithChain.Rules).To(HaveLen(16))
 				Expect(rulesWithChain.Rules[0]).To(ContainElement("10.255.1.2"))
 				Expect(rulesWithChain.Rules[1]).To(ContainElement("10.255.1.4"))
 				Expect(rulesWithChain.Rules[2]).To(ContainElement("10.255.1.3"))
@@ -463,7 +526,7 @@ var _ = Describe("Planner", func() {
 
 		Context("when there are no policies", func() {
 			BeforeEach(func() {
-				policyClient.GetPoliciesByIDReturns([]policy_client.Policy{}, nil)
+				policyClient.GetPoliciesByIDReturns([]policy_client.Policy{}, nil, nil)
 			})
 			It("returns an chain with only the ingress rules", func() {
 				rulesWithChain, err := policyPlanner.GetRulesAndChain()
@@ -542,7 +605,7 @@ var _ = Describe("Planner", func() {
 				Expect(logger).To(gbytes.Say("container-metadata-policy-group-id.*container-id-fruit.*Container.*metadata.*policy_group_id.*CloudController.*restage"))
 
 				Expect(rulesWithChain.Chain).To(Equal(chain))
-				Expect(rulesWithChain.Rules).To(HaveLen(7))
+				Expect(rulesWithChain.Rules).To(HaveLen(9))
 			})
 		})
 
@@ -563,7 +626,7 @@ var _ = Describe("Planner", func() {
 				Expect(logger).To(gbytes.Say("container-metadata-policy-group-id.*container-id-2.*Container.*metadata.*ports.*CloudController.*restage"))
 
 				Expect(rulesWithChain.Chain).To(Equal(chain))
-				Expect(rulesWithChain.Rules).To(HaveLen(5))
+				Expect(rulesWithChain.Rules).To(HaveLen(7))
 			})
 		})
 
@@ -581,7 +644,7 @@ var _ = Describe("Planner", func() {
 
 		Context("when getting policies fails", func() {
 			BeforeEach(func() {
-				policyClient.GetPoliciesByIDReturns(nil, errors.New("kiwi"))
+				policyClient.GetPoliciesByIDReturns(nil, nil, errors.New("kiwi"))
 			})
 
 			It("logs and returns the error", func() {

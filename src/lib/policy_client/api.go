@@ -10,6 +10,25 @@ type Policy struct {
 	Destination Destination `json:"destination"`
 }
 
+type EgressPolicy struct {
+	Source      *EgressSource      `json:"source"`
+	Destination *EgressDestination `json:"destination"`
+}
+
+type EgressSource struct {
+	ID string `json:"id"`
+}
+
+type EgressDestination struct {
+	Protocol string    `json:"protocol"`
+	IPRanges []IPRange `json:"ips"`
+}
+
+type IPRange struct {
+	Start string `json:"start"`
+	End   string `json:"end"`
+}
+
 type Source struct {
 	ID  string `json:"id"`
 	Tag string `json:"tag,omitempty"`
@@ -33,6 +52,6 @@ type Tag struct {
 }
 
 type Space struct {
-	Name    string `json:name`
-	OrgGUID string `json:organization_guid`
+	Name    string `json:"name"`
+	OrgGUID string `json:"organization_guid"`
 }
