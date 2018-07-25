@@ -8,6 +8,7 @@ files:
   - code.cloudfoundry.org/cf-networking-helpers/json_client/*.go # gosub
   - code.cloudfoundry.org/cf-networking-helpers/marshal/*.go # gosub
   - code.cloudfoundry.org/cf-networking-helpers/mutualtls/*.go # gosub
+  - code.cloudfoundry.org/cf-networking-helpers/runner/*.go # gosub
   - code.cloudfoundry.org/filelock/*.go # gosub
   - code.cloudfoundry.org/lager/*.go # gosub
   - code.cloudfoundry.org/silk/client/config/*.go # gosub

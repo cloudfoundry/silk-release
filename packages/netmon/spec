@@ -5,6 +5,7 @@ dependencies:
   - golang-1.10-linux
 
 files:
+  - code.cloudfoundry.org/cf-networking-helpers/runner/*.go # gosub
   - code.cloudfoundry.org/filelock/*.go # gosub
   - code.cloudfoundry.org/lager/*.go # gosub
   - code.cloudfoundry.org/runtimeschema/metric/*.go # gosub

@@ -12,6 +12,7 @@ files:
   - cni-wrapper-plugin/interfacelookup/*.go # gosub
   - cni-wrapper-plugin/legacynet/*.go # gosub
   - cni-wrapper-plugin/lib/*.go # gosub
+  - code.cloudfoundry.org/cf-networking-helpers/runner/*.go # gosub
   - code.cloudfoundry.org/filelock/*.go # gosub
   - code.cloudfoundry.org/garden/*.go # gosub
   - code.cloudfoundry.org/lager/*.go # gosub
