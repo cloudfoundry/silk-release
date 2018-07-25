@@ -15,11 +15,11 @@ import (
 
 var _ = Describe("Integration", func() {
 	var (
-		session              *gexec.Session
-		conf                 config.Netmon
-		fakeMetron           metrics.FakeMetron
-		ifName               string
-		configFilePath       string
+		session        *gexec.Session
+		conf           config.Netmon
+		fakeMetron     metrics.FakeMetron
+		ifName         string
+		configFilePath string
 		iptablesLockFilePath string
 	)
 	BeforeEach(func() {
@@ -32,11 +32,11 @@ var _ = Describe("Integration", func() {
 
 		ifName = discoverInterfaceName()
 		conf = config.Netmon{
-			PollInterval:     1,
-			MetronAddress:    fakeMetron.Address(),
-			InterfaceName:    ifName,
-			LogLevel:         "info",
-			LogPrefix:        "cfnetworking",
+			PollInterval:  1,
+			MetronAddress: fakeMetron.Address(),
+			InterfaceName: ifName,
+			LogLevel:      "info",
+			LogPrefix:     "cfnetworking",
 			IPTablesLockFile: iptablesLockFilePath,
 		}
 	})

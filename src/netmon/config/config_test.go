@@ -99,11 +99,11 @@ var _ = Describe("Config", func() {
 		DescribeTable("when config file is missing a member",
 			func(missingFlag, errorMsg string) {
 				allData := map[string]interface{}{
-					"poll_interval":      1234,
-					"metron_address":     "http://1.2.3.4:1234",
-					"interface_name":     "eth0",
-					"log_level":          "debug",
-					"log_prefix":         "cfnetworking",
+					"poll_interval":  1234,
+					"metron_address": "http://1.2.3.4:1234",
+					"interface_name": "eth0",
+					"log_level":      "debug",
+					"log_prefix":     "cfnetworking",
 					"iptables_lock_file": "some-lockfile",
 				}
 				delete(allData, missingFlag)

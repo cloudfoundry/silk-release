@@ -12,24 +12,21 @@ import (
 
 var _ = Describe("LockedIptables", func() {
 	var (
-		lockedIPT      *rules.LockedIPTables
-		ipt            *fakes.IPTables
-		restorer       *fakes.Restorer
-		lock           *fakes.Locker
-		rulespec       []string
-		rule           rules.IPTablesRule
-		ipTablesRunner *fakes.CommandRunner
+		lockedIPT *rules.LockedIPTables
+		ipt       *fakes.IPTables
+		restorer  *fakes.Restorer
+		lock      *fakes.Locker
+		rulespec  []string
+		rule      rules.IPTablesRule
 	)
 	BeforeEach(func() {
 		ipt = &fakes.IPTables{}
 		lock = &fakes.Locker{}
 		restorer = &fakes.Restorer{}
-		ipTablesRunner = &fakes.CommandRunner{}
 		lockedIPT = &rules.LockedIPTables{
-			IPTables:       ipt,
-			Locker:         lock,
-			Restorer:       restorer,
-			IPTablesRunner: ipTablesRunner,
+			IPTables: ipt,
+			Locker:   lock,
+			Restorer: restorer,
 		}
 		rulespec = []string{"some", "args"}
 		rule = rules.IPTablesRule{"some", "args"}
@@ -436,51 +433,6 @@ var _ = Describe("LockedIptables", func() {
 			It("returns an error", func() {
 				err := lockedIPT.ClearChain("some-table", "some-chain")
 				Expect(err).To(MatchError("iptables call: patato and unlock: banana"))
-			})
-		})
-	})
-
-	Describe("RuleCount", func() {
-		It("should return a count of all the rows", func() {
-			toReturn := []byte(`a chain
-				another chain
-				a third chain`)
-			ipTablesRunner.CombinedOutputReturns(toReturn, nil)
-
-			rows, err := lockedIPT.RuleCount("table-name")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rows).To(Equal(3))
-
-			Expect(lock.LockCallCount()).To(Equal(1))
-			Expect(lock.UnlockCallCount()).To(Equal(1))
-		})
-
-		Context("when locking fails", func() {
-			BeforeEach(func() {
-				lock.LockReturns(errors.New("banana"))
-			})
-			It("returns an error", func() {
-				_, err := lockedIPT.RuleCount("table-name")
-				Expect(err).To(MatchError("lock: banana"))
-			})
-		})
-
-		Context("when call fails and unlock succeeds", func() {
-			It("returns an error", func() {
-				ipTablesRunner.CombinedOutputReturns([]byte{},  errors.New("nope"))
-
-				_, err := lockedIPT.RuleCount("table-name")
-				Expect(err).To(MatchError("iptablesCommandRunner: nope and unlock: <nil>"))
-			})
-		})
-
-		Context("when call fails and unlock fails", func() {
-			It("returns an error", func() {
-				ipTablesRunner.CombinedOutputReturns([]byte{},  errors.New("nope"))
-				lock.UnlockReturns(errors.New("banana"))
-
-				_, err := lockedIPT.RuleCount("table-name")
-				Expect(err).To(MatchError("iptablesCommandRunner: nope and unlock: banana"))
 			})
 		})
 	})

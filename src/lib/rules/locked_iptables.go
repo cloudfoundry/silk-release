@@ -1,7 +1,6 @@
 package rules
 
 import (
-	"code.cloudfoundry.org/cf-networking-helpers/runner"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -31,12 +30,6 @@ type IPTablesAdapter interface {
 	DeleteChain(table, chain string) error
 	BulkInsert(table, chain string, pos int, rulespec ...IPTablesRule) error
 	BulkAppend(table, chain string, rulespec ...IPTablesRule) error
-	RuleCount(table string) (int, error)
-}
-
-//go:generate counterfeiter -o ../fakes/command_runner.go --fake-name CommandRunner . commandRunner
-type commandRunner interface {
-	CombinedOutput(command runner.Command) ([]byte, error)
 }
 
 //go:generate counterfeiter -o ../fakes/locker.go --fake-name Locker . locker
@@ -64,10 +57,9 @@ func (r *Restorer) Restore(input string) error {
 }
 
 type LockedIPTables struct {
-	IPTables       iptables
-	Locker         locker
-	Restorer       restorer
-	IPTablesRunner commandRunner
+	IPTables iptables
+	Locker   locker
+	Restorer restorer
 }
 
 func handleIPTablesError(err1, err2 error) error {
@@ -161,26 +153,6 @@ func (l *LockedIPTables) ListAll(table string) ([]string, error) {
 	}
 
 	return ret, l.Locker.Unlock()
-}
-
-func (l *LockedIPTables) RuleCount(table string) (int, error) {
-	if err := l.Locker.Lock(); err != nil {
-		return -1, fmt.Errorf("lock: %s", err)
-	}
-
-	command := runner.Command{
-		Args: []string{ "-S", "-t", table },
-	}
-	output, err := l.IPTablesRunner.CombinedOutput(command)
-
-	if err != nil {
-		return -1, fmt.Errorf("iptablesCommandRunner: %+v and unlock: %+v", err, l.Locker.Unlock())
-	}
-
-	rules := strings.TrimSpace(string(output))
-	ruleCount := len(strings.Split(rules, "\n"))
-
-	return ruleCount, l.Locker.Unlock()
 }
 
 func (l *LockedIPTables) NewChain(table, chain string) error {

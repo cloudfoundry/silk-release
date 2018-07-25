@@ -22,8 +22,10 @@ var _ = Describe("Poller Run", func() {
 		logger = lagertest.NewTestLogger("test")
 		pollInterval := 1 * time.Second
 
-		iptables.RuleCountReturnsOnCall(0, 2, nil)
-		iptables.RuleCountReturnsOnCall(1, 2, nil)
+		filterRules := []string {"rule 1", "meow rule"}
+		natRules := []string {"rule fish", "hampster rule"}
+		iptables.ListAllReturnsOnCall(0, filterRules, nil)
+		iptables.ListAllReturnsOnCall(1, natRules, nil)
 
 		metrics := &poller.SystemMetrics{
 			Logger:          logger,
@@ -53,11 +55,11 @@ var _ = Describe("Poller Run", func() {
 	})
 
 	It("should use the iptables adapter when checking the rules", func() {
-		Expect(iptables.RuleCountCallCount()).To(Equal(2))
+		Expect(iptables.ListAllCallCount()).To(Equal(2))
 
-		table := iptables.RuleCountArgsForCall(0)
+		table := iptables.ListAllArgsForCall(0)
 		Expect(table).To(Equal("filter"))
-		table = iptables.RuleCountArgsForCall(1)
+		table = iptables.ListAllArgsForCall(1)
 		Expect(table).To(Equal("nat"))
 
 		iptablesLog := logger.Logs()[2]

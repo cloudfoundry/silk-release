@@ -9,17 +9,15 @@ import (
 	"os"
 	"time"
 
-	"code.cloudfoundry.org/cf-networking-helpers/runner"
-	"code.cloudfoundry.org/filelock"
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry/dropsonde"
-	"github.com/coreos/go-iptables/iptables"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
-	"lib/rules"
-	"os/exec"
 	"sync"
+	"github.com/coreos/go-iptables/iptables"
+	"code.cloudfoundry.org/filelock"
+	"lib/rules"
 )
 
 var (
@@ -65,28 +63,18 @@ func main() {
 		Mutex:      &sync.Mutex{},
 	}
 	restorer := &rules.Restorer{}
-
-	executablePath, err := exec.LookPath("iptables")
-	if err != nil {
-		logger.Fatal("commandrunner-new", err)
-	}
-
-	iptablesCommandRunner := runner.CommandRunner{
-		Executable: executablePath,
-	}
-
 	lockedIPTables := &rules.LockedIPTables{
-		IPTables:       ipt,
-		Locker:         iptLocker,
-		Restorer:       restorer,
-		IPTablesRunner: iptablesCommandRunner,
+		IPTables: ipt,
+		Locker:   iptLocker,
+		Restorer: restorer,
 	}
+
 
 	dropsonde.Initialize(conf.MetronAddress, "netmon")
 	systemMetrics := &poller.SystemMetrics{
-		Logger:          logger,
-		PollInterval:    pollInterval,
-		InterfaceName:   conf.InterfaceName,
+		Logger:        logger,
+		PollInterval:  pollInterval,
+		InterfaceName: conf.InterfaceName,
 		IPTablesAdapter: lockedIPTables,
 	}
 

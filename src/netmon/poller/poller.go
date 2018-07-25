@@ -50,19 +50,19 @@ func countNetworkInterfaces() (int, error) {
 }
 
 func countIPTablesRules(ipTablesAdapter rules.IPTablesAdapter, logger lager.Logger) (int, error) {
-	filterRules, err := ipTablesAdapter.RuleCount("filter")
+	filterRules, err := ipTablesAdapter.ListAll("filter")
 	if err != nil {
 		logger.Error("failed-getting-filter-rules", err)
 		return 0, err
 	}
 
-	natRules, err := ipTablesAdapter.RuleCount("nat")
+	natRules, err := ipTablesAdapter.ListAll("nat")
 	if err != nil {
 		logger.Error("failed-getting-nat-rules", err)
 		return 0, err
 	}
 
-	return filterRules + natRules, nil
+	return len(filterRules) + len(natRules), nil
 }
 
 func readStatsFile(ifName, stat string) (int, error) {

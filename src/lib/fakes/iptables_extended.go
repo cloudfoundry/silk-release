@@ -125,19 +125,6 @@ type IPTablesAdapter struct {
 	bulkAppendReturnsOnCall map[int]struct {
 		result1 error
 	}
-	RuleCountStub        func(table string) (int, error)
-	ruleCountMutex       sync.RWMutex
-	ruleCountArgsForCall []struct {
-		table string
-	}
-	ruleCountReturns struct {
-		result1 int
-		result2 error
-	}
-	ruleCountReturnsOnCall map[int]struct {
-		result1 int
-		result2 error
-	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -596,57 +583,6 @@ func (fake *IPTablesAdapter) BulkAppendReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *IPTablesAdapter) RuleCount(table string) (int, error) {
-	fake.ruleCountMutex.Lock()
-	ret, specificReturn := fake.ruleCountReturnsOnCall[len(fake.ruleCountArgsForCall)]
-	fake.ruleCountArgsForCall = append(fake.ruleCountArgsForCall, struct {
-		table string
-	}{table})
-	fake.recordInvocation("RuleCount", []interface{}{table})
-	fake.ruleCountMutex.Unlock()
-	if fake.RuleCountStub != nil {
-		return fake.RuleCountStub(table)
-	}
-	if specificReturn {
-		return ret.result1, ret.result2
-	}
-	return fake.ruleCountReturns.result1, fake.ruleCountReturns.result2
-}
-
-func (fake *IPTablesAdapter) RuleCountCallCount() int {
-	fake.ruleCountMutex.RLock()
-	defer fake.ruleCountMutex.RUnlock()
-	return len(fake.ruleCountArgsForCall)
-}
-
-func (fake *IPTablesAdapter) RuleCountArgsForCall(i int) string {
-	fake.ruleCountMutex.RLock()
-	defer fake.ruleCountMutex.RUnlock()
-	return fake.ruleCountArgsForCall[i].table
-}
-
-func (fake *IPTablesAdapter) RuleCountReturns(result1 int, result2 error) {
-	fake.RuleCountStub = nil
-	fake.ruleCountReturns = struct {
-		result1 int
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *IPTablesAdapter) RuleCountReturnsOnCall(i int, result1 int, result2 error) {
-	fake.RuleCountStub = nil
-	if fake.ruleCountReturnsOnCall == nil {
-		fake.ruleCountReturnsOnCall = make(map[int]struct {
-			result1 int
-			result2 error
-		})
-	}
-	fake.ruleCountReturnsOnCall[i] = struct {
-		result1 int
-		result2 error
-	}{result1, result2}
-}
-
 func (fake *IPTablesAdapter) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -668,8 +604,6 @@ func (fake *IPTablesAdapter) Invocations() map[string][][]interface{} {
 	defer fake.bulkInsertMutex.RUnlock()
 	fake.bulkAppendMutex.RLock()
 	defer fake.bulkAppendMutex.RUnlock()
-	fake.ruleCountMutex.RLock()
-	defer fake.ruleCountMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
