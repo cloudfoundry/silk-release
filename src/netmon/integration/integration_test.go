@@ -14,8 +14,8 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/types"
 
-	"netmon/config"
 	"io/ioutil"
+	"netmon/config"
 	"os"
 )
 
@@ -38,10 +38,10 @@ func discoverInterfaceName() string {
 
 var _ = Describe("Integration", func() {
 	var (
-		session    *gexec.Session
-		conf       config.Netmon
-		fakeMetron metrics.FakeMetron
-		ifName     string
+		session              *gexec.Session
+		conf                 config.Netmon
+		fakeMetron           metrics.FakeMetron
+		ifName               string
 		iptablesLockFilePath string
 	)
 
@@ -55,11 +55,11 @@ var _ = Describe("Integration", func() {
 
 		ifName = discoverInterfaceName()
 		conf = config.Netmon{
-			PollInterval:  1,
-			MetronAddress: fakeMetron.Address(),
-			InterfaceName: ifName,
-			LogLevel:      "info",
-			LogPrefix:     "cfnetworking",
+			PollInterval:     1,
+			MetronAddress:    fakeMetron.Address(),
+			InterfaceName:    ifName,
+			LogLevel:         "info",
+			LogPrefix:        "cfnetworking",
 			IPTablesLockFile: iptablesLockFilePath,
 		}
 		configFilePath := WriteConfigFile(conf)
