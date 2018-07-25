@@ -13,11 +13,11 @@ import (
 )
 
 type Netmon struct {
-	PollInterval  int    `json:"poll_interval" validate:"min=1"`
-	MetronAddress string `json:"metron_address" validate:"nonzero"`
-	InterfaceName string `json:"interface_name" validate:"nonzero"`
-	LogLevel      string `json:"log_level"`
-	LogPrefix     string `json:"log_prefix" validate:"nonzero"`
+	PollInterval     int    `json:"poll_interval" validate:"min=1"`
+	MetronAddress    string `json:"metron_address" validate:"nonzero"`
+	InterfaceName    string `json:"interface_name" validate:"nonzero"`
+	LogLevel         string `json:"log_level"`
+	LogPrefix        string `json:"log_prefix" validate:"nonzero"`
 	IPTablesLockFile string `json:"iptables_lock_file" validate:"nonzero"`
 }
 
