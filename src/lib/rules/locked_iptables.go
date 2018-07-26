@@ -27,7 +27,6 @@ type IPTablesAdapter interface {
 	List(table, chain string) ([]string, error)
 	NewChain(table, chain string) error
 	ClearChain(table, chain string) error
-	ListAll(table string) ([]string, error)
 	DeleteChain(table, chain string) error
 	BulkInsert(table, chain string, pos int, rulespec ...IPTablesRule) error
 	BulkAppend(table, chain string, rulespec ...IPTablesRule) error
@@ -136,28 +135,6 @@ func (l *LockedIPTables) List(table, chain string) ([]string, error) {
 	ret, err := l.IPTables.List(table, chain)
 	if err != nil {
 		return nil, handleIPTablesError(err, l.Locker.Unlock())
-	}
-
-	return ret, l.Locker.Unlock()
-}
-
-func (l *LockedIPTables) ListAll(table string) ([]string, error) {
-	if err := l.Locker.Lock(); err != nil {
-		return nil, fmt.Errorf("lock: %s", err)
-	}
-
-	chains, err := l.IPTables.ListChains(table)
-	if err != nil {
-		return nil, handleIPTablesError(err, l.Locker.Unlock())
-	}
-
-	var ret []string
-	for _, chain := range chains {
-		rows, err := l.IPTables.List(table, chain)
-		if err != nil {
-			return nil, handleIPTablesError(err, l.Locker.Unlock())
-		}
-		ret = append(ret, rows...)
 	}
 
 	return ret, l.Locker.Unlock()
