@@ -131,7 +131,6 @@ var _ = Describe("Planner", func() {
 						{Start: "1.2.3.6", End: "1.2.3.7"},
 					},
 				},
-
 			},
 		}
 

@@ -1,13 +1,13 @@
 package handlers_test
 
 import (
+	"errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"vxlan-policy-agent/handlers"
-	"errors"
-	"io/ioutil"
 )
 
 var _ = Describe("Force Policy Poll Cycle Handler", func() {

@@ -164,7 +164,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 				BeforeEach(func() {
 					conf.PollInterval = math.MaxInt32
 				})
-				FIt("should cause iptables to be updated", func() {
+				It("should cause iptables to be updated", func() {
 					resp, err := http.Get(fmt.Sprintf("http://%s:%d/force-policy-poll-cycle", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort))
 					Expect(err).NotTo(HaveOccurred())
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
