@@ -43,7 +43,9 @@ var _ = Describe("Config", func() {
 					"iptables_c2c_logging": true,
 					"client_timeout_seconds":5,
 					"iptables_accepted_udp_logs_per_sec":4,
-					"enable_overlay_ingress_rules": true
+					"enable_overlay_ingress_rules": true,
+					"force_policy_poll_cycle_port": 6789,
+					"force_policy_poll_cycle_host": "http://6.7.8.9"
 				}`)
 				c, err := config.New(file.Name())
 				Expect(err).NotTo(HaveOccurred())
@@ -64,6 +66,8 @@ var _ = Describe("Config", func() {
 				Expect(c.ClientTimeoutSeconds).To(Equal(5))
 				Expect(c.IPTablesAcceptedUDPLogsPerSec).To(Equal(4))
 				Expect(c.EnableOverlayIngressRules).To(Equal(true))
+				Expect(c.ForcePolicyPollCyclePort).To(Equal(6789))
+				Expect(c.ForcePolicyPollCycleHost).To(Equal("http://6.7.8.9"))
 			})
 		})
 
@@ -106,6 +110,8 @@ var _ = Describe("Config", func() {
 					"log_prefix":                         "cfnetworking",
 					"client_timeout_seconds":             5,
 					"iptables_accepted_udp_logs_per_sec": 4,
+					"force_policy_poll_cycle_port":       6789,
+					"force_policy_poll_cycle_host":       "http://6.7.8.9",
 				}
 				delete(allData, missingFlag)
 				Expect(json.NewEncoder(file).Encode(allData)).To(Succeed())
@@ -127,6 +133,8 @@ var _ = Describe("Config", func() {
 			Entry("missing log prefix", "log_prefix", "LogPrefix: zero value"),
 			Entry("missing client timeout", "client_timeout_seconds", "ClientTimeoutSeconds: zero value"),
 			Entry("missing iptables accepted udp logs per sec", "iptables_accepted_udp_logs_per_sec", "IPTablesAcceptedUDPLogsPerSec: less than min"),
+			Entry("missing force policy poll cycle host", "force_policy_poll_cycle_host", "ForcePolicyPollCycleHost: zero value"),
+			Entry("missing force policy poll cycle port", "force_policy_poll_cycle_port", "ForcePolicyPollCyclePort: zero value"),
 		)
 	})
 })

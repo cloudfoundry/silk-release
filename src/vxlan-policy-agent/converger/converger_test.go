@@ -27,6 +27,7 @@ var _ = Describe("Single Poll Cycle", func() {
 			remoteRulesWithChain enforcer.RulesWithChain
 			policyRulesWithChain enforcer.RulesWithChain
 			logger               *lagertest.TestLogger
+			locker               *Locker
 		)
 
 		BeforeEach(func() {
@@ -35,6 +36,7 @@ var _ = Describe("Single Poll Cycle", func() {
 			fakeRemotePlanner = &fakes.Planner{}
 			fakeEnforcer = &fakes.RuleEnforcer{}
 			metricsSender = &fakes.MetricsSender{}
+			locker = &Locker{}
 			logger = lagertest.NewTestLogger("test")
 
 			p = &converger.SinglePollCycle{
@@ -42,6 +44,7 @@ var _ = Describe("Single Poll Cycle", func() {
 				Enforcer:      fakeEnforcer,
 				MetricsSender: metricsSender,
 				Logger:        logger,
+				Mutex:         locker,
 			}
 
 			localRulesWithChain = enforcer.RulesWithChain{
@@ -81,6 +84,8 @@ var _ = Describe("Single Poll Cycle", func() {
 			Expect(fakeRemotePlanner.GetRulesAndChainCallCount()).To(Equal(1))
 			Expect(fakePolicyPlanner.GetRulesAndChainCallCount()).To(Equal(1))
 			Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(3))
+			Expect(locker.LockCallCount).To(Equal(1))
+			Expect(locker.UnlockCallCount).To(Equal(1))
 
 			rws := fakeEnforcer.EnforceRulesAndChainArgsForCall(0)
 			Expect(rws).To(Equal(localRulesWithChain))
@@ -190,6 +195,9 @@ var _ = Describe("Single Poll Cycle", func() {
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(0))
 				Expect(metricsSender.SendDurationCallCount()).To(Equal(0))
+
+				Expect(locker.LockCallCount).To(Equal(1))
+				Expect(locker.UnlockCallCount).To(Equal(1))
 			})
 		})
 
@@ -204,6 +212,9 @@ var _ = Describe("Single Poll Cycle", func() {
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(1))
 				Expect(metricsSender.SendDurationCallCount()).To(Equal(0))
+
+				Expect(locker.LockCallCount).To(Equal(1))
+				Expect(locker.UnlockCallCount).To(Equal(1))
 			})
 		})
 
@@ -218,6 +229,9 @@ var _ = Describe("Single Poll Cycle", func() {
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(2))
 				Expect(metricsSender.SendDurationCallCount()).To(Equal(0))
+
+				Expect(locker.LockCallCount).To(Equal(1))
+				Expect(locker.UnlockCallCount).To(Equal(1))
 			})
 		})
 
@@ -231,7 +245,23 @@ var _ = Describe("Single Poll Cycle", func() {
 				Expect(err).To(MatchError("enforce: eggplant"))
 
 				Expect(metricsSender.SendDurationCallCount()).To(Equal(0))
+
+				Expect(locker.LockCallCount).To(Equal(1))
+				Expect(locker.UnlockCallCount).To(Equal(1))
 			})
 		})
 	})
 })
+
+type Locker struct {
+	LockCallCount   int
+	UnlockCallCount int
+}
+
+func (l *Locker) Lock() {
+	l.LockCallCount++
+}
+
+func (l *Locker) Unlock() {
+	l.UnlockCallCount++
+}

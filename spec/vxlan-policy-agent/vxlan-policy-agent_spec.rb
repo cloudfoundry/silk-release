@@ -50,6 +50,8 @@ module Bosh::Template::Test
               'policy_server_url' => 'https://policy-server-hostname:4003',
               'poll_interval' => 22,
               'vni' => 1,
+              'force_policy_poll_cycle_host' => '127.0.0.1',
+              'force_policy_poll_cycle_port' => 44152,
             })
           end
         end

@@ -162,18 +162,23 @@ func main() {
 	uptimeSource := metrics.NewUptimeSource()
 	metricsEmitter := metrics.NewMetricsEmitter(logger, emitInterval, uptimeSource)
 
+	pollCycleFunc := (&converger.SinglePollCycle{
+		Planners: []converger.Planner{
+			dynamicPlanner,
+		},
+		Enforcer:      ruleEnforcer,
+		MetricsSender: metricsSender,
+		Logger:        logger,
+	}).DoCycle
+
 	policyPoller := &poller.Poller{
 		Logger:       logger,
 		PollInterval: pollInterval,
-		SingleCycleFunc: (&converger.SinglePollCycle{
-			Planners: []converger.Planner{
-				dynamicPlanner,
-			},
-			Enforcer:      ruleEnforcer,
-			MetricsSender: metricsSender,
-			Logger:        logger,
-		}).DoCycle,
+		SingleCycleFunc: pollCycleFunc,
 	}
+
+	forcePolicyPollCycleServerAddress := fmt.Sprintf("%s:%d", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort)
+	forcePolicyPollCycleServer := createForcePolicyPollCycleServer(forcePolicyPollCycleServerAddress, pollCycleFunc)
 
 	debugServerAddress := fmt.Sprintf("%s:%d", conf.DebugServerHost, conf.DebugServerPort)
 	debugServer := createCustomDebugServer(debugServerAddress, reconfigurableSink, iptablesLoggingState)
@@ -181,6 +186,7 @@ func main() {
 		{"metrics_emitter", metricsEmitter},
 		{"policy_poller", policyPoller},
 		{"debug-server", debugServer},
+		{"force-policy-poll-cycle-server", forcePolicyPollCycleServer},
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
@@ -220,6 +226,14 @@ func createCustomDebugServer(listenAddress string, sink *lager.ReconfigurableSin
 	mux := debugserver.Handler(sink).(*http.ServeMux)
 	mux.Handle("/iptables-c2c-logging", &handlers.IPTablesLogging{
 		LoggingState: iptablesLoggingState,
+	})
+	return http_server.New(listenAddress, mux)
+}
+
+func createForcePolicyPollCycleServer(listenAddress string, pollCycleFunc func() error) ifrit.Runner {
+	mux := http.NewServeMux()
+	mux.Handle("/force-policy-poll-cycle", &handlers.ForcePolicyPollCycle{
+		PollCycleFunc: pollCycleFunc,
 	})
 	return http_server.New(listenAddress, mux)
 }

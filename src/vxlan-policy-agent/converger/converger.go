@@ -6,6 +6,7 @@ import (
 	"vxlan-policy-agent/enforcer"
 
 	"code.cloudfoundry.org/lager"
+	"sync"
 )
 
 //go:generate counterfeiter -o fakes/planner.go --fake-name Planner . Planner
@@ -29,12 +30,15 @@ type SinglePollCycle struct {
 	MetricsSender metricsSender
 	Logger        lager.Logger
 	ruleSets      map[enforcer.Chain]enforcer.RulesWithChain
+	Mutex         sync.Locker
 }
 
 const metricEnforceDuration = "iptablesEnforceTime"
 const metricPollDuration = "totalPollTime"
 
 func (m *SinglePollCycle) DoCycle() error {
+	m.Mutex.Lock()
+
 	if m.ruleSets == nil {
 		m.ruleSets = make(map[enforcer.Chain]enforcer.RulesWithChain)
 	}
@@ -44,6 +48,7 @@ func (m *SinglePollCycle) DoCycle() error {
 	for _, p := range m.Planners {
 		ruleSet, err := p.GetRulesAndChain()
 		if err != nil {
+			m.Mutex.Unlock()
 			return fmt.Errorf("get-rules: %s", err)
 		}
 		enforceStartTime := time.Now()
@@ -59,6 +64,7 @@ func (m *SinglePollCycle) DoCycle() error {
 			})
 			err = m.Enforcer.EnforceRulesAndChain(ruleSet)
 			if err != nil {
+				m.Mutex.Unlock()
 				return fmt.Errorf("enforce: %s", err)
 			}
 			m.ruleSets[ruleSet.Chain] = ruleSet
@@ -66,6 +72,8 @@ func (m *SinglePollCycle) DoCycle() error {
 
 		enforceDuration += time.Now().Sub(enforceStartTime)
 	}
+
+	m.Mutex.Unlock()
 
 	pollDuration := time.Now().Sub(pollStartTime)
 	m.MetricsSender.SendDuration(metricEnforceDuration, enforceDuration)

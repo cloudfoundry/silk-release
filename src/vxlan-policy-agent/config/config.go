@@ -27,6 +27,8 @@ type VxlanPolicyAgent struct {
 	IPTablesLogging               bool   `json:"iptables_c2c_logging"`
 	IPTablesAcceptedUDPLogsPerSec int    `json:"iptables_accepted_udp_logs_per_sec" validate:"min=1"`
 	EnableOverlayIngressRules     bool   `json:"enable_overlay_ingress_rules"`
+	ForcePolicyPollCyclePort      int    `json:"force_policy_poll_cycle_port" validate:"nonzero"`
+	ForcePolicyPollCycleHost      string `json:"force_policy_poll_cycle_host" validate:"nonzero"`
 }
 
 func (c *VxlanPolicyAgent) Validate() error {

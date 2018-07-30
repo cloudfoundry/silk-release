@@ -25,6 +25,7 @@ import (
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/http_server"
 	"github.com/tedsuo/ifrit/sigmon"
+	"math"
 )
 
 var _ = Describe("VXLAN Policy Agent", func() {
@@ -77,6 +78,8 @@ var _ = Describe("VXLAN Policy Agent", func() {
 			ClientCertFile:                paths.ClientCertFile,
 			ClientKeyFile:                 paths.ClientKeyFile,
 			IPTablesLockFile:              GlobalIPTablesLockFile,
+			ForcePolicyPollCycleHost:      "127.0.0.1",
+			ForcePolicyPollCyclePort:      ports.PickAPort(),
 			DebugServerHost:               "127.0.0.1",
 			DebugServerPort:               ports.PickAPort(),
 			LogPrefix:                     "testprefix",
@@ -154,6 +157,19 @@ var _ = Describe("VXLAN Policy Agent", func() {
 					Eventually(getIPTablesLogging).Should(BeFalse())
 					setIPTablesLogging(LoggingEnabled)
 					Expect(getIPTablesLogging()).To(BeTrue())
+				})
+			})
+
+			Describe("the force policy poll cycle endpoint", func() {
+				BeforeEach(func() {
+					conf.PollInterval = math.MaxInt32
+				})
+				FIt("should cause iptables to be updated", func() {
+					resp, err := http.Get(fmt.Sprintf("http://%s:%d/force-policy-poll-cycle", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+					Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m tcp -j ACCEPT`))
 				})
 			})
 
