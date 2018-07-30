@@ -169,11 +169,12 @@ func main() {
 		Enforcer:      ruleEnforcer,
 		MetricsSender: metricsSender,
 		Logger:        logger,
+		Mutex:         new(sync.Mutex),
 	}).DoCycle
 
 	policyPoller := &poller.Poller{
-		Logger:       logger,
-		PollInterval: pollInterval,
+		Logger:          logger,
+		PollInterval:    pollInterval,
 		SingleCycleFunc: pollCycleFunc,
 	}
 
