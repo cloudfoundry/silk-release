@@ -8,6 +8,14 @@ module Bosh::Template::Test
   describe 'silk-cni job' do
     let(:release_path) {File.join(File.dirname(__FILE__), '../..')}
     let(:release) {ReleaseDir.new(release_path)}
+    let(:links) {[
+      Link.new(
+        name: 'vpa',
+        properties: {
+          'force_policy_poll_cycle_port' => 5555
+        }
+      )
+    ]}
     let(:merged_manifest_properties) do
       {
         'mtu' => mtu,
@@ -35,7 +43,7 @@ module Bosh::Template::Test
       let(:template) {job.template('config/cni/cni-wrapper-plugin.conflist')}
 
       it 'creates a config/cni/cni-wrapper-plugin.conflist from properties' do
-        clientConfig = JSON.parse(template.render(merged_manifest_properties, spec: spec))
+        clientConfig = JSON.parse(template.render(merged_manifest_properties, spec: spec, consumes: links))
         expect(clientConfig).to eq({
           'name' => 'cni-wrapper',
           'cniVersion' => '0.3.1',
@@ -54,6 +62,7 @@ module Bosh::Template::Test
             'ingress_tag' => 'ffff0000',
             'vtep_name' => 'silk-vtep',
             'dns_servers' => ['8.8.8.8'],
+            'policy_agent_force_poll_address' => '127.0.0.1:5555',
             'host_tcp_services' => ['169.254.0.2:9001', '169.254.0.2:9002'],
             'delegate' => {
               'cniVersion' => '0.3.1',
@@ -78,7 +87,7 @@ module Bosh::Template::Test
       context 'when no_masquerade_cidr_range is not provided' do
         let(:merged_manifest_properties) {}
         it 'does not set the no_masquerade_cidr_range' do
-          clientConfig = JSON.parse(template.render(merged_manifest_properties, spec: spec))
+          clientConfig = JSON.parse(template.render(merged_manifest_properties, spec: spec, consumes: links))
           expect(clientConfig['plugins'][0]['no_masquerade_cidr_range']).to eq('')
         end
 
@@ -88,6 +97,12 @@ module Bosh::Template::Test
               name: 'cf_network',
               properties: {
                 'network' => '10.255.0.0/16'
+              }
+            ),
+            Link.new(
+              name: 'vpa',
+              properties: {
+                'force_policy_poll_cycle_port' => 5555
               }
             )
           ]}
@@ -102,7 +117,7 @@ module Bosh::Template::Test
       context 'when mtu is greater than 0' do
         let(:mtu) {100}
         it 'subtracts VXLAN_OVERHEAD from the mtu value' do
-          clientConfig = JSON.parse(template.render(merged_manifest_properties, spec: spec))
+          clientConfig = JSON.parse(template.render(merged_manifest_properties, spec: spec, consumes: links))
           expect(clientConfig['plugins'][0]['delegate']['mtu']).to eq(50)
         end
       end

@@ -27,7 +27,6 @@ properties:
   silk_daemon.listen_port:
     description: "Silk CNI plugin connects to the silk daemon on this port."
     default: 23954
-
   iptables_logging:
     description: "Enables iptables logging for overlay network policies and Application Security Groups.  Logs to the kernel log."
     default: false
