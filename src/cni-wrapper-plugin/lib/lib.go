@@ -9,6 +9,7 @@ import (
 
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/version"
+	"gopkg.in/validator.v2"
 )
 
 type RuntimeConfig struct {
@@ -33,6 +34,7 @@ type WrapperConfig struct {
 	IngressTag                      string                 `json:"ingress_tag"`
 	VTEPName                        string                 `json:"vtep_name"`
 	RuntimeConfig                   RuntimeConfig          `json:"runtimeConfig,omitempty"`
+	PolicyAgentForcePollAddress     string                 `json:"policy_agent_force_poll_address" validate:"nonzero"`
 }
 
 func LoadWrapperConfig(bytes []byte) (*WrapperConfig, error) {
@@ -76,6 +78,8 @@ func LoadWrapperConfig(bytes []byte) (*WrapperConfig, error) {
 	if _, ok := n.Delegate["cniVersion"]; !ok {
 		n.Delegate["cniVersion"] = version.Current()
 	}
+
+	validator.Validate(n)
 
 	return n, nil
 }

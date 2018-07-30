@@ -12,6 +12,8 @@ packages:
 consumes:
 - name: cf_network
   type: cf_network
+- name: vpa
+  type: policy-agent
 
 properties:
   no_masquerade_cidr_range:

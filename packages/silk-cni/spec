@@ -87,6 +87,7 @@ files:
   - github.com/vishvananda/netns/*.go # gosub
   - golang.org/x/sys/unix/*.go # gosub
   - golang.org/x/sys/unix/*.s # gosub
+  - gopkg.in/validator.v2/*.go # gosub
   - lib/datastore/*.go # gosub
   - lib/rules/*.go # gosub
   - lib/serial/*.go # gosub

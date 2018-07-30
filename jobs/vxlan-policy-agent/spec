@@ -15,11 +15,12 @@ packages:
 
 provides:
   - name: vpa
-    type: certificates
+    type: policy-agent
     properties:
     - ca_cert
     - client_cert
     - client_key
+    - force_policy_poll_cycle_port
 
 properties:
   iptables_logging:

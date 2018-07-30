@@ -19,6 +19,8 @@ import (
 	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 	"github.com/coreos/go-iptables/iptables"
+	"io/ioutil"
+	"net/http"
 )
 
 func cmdAdd(args *skel.CmdArgs) error {
@@ -73,6 +75,16 @@ func cmdAdd(args *skel.CmdArgs) error {
 		}
 
 		return storeErr
+	}
+
+	resp, err := http.DefaultClient.Get(fmt.Sprintf("http://%s/force-policy-poll-cycle", cfg.PolicyAgentForcePollAddress))
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		return fmt.Errorf("vpa response code: %v with message: %s", resp.StatusCode, body)
 	}
 
 	localDNSServers, err := getLocalDNSServers(cfg.DNSServers)

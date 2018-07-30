@@ -12,12 +12,15 @@ import (
 
 	"code.cloudfoundry.org/garden"
 
+	"code.cloudfoundry.org/cf-networking-helpers/testsupport/ports"
 	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/pivotal-cf-experimental/gomegamatchers"
 	"github.com/vishvananda/netlink"
+	"net/http"
 )
 
 type InputStruct struct {
@@ -51,6 +54,8 @@ var _ = Describe("CniWrapperPlugin", func() {
 		underlayName2          string
 		underlayIpAddr1        string
 		underlayIpAddr2        string
+		policyAgentAddress     string
+		policyAgentServer      mockPolicyAgentServer
 	)
 
 	var cniCommand = func(command, input string) *exec.Cmd {
@@ -113,6 +118,14 @@ var _ = Describe("CniWrapperPlugin", func() {
 		Expect(iptablesLockFile.Close()).To(Succeed())
 		iptablesLockFilePath = iptablesLockFile.Name()
 
+		policyAgentAddress = fmt.Sprintf("%s:%v", "127.0.0.1", ports.PickAPort())
+		policyAgentServer = mockPolicyAgentServer{
+			ReturnCode:         200,
+			ReturnErrorMessage: "",
+			Address:            policyAgentAddress,
+		}
+		policyAgentServer.start()
+
 		var code garden.ICMPCode = 0
 		inputStruct = InputStruct{
 			Name:       "cni-wrapper",
@@ -141,6 +154,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 				UnderlayIPs:                   []string{underlayIpAddr1, underlayIpAddr2},
 				IPTablesDeniedLogsPerSec:      5,
 				IPTablesAcceptedUDPLogsPerSec: 7,
+				PolicyAgentForcePollAddress:   policyAgentAddress,
 				RuntimeConfig: lib.RuntimeConfig{
 					PortMappings: []garden.NetIn{
 						{
@@ -258,6 +272,9 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 		removeDummyInterface(underlayName1, underlayIpAddr1)
 		removeDummyInterface(underlayName2, underlayIpAddr2)
+
+		err = policyAgentServer.stop()
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("state lifecycle", func() {
@@ -326,10 +343,10 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Expect(debug.Command).To(Equal("ADD"))
 
 			Expect(debug.CmdArgs.StdinData).To(MatchJSON(`{
-				"cniVersion": "0.3.1",
-				"type": "noop",
-				"some": "other data"
-			}`))
+						"cniVersion": "0.3.1",
+						"type": "noop",
+						"some": "other data"
+					}`))
 		})
 
 		It("ensures the container masquerade rule is created", func() {
@@ -372,6 +389,28 @@ var _ = Describe("CniWrapperPlugin", func() {
 			}))
 		})
 
+		It("calls the policy agent poller", func() {
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+
+			Expect(policyAgentServer.EndpointCallCount).To(Equal(1))
+		})
+
+		Context("when the policy agent poller returns an error", func() {
+			It("returns an error", func() {
+				policyAgentServer.ReturnCode = 500
+				policyAgentServer.ReturnErrorMessage = "an error occurred in the vpa"
+
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(1))
+				Expect(session.Out).Should(gbytes.Say(".*vpa response code: 500 with message: an error occurred in the vpa.*"))
+
+				Expect(policyAgentServer.EndpointCallCount).To(Equal(1))
+			})
+		})
+
 		Context("when an iptables rule is already present on the INPUT chain", func() {
 			BeforeEach(func() {
 				iptablesSession, err := gexec.Start(exec.Command("iptables", "-I", "INPUT", "1", "--destination", "127.0.0.1", "-j", "ACCEPT"), GinkgoWriter, GinkgoWriter)
@@ -410,10 +449,10 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 				By("returning all DNS servers")
 				Expect(session.Out.Contents()).To(MatchJSON(`{
-				"cniVersion": "0.3.1",
-				"ips": [{ "version": "4", "interface": -1, "address": "1.2.3.4/32" }],
-				"dns": {"nameservers": ["169.254.0.1", "8.8.4.4", "169.254.0.2"]}
-			}`))
+						"cniVersion": "0.3.1",
+						"ips": [{ "version": "4", "interface": -1, "address": "1.2.3.4/32" }],
+						"dns": {"nameservers": ["169.254.0.1", "8.8.4.4", "169.254.0.2"]}
+					}`))
 			})
 
 			It("writes input chain rules for local DNS servers", func() {
@@ -854,10 +893,10 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Expect(debug.Command).To(Equal("DEL"))
 
 			Expect(debug.CmdArgs.StdinData).To(MatchJSON(`{
-				"cniVersion": "0.3.1",
-				"type": "noop",
-				"some": "other data"
-			}`))
+						"cniVersion": "0.3.1",
+						"type": "noop",
+						"some": "other data"
+					}`))
 		})
 
 		Context("When the delegate plugin return an error", func() {
@@ -898,16 +937,44 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(debug.Command).To(Equal("DEL"))
 
 				Expect(debug.CmdArgs.StdinData).To(MatchJSON(`{
-					"cniVersion": "0.3.1",
-					"type": "noop",
-					"some": "other data"
-				}`))
+							"cniVersion": "0.3.1",
+							"type": "noop",
+							"some": "other data"
+						}`))
 			})
 		})
 
 	})
 
 })
+
+type mockPolicyAgentServer struct {
+	ReturnCode         int
+	ReturnErrorMessage string
+	Address            string
+	EndpointCallCount  int
+	server             *http.Server
+}
+
+func (a *mockPolicyAgentServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	a.EndpointCallCount++
+	w.WriteHeader(a.ReturnCode)
+	if a.ReturnErrorMessage != "" {
+		w.Write([]byte(a.ReturnErrorMessage))
+	}
+}
+
+func (a *mockPolicyAgentServer) start() {
+	mux := http.NewServeMux()
+	mux.Handle("/force-policy-poll-cycle", a)
+
+	a.server = &http.Server{Addr: a.Address, Handler: mux}
+	go a.server.ListenAndServe()
+}
+
+func (a *mockPolicyAgentServer) stop() error {
+	return a.server.Shutdown(nil)
+}
 
 func createDummyInterface(interfaceName, ipAddress string) {
 	err := netlink.LinkAdd(&netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Name: interfaceName}})

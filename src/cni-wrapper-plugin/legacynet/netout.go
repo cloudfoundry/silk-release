@@ -74,9 +74,8 @@ func (m *NetOut) BulkInsertRules(netOutRules []garden.NetOutRule) error {
 		return fmt.Errorf("getting chain name: %s", err)
 	}
 
-
 	ruleSpec := m.Converter.BulkConvert(netOutRules, logChain, m.ASGLogging)
-	ruleSpec = append( ruleSpec, []rules.IPTablesRule{
+	ruleSpec = append(ruleSpec, []rules.IPTablesRule{
 		{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
 		{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
 	}...)
