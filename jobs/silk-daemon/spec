@@ -24,7 +24,7 @@ consumes:
   type: cf_network
 
 - name: vpa
-  type: certificates
+  type: policy-agent
 
 properties:
   vtep_port:
