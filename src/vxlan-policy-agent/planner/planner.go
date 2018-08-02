@@ -244,7 +244,11 @@ func (p *VxlanPolicyPlanner) GetRulesAndChain() (enforcer.RulesWithChain, error)
 				"-m", policy.Destination.Protocol,
 			}
 
-			if len(policy.Destination.Ports) > 0 {
+			if policy.Destination.Protocol == "icmp" {
+				egressRule = append(egressRule, "--icmp-type", fmt.Sprintf("%d/%d", policy.Destination.ICMPType, policy.Destination.ICMPCode))
+			}
+
+			if len(policy.Destination.Ports) > 0 && (policy.Destination.Protocol == "tcp" || policy.Destination.Protocol == "udp") {
 				egressRule = append(egressRule, "--dport", fmt.Sprintf("%d:%d", policy.Destination.Ports[0].Start, policy.Destination.Ports[0].End))
 			}
 

@@ -115,12 +115,39 @@ var _ = Describe("Planner", func() {
 					ID: "some-app-guid",
 				},
 				Destination: &policy_client.EgressDestination{
+					Protocol: "tcp",
+					Ports: []policy_client.Ports{
+						{Start: 8080, End: 8081},
+					},
+					IPRanges: []policy_client.IPRange{
+						{Start: "1.2.3.4", End: "1.2.3.5"},
+					},
+				},
+			},
+			{
+				Source: &policy_client.EgressSource{
+					ID: "some-app-guid",
+				},
+				Destination: &policy_client.EgressDestination{
 					Protocol: "udp",
 					Ports: []policy_client.Ports{
 						{Start: 8080, End: 8081},
 					},
 					IPRanges: []policy_client.IPRange{
 						{Start: "1.2.3.4", End: "1.2.3.5"},
+					},
+				},
+			},
+			{
+				Source: &policy_client.EgressSource{
+					ID: "some-other-app-guid",
+				},
+				Destination: &policy_client.EgressDestination{
+					Protocol: "icmp",
+					ICMPType: 2,
+					ICMPCode: 3,
+					IPRanges: []policy_client.IPRange{
+						{Start: "1.2.3.6", End: "1.2.3.7"},
 					},
 				},
 			},
@@ -193,11 +220,29 @@ var _ = Describe("Planner", func() {
 					Expect(rulesWithChain.Rules).To(ConsistOf([]rules.IPTablesRule{
 						{
 							"-s", "10.255.1.2",
+							"-p", "tcp",
+							"-m", "iprange",
+							"--dst-range", "1.2.3.4-1.2.3.5",
+							"-m", "tcp",
+							"--dport", "8080:8081",
+							"-j", "ACCEPT",
+						},
+						{
+							"-s", "10.255.1.2",
 							"-p", "udp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.4-1.2.3.5",
 							"-m", "udp",
 							"--dport", "8080:8081",
+							"-j", "ACCEPT",
+						},
+						{
+							"-s", "10.255.1.3",
+							"-p", "icmp",
+							"-m", "iprange",
+							"--dst-range", "1.2.3.6-1.2.3.7",
+							"-m", "icmp",
+							"--icmp-type", "2/3",
 							"-j", "ACCEPT",
 						},
 						{
@@ -282,11 +327,29 @@ var _ = Describe("Planner", func() {
 							"-j", "ACCEPT",
 						},
 						{
+							"-s", "10.255.1.2",
+							"-p", "tcp",
+							"-m", "iprange",
+							"--dst-range", "1.2.3.4-1.2.3.5",
+							"-m", "tcp",
+							"--dport", "8080:8081",
+							"-j", "ACCEPT",
+						},
+						{
 							"-s", "10.255.1.3",
 							"-p", "tcp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.6-1.2.3.7",
 							"-m", "tcp",
+							"-j", "ACCEPT",
+						},
+						{
+							"-s", "10.255.1.3",
+							"-p", "icmp",
+							"-m", "iprange",
+							"--dst-range", "1.2.3.6-1.2.3.7",
+							"-m", "icmp",
+							"--icmp-type", "2/3",
 							"-j", "ACCEPT",
 						},
 						// allow based on mark
@@ -392,7 +455,6 @@ var _ = Describe("Planner", func() {
 		It("returns all mark set rules before any mark filter rules", func() {
 			rulesWithChain, err := policyPlanner.GetRulesAndChain()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rulesWithChain.Rules).To(HaveLen(9))
 			Expect(rulesWithChain.Rules[0]).To(ContainElement("--set-xmark"))
 			Expect(rulesWithChain.Rules[1]).To(ContainElement("--set-xmark"))
 			Expect(rulesWithChain.Rules[2]).To(ContainElement("ACCEPT"))
@@ -520,7 +582,6 @@ var _ = Describe("Planner", func() {
 			It("the order of the rules is not affected", func() {
 				rulesWithChain, err := policyPlanner.GetRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(rulesWithChain.Rules).To(HaveLen(16))
 				Expect(rulesWithChain.Rules[0]).To(ContainElement("10.255.1.2"))
 				Expect(rulesWithChain.Rules[1]).To(ContainElement("10.255.1.4"))
 				Expect(rulesWithChain.Rules[2]).To(ContainElement("10.255.1.3"))
@@ -609,7 +670,10 @@ var _ = Describe("Planner", func() {
 				Expect(logger).To(gbytes.Say("container-metadata-policy-group-id.*container-id-fruit.*Container.*metadata.*policy_group_id.*CloudController.*restage"))
 
 				Expect(rulesWithChain.Chain).To(Equal(chain))
-				Expect(rulesWithChain.Rules).To(HaveLen(9))
+
+				for _, rules := range rulesWithChain.Rules {
+					Expect(rules).NotTo(ContainElement("10.255.1.5"))
+				}
 			})
 		})
 
@@ -630,7 +694,10 @@ var _ = Describe("Planner", func() {
 				Expect(logger).To(gbytes.Say("container-metadata-policy-group-id.*container-id-2.*Container.*metadata.*ports.*CloudController.*restage"))
 
 				Expect(rulesWithChain.Chain).To(Equal(chain))
-				Expect(rulesWithChain.Rules).To(HaveLen(7))
+
+				for _, rules := range rulesWithChain.Rules {
+					Expect(rules).NotTo(gomegamatchers.ContainSequence([]string{"-d", "10.255.1.3"}))
+				}
 			})
 		})
 

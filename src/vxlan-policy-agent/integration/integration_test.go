@@ -180,6 +180,8 @@ var _ = Describe("VXLAN Policy Agent", func() {
 
 					Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m tcp --dport 8080:8081 -j ACCEPT`))
 					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -m tcp -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -m tcp -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 3/4 -j ACCEPT`))
 				})
 			})
 
@@ -209,6 +211,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 			It("enforces egress policies", func() {
 				Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m tcp --dport 8080:8081 -j ACCEPT`))
 				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -m tcp -j ACCEPT`))
+				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 3/4 -j ACCEPT`))
 			})
 
 			It("writes only one mark rule for a single container", func() {
@@ -420,6 +423,8 @@ func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 				"destination": {"id": "some-very-very-long-app-guid", "tag":"A", "protocol":"udp", "ports":{"start":7000, "end":8000}}}],
 				"total_egress_policies": 2,
 				"egress_policies": [
+				{"source": {"id": "some-very-very-long-app-guid" },
+				"destination": {"ips": [{"start": "10.27.1.1", "end": "10.27.1.2"}], "protocol": "icmp", "type": 3, "code": 4}},
 				{"source": {"id": "some-very-very-long-app-guid" },
 				"destination": {"ips": [{"start": "10.27.1.1", "end": "10.27.1.2"}], "ports": [{"start": 8080, "end": 8081}], "protocol": "tcp"}},
 				{"source": {"id": "some-app-guid-no-ports" },

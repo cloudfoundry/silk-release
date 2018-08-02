@@ -88,6 +88,10 @@ var _ = Describe("InternalClient", func() {
 							{
 								"source": { "id": "some-other-app-guid" },
 								"destination": { "protocol": "tcp", "ips": [{ "start": "1.2.3.4", "end": "1.2.3.5" }] }
+							},
+							{
+								"source": { "id": "some-other-app-guid" },
+								"destination": { "protocol": "icmp", "type": 8, "code": 4, "ips": [{ "start": "1.2.3.4", "end": "1.2.3.5" }] }
 							}
 						]
 					}`)
@@ -130,6 +134,19 @@ var _ = Describe("InternalClient", func() {
 					},
 					Destination: &policy_client.EgressDestination{
 						Protocol: "tcp",
+						IPRanges: []policy_client.IPRange{
+							{Start: "1.2.3.4", End: "1.2.3.5"},
+						},
+					},
+				},
+				{
+					Source: &policy_client.EgressSource{
+						ID: "some-other-app-guid",
+					},
+					Destination: &policy_client.EgressDestination{
+						Protocol: "icmp",
+						ICMPType: 8,
+						ICMPCode: 4,
 						IPRanges: []policy_client.IPRange{
 							{Start: "1.2.3.4", End: "1.2.3.5"},
 						},
