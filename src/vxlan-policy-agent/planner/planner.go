@@ -9,9 +9,10 @@ import (
 	"time"
 	"vxlan-policy-agent/enforcer"
 
-	"code.cloudfoundry.org/lager"
 	"fmt"
 	"strconv"
+
+	"code.cloudfoundry.org/lager"
 )
 
 //go:generate counterfeiter -o fakes/policy_client.go --fake-name PolicyClient . policyClient
@@ -235,15 +236,21 @@ func (p *VxlanPolicyPlanner) GetRulesAndChain() (enforcer.RulesWithChain, error)
 		sourceContainers := containersMap[policy.Source.ID]
 
 		for _, container := range sourceContainers {
-			filterRuleset = append(filterRuleset,
-				rules.IPTablesRule{
-					"-s", container.IP,
-					"-p", policy.Destination.Protocol,
-					"-m", "iprange",
-					"--dst-range", fmt.Sprintf("%s-%s", policy.Destination.IPRanges[0].Start, policy.Destination.IPRanges[0].End),
-					"-m", policy.Destination.Protocol,
-					"-j", "ACCEPT",
-				})
+			egressRule := rules.IPTablesRule{
+				"-s", container.IP,
+				"-p", policy.Destination.Protocol,
+				"-m", "iprange",
+				"--dst-range", fmt.Sprintf("%s-%s", policy.Destination.IPRanges[0].Start, policy.Destination.IPRanges[0].End),
+				"-m", policy.Destination.Protocol,
+			}
+
+			if len(policy.Destination.Ports) > 0 {
+				egressRule = append(egressRule, "--dport", fmt.Sprintf("%d:%d", policy.Destination.Ports[0].Start, policy.Destination.Ports[0].End))
+			}
+
+			egressRule = append(egressRule, "-j", "ACCEPT")
+
+			filterRuleset = append(filterRuleset, egressRule)
 		}
 	}
 

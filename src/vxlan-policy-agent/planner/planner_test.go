@@ -116,6 +116,9 @@ var _ = Describe("Planner", func() {
 				},
 				Destination: &policy_client.EgressDestination{
 					Protocol: "udp",
+					Ports: []policy_client.Ports{
+						{Start: 8080, End: 8081},
+					},
 					IPRanges: []policy_client.IPRange{
 						{Start: "1.2.3.4", End: "1.2.3.5"},
 					},
@@ -194,6 +197,7 @@ var _ = Describe("Planner", func() {
 							"-m", "iprange",
 							"--dst-range", "1.2.3.4-1.2.3.5",
 							"-m", "udp",
+							"--dport", "8080:8081",
 							"-j", "ACCEPT",
 						},
 						{
@@ -274,6 +278,7 @@ var _ = Describe("Planner", func() {
 							"-m", "iprange",
 							"--dst-range", "1.2.3.4-1.2.3.5",
 							"-m", "udp",
+							"--dport", "8080:8081",
 							"-j", "ACCEPT",
 						},
 						{

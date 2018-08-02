@@ -21,6 +21,7 @@ type EgressSource struct {
 
 type EgressDestination struct {
 	Protocol string    `json:"protocol"`
+	Ports    []Ports   `json:"ports"`
 	IPRanges []IPRange `json:"ips"`
 }
 
