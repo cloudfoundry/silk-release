@@ -156,6 +156,32 @@ var _ = Describe("Planner", func() {
 					ID: "some-other-app-guid",
 				},
 				Destination: &policy_client.EgressDestination{
+					Protocol: "icmp",
+					ICMPType: 8,
+					ICMPCode: -1,
+					IPRanges: []policy_client.IPRange{
+						{Start: "1.2.3.6", End: "1.2.3.7"},
+					},
+				},
+			},
+			{
+				Source: &policy_client.EgressSource{
+					ID: "some-other-app-guid",
+				},
+				Destination: &policy_client.EgressDestination{
+					Protocol: "icmp",
+					ICMPType: -1,
+					ICMPCode: -1,
+					IPRanges: []policy_client.IPRange{
+						{Start: "1.2.3.6", End: "1.2.3.7"},
+					},
+				},
+			},
+			{
+				Source: &policy_client.EgressSource{
+					ID: "some-other-app-guid",
+				},
+				Destination: &policy_client.EgressDestination{
 					Protocol: "tcp",
 					IPRanges: []policy_client.IPRange{
 						{Start: "1.2.3.6", End: "1.2.3.7"},
@@ -247,10 +273,25 @@ var _ = Describe("Planner", func() {
 						},
 						{
 							"-s", "10.255.1.3",
+							"-p", "icmp",
+							"-m", "iprange",
+							"--dst-range", "1.2.3.6-1.2.3.7",
+							"-m", "icmp",
+							"--icmp-type", "8",
+							"-j", "ACCEPT",
+						},
+						{
+							"-s", "10.255.1.3",
+							"-p", "icmp",
+							"-m", "iprange",
+							"--dst-range", "1.2.3.6-1.2.3.7",
+							"-j", "ACCEPT",
+						},
+						{
+							"-s", "10.255.1.3",
 							"-p", "tcp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.6-1.2.3.7",
-							"-m", "tcp",
 							"-j", "ACCEPT",
 						},
 						// allow based on mark
@@ -340,7 +381,6 @@ var _ = Describe("Planner", func() {
 							"-p", "tcp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.6-1.2.3.7",
-							"-m", "tcp",
 							"-j", "ACCEPT",
 						},
 						{
@@ -350,6 +390,22 @@ var _ = Describe("Planner", func() {
 							"--dst-range", "1.2.3.6-1.2.3.7",
 							"-m", "icmp",
 							"--icmp-type", "2/3",
+							"-j", "ACCEPT",
+						},
+						{
+							"-s", "10.255.1.3",
+							"-p", "icmp",
+							"-m", "iprange",
+							"--dst-range", "1.2.3.6-1.2.3.7",
+							"-m", "icmp",
+							"--icmp-type", "8",
+							"-j", "ACCEPT",
+						},
+						{
+							"-s", "10.255.1.3",
+							"-p", "icmp",
+							"-m", "iprange",
+							"--dst-range", "1.2.3.6-1.2.3.7",
 							"-j", "ACCEPT",
 						},
 						// allow based on mark

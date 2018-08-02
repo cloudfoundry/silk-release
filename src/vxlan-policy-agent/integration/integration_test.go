@@ -174,14 +174,20 @@ var _ = Describe("VXLAN Policy Agent", func() {
 					conf.PollInterval = math.MaxInt32
 				})
 				It("should cause iptables to be updated", func() {
-					resp, err := http.Get(fmt.Sprintf("http://%s:%d/force-policy-poll-cycle", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort))
-					Expect(err).NotTo(HaveOccurred())
-					Expect(resp.StatusCode).To(Equal(http.StatusOK))
+					Eventually(func() (int, error) {
+						resp, err := http.Get(fmt.Sprintf("http://%s:%d/force-policy-poll-cycle", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort))
+						if err != nil {
+							return -1, err
+						}
+						return resp.StatusCode, nil
+					}).Should(Equal(http.StatusOK))
 
 					Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m tcp --dport 8080:8081 -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -m tcp -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -m tcp -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -j ACCEPT`))
 					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 3/4 -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 8 -j ACCEPT`))
 				})
 			})
 
@@ -210,8 +216,10 @@ var _ = Describe("VXLAN Policy Agent", func() {
 
 			It("enforces egress policies", func() {
 				Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m tcp --dport 8080:8081 -j ACCEPT`))
-				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -m tcp -j ACCEPT`))
+				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -j ACCEPT`))
 				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 3/4 -j ACCEPT`))
+				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -j ACCEPT`))
+				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 8 -j ACCEPT`))
 			})
 
 			It("writes only one mark rule for a single container", func() {
@@ -425,6 +433,10 @@ func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 				"egress_policies": [
 				{"source": {"id": "some-very-very-long-app-guid" },
 				"destination": {"ips": [{"start": "10.27.1.1", "end": "10.27.1.2"}], "protocol": "icmp", "type": 3, "code": 4}},
+				{"source": {"id": "some-very-very-long-app-guid" },
+				"destination": {"ips": [{"start": "10.27.1.1", "end": "10.27.1.2"}], "protocol": "icmp", "type": -1, "code": -1}},
+				{"source": {"id": "some-very-very-long-app-guid" },
+				"destination": {"ips": [{"start": "10.27.1.1", "end": "10.27.1.2"}], "protocol": "icmp", "type": 8, "code": -1}},
 				{"source": {"id": "some-very-very-long-app-guid" },
 				"destination": {"ips": [{"start": "10.27.1.1", "end": "10.27.1.2"}], "ports": [{"start": 8080, "end": 8081}], "protocol": "tcp"}},
 				{"source": {"id": "some-app-guid-no-ports" },

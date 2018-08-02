@@ -241,15 +241,22 @@ func (p *VxlanPolicyPlanner) GetRulesAndChain() (enforcer.RulesWithChain, error)
 				"-p", policy.Destination.Protocol,
 				"-m", "iprange",
 				"--dst-range", fmt.Sprintf("%s-%s", policy.Destination.IPRanges[0].Start, policy.Destination.IPRanges[0].End),
-				"-m", policy.Destination.Protocol,
 			}
 
 			if policy.Destination.Protocol == "icmp" {
-				egressRule = append(egressRule, "--icmp-type", fmt.Sprintf("%d/%d", policy.Destination.ICMPType, policy.Destination.ICMPCode))
+				if policy.Destination.ICMPType != -1 {
+					icmpType := strconv.Itoa(policy.Destination.ICMPType)
+					if policy.Destination.ICMPCode != -1 {
+						icmpType += "/" + strconv.Itoa(policy.Destination.ICMPCode)
+					}
+					egressRule = append(egressRule, "-m", "icmp", "--icmp-type", icmpType)
+				}
 			}
 
 			if len(policy.Destination.Ports) > 0 && (policy.Destination.Protocol == "tcp" || policy.Destination.Protocol == "udp") {
-				egressRule = append(egressRule, "--dport", fmt.Sprintf("%d:%d", policy.Destination.Ports[0].Start, policy.Destination.Ports[0].End))
+				egressRule = append(egressRule,
+					"-m", policy.Destination.Protocol,
+					"--dport", fmt.Sprintf("%d:%d", policy.Destination.Ports[0].Start, policy.Destination.Ports[0].End))
 			}
 
 			egressRule = append(egressRule, "-j", "ACCEPT")
