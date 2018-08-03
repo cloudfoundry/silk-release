@@ -23,8 +23,8 @@ type EgressDestination struct {
 	Protocol string    `json:"protocol"`
 	Ports    []Ports   `json:"ports"`
 	IPRanges []IPRange `json:"ips"`
-	ICMPType int       `json:"type"`
-	ICMPCode int       `json:"code"`
+	ICMPType int       `json:"icmp_type"`
+	ICMPCode int       `json:"icmp_code"`
 }
 
 type IPRange struct {

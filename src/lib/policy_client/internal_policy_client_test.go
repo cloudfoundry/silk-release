@@ -91,7 +91,7 @@ var _ = Describe("InternalClient", func() {
 							},
 							{
 								"source": { "id": "some-other-app-guid" },
-								"destination": { "protocol": "icmp", "type": 8, "code": 4, "ips": [{ "start": "1.2.3.4", "end": "1.2.3.5" }] }
+								"destination": { "protocol": "icmp", "icmp_type": 8, "icmp_code": 4, "ips": [{ "start": "1.2.3.4", "end": "1.2.3.5" }] }
 							}
 						]
 					}`)
