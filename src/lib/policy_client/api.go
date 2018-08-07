@@ -16,7 +16,8 @@ type EgressPolicy struct {
 }
 
 type EgressSource struct {
-	ID string `json:"id"`
+	ID   string `json:"id"`
+	Type string `json:"type"`
 }
 
 type EgressDestination struct {

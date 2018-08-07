@@ -82,6 +82,14 @@ func (p *VxlanPolicyPlanner) getContainersMap(allContainers map[string]datastore
 			IP:    container.IP,
 			Ports: ports,
 		})
+
+		spaceID, ok := container.Metadata["space_id"].(string)
+		if ok {
+			containersMap[spaceID] = append(containersMap[spaceID], Container{
+				IP:    container.IP,
+				Ports: ports,
+			})
+		}
 	}
 	return containersMap, nil
 }
@@ -191,9 +199,15 @@ func (p *VxlanPolicyPlanner) GetRulesAndChain() (enforcer.RulesWithChain, error)
 	}
 
 	if p.EnableOverlayIngressRules {
+		visited := make(map[string]bool)
 		var allContainers []Container
 		for _, containers := range containersMap {
-			allContainers = append(allContainers, containers...)
+			for _, container := range containers {
+				if _, ok := visited[container.IP]; !ok {
+					allContainers = append(allContainers, container)
+					visited[container.IP] = true
+				}
+			}
 		}
 
 		sort.Slice(allContainers, func(i, j int) bool {

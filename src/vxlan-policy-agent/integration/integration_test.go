@@ -59,6 +59,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 		"ip":"10.255.100.21",
 		"metadata": {
 			"policy_group_id":"some-very-very-long-app-guid",
+			"space_id": "some-space",
 			"ports": "8080, 9090"
 		}
 	},
@@ -185,6 +186,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 					Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m tcp --dport 8080:8081 -j ACCEPT`))
 					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -j ACCEPT`))
 					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.2.1-10.27.2.2 -j ACCEPT`))
 					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 3/4 -j ACCEPT`))
 					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -j ACCEPT`))
 					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 8 -j ACCEPT`))
@@ -220,6 +222,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 3/4 -j ACCEPT`))
 				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -j ACCEPT`))
 				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 8 -j ACCEPT`))
+				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.2.1-10.27.2.2 -j ACCEPT`))
 			})
 
 			It("writes only one mark rule for a single container", func() {
@@ -429,8 +432,10 @@ func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 				"destination": {"id": "some-very-very-long-app-guid", "tag":"A", "protocol":"tcp", "ports":{"start":9999, "end":9999}}},
 				{"source": {"id":"yet-another-app-guid", "tag":"D"},
 				"destination": {"id": "some-very-very-long-app-guid", "tag":"A", "protocol":"udp", "ports":{"start":7000, "end":8000}}}],
-				"total_egress_policies": 2,
+				"total_egress_policies": 7,
 				"egress_policies": [
+				{"source": {"id": "some-space", "type": "space" },
+				"destination": {"ips": [{"start": "10.27.2.1", "end": "10.27.2.2"}], "protocol": "tcp"}},
 				{"source": {"id": "some-very-very-long-app-guid" },
 				"destination": {"ips": [{"start": "10.27.1.1", "end": "10.27.1.2"}], "protocol": "icmp", "icmp_type": 3, "icmp_code": 4}},
 				{"source": {"id": "some-very-very-long-app-guid" },

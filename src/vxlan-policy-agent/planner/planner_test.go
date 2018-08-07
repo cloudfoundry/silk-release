@@ -46,6 +46,7 @@ var _ = Describe("Planner", func() {
 			IP:     "10.255.1.2",
 			Metadata: map[string]interface{}{
 				"policy_group_id": "some-app-guid",
+				"space_id":        "some-space-guid",
 				"ports":           "8080",
 			},
 		}
@@ -188,6 +189,18 @@ var _ = Describe("Planner", func() {
 					},
 				},
 			},
+			{
+				Source: &policy_client.EgressSource{
+					ID:   "some-space-guid",
+					Type: "space",
+				},
+				Destination: &policy_client.EgressDestination{
+					Protocol: "udp",
+					IPRanges: []policy_client.IPRange{
+						{Start: "2.3.4.5", End: "3.3.3.3"},
+					},
+				},
+			},
 		}
 
 		policyClient.GetPoliciesByIDReturns(policyServerResponse, egressPolicyServerResponse, nil)
@@ -226,7 +239,7 @@ var _ = Describe("Planner", func() {
 
 			By("filtering by ID when calling the internal policy server")
 			Expect(policyClient.GetPoliciesByIDCallCount()).To(Equal(1))
-			Expect(policyClient.GetPoliciesByIDArgsForCall(0)).To(ConsistOf([]string{"some-app-guid", "some-other-app-guid"}))
+			Expect(policyClient.GetPoliciesByIDArgsForCall(0)).To(ConsistOf([]string{"some-app-guid", "some-other-app-guid", "some-space-guid"}))
 		})
 
 		Context("when iptables logging is disabled", func() {
@@ -292,6 +305,13 @@ var _ = Describe("Planner", func() {
 							"-p", "tcp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.6-1.2.3.7",
+							"-j", "ACCEPT",
+						},
+						{
+							"-s", "10.255.1.2",
+							"-p", "udp",
+							"-m", "iprange",
+							"--dst-range", "2.3.4.5-3.3.3.3",
 							"-j", "ACCEPT",
 						},
 						// allow based on mark
@@ -406,6 +426,13 @@ var _ = Describe("Planner", func() {
 							"-p", "icmp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.6-1.2.3.7",
+							"-j", "ACCEPT",
+						},
+						{
+							"-s", "10.255.1.2",
+							"-p", "udp",
+							"-m", "iprange",
+							"--dst-range", "2.3.4.5-3.3.3.3",
 							"-j", "ACCEPT",
 						},
 						// allow based on mark
