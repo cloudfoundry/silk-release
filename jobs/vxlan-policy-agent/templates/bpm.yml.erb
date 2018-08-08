@@ -9,5 +9,6 @@ processes:
       writable: true
     - path: /var/vcap/data/garden-cni
       writable: true
-    unsafe:
-      privileged: true
+    capabilities:
+    - NET_RAW
+    - NET_ADMIN

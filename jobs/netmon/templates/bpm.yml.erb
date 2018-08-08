@@ -4,5 +4,10 @@ processes:
     executable: "/var/vcap/packages/netmon/bin/netmon"
     args:
     - "-config-file=/var/vcap/jobs/netmon/config/netmon.json"
-    unsafe:
-      privileged: true
+    additional_volumes:
+    - path: /var/vcap/data/container-metadata
+      writable: true
+    - path: /var/vcap/data/garden-cni
+      writable: true
+    capabilties:
+    - NET_RAW
