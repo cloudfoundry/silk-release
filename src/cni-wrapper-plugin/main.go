@@ -68,7 +68,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	if err := store.Add(args.ContainerID, containerIP.String(), cniAddData.Metadata); err != nil {
 		storeErr := fmt.Errorf("store add: %s", err)
 		fmt.Fprintf(os.Stderr, "%s", storeErr)
-		fmt.Fprintf(os.Stderr, "cleaning up from error")
+		fmt.Fprint(os.Stderr, "cleaning up from error")
 		err = pluginController.DelIPMasq(containerIP.String(), cfg.NoMasqueradeCIDRRange, cfg.VTEPName)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "during cleanup: removing IP masq: %s", err)

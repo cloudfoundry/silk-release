@@ -239,7 +239,7 @@ var _ = Describe("Planner", func() {
 
 			By("filtering by ID when calling the internal policy server")
 			Expect(policyClient.GetPoliciesByIDCallCount()).To(Equal(1))
-			Expect(policyClient.GetPoliciesByIDArgsForCall(0)).To(ConsistOf([]string{"some-app-guid", "some-other-app-guid", "some-space-guid"}))
+			Expect(policyClient.GetPoliciesByIDArgsForCall(0)).To(ConsistOf([]interface{}{"some-app-guid", "some-other-app-guid", "some-space-guid"}))
 		})
 
 		Context("when iptables logging is disabled", func() {
@@ -666,8 +666,8 @@ var _ = Describe("Planner", func() {
 				rulesWithChain, err := policyPlanner.GetRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rulesWithChain.Rules[0]).To(ContainElement("10.255.1.2"))
-				Expect(rulesWithChain.Rules[1]).To(ContainElement("10.255.1.4"))
-				Expect(rulesWithChain.Rules[2]).To(ContainElement("10.255.1.3"))
+				Expect(rulesWithChain.Rules[1]).To(ContainElement("10.255.1.3"))
+				Expect(rulesWithChain.Rules[2]).To(ContainElement("10.255.1.4"))
 				Expect(rulesWithChain.Rules[3]).To(ContainElement("10.255.1.5"))
 			})
 		})
@@ -779,7 +779,7 @@ var _ = Describe("Planner", func() {
 				Expect(rulesWithChain.Chain).To(Equal(chain))
 
 				for _, rules := range rulesWithChain.Rules {
-					Expect(rules).NotTo(gomegamatchers.ContainSequence([]string{"-d", "10.255.1.3"}))
+					Expect(rules).NotTo(gomegamatchers.ContainSequence([]interface{}{"-d", "10.255.1.3"}))
 				}
 			})
 		})
@@ -803,8 +803,8 @@ var _ = Describe("Planner", func() {
 
 			It("logs and returns the error", func() {
 				_, err := policyPlanner.GetRulesAndChain()
-				Expect(err).To(MatchError("kiwi"))
-				Expect(logger).To(gbytes.Say("policy-client-get-policies.*kiwi"))
+				Expect(err).To(MatchError("failed to get policies: kiwi"))
+				Expect(logger).To(gbytes.Say("policy-client-query.*kiwi"))
 			})
 		})
 
@@ -815,8 +815,8 @@ var _ = Describe("Planner", func() {
 
 			It("logs and returns the error", func() {
 				_, err := policyPlanner.GetRulesAndChain()
-				Expect(err).To(MatchError("sad kumquat"))
-				Expect(logger).To(gbytes.Say("policy-client-get-ingress-tags.*sad kumquat"))
+				Expect(err).To(MatchError("failed to get ingress tags: sad kumquat"))
+				Expect(logger).To(gbytes.Say("policy-client-query.*sad kumquat"))
 			})
 		})
 
@@ -835,7 +835,7 @@ var _ = Describe("Planner", func() {
 			It("logs and returns the error", func() {
 				_, err := policyPlanner.GetRulesAndChain()
 				Expect(err).To(MatchError(`converting container metadata port to int: strconv.Atoi: parsing "invalid-port": invalid syntax`))
-				Expect(logger).To(gbytes.Say(`policy-client-get-ingress-tags.*converting container metadata port to int*`))
+				Expect(logger).To(gbytes.Say(`policy-client-get-container-policies.*converting container metadata port to int*`))
 			})
 		})
 	})
