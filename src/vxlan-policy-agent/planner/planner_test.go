@@ -108,6 +108,20 @@ var _ = Describe("Planner", func() {
 					Protocol: "udp",
 				},
 			},
+			{
+				Source: policy_client.Source{
+					ID:  "some-app-guid",
+					Tag: "AA",
+				},
+				Destination: policy_client.Destination{
+					ID: "some-app-guid",
+					Ports: policy_client.Ports{
+						Start: 8080,
+						End:   8080,
+					},
+					Protocol: "tcp",
+				},
+			},
 		}
 
 		egressPolicyServerResponse = []policy_client.EgressPolicy{
@@ -334,6 +348,14 @@ var _ = Describe("Planner", func() {
 						{
 							"-d", "10.255.1.2",
 							"-p", "tcp",
+							"--dport", "8080:8080",
+							"-m", "mark", "--mark", "0xAA",
+							"--jump", "ACCEPT",
+							"-m", "comment", "--comment", "src:some-app-guid_dst:some-app-guid",
+						},
+						{
+							"-d", "10.255.1.2",
+							"-p", "tcp",
 							"-m", "tcp", "--dport", "8080",
 							"-m", "mark", "--mark", "0x5476",
 							"--jump", "ACCEPT",
@@ -451,6 +473,14 @@ var _ = Describe("Planner", func() {
 							"-m", "mark", "--mark", "0xAA",
 							"--jump", "ACCEPT",
 							"-m", "comment", "--comment", "src:some-app-guid_dst:some-other-app-guid",
+						},
+						{
+							"-d", "10.255.1.2",
+							"-p", "tcp",
+							"--dport", "8080:8080",
+							"-m", "mark", "--mark", "0xAA",
+							"--jump", "ACCEPT",
+							"-m", "comment", "--comment", "src:some-app-guid_dst:some-app-guid",
 						},
 						// set tags on all outgoing packets, regardless of local vs remote
 						{

@@ -314,8 +314,7 @@ func (p *VxlanPolicyPlanner) getContainerPolicies(policies []policy_client.Polic
 	var containerPolicySet containerPolicySet
 	for _, container := range allContainers {
 		for _, policy := range policies {
-			switch {
-			case container.AppID == policy.Source.ID:
+			if container.AppID == policy.Source.ID {
 				if _, ok := visited[container.IP]; !ok {
 					containerPolicy := source{
 						Tag:  policy.Source.Tag,
@@ -325,7 +324,9 @@ func (p *VxlanPolicyPlanner) getContainerPolicies(policies []policy_client.Polic
 					containerPolicySet.Source = append(containerPolicySet.Source, containerPolicy)
 					visited[container.IP] = true
 				}
-			case container.AppID == policy.Destination.ID:
+			}
+
+			if container.AppID == policy.Destination.ID {
 				containerPolicy := destination{
 					IP:         container.IP,
 					StartPort:  policy.Destination.Ports.Start,
