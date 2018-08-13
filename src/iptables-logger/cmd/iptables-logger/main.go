@@ -82,8 +82,6 @@ func main() {
 		DataFilePath:    conf.ContainerMetadataFile,
 		VersionFilePath: conf.ContainerMetadataFile + "_version",
 		LockedFilePath:  conf.ContainerMetadataFile + "_lock",
-		FileOwner:       "vcap",
-		FileGroup:       "vcap",
 		CacheMutex:      new(sync.RWMutex),
 	}
 	containerRepo := &repository.ContainerRepo{

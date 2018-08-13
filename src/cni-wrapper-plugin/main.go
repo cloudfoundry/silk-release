@@ -57,8 +57,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 		DataFilePath:    cfg.Datastore,
 		VersionFilePath: cfg.Datastore + "_version",
 		LockedFilePath:  cfg.Datastore + "_lock",
-		FileOwner:       "vcap",
-		FileGroup:       "vcap",
+		FileOwner:       cfg.DatastoreFileOwner,
+		FileGroup:       cfg.DatastoreFileGroup,
 		CacheMutex:      new(sync.RWMutex),
 	}
 

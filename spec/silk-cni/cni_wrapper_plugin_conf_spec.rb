@@ -50,6 +50,8 @@ module Bosh::Template::Test
           'plugins' => [{
             'type' => 'cni-wrapper-plugin',
             'datastore' => '/var/vcap/data/container-metadata/store.json',
+            'datastore_file_owner' => 'vcap',
+            'datastore_file_group' => 'vcap',
             'iptables_lock_file' => '/var/vcap/data/garden-cni/iptables.lock',
             'instance_address' => '111.11.11.1',
             'no_masquerade_cidr_range' => '222.22.0.0/16',

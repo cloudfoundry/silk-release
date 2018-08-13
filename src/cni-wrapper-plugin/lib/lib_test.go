@@ -21,6 +21,8 @@ var _ = Describe("LoadWrapperConfig", func() {
 	BeforeEach(func() {
 		input = []byte(`{
 			"datastore": "/some/path",
+			"datastore_file_owner": "vcap",
+			"datastore_file_group": "vcap",
 			"iptables_lock_file": "/some/other/path",
 			"health_check_url": "http://127.0.0.1:10007",
 			"instance_address": "10.244.20.1",
@@ -43,6 +45,8 @@ var _ = Describe("LoadWrapperConfig", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(result).To(Equal(&lib.WrapperConfig{
 			Datastore:                       "/some/path",
+			DatastoreFileOwner:              "vcap",
+			DatastoreFileGroup:              "vcap",
 			IPTablesLockFile:                "/some/other/path",
 			InstanceAddress:                 "10.244.20.1",
 			NoMasqueradeCIDRRange:           "10.255.0.0/16",

@@ -93,6 +93,13 @@ func (c *Store) Add(handle, ip string, metadata map[string]interface{}) error {
 		return err
 	}
 
+	return c.ensureFileOwnership()
+}
+
+func (c *Store) ensureFileOwnership() error {
+	if c.FileOwner == "" || c.FileGroup == "" {
+		return nil
+	}
 	uid, gid, err := c.lookupFileOwnerUIDandGID()
 	if err != nil {
 		return err
@@ -178,27 +185,7 @@ func (c *Store) Delete(handle string) (Container, error) {
 		return deleted, err
 	}
 
-	uid, gid, err := c.lookupFileOwnerUIDandGID()
-	if err != nil {
-		return deleted, err
-	}
-
-	err = os.Chown(c.LockedFilePath, uid, gid)
-	if err != nil {
-		return deleted, err
-	}
-
-	err = os.Chown(c.DataFilePath, uid, gid)
-	if err != nil {
-		return deleted, err
-	}
-
-	err = os.Chown(c.VersionFilePath, uid, gid)
-	if err != nil {
-		return deleted, err
-	}
-
-	return deleted, nil
+	return deleted, c.ensureFileOwnership()
 }
 
 func (c *Store) ReadAll() (map[string]Container, error) {

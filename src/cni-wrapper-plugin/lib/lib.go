@@ -19,6 +19,8 @@ type RuntimeConfig struct {
 
 type WrapperConfig struct {
 	Datastore                       string                 `json:"datastore"`
+	DatastoreFileOwner              string                 `json:"datastore_file_owner"`
+	DatastoreFileGroup              string                 `json:"datastore_file_group"`
 	IPTablesLockFile                string                 `json:"iptables_lock_file"`
 	Delegate                        map[string]interface{} `json:"delegate"`
 	InstanceAddress                 string                 `json:"instance_address"`

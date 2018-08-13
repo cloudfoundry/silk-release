@@ -128,7 +128,29 @@ var _ = Describe("Datastore Lifecycle", func() {
 				Expect(err).To(MatchError("user: unknown user missingtestuser"))
 			})
 
-			It("returns an error when file group cannot be found", func() {
+			It("doesn't chown the owner/group it isn't set", func() {
+				store.FileOwner = ""
+				store.FileGroup = "nogroup"
+				err := store.Add(handle, ip, metadata)
+				Expect(err).NotTo(HaveOccurred())
+				fileInfo, err := os.Stat(dataFilePath)
+				statInfo, ok := fileInfo.Sys().(*syscall.Stat_t)
+				Expect(ok).To(BeTrue(), "unable to get the stat_t struct")
+				Expect(statInfo.Uid).NotTo(Equal(UnprivilegedUserId))
+				Expect(statInfo.Gid).NotTo(Equal(UnprivilegedGroupId))
+
+				store.FileOwner = "nobody"
+				store.FileGroup = ""
+				err = store.Add(handle, ip, metadata)
+				Expect(err).NotTo(HaveOccurred())
+				fileInfo, err = os.Stat(dataFilePath)
+				statInfo, ok = fileInfo.Sys().(*syscall.Stat_t)
+				Expect(ok).To(BeTrue(), "unable to get the stat_t struct")
+				Expect(statInfo.Uid).NotTo(Equal(UnprivilegedUserId))
+				Expect(statInfo.Gid).NotTo(Equal(UnprivilegedGroupId))
+			})
+
+			It("doesn't attempt a chown if file owner/group aren't set", func() {
 				store.FileGroup = "missingtestgroup"
 				err := store.Add(handle, ip, metadata)
 				Expect(err).To(MatchError("group: unknown group missingtestgroup"))
@@ -219,14 +241,36 @@ var _ = Describe("Datastore Lifecycle", func() {
 
 			It("returns an error when file owner cannot be found", func() {
 				store.FileOwner = "missingtestuser"
-				err := store.Add(handle, ip, metadata)
+				_, err := store.Delete(handle)
 				Expect(err).To(MatchError("user: unknown user missingtestuser"))
 			})
 
 			It("returns an error when file group cannot be found", func() {
 				store.FileGroup = "missingtestgroup"
-				err := store.Add(handle, ip, metadata)
+				_, err := store.Delete(handle)
 				Expect(err).To(MatchError("group: unknown group missingtestgroup"))
+			})
+
+			It("doesn't chown the owner/group it isn't set", func() {
+				store.FileOwner = ""
+				store.FileGroup = "nogroup"
+				_, err := store.Delete(handle)
+				Expect(err).NotTo(HaveOccurred())
+				fileInfo, err := os.Stat(dataFilePath)
+				statInfo, ok := fileInfo.Sys().(*syscall.Stat_t)
+				Expect(ok).To(BeTrue(), "unable to get the stat_t struct")
+				Expect(statInfo.Uid).NotTo(Equal(UnprivilegedUserId))
+				Expect(statInfo.Gid).NotTo(Equal(UnprivilegedGroupId))
+
+				store.FileOwner = "nobody"
+				store.FileGroup = ""
+				_, err = store.Delete(handle)
+				Expect(err).NotTo(HaveOccurred())
+				fileInfo, err = os.Stat(dataFilePath)
+				statInfo, ok = fileInfo.Sys().(*syscall.Stat_t)
+				Expect(ok).To(BeTrue(), "unable to get the stat_t struct")
+				Expect(statInfo.Uid).NotTo(Equal(UnprivilegedUserId))
+				Expect(statInfo.Gid).NotTo(Equal(UnprivilegedGroupId))
 			})
 		})
 
