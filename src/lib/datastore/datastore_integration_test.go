@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/user"
+	"strconv"
 	"sync"
 	"sync/atomic"
+	"syscall"
 
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport"
 	"code.cloudfoundry.org/filelock"
@@ -15,6 +18,11 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+)
+
+const (
+	UnprivilegedUserId  = uint32(65534)
+	UnprivilegedGroupId = uint32(65534)
 )
 
 var _ = Describe("Datastore Lifecycle", func() {
@@ -59,7 +67,10 @@ var _ = Describe("Datastore Lifecycle", func() {
 			},
 			DataFilePath:    dataFilePath,
 			VersionFilePath: versionFilePath,
+			LockedFilePath:  lockFilePath,
 			CacheMutex:      new(sync.RWMutex),
+			FileOwner:       "nobody",
+			FileGroup:       "nogroup",
 		}
 	})
 
@@ -90,6 +101,38 @@ var _ = Describe("Datastore Lifecycle", func() {
 			for k, v := range metadata {
 				Expect(data[handle].Metadata).Should(HaveKeyWithValue(k, v))
 			}
+		})
+
+		Context("when files are getting chowned", func() {
+			It("chowns the store.* files to a non-root user", func() {
+				By("adding an entry to store")
+				err := store.Add(handle, ip, metadata)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("verify store files are owned by user nobody")
+				for _, filePath := range []string{lockFilePath, dataFilePath, versionFilePath} {
+					fileInfo, err := os.Stat(filePath)
+					Expect(err).NotTo(HaveOccurred())
+
+					statInfo, ok := fileInfo.Sys().(*syscall.Stat_t)
+					Expect(ok).To(BeTrue(), "unable to get the stat_t struct")
+
+					Expect(statInfo.Uid).To(Equal(UnprivilegedUserId))
+					Expect(statInfo.Gid).To(Equal(UnprivilegedGroupId))
+				}
+			})
+
+			It("returns an error when file owner cannot be found", func() {
+				store.FileOwner = "missingtestuser"
+				err := store.Add(handle, ip, metadata)
+				Expect(err).To(MatchError("user: unknown user missingtestuser"))
+			})
+
+			It("returns an error when file group cannot be found", func() {
+				store.FileGroup = "missingtestgroup"
+				err := store.Add(handle, ip, metadata)
+				Expect(err).To(MatchError("group: unknown group missingtestgroup"))
+			})
 		})
 
 		It("can add multiple entries to datastore", func() {
@@ -130,6 +173,61 @@ var _ = Describe("Datastore Lifecycle", func() {
 			data, err = store.ReadAll()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(data).Should(BeEmpty())
+		})
+
+		Context("when files are getting chowned", func() {
+			BeforeEach(func() {
+				err := store.Add(handle, ip, metadata)
+				Expect(err).NotTo(HaveOccurred())
+
+				currentUser, err := user.Current()
+				Expect(err).NotTo(HaveOccurred())
+
+				uid, err := strconv.Atoi(currentUser.Uid)
+				Expect(err).NotTo(HaveOccurred())
+
+				gid, err := strconv.Atoi(currentUser.Gid)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = os.Chown(versionFilePath, uid, gid)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = os.Chown(lockFilePath, uid, gid)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = os.Chown(dataFilePath, uid, gid)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("chowns the store.* files to a non-root user", func() {
+				By("adding an entry to store")
+				_, err := store.Delete(handle)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("verify store files are owned by user nobody")
+				for _, filePath := range []string{lockFilePath, dataFilePath, versionFilePath} {
+					fileInfo, err := os.Stat(filePath)
+					Expect(err).NotTo(HaveOccurred())
+
+					statInfo, ok := fileInfo.Sys().(*syscall.Stat_t)
+					Expect(ok).To(BeTrue(), "unable to get the stat_t struct")
+
+					Expect(statInfo.Uid).To(Equal(UnprivilegedUserId))
+					Expect(statInfo.Gid).To(Equal(UnprivilegedGroupId))
+				}
+			})
+
+			It("returns an error when file owner cannot be found", func() {
+				store.FileOwner = "missingtestuser"
+				err := store.Add(handle, ip, metadata)
+				Expect(err).To(MatchError("user: unknown user missingtestuser"))
+			})
+
+			It("returns an error when file group cannot be found", func() {
+				store.FileGroup = "missingtestgroup"
+				err := store.Add(handle, ip, metadata)
+				Expect(err).To(MatchError("group: unknown group missingtestgroup"))
+			})
 		})
 
 		It("can remove multiple entries to datastore", func() {

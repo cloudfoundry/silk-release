@@ -103,6 +103,9 @@ func main() {
 		},
 		DataFilePath:    conf.Datastore,
 		VersionFilePath: conf.Datastore + "_version",
+		LockedFilePath:  conf.Datastore + "_lock",
+		FileOwner:       "vcap",
+		FileGroup:       "vcap",
 		CacheMutex:      new(sync.RWMutex),
 	}
 

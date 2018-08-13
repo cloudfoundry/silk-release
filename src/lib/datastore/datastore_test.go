@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"os/user"
 	"sync"
 
 	"lib/datastore"
@@ -24,6 +25,7 @@ var _ = Describe("Datastore", func() {
 		locker      *libfakes.Locker
 		dataFile    *os.File
 		versionFile *os.File
+		lockedFile  *os.File
 	)
 
 	BeforeEach(func() {
@@ -44,13 +46,24 @@ var _ = Describe("Datastore", func() {
 		Expect(err).NotTo(HaveOccurred())
 		versionFile, err = ioutil.TempFile(os.TempDir(), "versionFile")
 		Expect(err).NotTo(HaveOccurred())
+		lockedFile, err = ioutil.TempFile(os.TempDir(), "lockedFile")
+		Expect(err).NotTo(HaveOccurred())
+
+		currentUser, err := user.Current()
+		Expect(err).NotTo(HaveOccurred())
+
+		currentGroup, err := user.LookupGroupId(currentUser.Gid)
+		Expect(err).NotTo(HaveOccurred())
 
 		store = &datastore.Store{
 			Serializer:      serializer,
 			Locker:          locker,
 			DataFilePath:    dataFile.Name(),
 			VersionFilePath: versionFile.Name(),
+			LockedFilePath:  lockedFile.Name(),
 			CacheMutex:      new(sync.RWMutex),
+			FileOwner:       currentUser.Username,
+			FileGroup:       currentGroup.Name,
 		}
 	})
 

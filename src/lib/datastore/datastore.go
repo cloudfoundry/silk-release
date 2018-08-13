@@ -6,6 +6,7 @@ import (
 	"lib/serial"
 	"net"
 	"os"
+	"os/user"
 	"strconv"
 	"sync"
 )
@@ -34,7 +35,10 @@ type Store struct {
 	Locker          locker
 	DataFilePath    string
 	VersionFilePath string
+	LockedFilePath  string
 	CacheMutex      *sync.RWMutex
+	FileOwner       string
+	FileGroup       string
 	cachedVersion   int
 	cachedPool      map[string]Container
 }
@@ -89,7 +93,51 @@ func (c *Store) Add(handle, ip string, metadata map[string]interface{}) error {
 		return err
 	}
 
+	uid, gid, err := c.lookupFileOwnerUIDandGID()
+	if err != nil {
+		return err
+	}
+
+	err = os.Chown(c.LockedFilePath, uid, gid)
+	if err != nil {
+		return err
+	}
+
+	err = os.Chown(c.DataFilePath, uid, gid)
+	if err != nil {
+		return err
+	}
+
+	err = os.Chown(c.VersionFilePath, uid, gid)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func (c *Store) lookupFileOwnerUIDandGID() (int, int, error) {
+	fileOwnerUser, err := user.Lookup(c.FileOwner)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	fileOwnerGroup, err := user.LookupGroup(c.FileGroup)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	uid, err := strconv.Atoi(fileOwnerUser.Uid)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	gid, err := strconv.Atoi(fileOwnerGroup.Gid)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return uid, gid, nil
 }
 
 func (c *Store) Delete(handle string) (Container, error) {
@@ -126,6 +174,26 @@ func (c *Store) Delete(handle string) (Container, error) {
 	}
 
 	err = c.updateVersion()
+	if err != nil {
+		return deleted, err
+	}
+
+	uid, gid, err := c.lookupFileOwnerUIDandGID()
+	if err != nil {
+		return deleted, err
+	}
+
+	err = os.Chown(c.LockedFilePath, uid, gid)
+	if err != nil {
+		return deleted, err
+	}
+
+	err = os.Chown(c.DataFilePath, uid, gid)
+	if err != nil {
+		return deleted, err
+	}
+
+	err = os.Chown(c.VersionFilePath, uid, gid)
 	if err != nil {
 		return deleted, err
 	}

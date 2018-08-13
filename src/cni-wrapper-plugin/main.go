@@ -14,13 +14,14 @@ import (
 	"os"
 	"sync"
 
+	"io/ioutil"
+	"net/http"
+
 	"code.cloudfoundry.org/filelock"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 	"github.com/coreos/go-iptables/iptables"
-	"io/ioutil"
-	"net/http"
 )
 
 func cmdAdd(args *skel.CmdArgs) error {
@@ -55,6 +56,9 @@ func cmdAdd(args *skel.CmdArgs) error {
 		},
 		DataFilePath:    cfg.Datastore,
 		VersionFilePath: cfg.Datastore + "_version",
+		LockedFilePath:  cfg.Datastore + "_lock",
+		FileOwner:       "vcap",
+		FileGroup:       "vcap",
 		CacheMutex:      new(sync.RWMutex),
 	}
 
