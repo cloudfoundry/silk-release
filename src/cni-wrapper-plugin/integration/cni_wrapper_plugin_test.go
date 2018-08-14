@@ -21,6 +21,7 @@ import (
 	"github.com/pivotal-cf-experimental/gomegamatchers"
 	"github.com/vishvananda/netlink"
 	"net/http"
+	"syscall"
 )
 
 type InputStruct struct {
@@ -31,6 +32,12 @@ type InputStruct struct {
 	Metadata   map[string]interface{} `json:"metadata"`
 	lib.WrapperConfig
 }
+
+const (
+	UnprivilegedUserId  = uint32(65534)
+	UnprivilegedGroupId = uint32(65534)
+)
+
 
 // Always run serially, this is setup in the test.sh file
 // Test writes to disk and modifies iptables
@@ -140,6 +147,8 @@ var _ = Describe("CniWrapperPlugin", func() {
 				"key2": []string{"some", "data"},
 			},
 			WrapperConfig: lib.WrapperConfig{
+				DatastoreFileOwner: "nobody",
+				DatastoreFileGroup: "nogroup",
 				Datastore:        datastorePath,
 				IPTablesLockFile: iptablesLockFilePath,
 				Delegate: map[string]interface{}{
@@ -395,6 +404,22 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Eventually(session).Should(gexec.Exit(0))
 
 			Expect(policyAgentServer.EndpointCallCount).To(Equal(1))
+		})
+
+		It("ensures the iptables.lock file is chowned", func() {
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+
+
+			fileInfo, err := os.Stat(iptablesLockFilePath)
+			Expect(err).NotTo(HaveOccurred())
+
+			statInfo, ok := fileInfo.Sys().(*syscall.Stat_t)
+			Expect(ok).To(BeTrue(), "unable to get the stat_t struct")
+
+			Expect(statInfo.Uid).To(Equal(UnprivilegedUserId))
+			Expect(statInfo.Gid).To(Equal(UnprivilegedGroupId))
 		})
 
 		Context("when the policy agent poller returns an error", func() {
@@ -897,6 +922,22 @@ var _ = Describe("CniWrapperPlugin", func() {
 						"type": "noop",
 						"some": "other data"
 					}`))
+		})
+
+		It("ensures the iptables.lock file is chowned", func() {
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+
+
+			fileInfo, err := os.Stat(iptablesLockFilePath)
+			Expect(err).NotTo(HaveOccurred())
+
+			statInfo, ok := fileInfo.Sys().(*syscall.Stat_t)
+			Expect(ok).To(BeTrue(), "unable to get the stat_t struct")
+
+			Expect(statInfo.Uid).To(Equal(UnprivilegedUserId))
+			Expect(statInfo.Gid).To(Equal(UnprivilegedGroupId))
 		})
 
 		Context("When the delegate plugin return an error", func() {

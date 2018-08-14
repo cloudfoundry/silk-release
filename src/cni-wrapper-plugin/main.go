@@ -22,6 +22,8 @@ import (
 	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 	"github.com/coreos/go-iptables/iptables"
+	"os/user"
+	"strconv"
 )
 
 func cmdAdd(args *skel.CmdArgs) error {
@@ -30,7 +32,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	pluginController, err := newPluginController(cfg.IPTablesLockFile)
+	pluginController, err := newPluginController(cfg)
 	if err != nil {
 		return err
 	}
@@ -205,7 +207,7 @@ func cmdDel(args *skel.CmdArgs) error {
 		fmt.Fprintf(os.Stderr, "store delete: %s", err)
 	}
 
-	pluginController, err := newPluginController(n.IPTablesLockFile)
+	pluginController, err := newPluginController(n)
 	if err != nil {
 		return err
 	}
@@ -263,14 +265,67 @@ func cmdDel(args *skel.CmdArgs) error {
 	return nil
 }
 
-func newPluginController(iptablesLockFile string) (*lib.PluginController, error) {
+
+func ensureIptablesFileOwnership(filePath, fileOwner, fileGroup string) error {
+	err := ioutil.WriteFile(filePath, make([]byte, 0), 0600)
+	if err != nil {
+		return err
+	}
+
+	if fileOwner == "" || fileGroup == "" {
+		return nil
+	}
+	uid, gid, err := lookupFileOwnerUIDandGID(fileOwner, fileGroup)
+	if err != nil {
+		return err
+	}
+
+	err = os.Chown(filePath, uid, gid)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func lookupFileOwnerUIDandGID(fileOwner, fileGroup string) (int, int, error) {
+	fileOwnerUser, err := user.Lookup(fileOwner)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	fileOwnerGroup, err := user.LookupGroup(fileGroup)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	uid, err := strconv.Atoi(fileOwnerUser.Uid)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	gid, err := strconv.Atoi(fileOwnerGroup.Gid)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return uid, gid, nil
+}
+
+
+func newPluginController(config *lib.WrapperConfig) (*lib.PluginController, error) {
 	ipt, err := iptables.New()
 	if err != nil {
 		return nil, err
 	}
 
+	err = ensureIptablesFileOwnership(config.IPTablesLockFile, config.DatastoreFileOwner, config.DatastoreFileGroup)
+	if err != nil {
+		return nil, err
+	}
+
 	iptLocker := &filelock.Locker{
-		FileLocker: filelock.NewLocker(iptablesLockFile),
+		FileLocker: filelock.NewLocker(config.IPTablesLockFile),
 		Mutex:      &sync.Mutex{},
 	}
 	restorer := &rules.Restorer{}
