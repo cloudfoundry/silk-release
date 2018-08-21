@@ -8,6 +8,7 @@ files:
   - code.cloudfoundry.org/cf-networking-helpers/metrics/*.go # gosub
   - code.cloudfoundry.org/filelock/*.go # gosub
   - code.cloudfoundry.org/lager/*.go # gosub
+  - code.cloudfoundry.org/lager/lagerflags/*.go # gosub
   - github.com/cloudfoundry/dropsonde/*.go # gosub
   - github.com/cloudfoundry/dropsonde/emitter/*.go # gosub
   - github.com/cloudfoundry/dropsonde/envelope_sender/*.go # gosub
@@ -43,5 +44,6 @@ files:
   - iptables-logger/repository/*.go # gosub
   - iptables-logger/rotatablesink/*.go # gosub
   - iptables-logger/runner/*.go # gosub
+  - lib/common/*.go # gosub
   - lib/datastore/*.go # gosub
   - lib/serial/*.go # gosub

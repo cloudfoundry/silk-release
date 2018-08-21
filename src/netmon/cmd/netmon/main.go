@@ -9,20 +9,24 @@ import (
 	"os"
 	"time"
 
+	"lib/common"
+	"lib/rules"
+	"os/exec"
+	"sync"
+
 	"code.cloudfoundry.org/cf-networking-helpers/runner"
 	"code.cloudfoundry.org/filelock"
 	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagerflags"
 	"github.com/cloudfoundry/dropsonde"
 	"github.com/coreos/go-iptables/iptables"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
-	"lib/rules"
-	"os/exec"
-	"sync"
 )
 
 var (
+	jobPrefix = "netmon"
 	logPrefix = "cfnetworking"
 )
 
@@ -38,9 +42,7 @@ func main() {
 		logPrefix = conf.LogPrefix
 	}
 
-	logger := lager.NewLogger(fmt.Sprintf("%s.netmon", logPrefix))
-	sink := lager.NewReconfigurableSink(lager.NewWriterSink(os.Stdout, lager.DEBUG), lager.DEBUG)
-	logger.RegisterSink(sink)
+	logger, sink := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), common.GetLagerConfig())
 	logger.Info("parsed-config", lager.Data{"config": conf})
 
 	logLevel, err := conf.ParseLogLevel()

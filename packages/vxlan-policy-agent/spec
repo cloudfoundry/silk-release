@@ -13,6 +13,7 @@ files:
   - code.cloudfoundry.org/debugserver/*.go # gosub
   - code.cloudfoundry.org/filelock/*.go # gosub
   - code.cloudfoundry.org/lager/*.go # gosub
+  - code.cloudfoundry.org/lager/lagerflags/*.go # gosub
   - github.com/cloudfoundry/dropsonde/*.go # gosub
   - github.com/cloudfoundry/dropsonde/emitter/*.go # gosub
   - github.com/cloudfoundry/dropsonde/envelope_sender/*.go # gosub
@@ -37,6 +38,7 @@ files:
   - github.com/tedsuo/ifrit/http_server/*.go # gosub
   - github.com/tedsuo/ifrit/sigmon/*.go # gosub
   - gopkg.in/validator.v2/*.go # gosub
+  - lib/common/*.go # gosub
   - lib/datastore/*.go # gosub
   - lib/policy_client/*.go # gosub
   - lib/poller/*.go # gosub

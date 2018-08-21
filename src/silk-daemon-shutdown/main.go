@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	neturl "net/url"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -19,13 +18,17 @@ import (
 
 	"code.cloudfoundry.org/filelock"
 	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagerflags"
 	"github.com/coreos/go-iptables/iptables"
 )
 
 var logger lager.Logger
+
 const (
 	ChainDoesNotExistErrorText = "No chain/target/match by that name."
-	IngressChainName = "istio-ingress"
+	IngressChainName           = "istio-ingress"
+	jobPrefix                  = "silk-daemon-shutdown"
+	logPrefix                  = "cfnetworking"
 )
 
 func main() {
@@ -45,8 +48,12 @@ func mainWithError() error {
 
 	flag.Parse()
 
-	logger = lager.NewLogger(fmt.Sprintf("%s.silk-daemon-shutdown", "cfnetworking"))
-	logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.DEBUG))
+	lagerConfig := lagerflags.LagerConfig{
+		LogLevel:   lagerflags.DEBUG,
+		TimeFormat: lagerflags.FormatRFC3339,
+	}
+
+	logger, _ = lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), lagerConfig)
 
 	var err error
 	repMaxAttempts := 40

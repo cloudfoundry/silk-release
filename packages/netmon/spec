@@ -8,6 +8,7 @@ files:
   - code.cloudfoundry.org/cf-networking-helpers/runner/*.go # gosub
   - code.cloudfoundry.org/filelock/*.go # gosub
   - code.cloudfoundry.org/lager/*.go # gosub
+  - code.cloudfoundry.org/lager/lagerflags/*.go # gosub
   - code.cloudfoundry.org/runtimeschema/metric/*.go # gosub
   - github.com/cloudfoundry/dropsonde/*.go # gosub
   - github.com/cloudfoundry/dropsonde/emitter/*.go # gosub
@@ -32,6 +33,7 @@ files:
   - github.com/tedsuo/ifrit/grouper/*.go # gosub
   - github.com/tedsuo/ifrit/sigmon/*.go # gosub
   - gopkg.in/validator.v2/*.go # gosub
+  - lib/common/*.go # gosub
   - lib/rules/*.go # gosub
   - netmon/cmd/netmon/*.go # gosub
   - netmon/config/*.go # gosub

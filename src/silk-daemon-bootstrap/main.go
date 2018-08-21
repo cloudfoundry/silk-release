@@ -3,11 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"lib/common"
 	policyClient "lib/policy_client"
 	"lib/rules"
 	"log"
 	"net/http"
-	"os"
 	"silk-daemon-bootstrap/config"
 	"sync"
 	"time"
@@ -15,12 +15,15 @@ import (
 	"code.cloudfoundry.org/cf-networking-helpers/mutualtls"
 	"code.cloudfoundry.org/filelock"
 	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagerflags"
 	"github.com/coreos/go-iptables/iptables"
 )
 
 const (
 	ClientTimeoutSeconds = 5 * time.Second
-	IngressChainName = "istio-ingress"
+	IngressChainName     = "istio-ingress"
+	jobPrefix            = "silk-daemon-bootstrap"
+	logPrefix            = "cfnetworking"
 )
 
 func main() {
@@ -38,8 +41,7 @@ func mainWithError() error {
 		return err
 	}
 
-	logger := lager.NewLogger(fmt.Sprintf("%s.silk-daemon-bootstrap", "cfnetworking"))
-	logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.DEBUG))
+	logger, _ := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), common.GetLagerConfig())
 
 	if bootstrapConfig.SingleIPOnly {
 		internalClient, err := createPolicyClient(bootstrapConfig, logger.Session("policy-client"))
@@ -82,7 +84,6 @@ func createNewChain(ipTablesAdapter rules.IPTablesAdapter) error {
 
 	return err
 }
-
 
 func createPolicyClient(bootstrapConfig *config.SilkDaemonBootstrap, logger lager.Logger) (*policyClient.InternalClient, error) {
 	clientTLSConfig, err := mutualtls.NewClientTLSConfig(bootstrapConfig.PolicyClientCertFile, bootstrapConfig.PolicyClientKeyFile, bootstrapConfig.PolicyServerCACertFile)
@@ -141,7 +142,7 @@ func addOverlayAccessMarkRule(iptables rules.IPTablesAdapter, tag string) error 
 			return err
 		}
 	}
-	overlayAccessAllowRule := rules.IPTablesRule{ "-o", "silk-vtep", "-j", "ACCEPT" }
+	overlayAccessAllowRule := rules.IPTablesRule{"-o", "silk-vtep", "-j", "ACCEPT"}
 	exists, err = iptables.Exists("filter", IngressChainName, overlayAccessAllowRule)
 	if err == nil && !exists {
 		err = iptables.BulkAppend("filter", IngressChainName, overlayAccessAllowRule)

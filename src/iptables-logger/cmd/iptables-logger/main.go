@@ -8,6 +8,7 @@ import (
 	"iptables-logger/parser"
 	"iptables-logger/repository"
 	"iptables-logger/runner"
+	"lib/common"
 	"lib/datastore"
 	"lib/serial"
 	"log"
@@ -28,15 +29,14 @@ import (
 	"code.cloudfoundry.org/cf-networking-helpers/metrics"
 	"code.cloudfoundry.org/filelock"
 	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagerflags"
 )
 
 const (
 	dropsondeOrigin = "iptables-logger"
 	emitInterval    = 30 * time.Second
-)
-
-var (
-	logPrefix = "cfnetworking"
+	jobPrefix       = "iptables-logger"
+	logPrefix       = "cfnetworking"
 )
 
 func main() {
@@ -47,10 +47,7 @@ func main() {
 		log.Fatalf("%s.iptables-logger: reading config: %s", logPrefix, err)
 	}
 
-	logger := lager.NewLogger(fmt.Sprintf("%s.iptables-logger", logPrefix))
-	sink := lager.NewReconfigurableSink(lager.NewWriterSink(os.Stdout, lager.DEBUG), lager.DEBUG)
-	logger.RegisterSink(sink)
-
+	logger, sink := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), common.GetLagerConfig())
 	sink.SetMinLevel(lager.DEBUG)
 
 	logger.Info("starting")

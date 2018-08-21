@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"lib/common"
 	"lib/datastore"
 	"lib/policy_client"
 	"lib/poller"
@@ -25,6 +26,7 @@ import (
 	"code.cloudfoundry.org/debugserver"
 	"code.cloudfoundry.org/filelock"
 	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagerflags"
 	"github.com/cloudfoundry/dropsonde"
 	"github.com/coreos/go-iptables/iptables"
 	"github.com/tedsuo/ifrit"
@@ -36,6 +38,7 @@ import (
 const (
 	dropsondeOrigin = "vxlan-policy-agent"
 	emitInterval    = 30 * time.Second
+	jobPrefix       = "vxlan-policy-agent"
 )
 
 var (
@@ -60,9 +63,7 @@ func main() {
 		logPrefix = conf.LogPrefix
 	}
 
-	logger := lager.NewLogger(fmt.Sprintf("%s.vxlan-policy-agent", conf.LogPrefix))
-	reconfigurableSink := initLoggerSink(logger, conf.LogLevel)
-	logger.RegisterSink(reconfigurableSink)
+	logger, reconfigurableSink := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), common.GetLagerConfig())
 
 	logger.Info("parsed-config", lager.Data{"config": conf})
 

@@ -3,17 +3,23 @@ package main
 import (
 	"cni-teardown/config"
 	"flag"
+	"fmt"
+	"lib/common"
 	"os"
 	"strings"
 
 	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagerflags"
 	"code.cloudfoundry.org/silk/lib/adapter"
 )
 
+const (
+	jobPrefix = "cni-teardown"
+	logPrefix = "cfnetworking"
+)
+
 func main() {
-	logger := lager.NewLogger("cni-teardown")
-	sink := lager.NewWriterSink(os.Stdout, lager.INFO)
-	logger.RegisterSink(sink)
+	logger, _ := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), common.GetLagerConfig())
 
 	logger.Info("starting")
 	netlinkAdapter := &adapter.NetlinkAdapter{}

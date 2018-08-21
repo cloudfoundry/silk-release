@@ -16,6 +16,7 @@ files:
   - code.cloudfoundry.org/filelock/*.go # gosub
   - code.cloudfoundry.org/garden/*.go # gosub
   - code.cloudfoundry.org/lager/*.go # gosub
+  - code.cloudfoundry.org/lager/lagerflags/*.go # gosub
   - code.cloudfoundry.org/silk/cmd/silk-cni/*.go # gosub
   - code.cloudfoundry.org/silk/cni/adapter/*.go # gosub
   - code.cloudfoundry.org/silk/cni/config/*.go # gosub
@@ -88,6 +89,7 @@ files:
   - golang.org/x/sys/unix/*.go # gosub
   - golang.org/x/sys/unix/*.s # gosub
   - gopkg.in/validator.v2/*.go # gosub
+  - lib/common/*.go # gosub
   - lib/datastore/*.go # gosub
   - lib/rules/*.go # gosub
   - lib/serial/*.go # gosub
