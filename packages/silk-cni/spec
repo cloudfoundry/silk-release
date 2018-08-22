@@ -52,6 +52,8 @@ files:
   - code.cloudfoundry.org/silk/vendor/github.com/vishvananda/netlink/*.go # gosub
   - code.cloudfoundry.org/silk/vendor/github.com/vishvananda/netlink/nl/*.go # gosub
   - code.cloudfoundry.org/silk/vendor/github.com/vishvananda/netns/*.go # gosub
+  - code.cloudfoundry.org/silk/vendor/golang.org/x/sys/unix/*.go # gosub
+  - code.cloudfoundry.org/silk/vendor/golang.org/x/sys/unix/*.s # gosub
   - code.cloudfoundry.org/silk/vendor/gopkg.in/validator.v2/*.go # gosub
   - github.com/containernetworking/cni/pkg/invoke/*.go # gosub
   - github.com/containernetworking/cni/pkg/skel/*.go # gosub
