@@ -60,6 +60,9 @@ var _ = Describe("Teardown", func() {
 
 	AfterEach(func() {
 		Expect(os.RemoveAll(configFilePath)).To(Succeed())
+		Expect(os.RemoveAll(datastorePath))
+		Expect(os.RemoveAll(delegateDataDirPath))
+		Expect(os.RemoveAll(delegateDatastorePath))
 	})
 
 	Context("when an ifb device exists", func() {
@@ -117,14 +120,26 @@ var _ = Describe("Teardown", func() {
 		})
 
 		Context("when we fail to clean up the directories", func() {
+			var silkJsonPath, metadataJsonPath, hostLocalJsonPath string
+
 			BeforeEach(func() {
-				silkJsonPath := filepath.Join(delegateDatastorePath, "store.json")
-				metadataJsonPath := filepath.Join(datastorePath, "store.json")
-				hostLocalJsonPath := filepath.Join(delegateDataDirPath, "store.json")
+				silkJsonPath = filepath.Join(delegateDatastorePath, "store.json")
+				metadataJsonPath = filepath.Join(datastorePath, "store.json")
+				hostLocalJsonPath = filepath.Join(delegateDataDirPath, "store.json")
 
 				makeImmutableFile(silkJsonPath)
 				makeImmutableFile(metadataJsonPath)
 				makeImmutableFile(hostLocalJsonPath)
+			})
+
+			AfterEach(func() {
+				changeFileToMutable(silkJsonPath)
+				changeFileToMutable(metadataJsonPath)
+				changeFileToMutable(hostLocalJsonPath)
+				
+				Expect(os.Remove(silkJsonPath)).To(Succeed())
+				Expect(os.Remove(metadataJsonPath)).To(Succeed())
+				Expect(os.Remove(hostLocalJsonPath)).To(Succeed())
 			})
 
 			It("logs the errors but still cleans up devices", func() {
@@ -206,14 +221,26 @@ var _ = Describe("Teardown", func() {
 	})
 
 	Context("when we fail to clean up the directories", func() {
+		var silkJsonPath, metadataJsonPath, hostLocalJsonPath string
+
 		BeforeEach(func() {
-			silkJsonPath := filepath.Join(delegateDatastorePath, "store.json")
-			metadataJsonPath := filepath.Join(datastorePath, "store.json")
-			hostLocalJsonPath := filepath.Join(delegateDataDirPath, "store.json")
+			silkJsonPath = filepath.Join(delegateDatastorePath, "store.json")
+			metadataJsonPath = filepath.Join(datastorePath, "store.json")
+			hostLocalJsonPath = filepath.Join(delegateDataDirPath, "store.json")
 
 			makeImmutableFile(silkJsonPath)
 			makeImmutableFile(metadataJsonPath)
 			makeImmutableFile(hostLocalJsonPath)
+		})
+
+		AfterEach(func() {
+			changeFileToMutable(silkJsonPath)
+			changeFileToMutable(metadataJsonPath)
+			changeFileToMutable(hostLocalJsonPath)
+
+			Expect(os.Remove(silkJsonPath)).To(Succeed())
+			Expect(os.Remove(metadataJsonPath)).To(Succeed())
+			Expect(os.Remove(hostLocalJsonPath)).To(Succeed())
 		})
 
 		It("logs the errors", func() {
@@ -237,9 +264,16 @@ func makeImmutableFile(fileName string) {
 	Expect(err).NotTo(HaveOccurred())
 
 	cmd := exec.Command("chattr", "+i", fileName)
-	userAddSession, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).NotTo(HaveOccurred())
-	Eventually(userAddSession, 5*time.Second).Should(gexec.Exit(0))
+	Eventually(session, 5*time.Second).Should(gexec.Exit(0))
+}
+
+func changeFileToMutable(fileName string) {
+	cmd := exec.Command("chattr", "-i", fileName)
+	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+	Expect(err).NotTo(HaveOccurred())
+	Eventually(session, 5*time.Second).Should(gexec.Exit(0))
 }
 
 func fileExists(path string) bool {
