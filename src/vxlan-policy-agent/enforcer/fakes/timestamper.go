@@ -7,20 +7,20 @@ import (
 )
 
 type TimeStamper struct {
-	CurrentTimeStub        func() int
+	CurrentTimeStub        func() int64
 	currentTimeMutex       sync.RWMutex
 	currentTimeArgsForCall []struct{}
 	currentTimeReturns     struct {
-		result1 int
+		result1 int64
 	}
 	currentTimeReturnsOnCall map[int]struct {
-		result1 int
+		result1 int64
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *TimeStamper) CurrentTime() int {
+func (fake *TimeStamper) CurrentTime() int64 {
 	fake.currentTimeMutex.Lock()
 	ret, specificReturn := fake.currentTimeReturnsOnCall[len(fake.currentTimeArgsForCall)]
 	fake.currentTimeArgsForCall = append(fake.currentTimeArgsForCall, struct{}{})
@@ -41,22 +41,22 @@ func (fake *TimeStamper) CurrentTimeCallCount() int {
 	return len(fake.currentTimeArgsForCall)
 }
 
-func (fake *TimeStamper) CurrentTimeReturns(result1 int) {
+func (fake *TimeStamper) CurrentTimeReturns(result1 int64) {
 	fake.CurrentTimeStub = nil
 	fake.currentTimeReturns = struct {
-		result1 int
+		result1 int64
 	}{result1}
 }
 
-func (fake *TimeStamper) CurrentTimeReturnsOnCall(i int, result1 int) {
+func (fake *TimeStamper) CurrentTimeReturnsOnCall(i int, result1 int64) {
 	fake.CurrentTimeStub = nil
 	if fake.currentTimeReturnsOnCall == nil {
 		fake.currentTimeReturnsOnCall = make(map[int]struct {
-			result1 int
+			result1 int64
 		})
 	}
 	fake.currentTimeReturnsOnCall[i] = struct {
-		result1 int
+		result1 int64
 	}{result1}
 }
 

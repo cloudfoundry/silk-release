@@ -84,9 +84,10 @@ var _ = Describe("Enforcer", func() {
 
 		Context("when there is an older timestamped chain", func() {
 			BeforeEach(func() {
+				timestamper.CurrentTimeReturns(9999999999111111)
 				iptables.ListReturns([]string{
-					"-A some-chain -j foo0000000001",
-					"-A some-chain -j foo9999999999",
+					"-A some-chain -j foo9999999999111110",
+					"-A some-chain -j foo9999999999111116",
 				}, nil)
 			})
 			It("gets deleted", func() {
@@ -97,15 +98,15 @@ var _ = Describe("Enforcer", func() {
 				table, chain, ruleSpec := iptables.DeleteArgsForCall(0)
 				Expect(table).To(Equal("some-table"))
 				Expect(chain).To(Equal("some-chain"))
-				Expect(ruleSpec).To(Equal(rules.IPTablesRule{"-j", "foo0000000001"}))
+				Expect(ruleSpec).To(Equal(rules.IPTablesRule{"-j", "foo9999999999111110"}))
 				Expect(iptables.ClearChainCallCount()).To(Equal(1))
 				table, chain = iptables.ClearChainArgsForCall(0)
 				Expect(table).To(Equal("some-table"))
-				Expect(chain).To(Equal("foo0000000001"))
+				Expect(chain).To(Equal("foo9999999999111110"))
 				Expect(iptables.DeleteChainCallCount()).To(Equal(1))
 				table, chain = iptables.DeleteChainArgsForCall(0)
 				Expect(table).To(Equal("some-table"))
-				Expect(chain).To(Equal("foo0000000001"))
+				Expect(chain).To(Equal("foo9999999999111110"))
 			})
 		})
 

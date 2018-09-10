@@ -13,13 +13,13 @@ import (
 
 type Timestamper struct{}
 
-func (_ Timestamper) CurrentTime() int {
-	return int(time.Now().Unix())
+func (_ Timestamper) CurrentTime() int64 {
+	return time.Now().UnixNano() / int64(time.Microsecond)
 }
 
 //go:generate counterfeiter -o fakes/timestamper.go --fake-name TimeStamper . TimeStamper
 type TimeStamper interface {
-	CurrentTime() int
+	CurrentTime() int64
 }
 
 type Enforcer struct {
@@ -99,7 +99,7 @@ func (e *Enforcer) Enforce(table, parentChain, chainPrefix string, rulespec ...r
 		return fmt.Errorf("bulk appending: %s", err)
 	}
 
-	err = e.cleanupOldRules(table, parentChain, chainPrefix, int(newTime))
+	err = e.cleanupOldRules(table, parentChain, chainPrefix, newTime)
 	if err != nil {
 		e.Logger.Error("cleanup-rules", err)
 		return err
@@ -108,18 +108,18 @@ func (e *Enforcer) Enforce(table, parentChain, chainPrefix string, rulespec ...r
 	return nil
 }
 
-func (e *Enforcer) cleanupOldRules(table, parentChain, chainPrefix string, newTime int) error {
+func (e *Enforcer) cleanupOldRules(table, parentChain, chainPrefix string, newTime int64) error {
 	chainList, err := e.iptables.List(table, parentChain)
 	if err != nil {
 		return fmt.Errorf("listing forward rules: %s", err)
 	}
 
-	re := regexp.MustCompile(chainPrefix + "[0-9]{10}")
+	re := regexp.MustCompile(chainPrefix + "[0-9]{10,16}")
 	for _, c := range chainList {
 		timeStampedChain := string(re.Find([]byte(c)))
 
 		if timeStampedChain != "" {
-			oldTime, err := strconv.Atoi(strings.TrimPrefix(timeStampedChain, chainPrefix))
+			oldTime, err := strconv.ParseInt(strings.TrimPrefix(timeStampedChain, chainPrefix), 10, 64)
 			if err != nil {
 				return err // not tested
 			}
