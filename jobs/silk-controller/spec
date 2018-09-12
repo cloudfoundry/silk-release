@@ -104,11 +104,21 @@ properties:
     default: 120
 
   max_open_connections:
-    description: "Maximum number of open connections to the SQL database"
+    description: |
+      Maximum number of open connections to the SQL database.
+
+      The number of necessary connections will scale with the number of diego-cells in the deployment.
+      The handlers that use the db conns in this job respond to the silk-daemon, which runs on the diego-cells.
+      Each daemon polls this server once every 5s, by default.
+      Anecdote: A deployment with ~200 diego-cells has been seen to use up to ~200 conns in total.
+      Each instance of this job would expect approx 200/job-instance-count conns each in this scenario.
+      YMMV based on the performance of the db, latency, load, etc.
     default: 200
 
   max_idle_connections:
-    description: "Maximum number of idle connections to the SQL database"
+    description: |
+      Maximum number of idle connections to the SQL database
+      Idle connections will be retained until their `connections_max_lifetime_seconds` has been reached.
     default: 200
 
   connections_max_lifetime_seconds:
