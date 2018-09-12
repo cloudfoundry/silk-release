@@ -24,7 +24,7 @@
     from_property = db_param 'host'
     return from_property if !from_property.nil?
 
-    if_link("database") do |db_link|
+    if_link('database') do |db_link|
       instances = db_link.instances
       if instances.size > 0
         return instances[0].address
@@ -45,41 +45,42 @@
   end
 
   def subnet_prefix_length
-    size = p("subnet_prefix_length")
+    size = p('subnet_prefix_length')
     if size < 1 || size > 30
-      raise "subnet_prefix_length must be a value between 1-30"
+      raise 'subnet_prefix_length must be a value between 1-30'
     end
     size
   end
 
   toRender = {
-    "debug_server_port" => p("debug_port"),
-    "health_check_port" => p("health_check_port"),
-    "listen_host" => p("listen_ip"),
-    "listen_port" => p("listen_port"),
-    "ca_cert_file" => "/var/vcap/jobs/silk-controller/config/certs/ca.crt",
-    "server_cert_file" => "/var/vcap/jobs/silk-controller/config/certs/server.crt",
-    "server_key_file" => "/var/vcap/jobs/silk-controller/config/certs/server.key",
-    "network" => p("network"),
-    "subnet_prefix_length" => subnet_prefix_length,
-    "database" => {
-      "type" => driver,
-      "user" => user,
-      "password" => password,
-      "host" => db_host,
-      "port" => port,
-      "timeout" => p("database.connect_timeout_seconds"),
-      "database_name" => name,
-      "require_ssl" => p("database.require_ssl"),
-      "ca_cert" => '/var/vcap/jobs/silk-controller/config/certs/database_ca.crt',
+    'debug_server_port' => p('debug_port'),
+    'health_check_port' => p('health_check_port'),
+    'listen_host' => p('listen_ip'),
+    'listen_port' => p('listen_port'),
+    'ca_cert_file' => '/var/vcap/jobs/silk-controller/config/certs/ca.crt',
+    'server_cert_file' => '/var/vcap/jobs/silk-controller/config/certs/server.crt',
+    'server_key_file' => '/var/vcap/jobs/silk-controller/config/certs/server.key',
+    'network' => p('network'),
+    'subnet_prefix_length' => subnet_prefix_length,
+    'database' => {
+      'type' => driver,
+      'user' => user,
+      'password' => password,
+      'host' => db_host,
+      'port' => port,
+      'timeout' => p('database.connect_timeout_seconds'),
+      'database_name' => name,
+      'require_ssl' => p('database.require_ssl'),
+      'ca_cert' => '/var/vcap/jobs/silk-controller/config/certs/database_ca.crt',
     },
-    "lease_expiration_seconds" => p("subnet_lease_expiration_hours") * 60 * 60,
-    "metron_port" => p("metron_port"),
-    "staleness_threshold_seconds" => 60*60,
-    "metrics_emit_seconds" => 30,
-    "log_prefix" => "cfnetworking",
-    "max_idle_connections" => p("max_idle_connections"),
-    "max_open_connections" => p("max_open_connections"),
+    'lease_expiration_seconds' => p('subnet_lease_expiration_hours') * 60 * 60,
+    'metron_port' => p('metron_port'),
+    'staleness_threshold_seconds' => 60*60,
+    'metrics_emit_seconds' => 30,
+    'log_prefix' => 'cfnetworking',
+    'max_idle_connections' => p('max_idle_connections'),
+    'max_open_connections' => p('max_open_connections'),
+    'connections_max_lifetime_seconds' => p('connections_max_lifetime_seconds'),
   }
 
   JSON.pretty_generate(toRender)

@@ -31,7 +31,8 @@ module Bosh::Template::Test
           'connect_timeout_seconds' => 10,
         },
         'max_open_connections' => 1,
-        'max_idle_connections' => 3
+        'max_idle_connections' => 3,
+        'connections_max_lifetime_seconds' => 31
       }
     end
     let(:database_link) {
@@ -84,7 +85,8 @@ module Bosh::Template::Test
           'metrics_emit_seconds' => 30,
           'log_prefix' => 'cfnetworking',
           'max_idle_connections' => 3,
-          'max_open_connections' => 1
+          'max_open_connections' => 1,
+          'connections_max_lifetime_seconds' => 31
         })
       end
 

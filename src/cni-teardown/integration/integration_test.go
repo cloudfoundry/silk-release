@@ -136,7 +136,7 @@ var _ = Describe("Teardown", func() {
 				changeFileToMutable(silkJsonPath)
 				changeFileToMutable(metadataJsonPath)
 				changeFileToMutable(hostLocalJsonPath)
-				
+
 				Expect(os.Remove(silkJsonPath)).To(Succeed())
 				Expect(os.Remove(metadataJsonPath)).To(Succeed())
 				Expect(os.Remove(hostLocalJsonPath)).To(Succeed())
