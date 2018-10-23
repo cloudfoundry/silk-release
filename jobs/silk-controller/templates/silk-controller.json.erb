@@ -73,8 +73,6 @@
       'require_ssl' => p('database.require_ssl'),
       'ca_cert' => '/var/vcap/jobs/silk-controller/config/certs/database_ca.crt',
       'skip_hostname_validation' => p('database.skip_hostname_validation'),
-      'client_cert' => p('database.client_cert'),
-      'client_key' => p('database.client_key'),
     },
     'lease_expiration_seconds' => p('subnet_lease_expiration_hours') * 60 * 60,
     'metron_port' => p('metron_port'),
