@@ -13,6 +13,8 @@
       'debug_server_port' => p('debug_server_port'),
       'force_policy_poll_cycle_port' => 44152,
       'enable_overlay_ingress_rules' => p('enable_overlay_ingress_rules'),
+      "disable_container_network_policy" => p("disable_container_network_policy"),
+      'overlay_network' => link('cf_network').p('network'),
 
       # hard-coded values, not exposed as bosh spec properties
       'ca_cert_file' => '/var/vcap/jobs/vxlan-policy-agent/config/certs/ca.crt',

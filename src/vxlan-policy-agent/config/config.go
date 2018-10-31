@@ -29,6 +29,8 @@ type VxlanPolicyAgent struct {
 	EnableOverlayIngressRules     bool   `json:"enable_overlay_ingress_rules"`
 	ForcePolicyPollCyclePort      int    `json:"force_policy_poll_cycle_port" validate:"nonzero"`
 	ForcePolicyPollCycleHost      string `json:"force_policy_poll_cycle_host" validate:"nonzero"`
+	DisableContainerNetworkPolicy bool   `json:"disable_container_network_policy"`
+	OverlayNetwork                string `json:"overlay_network"`
 }
 
 func (c *VxlanPolicyAgent) Validate() error {

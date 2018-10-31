@@ -26,14 +26,21 @@ type Enforcer struct {
 	Logger      lager.Logger
 	timestamper TimeStamper
 	iptables    rules.IPTablesAdapter
+	conf        EnforcerConfig
 }
 
-func NewEnforcer(logger lager.Logger, timestamper TimeStamper, ipt rules.IPTablesAdapter) *Enforcer {
+func NewEnforcer(logger lager.Logger, timestamper TimeStamper, ipt rules.IPTablesAdapter, conf EnforcerConfig) *Enforcer {
 	return &Enforcer{
 		Logger:      logger,
 		timestamper: timestamper,
 		iptables:    ipt,
+		conf:        conf,
 	}
+}
+
+type EnforcerConfig struct {
+	DisableContainerNetworkPolicy bool
+	OverlayNetwork                string
 }
 
 type Chain struct {
@@ -86,6 +93,10 @@ func (e *Enforcer) Enforce(table, parentChain, chainPrefix string, rulespec ...r
 	if err != nil {
 		e.Logger.Error("create-chain", err)
 		return fmt.Errorf("creating chain: %s", err)
+	}
+
+	if e.conf.DisableContainerNetworkPolicy {
+		rulespec = append([]rules.IPTablesRule{rules.NewAcceptEverythingRule(e.conf.OverlayNetwork)}, rulespec...)
 	}
 
 	err = e.iptables.BulkInsert(table, parentChain, 1, rules.IPTablesRule{"-j", chain})

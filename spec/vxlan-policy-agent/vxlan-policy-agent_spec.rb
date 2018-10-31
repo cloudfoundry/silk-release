@@ -25,13 +25,25 @@ module Bosh::Template::Test
         }
       end
 
+      let(:links) do
+        [
+          Link.new(
+            name: 'cf_network',
+            instances: [LinkInstance.new()],
+            properties: {
+              'network' => '10.255.0.0/16',
+            }
+          )
+        ]
+      end
+
       describe 'vxlan-policy-agent job' do
         let(:job) {release.job('vxlan-policy-agent')}
         describe 'config/client-config.json' do
           let(:template) {job.template('config/vxlan-policy-agent.json')}
 
           it 'renders the template with the provided manifest properties' do
-            renderedConfig = JSON.parse(template.render(merged_manifest_properties))
+            renderedConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links))
             expect(renderedConfig).to eq({
               'ca_cert_file' => '/var/vcap/jobs/vxlan-policy-agent/config/certs/ca.crt',
               'client_cert_file' => '/var/vcap/jobs/vxlan-policy-agent/config/certs/client.crt',
@@ -52,6 +64,8 @@ module Bosh::Template::Test
               'vni' => 1,
               'force_policy_poll_cycle_host' => '127.0.0.1',
               'force_policy_poll_cycle_port' => 44152,
+              "disable_container_network_policy" => false,
+              'overlay_network' => '10.255.0.0/16',
             })
           end
         end

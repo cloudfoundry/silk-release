@@ -45,7 +45,8 @@ var _ = Describe("Config", func() {
 					"iptables_accepted_udp_logs_per_sec":4,
 					"enable_overlay_ingress_rules": true,
 					"force_policy_poll_cycle_port": 6789,
-					"force_policy_poll_cycle_host": "http://6.7.8.9"
+					"force_policy_poll_cycle_host": "http://6.7.8.9",
+					"disable_container_network_policy": false
 				}`)
 				c, err := config.New(file.Name())
 				Expect(err).NotTo(HaveOccurred())
@@ -68,6 +69,7 @@ var _ = Describe("Config", func() {
 				Expect(c.EnableOverlayIngressRules).To(Equal(true))
 				Expect(c.ForcePolicyPollCyclePort).To(Equal(6789))
 				Expect(c.ForcePolicyPollCycleHost).To(Equal("http://6.7.8.9"))
+				Expect(c.DisableContainerNetworkPolicy).To(BeFalse())
 			})
 		})
 

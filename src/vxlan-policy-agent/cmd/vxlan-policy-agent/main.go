@@ -154,6 +154,10 @@ func main() {
 		logger.Session("rules-enforcer"),
 		timestamper,
 		lockedIPTables,
+		enforcer.EnforcerConfig{
+			DisableContainerNetworkPolicy: conf.DisableContainerNetworkPolicy,
+			OverlayNetwork:                conf.OverlayNetwork,
+		},
 	)
 
 	err = dropsonde.Initialize(conf.MetronAddress, dropsondeOrigin)

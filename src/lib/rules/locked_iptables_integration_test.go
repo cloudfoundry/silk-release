@@ -10,7 +10,6 @@ import (
 
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport"
 	"code.cloudfoundry.org/filelock"
-
 	goiptables "github.com/coreos/go-iptables/iptables"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -86,6 +85,13 @@ var _ = Describe("Locked IPTables Integration Test", func() {
 		}
 	})
 
+	It("writes a single rule to allow all traffic on a given IP range", func() {
+		onlyRunOnLinux()
+		err := lockedIPT.AllowTrafficForRange([]rules.IPTablesRule{rules.NewAcceptEverythingRule("10.255.0.0/16")}...)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(AllIPTablesRules("filter")).To(ContainElement(`-A FORWARD -s 10.255.0.0/16 -d 10.255.0.0/16 -j ACCEPT`))
+	})
 })
 
 func onlyRunOnLinux() {

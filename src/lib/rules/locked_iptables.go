@@ -1,10 +1,11 @@
 package rules
 
 import (
-	"code.cloudfoundry.org/cf-networking-helpers/runner"
 	"fmt"
 	"os/exec"
 	"strings"
+
+	"code.cloudfoundry.org/cf-networking-helpers/runner"
 )
 
 //go:generate counterfeiter -o ../fakes/iptables.go --fake-name IPTables . iptables
@@ -31,6 +32,7 @@ type IPTablesAdapter interface {
 	BulkInsert(table, chain string, pos int, rulespec ...IPTablesRule) error
 	BulkAppend(table, chain string, rulespec ...IPTablesRule) error
 	RuleCount(table string) (int, error)
+	AllowTrafficForRange(rulespec ...IPTablesRule) error
 }
 
 //go:generate counterfeiter -o ../fakes/command_runner.go --fake-name CommandRunner . commandRunner
@@ -106,6 +108,10 @@ func (l *LockedIPTables) bulkAction(table, prefix string, rulespec ...IPTablesRu
 	return l.Locker.Unlock()
 }
 
+func (l *LockedIPTables) AllowTrafficForRange(rulespec ...IPTablesRule) error {
+	return l.bulkAction("filter", fmt.Sprintf("-I %s %d", "FORWARD", 1), rulespec...)
+}
+
 func (l *LockedIPTables) BulkInsert(table, chain string, pos int, rulespec ...IPTablesRule) error {
 	return l.bulkAction(table, fmt.Sprintf("-I %s %d", chain, pos), rulespec...)
 }
@@ -146,7 +152,7 @@ func (l *LockedIPTables) RuleCount(table string) (int, error) {
 	}
 
 	command := runner.Command{
-		Args: []string{ "-S", "-t", table },
+		Args: []string{"-S", "-t", table},
 	}
 	output, err := l.IPTablesRunner.CombinedOutput(command)
 

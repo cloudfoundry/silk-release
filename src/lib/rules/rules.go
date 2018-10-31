@@ -232,6 +232,12 @@ func NewAcceptRule() IPTablesRule {
 	}
 }
 
+func NewAcceptEverythingRule(ipRange string) IPTablesRule {
+	return IPTablesRule{
+		"-s", ipRange, "-d", ipRange, "-j", "ACCEPT",
+	}
+}
+
 func NewInputRelatedEstablishedRule() IPTablesRule {
 	return IPTablesRule{
 		"-m", "state", "--state", "RELATED,ESTABLISHED",

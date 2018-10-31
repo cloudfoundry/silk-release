@@ -2,11 +2,10 @@ package enforcer_test
 
 import (
 	"errors"
+	libfakes "lib/fakes"
 	"lib/rules"
 	"vxlan-policy-agent/enforcer"
 	"vxlan-policy-agent/enforcer/fakes"
-
-	libfakes "lib/fakes"
 
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
@@ -34,7 +33,7 @@ var _ = Describe("Enforcer", func() {
 			iptables = &libfakes.IPTablesAdapter{}
 
 			timestamper.CurrentTimeReturns(42)
-			ruleEnforcer = enforcer.NewEnforcer(logger, timestamper, iptables)
+			ruleEnforcer = enforcer.NewEnforcer(logger, timestamper, iptables, enforcer.EnforcerConfig{DisableContainerNetworkPolicy: false, OverlayNetwork: "10.10.0.0/16"})
 		})
 
 		It("enforces all the rules it receives on the correct chain", func() {
@@ -131,7 +130,6 @@ var _ = Describe("Enforcer", func() {
 			It("it logs and returns a useful error", func() {
 				err := ruleEnforcer.Enforce("some-table", "some-chain", "foo", []rules.IPTablesRule{fakeRule}...)
 				Expect(err).To(MatchError("listing forward rules: blueberry"))
-
 				Expect(logger).To(gbytes.Say("cleanup-rules.*blueberry"))
 			})
 		})
@@ -160,7 +158,37 @@ var _ = Describe("Enforcer", func() {
 				Expect(logger).To(gbytes.Say("create-chain.*banana"))
 			})
 		})
+
+		Context("when network policy is disabled", func() {
+			BeforeEach(func() {
+				ruleEnforcer = enforcer.NewEnforcer(
+					logger,
+					timestamper,
+					iptables,
+					enforcer.EnforcerConfig{
+						DisableContainerNetworkPolicy: true,
+						OverlayNetwork:                "10.10.0.0/16",
+					},
+				)
+			})
+
+			It("allows all container connections", func() {
+				err := ruleEnforcer.Enforce("some-table", "some-chain", "foo", []rules.IPTablesRule{fakeRule}...)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(iptables.NewChainCallCount()).To(Equal(1))
+				Expect(iptables.BulkInsertCallCount()).To(Equal(1))
+				_, _, position, _ := iptables.BulkInsertArgsForCall(0)
+				Expect(position).To(Equal(1))
+
+				table, chain, rulespec := iptables.BulkAppendArgsForCall(0)
+				Expect(table).To(Equal("some-table"))
+				Expect(chain).To(Equal("foo42"))
+				Expect(rulespec).To(Equal([]rules.IPTablesRule{{"-s", "10.10.0.0/16", "-d", "10.10.0.0/16", "-j", "ACCEPT"}, {"rule1"}}))
+			})
+		})
 	})
+
 	Describe("RulesWithChain", func() {
 		Describe("Equals", func() {
 			var ruleSet, otherRuleSet enforcer.RulesWithChain
