@@ -23,6 +23,7 @@ files:
   - code.cloudfoundry.org/silk/lib/adapter/*.go # gosub
   - code.cloudfoundry.org/silk/lib/datastore/*.go # gosub
   - code.cloudfoundry.org/silk/lib/serial/*.go # gosub
+  - code.cloudfoundry.org/silk/vendor/code.cloudfoundry.org/bbs/db/sqldb/helpers/monitor/*.go # gosub
   - code.cloudfoundry.org/silk/vendor/code.cloudfoundry.org/cf-networking-helpers/json_client/*.go # gosub
   - code.cloudfoundry.org/silk/vendor/code.cloudfoundry.org/cf-networking-helpers/marshal/*.go # gosub
   - code.cloudfoundry.org/silk/vendor/code.cloudfoundry.org/cf-networking-helpers/metrics/*.go # gosub
@@ -61,10 +62,12 @@ files:
   - code.cloudfoundry.org/silk/vendor/github.com/vishvananda/netlink/*.go # gosub
   - code.cloudfoundry.org/silk/vendor/github.com/vishvananda/netlink/nl/*.go # gosub
   - code.cloudfoundry.org/silk/vendor/github.com/vishvananda/netns/*.go # gosub
-  - code.cloudfoundry.org/silk/vendor/golang.org/x/sys/unix/*.go # gosub
-  - code.cloudfoundry.org/silk/vendor/golang.org/x/sys/unix/*.s # gosub
+  - code.cloudfoundry.org/silk/vendor/golang.org/x/sys/windows/*.go # gosub
+  - code.cloudfoundry.org/silk/vendor/golang.org/x/sys/windows/*.s # gosub
   - code.cloudfoundry.org/silk/vendor/gopkg.in/validator.v2/*.go # gosub
   - github.com/coreos/go-iptables/iptables/*.go # gosub
+  - golang.org/x/sys/windows/*.go # gosub
+  - golang.org/x/sys/windows/*.s # gosub
   - lib/common/*.go # gosub
   - lib/policy_client/*.go # gosub
   - lib/rules/*.go # gosub

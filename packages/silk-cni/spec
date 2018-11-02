@@ -52,8 +52,8 @@ files:
   - code.cloudfoundry.org/silk/vendor/github.com/vishvananda/netlink/*.go # gosub
   - code.cloudfoundry.org/silk/vendor/github.com/vishvananda/netlink/nl/*.go # gosub
   - code.cloudfoundry.org/silk/vendor/github.com/vishvananda/netns/*.go # gosub
-  - code.cloudfoundry.org/silk/vendor/golang.org/x/sys/unix/*.go # gosub
-  - code.cloudfoundry.org/silk/vendor/golang.org/x/sys/unix/*.s # gosub
+  - code.cloudfoundry.org/silk/vendor/golang.org/x/sys/windows/*.go # gosub
+  - code.cloudfoundry.org/silk/vendor/golang.org/x/sys/windows/*.s # gosub
   - code.cloudfoundry.org/silk/vendor/gopkg.in/validator.v2/*.go # gosub
   - github.com/containernetworking/cni/pkg/invoke/*.go # gosub
   - github.com/containernetworking/cni/pkg/skel/*.go # gosub
@@ -90,6 +90,8 @@ files:
   - github.com/vishvananda/netns/*.go # gosub
   - golang.org/x/sys/unix/*.go # gosub
   - golang.org/x/sys/unix/*.s # gosub
+  - golang.org/x/sys/windows/*.go # gosub
+  - golang.org/x/sys/windows/*.s # gosub
   - gopkg.in/validator.v2/*.go # gosub
   - lib/common/*.go # gosub
   - lib/datastore/*.go # gosub
