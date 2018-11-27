@@ -45,17 +45,19 @@ var _ = Describe("Planner", func() {
 			Handle: "container-id-1",
 			IP:     "10.255.1.2",
 			Metadata: map[string]interface{}{
-				"policy_group_id": "some-app-guid",
-				"space_id":        "some-space-guid",
-				"ports":           "8080",
+				"policy_group_id":   "some-app-guid",
+				"space_id":          "some-space-guid",
+				"ports":             "8080",
+				"container_purpose": "task",
 			},
 		}
 		data["container-id-2"] = datastore.Container{
 			Handle: "container-id-2",
 			IP:     "10.255.1.3",
 			Metadata: map[string]interface{}{
-				"policy_group_id": "some-other-app-guid",
-				"ports":           " 8181 , 9090",
+				"policy_group_id":   "some-other-app-guid",
+				"ports":             " 8181 , 9090",
+				"container_purpose": "staging",
 			},
 		}
 		data["container-id-3"] = datastore.Container{
@@ -138,6 +140,7 @@ var _ = Describe("Planner", func() {
 						{Start: "1.2.3.4", End: "1.2.3.5"},
 					},
 				},
+				AppLifecycle: "all",
 			},
 			{
 				Source: &policy_client.EgressSource{
@@ -152,6 +155,7 @@ var _ = Describe("Planner", func() {
 						{Start: "1.2.3.4", End: "1.2.3.5"},
 					},
 				},
+				AppLifecycle: "all",
 			},
 			{
 				Source: &policy_client.EgressSource{
@@ -165,6 +169,7 @@ var _ = Describe("Planner", func() {
 						{Start: "1.2.3.6", End: "1.2.3.7"},
 					},
 				},
+				AppLifecycle: "all",
 			},
 			{
 				Source: &policy_client.EgressSource{
@@ -178,6 +183,7 @@ var _ = Describe("Planner", func() {
 						{Start: "1.2.3.6", End: "1.2.3.7"},
 					},
 				},
+				AppLifecycle: "all",
 			},
 			{
 				Source: &policy_client.EgressSource{
@@ -191,6 +197,7 @@ var _ = Describe("Planner", func() {
 						{Start: "1.2.3.6", End: "1.2.3.7"},
 					},
 				},
+				AppLifecycle: "all",
 			},
 			{
 				Source: &policy_client.EgressSource{
@@ -202,6 +209,7 @@ var _ = Describe("Planner", func() {
 						{Start: "1.2.3.6", End: "1.2.3.7"},
 					},
 				},
+				AppLifecycle: "all",
 			},
 			{
 				Source: &policy_client.EgressSource{
@@ -214,6 +222,7 @@ var _ = Describe("Planner", func() {
 						{Start: "2.3.4.5", End: "3.3.3.3"},
 					},
 				},
+				AppLifecycle: "all",
 			},
 		}
 
@@ -699,6 +708,177 @@ var _ = Describe("Planner", func() {
 				Expect(rulesWithChain.Rules[1]).To(ContainElement("10.255.1.3"))
 				Expect(rulesWithChain.Rules[2]).To(ContainElement("10.255.1.4"))
 				Expect(rulesWithChain.Rules[3]).To(ContainElement("10.255.1.5"))
+			})
+		})
+
+		Context("when there are app lifecycle limitations", func() {
+
+			BeforeEach(func() {
+				egressPolicyServerResponse = []policy_client.EgressPolicy{
+					{
+						Source: &policy_client.EgressSource{
+							ID: "some-app-guid",
+						},
+						Destination: &policy_client.EgressDestination{
+							Protocol: "tcp",
+							Ports: []policy_client.Ports{
+								{Start: 1234, End: 1234},
+							},
+							IPRanges: []policy_client.IPRange{
+								{Start: "1.2.3.4", End: "1.2.3.5"},
+							},
+						},
+						AppLifecycle: "running",
+					},
+					{
+						Source: &policy_client.EgressSource{
+							ID: "some-app-guid",
+						},
+						Destination: &policy_client.EgressDestination{
+							Protocol: "udp",
+							Ports: []policy_client.Ports{
+								{Start: 5678, End: 5678},
+							},
+							IPRanges: []policy_client.IPRange{
+								{Start: "1.2.3.4", End: "1.2.3.5"},
+							},
+						},
+						AppLifecycle: "staging",
+					},
+					{
+						Source: &policy_client.EgressSource{
+							ID: "some-app-guid",
+						},
+						Destination: &policy_client.EgressDestination{
+							Protocol: "udp",
+							Ports: []policy_client.Ports{
+								{Start: 9999, End: 9999},
+							},
+							IPRanges: []policy_client.IPRange{
+								{Start: "1.2.3.4", End: "1.2.3.5"},
+							},
+						},
+						AppLifecycle: "all",
+					},
+				}
+
+				policyClient.GetPoliciesByIDReturns(policyServerResponse, egressPolicyServerResponse, nil)
+			})
+
+			Context("and the purpose is app", func() {
+				BeforeEach(func() {
+					data = make(map[string]datastore.Container)
+					data["container-id-1"] = datastore.Container{
+						Handle: "container-id-1",
+						IP:     "10.255.1.2",
+						Metadata: map[string]interface{}{
+							"policy_group_id":   "some-app-guid",
+							"ports":             "8080",
+							"container_purpose": "app",
+						},
+					}
+					store.ReadAllReturns(data, nil)
+				})
+
+				It("assigns the rules correctly", func() {
+					rulesWithChain, err := policyPlanner.GetRulesAndChain()
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(rulesWithChain.Rules).To(ConsistOf(
+						rules.IPTablesRule{"--source", "10.255.1.2", "--jump", "MARK", "--set-xmark", "0xAA", "-m", "comment", "--comment", "src:some-app-guid"},
+						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "--dport", "8080:8080", "-m", "mark", "--mark", "0xAA", "--jump", "ACCEPT", "-m", "comment", "--comment", "src:some-app-guid_dst:some-app-guid"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "tcp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "tcp", "--dport", "1234:1234", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "9999:9999", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "-m", "tcp", "--dport", "8080", "-m", "mark", "--mark", "0x5476", "--jump", "ACCEPT"},
+					))
+				})
+			})
+
+			Context("and the purpose is task", func() {
+				BeforeEach(func() {
+					data = make(map[string]datastore.Container)
+					data["container-id-1"] = datastore.Container{
+						Handle: "container-id-1",
+						IP:     "10.255.1.2",
+						Metadata: map[string]interface{}{
+							"policy_group_id":   "some-app-guid",
+							"ports":             "8080",
+							"container_purpose": "task",
+						},
+					}
+					store.ReadAllReturns(data, nil)
+				})
+
+				It("assigns the rules correctly", func() {
+					rulesWithChain, err := policyPlanner.GetRulesAndChain()
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(rulesWithChain.Rules).To(ConsistOf(
+						rules.IPTablesRule{"--source", "10.255.1.2", "--jump", "MARK", "--set-xmark", "0xAA", "-m", "comment", "--comment", "src:some-app-guid"},
+						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "--dport", "8080:8080", "-m", "mark", "--mark", "0xAA", "--jump", "ACCEPT", "-m", "comment", "--comment", "src:some-app-guid_dst:some-app-guid"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "tcp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "tcp", "--dport", "1234:1234", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "9999:9999", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "-m", "tcp", "--dport", "8080", "-m", "mark", "--mark", "0x5476", "--jump", "ACCEPT"},
+					))
+				})
+			})
+
+			Context("and the purpose is staging", func() {
+				BeforeEach(func() {
+					data = make(map[string]datastore.Container)
+					data["container-id-1"] = datastore.Container{
+						Handle: "container-id-1",
+						IP:     "10.255.1.2",
+						Metadata: map[string]interface{}{
+							"policy_group_id":   "some-app-guid",
+							"ports":             "8080",
+							"container_purpose": "staging",
+						},
+					}
+					store.ReadAllReturns(data, nil)
+				})
+
+				It("assigns the rules correctly", func() {
+					rulesWithChain, err := policyPlanner.GetRulesAndChain()
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(rulesWithChain.Rules).To(ConsistOf(
+						rules.IPTablesRule{"--source", "10.255.1.2", "--jump", "MARK", "--set-xmark", "0xAA", "-m", "comment", "--comment", "src:some-app-guid"},
+						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "--dport", "8080:8080", "-m", "mark", "--mark", "0xAA", "--jump", "ACCEPT", "-m", "comment", "--comment", "src:some-app-guid_dst:some-app-guid"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "5678:5678", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "9999:9999", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "-m", "tcp", "--dport", "8080", "-m", "mark", "--mark", "0x5476", "--jump", "ACCEPT"},
+					))
+				})
+			})
+
+			Context("and the purpose is not present", func() {
+				BeforeEach(func() {
+					data = make(map[string]datastore.Container)
+					data["container-id-1"] = datastore.Container{
+						Handle: "container-id-1",
+						IP:     "10.255.1.2",
+						Metadata: map[string]interface{}{
+							"policy_group_id":   "some-app-guid",
+							"ports":             "8080",
+						},
+					}
+					store.ReadAllReturns(data, nil)
+				})
+
+				It("assigns all the policies, in a backwards compatible way", func() {
+					rulesWithChain, err := policyPlanner.GetRulesAndChain()
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(rulesWithChain.Rules).To(ConsistOf(
+						rules.IPTablesRule{"--source", "10.255.1.2", "--jump", "MARK", "--set-xmark", "0xAA", "-m", "comment", "--comment", "src:some-app-guid"},
+						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "--dport", "8080:8080", "-m", "mark", "--mark", "0xAA", "--jump", "ACCEPT", "-m", "comment", "--comment", "src:some-app-guid_dst:some-app-guid"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "tcp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "tcp", "--dport", "1234:1234", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "5678:5678", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "9999:9999", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "-m", "tcp", "--dport", "8080", "-m", "mark", "--mark", "0x5476", "--jump", "ACCEPT"},
+					))
+				})
 			})
 		})
 

@@ -55,6 +55,7 @@ type container struct {
 	SpaceID string
 	Ports   string
 	IP      string
+	Purpose string
 }
 
 type containerPolicySet struct {
@@ -249,11 +250,17 @@ func (p *VxlanPolicyPlanner) readFile() ([]container, error) {
 			spaceID = ""
 		}
 
+		purpose, ok := containerMeta.Metadata["container_purpose"].(string)
+		if !ok {
+			purpose = ""
+		}
+
 		allContainers = append(allContainers, container{
 			AppID:   policyGroupID,
 			SpaceID: spaceID,
 			Ports:   ports,
 			IP:      containerMeta.IP,
+			Purpose: purpose,
 		})
 	}
 	containerMetadataDuration := time.Now().Sub(containerMetadataStartTime)
@@ -342,24 +349,26 @@ func (p *VxlanPolicyPlanner) getContainerPolicies(policies []policy_client.Polic
 
 		for _, egressPolicy := range egressPolicies {
 			if egressPolicy.Source.ID == container.AppID || egressPolicy.Source.ID == container.SpaceID {
-				var startPort, endPort int
+				if containerPurposeMatchesAppLifecycle(container.Purpose, egressPolicy.AppLifecycle) {
+					var startPort, endPort int
 
-				if len(egressPolicy.Destination.Ports) > 0 {
-					startPort = egressPolicy.Destination.Ports[0].Start
-					endPort = egressPolicy.Destination.Ports[0].End
-				}
+					if len(egressPolicy.Destination.Ports) > 0 {
+						startPort = egressPolicy.Destination.Ports[0].Start
+						endPort = egressPolicy.Destination.Ports[0].End
+					}
 
-				containerPolicy := egress{
-					SourceIP:  container.IP,
-					Protocol:  egressPolicy.Destination.Protocol,
-					IpStart:   egressPolicy.Destination.IPRanges[0].Start,
-					IpEnd:     egressPolicy.Destination.IPRanges[0].End,
-					IcmpType:  egressPolicy.Destination.ICMPType,
-					IcmpCode:  egressPolicy.Destination.ICMPCode,
-					PortStart: startPort,
-					PortEnd:   endPort,
+					containerPolicy := egress{
+						SourceIP:  container.IP,
+						Protocol:  egressPolicy.Destination.Protocol,
+						IpStart:   egressPolicy.Destination.IPRanges[0].Start,
+						IpEnd:     egressPolicy.Destination.IPRanges[0].End,
+						IcmpType:  egressPolicy.Destination.ICMPType,
+						IcmpCode:  egressPolicy.Destination.ICMPCode,
+						PortStart: startPort,
+						PortEnd:   endPort,
+					}
+					containerPolicySet.Egress = append(containerPolicySet.Egress, containerPolicy)
 				}
-				containerPolicySet.Egress = append(containerPolicySet.Egress, containerPolicy)
 			}
 		}
 
@@ -443,4 +452,12 @@ func (p *VxlanPolicyPlanner) planIPTableRules(containerPolicySet containerPolicy
 	}
 
 	return ruleset
+}
+
+func containerPurposeMatchesAppLifecycle(containerPurpose, appLifecycle string) bool {
+	return appLifecycle == "all" ||
+		containerPurpose == "" ||
+		(appLifecycle == "running" && (containerPurpose == "task" || containerPurpose == "app")) ||
+		appLifecycle == "staging" && containerPurpose == "staging"
+
 }

@@ -11,8 +11,9 @@ type Policy struct {
 }
 
 type EgressPolicy struct {
-	Source      *EgressSource      `json:"source"`
-	Destination *EgressDestination `json:"destination"`
+	Source       *EgressSource      `json:"source"`
+	Destination  *EgressDestination `json:"destination"`
+	AppLifecycle string             `json:"app_lifecycle"`
 }
 
 type EgressSource struct {
