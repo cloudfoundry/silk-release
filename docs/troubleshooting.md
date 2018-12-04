@@ -5,24 +5,24 @@
   The VXLAN policy agent log at the `info` level by default. The log level can be adjusted at runtime by making a request to the debug server running on the VM.
   To enable debug logging ssh to the VM and make this request to the debug server:
   ```
-  curl -X POST -d 'DEBUG' localhost:44151/log-level
+  curl -X POST -d 'DEBUG' localhost:8721/log-level
   ```
   To switch back to info logging make this request:
   ```
-  curl -X POST -d 'INFO' localhost:44151/log-level
+  curl -X POST -d 'INFO' localhost:8721/log-level
   ```
-  For the vxlan policy agent, the debug server listens on port 44151 by default, and can be overridden by `debug_server_port`.
+  For the vxlan policy agent, the debug server listens on port 8721 by default, and can be overridden by `debug_server_port`.
 
 
 ### Enabling IPTables Logging for Container to Container Traffic
 
 Logging for policy iptables rules can be enabled through the VXLAN policy agent debug server. SSH to a cell VM and make this request to enable logging on the VM:
 ```
-curl -X PUT -d '{"enabled": true}' localhost:44151/iptables-c2c-logging
+curl -X PUT -d '{"enabled": true}' localhost:8721/iptables-c2c-logging
 ```
 To disable:
 ```
-curl -X PUT -d '{"enabled": false}' localhost:44151/iptables-c2c-logging
+curl -X PUT -d '{"enabled": false}' localhost:8721/iptables-c2c-logging
 ```
 
 This can be configured at startup via the `iptables_logging` property. It

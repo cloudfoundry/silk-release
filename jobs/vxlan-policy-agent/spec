@@ -58,7 +58,7 @@ properties:
 
   debug_server_port:
     description: "Port for the debug server. Use this to adjust log level at runtime or dump process stats."
-    default: 44151
+    default: 8721
 
   log_level:
     description: "Logging level (debug, info, warn, error)."

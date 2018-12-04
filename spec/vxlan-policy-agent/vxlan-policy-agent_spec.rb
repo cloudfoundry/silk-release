@@ -20,7 +20,6 @@ module Bosh::Template::Test
             'internal_listent_port' => 234,
           },
           'metron_port' => 55,
-          'debug_server_port' => 343,
           'enable_overlay_ingress_rules' => true,
         }
       end
@@ -51,7 +50,7 @@ module Bosh::Template::Test
               'client_timeout_seconds' => 5,
               'cni_datastore_path' => '/var/vcap/data/container-metadata/store.json',
               'debug_server_host' => '127.0.0.1',
-              'debug_server_port' => 343,
+              'debug_server_port' => 8721,
               'iptables_accepted_udp_logs_per_sec' => 33,
               'iptables_c2c_logging' => true,
               'iptables_lock_file' => '/var/vcap/data/garden-cni/iptables.lock',
