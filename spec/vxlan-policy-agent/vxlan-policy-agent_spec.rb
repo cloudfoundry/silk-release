@@ -62,7 +62,7 @@ module Bosh::Template::Test
               'poll_interval' => 22,
               'vni' => 1,
               'force_policy_poll_cycle_host' => '127.0.0.1',
-              'force_policy_poll_cycle_port' => 44152,
+              'force_policy_poll_cycle_port' => 8722,
               "disable_container_network_policy" => false,
               'overlay_network' => '10.255.0.0/16',
             })

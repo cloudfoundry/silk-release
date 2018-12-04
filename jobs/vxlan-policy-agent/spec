@@ -70,7 +70,7 @@ properties:
 
   force_policy_poll_cycle_port:
     description: "Port for force policy poll cycle server. Use this server to force an immediate poll cycle."
-    default: 44152
+    default: 8722
 
   enable_overlay_ingress_rules:
     description: "Experimental feature. Allows ingress over the overlay network, from a vm running silk-daemon in singleIPMode"
