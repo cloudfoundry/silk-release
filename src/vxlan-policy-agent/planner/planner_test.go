@@ -48,7 +48,7 @@ var _ = Describe("Planner", func() {
 				"policy_group_id":   "some-app-guid",
 				"space_id":          "some-space-guid",
 				"ports":             "8080",
-				"container_purpose": "task",
+				"container_workload": "task",
 			},
 		}
 		data["container-id-2"] = datastore.Container{
@@ -57,7 +57,7 @@ var _ = Describe("Planner", func() {
 			Metadata: map[string]interface{}{
 				"policy_group_id":   "some-other-app-guid",
 				"ports":             " 8181 , 9090",
-				"container_purpose": "staging",
+				"container_workload": "staging",
 			},
 		}
 		data["container-id-3"] = datastore.Container{
@@ -774,7 +774,7 @@ var _ = Describe("Planner", func() {
 						Metadata: map[string]interface{}{
 							"policy_group_id":   "some-app-guid",
 							"ports":             "8080",
-							"container_purpose": "app",
+							"container_workload": "app",
 						},
 					}
 					store.ReadAllReturns(data, nil)
@@ -803,7 +803,7 @@ var _ = Describe("Planner", func() {
 						Metadata: map[string]interface{}{
 							"policy_group_id":   "some-app-guid",
 							"ports":             "8080",
-							"container_purpose": "task",
+							"container_workload": "task",
 						},
 					}
 					store.ReadAllReturns(data, nil)
@@ -832,7 +832,7 @@ var _ = Describe("Planner", func() {
 						Metadata: map[string]interface{}{
 							"policy_group_id":   "some-app-guid",
 							"ports":             "8080",
-							"container_purpose": "staging",
+							"container_workload": "staging",
 						},
 					}
 					store.ReadAllReturns(data, nil)

@@ -250,7 +250,7 @@ func (p *VxlanPolicyPlanner) readFile() ([]container, error) {
 			spaceID = ""
 		}
 
-		purpose, ok := containerMeta.Metadata["container_purpose"].(string)
+		purpose, ok := containerMeta.Metadata["container_workload"].(string)
 		if !ok {
 			purpose = ""
 		}

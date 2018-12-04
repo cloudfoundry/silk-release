@@ -60,7 +60,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 					"policy_group_id":"some-very-very-long-app-guid",
 					"space_id": "some-space",
 					"ports": "8080, 9090",
-					"container_purpose": "app"
+					"container_workload": "app"
 				}
 			},
 			"some-other-handle": {
@@ -234,7 +234,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 								"policy_group_id":"some-very-very-long-app-guid",
 								"space_id": "some-space",
 								"ports": "8080, 9090",
-								"container_purpose": "staging"
+								"container_workload": "staging"
 							}
 						}
 					}`
