@@ -348,7 +348,9 @@ func (p *VxlanPolicyPlanner) getContainerPolicies(policies []policy_client.Polic
 		}
 
 		for _, egressPolicy := range egressPolicies {
-			if egressPolicy.Source.ID == container.AppID || egressPolicy.Source.ID == container.SpaceID {
+			if (egressPolicy.Source.ID == container.AppID) ||
+				(egressPolicy.Source.ID == container.SpaceID && egressPolicy.Source.Type == "space") ||
+				egressPolicy.Source.Type == "default" {
 				if containerPurposeMatchesAppLifecycle(container.Purpose, egressPolicy.AppLifecycle) {
 					var startPort, endPort int
 

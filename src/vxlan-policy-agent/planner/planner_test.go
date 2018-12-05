@@ -224,6 +224,19 @@ var _ = Describe("Planner", func() {
 				},
 				AppLifecycle: "all",
 			},
+			{
+				Source: &policy_client.EgressSource{
+					ID:   "",
+					Type: "default",
+				},
+				Destination: &policy_client.EgressDestination{
+					Protocol: "udp",
+					IPRanges: []policy_client.IPRange{
+						{Start: "8.7.6.5", End: "4.3.2.1"},
+					},
+				},
+				AppLifecycle: "all",
+			},
 		}
 
 		policyClient.GetPoliciesByIDReturns(policyServerResponse, egressPolicyServerResponse, nil)
@@ -394,6 +407,13 @@ var _ = Describe("Planner", func() {
 							"--jump", "MARK", "--set-xmark", "0xCC",
 							"-m", "comment", "--comment", "src:some-other-app-guid",
 						},
+						// default
+						{
+							"-s", "10.255.1.3", "-p", "udp", "-m", "iprange", "--dst-range", "8.7.6.5-4.3.2.1", "-j", "ACCEPT",
+						},
+						{
+							"-s", "10.255.1.2", "-p", "udp", "-m", "iprange", "--dst-range", "8.7.6.5-4.3.2.1", "-j", "ACCEPT",
+						},
 					}))
 				})
 			})
@@ -501,6 +521,21 @@ var _ = Describe("Planner", func() {
 							"--source", "10.255.1.3",
 							"--jump", "MARK", "--set-xmark", "0xCC",
 							"-m", "comment", "--comment", "src:some-other-app-guid",
+						},
+						// default policies
+						{
+							"-s", "10.255.1.3",
+							"-p", "udp",
+							"-m", "iprange",
+							"--dst-range", "8.7.6.5-4.3.2.1",
+							"-j", "ACCEPT",
+						},
+						{
+							"-s", "10.255.1.2",
+							"-p", "udp",
+							"-m", "iprange",
+							"--dst-range", "8.7.6.5-4.3.2.1",
+							"-j", "ACCEPT",
 						},
 					}))
 				})

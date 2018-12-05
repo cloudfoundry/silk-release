@@ -189,6 +189,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 3/4 -j ACCEPT`))
 					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -j ACCEPT`))
 					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 8 -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.28.2.3-10.28.2.5 -j ACCEPT`))
 				})
 			})
 
@@ -222,6 +223,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -j ACCEPT`))
 				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 8 -j ACCEPT`))
 				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.2.1-10.27.2.2 -j ACCEPT`))
+				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.28.2.3-10.28.2.5 -j ACCEPT`))
 			})
 
 			Context("when the container is staging", func() {
@@ -505,6 +507,11 @@ func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 					{
 						"source": {"id": "not-deployed-on-this-cell-why-did-you-query-for-this-id" },
 						"destination": {"ips": [{"start": "10.27.2.3", "end": "10.27.2.5"}], "protocol": "udp"},
+						"app_lifecycle": "all"
+					},
+					{
+						"source": {"id": "", "type": "default" },
+						"destination": {"ips": [{"start": "10.28.2.3", "end": "10.28.2.5"}], "protocol": "tcp"},
 						"app_lifecycle": "all"
 					}
 				]
