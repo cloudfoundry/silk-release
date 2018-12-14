@@ -237,6 +237,21 @@ var _ = Describe("Planner", func() {
 				},
 				AppLifecycle: "all",
 			},
+			{
+				Source: &policy_client.EgressSource{
+					ID: "some-other-app-guid",
+				},
+				Destination: &policy_client.EgressDestination{
+					Protocol: "all",
+					IPRanges: []policy_client.IPRange{
+						{Start: "8.8.4.4", End: "8.8.8.8"},
+					},
+					Ports: []policy_client.Ports{
+						{Start: 8080, End: 8081},
+					},
+				},
+				AppLifecycle: "all",
+			},
 		}
 
 		policyClient.GetPoliciesByIDReturns(policyServerResponse, egressPolicyServerResponse, nil)
@@ -348,6 +363,13 @@ var _ = Describe("Planner", func() {
 							"-p", "udp",
 							"-m", "iprange",
 							"--dst-range", "2.3.4.5-3.3.3.3",
+							"-j", "ACCEPT",
+						},
+						{
+							"-s", "10.255.1.3",
+							"-p", "all",
+							"-m", "iprange",
+							"--dst-range", "8.8.4.4-8.8.8.8",
 							"-j", "ACCEPT",
 						},
 						// allow based on mark
@@ -484,6 +506,13 @@ var _ = Describe("Planner", func() {
 							"-p", "udp",
 							"-m", "iprange",
 							"--dst-range", "2.3.4.5-3.3.3.3",
+							"-j", "ACCEPT",
+						},
+						{
+							"-s", "10.255.1.3",
+							"-p", "all",
+							"-m", "iprange",
+							"--dst-range", "8.8.4.4-8.8.8.8",
 							"-j", "ACCEPT",
 						},
 						// allow based on mark
