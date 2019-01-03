@@ -11,6 +11,26 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+var policyData = `
+{
+	"policies": [
+		{
+			"source": { "id": "some-app-guid", "tag": "BEEF" },
+			"destination": { "id": "some-other-app-guid", "protocol": "tcp", "port": 8090, "ports": { "start": 8090, "end": 8090 } } 
+		}
+	],
+	"egress_policies": [
+		{
+			"source": { "id": "some-other-app-guid" },
+			"destination": { "protocol": "tcp", "ips": [{ "start": "1.2.3.4", "end": "1.2.3.5" }] }
+		},
+		{
+			"source": { "id": "some-other-app-guid" },
+			"destination": { "protocol": "icmp", "icmp_type": 8, "icmp_code": 4, "ips": [{ "start": "1.2.3.4", "end": "1.2.3.5" }] }
+		}
+	]
+}`
+
 var _ = Describe("InternalClient", func() {
 	var (
 		client     *policy_client.InternalClient
@@ -27,13 +47,14 @@ var _ = Describe("InternalClient", func() {
 	Describe("GetPolicies", func() {
 		BeforeEach(func() {
 			jsonClient.DoStub = func(method, route string, reqData, respData interface{}, token string) error {
-				respBytes := []byte(`{ "policies": [ {"source": { "id": "some-app-guid", "tag": "BEEF" }, "destination": { "id": "some-other-app-guid", "protocol": "tcp", "ports": { "start": 8090, "end": 8090 } } } ] }`)
+				respBytes := []byte(policyData)
 				json.Unmarshal(respBytes, respData)
 				return nil
 			}
 		})
+
 		It("does the right json http client request", func() {
-			policies, err := client.GetPolicies()
+			policies, egressPolicies, err := client.GetPolicies()
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(jsonClient.DoCallCount()).To(Equal(1))
@@ -59,6 +80,32 @@ var _ = Describe("InternalClient", func() {
 				},
 			},
 			))
+			Expect(egressPolicies).To(Equal([]policy_client.EgressPolicy{
+				{
+					Source: &policy_client.EgressSource{
+						ID: "some-other-app-guid",
+					},
+					Destination: &policy_client.EgressDestination{
+						Protocol: "tcp",
+						IPRanges: []policy_client.IPRange{
+							{Start: "1.2.3.4", End: "1.2.3.5"},
+						},
+					},
+				},
+				{
+					Source: &policy_client.EgressSource{
+						ID: "some-other-app-guid",
+					},
+					Destination: &policy_client.EgressDestination{
+						Protocol: "icmp",
+						ICMPType: 8,
+						ICMPCode: 4,
+						IPRanges: []policy_client.IPRange{
+							{Start: "1.2.3.4", End: "1.2.3.5"},
+						},
+					},
+				},
+			}))
 			Expect(token).To(BeEmpty())
 		})
 
@@ -67,7 +114,7 @@ var _ = Describe("InternalClient", func() {
 				jsonClient.DoReturns(errors.New("banana"))
 			})
 			It("returns the error", func() {
-				_, err := client.GetPolicies()
+				_, _, err := client.GetPolicies()
 				Expect(err).To(MatchError("banana"))
 			})
 		})
@@ -76,25 +123,7 @@ var _ = Describe("InternalClient", func() {
 	Describe("GetPoliciesByID", func() {
 		BeforeEach(func() {
 			jsonClient.DoStub = func(method, route string, reqData, respData interface{}, token string) error {
-				respBytes := []byte(`
-					{ 
-						"policies": [ 
-							{
-								"source": { "id": "some-app-guid", "tag": "BEEF" }, 
-								"destination": { "id": "some-other-app-guid", "protocol": "tcp", "port": 8090, "ports": { "start": 8090, "end": 8090 } } 
-							} 
-						],
-						"egress_policies": [
-							{
-								"source": { "id": "some-other-app-guid" },
-								"destination": { "protocol": "tcp", "ips": [{ "start": "1.2.3.4", "end": "1.2.3.5" }] }
-							},
-							{
-								"source": { "id": "some-other-app-guid" },
-								"destination": { "protocol": "icmp", "icmp_type": 8, "icmp_code": 4, "ips": [{ "start": "1.2.3.4", "end": "1.2.3.5" }] }
-							}
-						]
-					}`)
+				respBytes := []byte(policyData)
 				json.Unmarshal(respBytes, respData)
 				return nil
 			}
