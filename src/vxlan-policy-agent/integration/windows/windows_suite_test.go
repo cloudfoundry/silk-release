@@ -1,4 +1,4 @@
-package integration_test
+package windows_test
 
 import (
 	"encoding/json"
@@ -61,7 +61,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Expect(err).NotTo(HaveOccurred())
 
 	fmt.Fprintf(GinkgoWriter, "building binary...")
-	paths.VxlanPolicyAgentPath, err = gexec.Build("vxlan-policy-agent/cmd/vxlan-policy-agent", "-race")
+	paths.VxlanPolicyAgentPath, err = gexec.Build("vxlan-policy-agent/cmd/vxlan-policy-agent-windows", "-race")
 	fmt.Fprintf(GinkgoWriter, "done")
 	Expect(err).NotTo(HaveOccurred())
 

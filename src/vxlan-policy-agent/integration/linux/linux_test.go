@@ -1,4 +1,4 @@
-package integration_test
+package linux_test
 
 import (
 	"crypto/tls"
