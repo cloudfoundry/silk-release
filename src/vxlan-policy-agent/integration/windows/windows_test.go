@@ -81,7 +81,7 @@ var _ = Describe("VXLAN Policy Agent Windows", func() {
 			ServerCACertFile:              paths.ServerCACertFile,
 			ClientCertFile:                paths.ClientCertFile,
 			ClientKeyFile:                 paths.ClientKeyFile,
-			IPTablesLockFile:              GlobalIPTablesLockFile,
+			IPTablesLockFile:              "REMOVE", // TODO: Remove this property
 			ForcePolicyPollCycleHost:      "127.0.0.1",
 			ForcePolicyPollCyclePort:      ports.PickAPort(),
 			DebugServerHost:               "127.0.0.1",
@@ -91,7 +91,6 @@ var _ = Describe("VXLAN Policy Agent Windows", func() {
 			IPTablesAcceptedUDPLogsPerSec: 7,
 			EnableOverlayIngressRules:     true,
 		}
-
 	})
 
 	JustBeforeEach(func() {
@@ -121,6 +120,7 @@ var _ = Describe("VXLAN Policy Agent Windows", func() {
 				Eventually(session.Out, "2s").Should(Say("cfnetworking.vxlan-policy-agent.parsed-config"))
 				Eventually(session.Out, "2s").Should(Say(conf.PolicyServerURL))
 				Eventually(session.Out, "2s").Should(Say("cfnetworking.vxlan-policy-agent.starting"))
+				Eventually(session.Out, "3s").Should(Say("cfnetworking.vxlan-policy-agent.policies"))
 			})
 		})
 	})
