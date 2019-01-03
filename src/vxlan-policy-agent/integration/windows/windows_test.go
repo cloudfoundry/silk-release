@@ -121,6 +121,7 @@ var _ = Describe("VXLAN Policy Agent Windows", func() {
 				Eventually(session.Out, "2s").Should(Say(conf.PolicyServerURL))
 				Eventually(session.Out, "2s").Should(Say("cfnetworking.vxlan-policy-agent.starting"))
 				Eventually(session.Out, "3s").Should(Say("cfnetworking.vxlan-policy-agent.policies"))
+				Eventually(session.Out, "3s").Should(Say("cfnetworking.vxlan-policy-agent.egress_policies"))
 			})
 		})
 	})

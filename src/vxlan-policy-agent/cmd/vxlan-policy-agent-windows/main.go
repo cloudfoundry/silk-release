@@ -70,5 +70,5 @@ func main() {
 	}
 
 	logger.Info("policies", lager.Data{"policies": policies})
-	logger.Info("policies", lager.Data{"egress_policies": egressPolicies})
+	logger.Info("egress_policies", lager.Data{"egress_policies": egressPolicies})
 }
