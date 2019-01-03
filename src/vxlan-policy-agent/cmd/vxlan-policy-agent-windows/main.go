@@ -64,10 +64,11 @@ func main() {
 		conf.PolicyServerURL,
 	)
 
-	policies, err := policyClient.GetPolicies()
+	policies, egressPolicies, err := policyClient.GetPolicies()
 	if err != nil {
 		die(logger, "policy-client-get-policies", err)
 	}
 
 	logger.Info("policies", lager.Data{"policies": policies})
+	logger.Info("policies", lager.Data{"egress_policies": egressPolicies})
 }
