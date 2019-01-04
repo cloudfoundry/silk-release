@@ -2,11 +2,13 @@ package windows_test
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"vxlan-policy-agent/config"
 
 	"code.cloudfoundry.org/cf-networking-helpers/mutualtls"
@@ -23,6 +25,8 @@ import (
 	"github.com/tedsuo/ifrit/http_server"
 	"github.com/tedsuo/ifrit/sigmon"
 )
+
+const LoggingEnabled = true
 
 var _ = Describe("VXLAN Policy Agent Windows", func() {
 	var (
@@ -103,11 +107,43 @@ var _ = Describe("VXLAN Policy Agent Windows", func() {
 		Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit())
 	})
 
+	setPoliciesLogging := func(enabled bool) {
+		endpoint := fmt.Sprintf("http://%s:%d/policies-logging", conf.DebugServerHost, conf.DebugServerPort)
+		req, err := http.NewRequest("PUT", endpoint, strings.NewReader(fmt.Sprintf(`{ "enabled": %t }`, enabled)))
+		Expect(err).NotTo(HaveOccurred())
+		resp, err := http.DefaultClient.Do(req)
+		Expect(err).NotTo(HaveOccurred())
+		defer resp.Body.Close()
+
+		Expect(resp.StatusCode).To(Equal(http.StatusOK))
+		Expect(ioutil.ReadAll(resp.Body)).To(MatchJSON(fmt.Sprintf(`{ "enabled": %t }`, enabled)))
+	}
+
 	Describe("policy agent", func() {
 		Context("when the policy server is up and running", func() {
+			getPoliciesLogging := func() (bool, error) {
+				endpoint := fmt.Sprintf("http://%s:%d/policies-logging", conf.DebugServerHost, conf.DebugServerPort)
+				resp, err := http.DefaultClient.Get(endpoint)
+				if err != nil {
+					return false, err
+				}
+				defer resp.Body.Close()
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				var respStruct struct {
+					Enabled bool `json:"enabled"`
+				}
+				Expect(json.NewDecoder(resp.Body).Decode(&respStruct)).To(Succeed())
+				return respStruct.Enabled, nil
+			}
+
 			JustBeforeEach(func() {
 				mockPolicyServer = startServer(serverListenAddr, serverTLSConfig)
 				session = startAgent(paths.VxlanPolicyAgentPath, configFilePath)
+
+				Eventually(func() error {
+					_, err := getPoliciesLogging()
+					return err
+				}, "5s").Should(Succeed()) // wait until vxlan-policy-agent debug server is up
 			})
 
 			It("should boot and gracefully terminate", func() {
@@ -116,12 +152,20 @@ var _ = Describe("VXLAN Policy Agent Windows", func() {
 				Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit())
 			})
 
-			It("should parse the config file", func() {
+			It("should parse the config file and get policies", func() {
 				Eventually(session.Out, "2s").Should(Say("cfnetworking.vxlan-policy-agent.parsed-config"))
 				Eventually(session.Out, "2s").Should(Say(conf.PolicyServerURL))
 				Eventually(session.Out, "2s").Should(Say("cfnetworking.vxlan-policy-agent.starting"))
 				Eventually(session.Out, "3s").Should(Say("cfnetworking.vxlan-policy-agent.policies"))
 				Eventually(session.Out, "3s").Should(Say("cfnetworking.vxlan-policy-agent.egress_policies"))
+			})
+
+			Describe("the debug server", func() {
+				It("has a policies logging endpoint", func() {
+					Eventually(getPoliciesLogging).Should(BeFalse())
+					setPoliciesLogging(LoggingEnabled)
+					Expect(getPoliciesLogging()).To(BeTrue())
+				})
 			})
 		})
 	})
@@ -139,7 +183,7 @@ func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 		if r.URL.Path == "/networking/v1/internal/policies" {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{
-				"total_policies": 4,
+				"total_policies": 3,
 				"policies": [
 					{
 						"source": {"id":"some-very-very-long-app-guid", "tag":"A"},
@@ -152,22 +196,13 @@ func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 					{
 						"source": {"id":"another-app-guid", "tag":"C"},
 						"destination": {"id": "some-very-very-long-app-guid", "tag":"A", "protocol":"tcp", "ports":{"start":9999, "end":9999}}
-					},
-					{
-						"source": {"id":"yet-another-app-guid", "tag":"D"},
-						"destination": {"id": "some-very-very-long-app-guid", "tag":"A", "protocol":"udp", "ports":{"start":7000, "end":8000}}
 					}
 				],
-				"total_egress_policies": 7,
+				"total_egress_policies": 3,
 				"egress_policies": [
 					{
 						"source": {"id": "some-space", "type": "space" },
 						"destination": {"ips": [{"start": "10.27.2.1", "end": "10.27.2.2"}], "protocol": "tcp"},
-						"app_lifecycle": "running"
-					},
-					{
-						"source": {"id": "some-very-very-long-app-guid" },
-						"destination": {"ips": [{"start": "10.27.1.1", "end": "10.27.1.2"}], "protocol": "icmp", "icmp_type": 3, "icmp_code": 4},
 						"app_lifecycle": "running"
 					},
 					{
@@ -179,44 +214,9 @@ func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 						"source": {"id": "some-very-very-long-app-guid" },
 						"destination": {"ips": [{"start": "10.27.1.1", "end": "10.27.1.2"}], "protocol": "icmp", "icmp_type": -1, "icmp_code": -1},
 						"app_lifecycle": "all"
-					},
-					{
-						"source": {"id": "some-very-very-long-app-guid" },
-						"destination": {"ips": [{"start": "10.27.1.1", "end": "10.27.1.2"}], "protocol": "icmp", "icmp_type": 8, "icmp_code": -1},
-						"app_lifecycle": "all"
-					},
-					{
-						"source": {"id": "some-very-very-long-app-guid" },
-						"destination": {"ips": [{"start": "10.27.1.1", "end": "10.27.1.2"}], "ports": [{"start": 8080, "end": 8081}], "protocol": "tcp"},
-						"app_lifecycle": "all"
-					},
-					{
-						"source": {"id": "some-app-guid-no-ports" },
-						"destination": {"ips": [{"start": "10.27.1.3", "end": "10.27.1.4"}], "protocol": "tcp"},
-						"app_lifecycle": "all"
-					},
-					{
-						"source": {"id": "not-deployed-on-this-cell-why-did-you-query-for-this-id" },
-						"destination": {"ips": [{"start": "10.27.2.3", "end": "10.27.2.5"}], "protocol": "udp"},
-						"app_lifecycle": "all"
-					},
-					{
-						"source": {"id": "", "type": "default" },
-						"destination": {"ips": [{"start": "10.28.2.3", "end": "10.28.2.5"}], "protocol": "tcp"},
-						"app_lifecycle": "all"
 					}
 				]
 			}`))
-			return
-		}
-
-		if r.URL.Path == "/networking/v1/internal/tags" {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte((`{
-					"id": "some-id",
-					"type": "some-type",
-					"tag": "6"
-				}`)))
 			return
 		}
 

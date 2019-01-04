@@ -12,10 +12,17 @@ import (
 	"lib/policy_client"
 
 	"vxlan-policy-agent/config"
+	"vxlan-policy-agent/handlers"
+	"vxlan-policy-agent/planner"
 
 	"code.cloudfoundry.org/cf-networking-helpers/mutualtls"
+	"code.cloudfoundry.org/debugserver"
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lager/lagerflags"
+	"github.com/tedsuo/ifrit"
+	"github.com/tedsuo/ifrit/grouper"
+	"github.com/tedsuo/ifrit/http_server"
+	"github.com/tedsuo/ifrit/sigmon"
 )
 
 const (
@@ -40,7 +47,7 @@ func main() {
 		log.Fatalf("%s: could not read config file %s", logPrefix, err)
 	}
 
-	logger, _ := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), common.GetLagerConfig())
+	logger, reconfigurableSink := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), common.GetLagerConfig())
 
 	logger.Info("parsed-config", lager.Data{"config": conf})
 
@@ -71,4 +78,31 @@ func main() {
 
 	logger.Info("policies", lager.Data{"policies": policies})
 	logger.Info("egress_policies", lager.Data{"egress_policies": egressPolicies})
+
+	debugServerAddress := fmt.Sprintf("%s:%d", conf.DebugServerHost, conf.DebugServerPort)
+
+	loggingState := &planner.LoggingState{}
+	if conf.IPTablesLogging {
+		loggingState.Enable()
+	}
+
+	debugServer := createCustomDebugServer(debugServerAddress, reconfigurableSink, loggingState)
+	members := grouper.Members{
+		{"debug-server", debugServer},
+	}
+
+	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
+	logger.Info("starting")
+	err = <-monitor.Wait()
+	if err != nil {
+		die(logger, "ifrit monitor", err)
+	}
+}
+
+func createCustomDebugServer(listenAddress string, sink *lager.ReconfigurableSink, loggingState *planner.LoggingState) ifrit.Runner {
+	mux := debugserver.Handler(sink).(*http.ServeMux)
+	mux.Handle("/policies-logging", &handlers.IPTablesLogging{
+		LoggingState: loggingState,
+	})
+	return http_server.New(listenAddress, mux)
 }
