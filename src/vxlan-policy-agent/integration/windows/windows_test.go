@@ -42,7 +42,7 @@ var _ = Describe("VXLAN Policy Agent Windows", func() {
 
 	BeforeEach(func() {
 		var err error
-		fakeMetron = metrics.NewFakeMetron(config.GinkgoConfig.ParallelNode)
+		fakeMetron = metrics.NewFakeMetron()
 
 		serverTLSConfig, err = mutualtls.NewServerTLSConfig(paths.ServerCertFile, paths.ServerKeyFile, paths.ClientCACertFile)
 		Expect(err).NotTo(HaveOccurred())
