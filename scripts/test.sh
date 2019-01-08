@@ -13,6 +13,10 @@ declare -a serial_packages=(
     "src/silk-daemon-bootstrap/integration"
     )
 
+declare -a windows_packages=(
+    "src/vxlan-policy-agent/integration/windows"
+    )
+
 function bootDB {
   db=$1
 
@@ -62,6 +66,11 @@ for i in "${serial_packages[@]}"; do
   packages=(${packages[@]//*$i*})
 done
 
+# filter out windows_packages from packages
+for i in "${windows_packages[@]}"; do
+  packages=(${packages[@]//*$i*})
+done
+
 if [ "${1:-""}" = "" ]; then
   for dir in "${packages[@]}"; do
     pushd "$dir"
@@ -88,7 +97,7 @@ else
       exit $?
     fi
   done
-  ginkgo -p --race -randomizeAllSpecs -randomizeSuites -failFast \
+  ginkgo -p --race -randomizeAllSpecs -randomizeSuites -failFast -skipPackage windows \
     -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
     "${@}"
 fi
