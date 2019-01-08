@@ -23,20 +23,21 @@ func NewInternal(logger lager.Logger, httpClient json_client.HttpClient, baseURL
 	}
 }
 
-func (c *InternalClient) GetPolicies() ([]Policy, error) {
+func (c *InternalClient) GetPolicies() ([]Policy, []EgressPolicy, error) {
 	var policies struct {
-		Policies []Policy `json:"policies"`
+		Policies       []Policy       `json:"policies"`
+		EgressPolicies []EgressPolicy `json:"egress_policies"`
 	}
 	err := c.JsonClient.Do("GET", "/networking/v1/internal/policies", nil, &policies, "")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return policies.Policies, nil
+	return policies.Policies, policies.EgressPolicies, nil
 }
 
 func (c *InternalClient) GetPoliciesByID(ids ...string) ([]Policy, []EgressPolicy, error) {
 	var policies struct {
-		Policies []Policy `json:"policies"`
+		Policies       []Policy       `json:"policies"`
 		EgressPolicies []EgressPolicy `json:"egress_policies"`
 	}
 	if len(ids) == 0 {
