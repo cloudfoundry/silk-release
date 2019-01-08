@@ -90,7 +90,7 @@ func main() {
 		conf.PolicyServerURL,
 	)
 
-	_, err = policyClient.GetPolicies()
+	_, _, err = policyClient.GetPolicies()
 
 	if err != nil {
 		die(logger, "policy-client-get-policies", err)

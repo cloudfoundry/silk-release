@@ -1,3 +1,5 @@
+// +build !windows
+
 package planner_test
 
 import (
@@ -45,9 +47,9 @@ var _ = Describe("Planner", func() {
 			Handle: "container-id-1",
 			IP:     "10.255.1.2",
 			Metadata: map[string]interface{}{
-				"policy_group_id":   "some-app-guid",
-				"space_id":          "some-space-guid",
-				"ports":             "8080",
+				"policy_group_id":    "some-app-guid",
+				"space_id":           "some-space-guid",
+				"ports":              "8080",
 				"container_workload": "task",
 			},
 		}
@@ -55,8 +57,8 @@ var _ = Describe("Planner", func() {
 			Handle: "container-id-2",
 			IP:     "10.255.1.3",
 			Metadata: map[string]interface{}{
-				"policy_group_id":   "some-other-app-guid",
-				"ports":             " 8181 , 9090",
+				"policy_group_id":    "some-other-app-guid",
+				"ports":              " 8181 , 9090",
 				"container_workload": "staging",
 			},
 		}
@@ -836,8 +838,8 @@ var _ = Describe("Planner", func() {
 						Handle: "container-id-1",
 						IP:     "10.255.1.2",
 						Metadata: map[string]interface{}{
-							"policy_group_id":   "some-app-guid",
-							"ports":             "8080",
+							"policy_group_id":    "some-app-guid",
+							"ports":              "8080",
 							"container_workload": "app",
 						},
 					}
@@ -865,8 +867,8 @@ var _ = Describe("Planner", func() {
 						Handle: "container-id-1",
 						IP:     "10.255.1.2",
 						Metadata: map[string]interface{}{
-							"policy_group_id":   "some-app-guid",
-							"ports":             "8080",
+							"policy_group_id":    "some-app-guid",
+							"ports":              "8080",
 							"container_workload": "task",
 						},
 					}
@@ -894,8 +896,8 @@ var _ = Describe("Planner", func() {
 						Handle: "container-id-1",
 						IP:     "10.255.1.2",
 						Metadata: map[string]interface{}{
-							"policy_group_id":   "some-app-guid",
-							"ports":             "8080",
+							"policy_group_id":    "some-app-guid",
+							"ports":              "8080",
 							"container_workload": "staging",
 						},
 					}
@@ -923,8 +925,8 @@ var _ = Describe("Planner", func() {
 						Handle: "container-id-1",
 						IP:     "10.255.1.2",
 						Metadata: map[string]interface{}{
-							"policy_group_id":   "some-app-guid",
-							"ports":             "8080",
+							"policy_group_id": "some-app-guid",
+							"ports":           "8080",
 						},
 					}
 					store.ReadAllReturns(data, nil)

@@ -1,4 +1,6 @@
-package integration_test
+// +build !windows
+
+package linux_test
 
 import (
 	"crypto/tls"
