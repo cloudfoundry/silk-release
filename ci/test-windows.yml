@@ -11,5 +11,6 @@ run:
     - "Bypass"
     - "-File"
     - silk/scripts/test-windows.ps1
-  params:
-    NODES: 4
+
+params:
+  NODES: 4
