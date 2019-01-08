@@ -6,23 +6,22 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"lib/common"
+	"lib/datastore"
 	"lib/policy_client"
+	"lib/serial"
 
 	"vxlan-policy-agent/config"
-	"vxlan-policy-agent/handlers"
 	"vxlan-policy-agent/planner"
 
+	"code.cloudfoundry.org/cf-networking-helpers/metrics"
 	"code.cloudfoundry.org/cf-networking-helpers/mutualtls"
-	"code.cloudfoundry.org/debugserver"
+	"code.cloudfoundry.org/filelock"
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lager/lagerflags"
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/grouper"
-	"github.com/tedsuo/ifrit/http_server"
-	"github.com/tedsuo/ifrit/sigmon"
 )
 
 const (
@@ -47,7 +46,7 @@ func main() {
 		log.Fatalf("%s: could not read config file %s", logPrefix, err)
 	}
 
-	logger, reconfigurableSink := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), common.GetLagerConfig())
+	logger, _ := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), common.GetLagerConfig())
 
 	logger.Info("parsed-config", lager.Data{"config": conf})
 
@@ -71,38 +70,42 @@ func main() {
 		conf.PolicyServerURL,
 	)
 
-	policies, egressPolicies, err := policyClient.GetPolicies()
+	_, _, err = policyClient.GetPolicies()
+
 	if err != nil {
 		die(logger, "policy-client-get-policies", err)
 	}
 
-	logger.Info("policies", lager.Data{"policies": policies})
-	logger.Info("egress_policies", lager.Data{"egress_policies": egressPolicies})
-
-	debugServerAddress := fmt.Sprintf("%s:%d", conf.DebugServerHost, conf.DebugServerPort)
-
-	loggingState := &planner.LoggingState{}
-	if conf.IPTablesLogging {
-		loggingState.Enable()
+	store := &datastore.Store{
+		Serializer: &serial.Serial{},
+		Locker: &filelock.Locker{
+			FileLocker: filelock.NewLocker(conf.Datastore + "_lock"),
+			Mutex:      new(sync.Mutex),
+		},
+		DataFilePath:    conf.Datastore,
+		VersionFilePath: conf.Datastore + "_version",
+		LockedFilePath:  conf.Datastore + "_lock",
+		CacheMutex:      new(sync.RWMutex),
 	}
 
-	debugServer := createCustomDebugServer(debugServerAddress, reconfigurableSink, loggingState)
-	members := grouper.Members{
-		{"debug-server", debugServer},
+	metricsSender := &metrics.MetricsSender{
+		Logger: logger.Session("time-metric-emitter"),
 	}
 
-	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
-	logger.Info("starting")
-	err = <-monitor.Wait()
+	dynamicPlanner := &planner.VxlanPolicyPlanner{
+		Datastore:                     store,
+		PolicyClient:                  policyClient,
+		Logger:                        logger.Session("rules-updater"),
+		VNI:                           conf.VNI,
+		MetricsSender:                 metricsSender,
+		LoggingState:                  &planner.LoggingState{},
+		IPTablesAcceptedUDPLogsPerSec: conf.IPTablesAcceptedUDPLogsPerSec,
+	}
+
+	egressPolicies, err := dynamicPlanner.GetRules()
 	if err != nil {
-		die(logger, "ifrit monitor", err)
+		die(logger, "dynamic-planner-get-rules", err)
 	}
-}
 
-func createCustomDebugServer(listenAddress string, sink *lager.ReconfigurableSink, loggingState *planner.LoggingState) ifrit.Runner {
-	mux := debugserver.Handler(sink).(*http.ServeMux)
-	mux.Handle("/policies-logging", &handlers.IPTablesLogging{
-		LoggingState: loggingState,
-	})
-	return http_server.New(listenAddress, mux)
+	logger.Info("egress_policies", lager.Data{"egress_policies": egressPolicies})
 }

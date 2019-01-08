@@ -1,3 +1,5 @@
+// +build !windows
+
 package linux_test
 
 import (
