@@ -8,7 +8,7 @@ export GOPATH=$PWD
 
 declare -a serial_packages=(
     "src/cni-wrapper-plugin/integration"
-    "src/vxlan-policy-agent/integration"
+    "src/vxlan-policy-agent/integration/linux"
     "src/silk-daemon-shutdown/integration"
     "src/silk-daemon-bootstrap/integration"
     )
