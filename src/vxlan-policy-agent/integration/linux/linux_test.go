@@ -97,6 +97,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 			ClientTimeoutSeconds:          5,
 			IPTablesAcceptedUDPLogsPerSec: 7,
 			EnableOverlayIngressRules:     true,
+			UnderlayIPs:                   []string{"10.0.0.1"},
 		}
 
 	})
@@ -131,6 +132,17 @@ var _ = Describe("VXLAN Policy Agent", func() {
 	}
 
 	Describe("policy agent", func() {
+		Context("when underlay interface can't be found", func() {
+			BeforeEach(func() {
+				conf.UnderlayIPs = []string{"meow"}
+			})
+			It("exits with an error", func() {
+				session = startAgent(paths.VxlanPolicyAgentPath, configFilePath)
+				Eventually(session).Should(gexec.Exit(1))
+				Eventually(session.Err).Should(Say("looking up interface names:"))
+			})
+		})
+
 		Context("when the policy server is up and running", func() {
 			getIPTablesLogging := func() (bool, error) {
 				endpoint := fmt.Sprintf("http://%s:%d/iptables-c2c-logging", conf.DebugServerHost, conf.DebugServerPort)
@@ -184,14 +196,14 @@ var _ = Describe("VXLAN Policy Agent", func() {
 						return resp.StatusCode, nil
 					}).Should(Equal(http.StatusOK))
 
-					Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m tcp --dport 8080:8081 -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.2.1-10.27.2.2 -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 3/4 -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 8 -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.28.2.3-10.28.2.5 -j ACCEPT`))
+					Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m tcp --dport 8080:8081 -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.27.2.1-10.27.2.2 -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 3/4 -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 8 -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.28.2.3-10.28.2.5 -j ACCEPT`))
 				})
 			})
 
@@ -219,13 +231,13 @@ var _ = Describe("VXLAN Policy Agent", func() {
 			})
 
 			It("enforces egress policies", func() {
-				Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m tcp --dport 8080:8081 -j ACCEPT`))
-				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -j ACCEPT`))
-				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 3/4 -j ACCEPT`))
-				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -j ACCEPT`))
-				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 8 -j ACCEPT`))
-				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.2.1-10.27.2.2 -j ACCEPT`))
-				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.28.2.3-10.28.2.5 -j ACCEPT`))
+				Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m tcp --dport 8080:8081 -j ACCEPT`))
+				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -j ACCEPT`))
+				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 3/4 -j ACCEPT`))
+				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -j ACCEPT`))
+				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 8 -j ACCEPT`))
+				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.27.2.1-10.27.2.2 -j ACCEPT`))
+				Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.28.2.3-10.28.2.5 -j ACCEPT`))
 			})
 
 			Context("when the container is staging", func() {
@@ -246,10 +258,10 @@ var _ = Describe("VXLAN Policy Agent", func() {
 				})
 
 				It("enforces the egress policies for staging", func() {
-					Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m tcp --dport 8080:8081 -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 8 -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -p tcp -m iprange --dst-range 1.1.1.1-2.9.9.9 -m tcp --dport 8080:8081 -j ACCEPT`))
+					Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m tcp --dport 8080:8081 -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 8 -j ACCEPT`))
+					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 1.1.1.1-2.9.9.9 -m tcp --dport 8080:8081 -j ACCEPT`))
 				})
 			})
 

@@ -16,6 +16,7 @@ import (
 	ginkgoConfig "github.com/onsi/ginkgo/config"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	"github.com/vishvananda/netlink"
 
 	"testing"
 )
@@ -44,6 +45,34 @@ func TestIntegration(t *testing.T) {
 	RunSpecs(t, "Integration Suite")
 }
 
+func createDummyInterface(interfaceName, ipAddress string) {
+	err := netlink.LinkAdd(&netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Name: interfaceName}})
+	Expect(err).ToNot(HaveOccurred())
+
+	link, err := netlink.LinkByName(interfaceName)
+	Expect(err).ToNot(HaveOccurred())
+
+	addr, err := netlink.ParseAddr(ipAddress + "/32")
+	Expect(err).ToNot(HaveOccurred())
+
+	err = netlink.AddrAdd(link, addr)
+	Expect(err).ToNot(HaveOccurred())
+}
+
+func removeDummyInterface(interfaceName, ipAddress string) {
+	link, err := netlink.LinkByName(interfaceName)
+	Expect(err).ToNot(HaveOccurred())
+
+	addr, err := netlink.ParseAddr(ipAddress + "/32")
+	Expect(err).ToNot(HaveOccurred())
+
+	err = netlink.AddrDel(link, addr)
+	Expect(err).ToNot(HaveOccurred())
+
+	err = netlink.LinkDel(link)
+	Expect(err).ToNot(HaveOccurred())
+}
+
 var _ = SynchronizedBeforeSuite(func() []byte {
 	var err error
 	certDir, err = ioutil.TempDir("", "netman-certs")
@@ -70,6 +99,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	data, err := json.Marshal(paths)
 	Expect(err).NotTo(HaveOccurred())
 
+	createDummyInterface("underlay1", "10.0.0.1")
+	createDummyInterface("underlay2", "169.254.169.254")
 	return data
 }, func(data []byte) {
 	Expect(json.Unmarshal(data, &paths)).To(Succeed())
@@ -80,6 +111,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 var _ = SynchronizedAfterSuite(func() {}, func() {
 	gexec.CleanupBuildArtifacts()
 	os.Remove(certDir)
+	removeDummyInterface("underlay1", "10.0.0.1")
+	removeDummyInterface("underlay2", "169.254.169.254")
 })
 
 func WriteConfigFile(Config config.VxlanPolicyAgent) string {

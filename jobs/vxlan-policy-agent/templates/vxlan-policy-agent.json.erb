@@ -10,6 +10,7 @@
 
       'policy_server_url' => "https://#{p('policy_server.hostname')}:#{p('policy_server.internal_listen_port')}",
       'metron_address' => "127.0.0.1:#{p('metron_port')}",
+      'underlay_ips' => spec.networks.to_h.values.map(&:ip),
       'debug_server_port' => p('debug_server_port'),
       'force_policy_poll_cycle_port' => p('force_policy_poll_cycle_port'),
       'enable_overlay_ingress_rules' => p('enable_overlay_ingress_rules'),

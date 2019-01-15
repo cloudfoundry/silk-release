@@ -27,6 +27,7 @@ type VxlanPolicyPlanner struct {
 	LoggingState                  loggingStateGetter
 	IPTablesAcceptedUDPLogsPerSec int
 	EnableOverlayIngressRules     bool
+	HostInterfaceNames            []string
 }
 
 //go:generate counterfeiter -o fakes/dstore.go --fake-name Dstore . dstore
