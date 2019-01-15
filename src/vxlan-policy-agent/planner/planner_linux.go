@@ -327,16 +327,18 @@ func (p *VxlanPolicyPlanner) planIPTableRules(containerPolicySet containerPolicy
 	}
 
 	for _, egressSource := range containerPolicySet.Egress {
-		ruleset = append(ruleset, rules.NewEgress(
-			p.HostInterfaceNames[0],
-			egressSource.SourceIP,
-			egressSource.Protocol,
-			egressSource.IpStart,
-			egressSource.IpEnd,
-			egressSource.IcmpType,
-			egressSource.IcmpCode,
-			egressSource.PortStart,
-			egressSource.PortEnd))
+		for _, hostInterfaceName := range p.HostInterfaceNames {
+			ruleset = append(ruleset, rules.NewEgress(
+				hostInterfaceName,
+				egressSource.SourceIP,
+				egressSource.Protocol,
+				egressSource.IpStart,
+				egressSource.IpEnd,
+				egressSource.IcmpType,
+				egressSource.IcmpCode,
+				egressSource.PortStart,
+				egressSource.PortEnd))
+		}
 	}
 
 	for _, ingressSource := range containerPolicySet.Ingress {
