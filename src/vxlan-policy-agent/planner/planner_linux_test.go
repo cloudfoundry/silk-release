@@ -275,10 +275,55 @@ var _ = Describe("Planner", func() {
 			LoggingState:                  loggingStateGetter,
 			IPTablesAcceptedUDPLogsPerSec: 3,
 			EnableOverlayIngressRules:     true,
+			HostInterfaceNames:            []string{"eth0"},
 		}
 	})
 
 	Describe("GetRulesAndChain", func() {
+		Context("when multiple underlay interfaces are present", func() {
+			BeforeEach(func() {
+				policyPlanner.HostInterfaceNames = []string{"eth0", "eth1"}
+			})
+
+			It("returns all the rules but no logging rules", func() {
+				rulesWithChain, err := policyPlanner.GetRulesAndChain()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rulesWithChain.Chain).To(Equal(chain))
+				Expect(rulesWithChain.Rules).To(ConsistOf([]rules.IPTablesRule{
+					{"-s", "10.255.1.2", "-o", "eth0", "-p", "tcp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "tcp", "--dport", "8080:8081", "-j", "ACCEPT"},
+					{"-s", "10.255.1.2", "-o", "eth0", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "8080:8081", "-j", "ACCEPT"},
+					{"-s", "10.255.1.3", "-o", "eth0", "-p", "icmp", "-m", "iprange", "--dst-range", "1.2.3.6-1.2.3.7", "-m", "icmp", "--icmp-type", "2/3", "-j", "ACCEPT"},
+					{"-s", "10.255.1.3", "-o", "eth0", "-p", "icmp", "-m", "iprange", "--dst-range", "1.2.3.6-1.2.3.7", "-m", "icmp", "--icmp-type", "8", "-j", "ACCEPT"},
+					{"-s", "10.255.1.3", "-o", "eth0", "-p", "icmp", "-m", "iprange", "--dst-range", "1.2.3.6-1.2.3.7", "-j", "ACCEPT"},
+					{"-s", "10.255.1.3", "-o", "eth0", "-p", "tcp", "-m", "iprange", "--dst-range", "1.2.3.6-1.2.3.7", "-j", "ACCEPT"},
+					{"-s", "10.255.1.2", "-o", "eth0", "-p", "udp", "-m", "iprange", "--dst-range", "2.3.4.5-3.3.3.3", "-j", "ACCEPT"},
+					{"-s", "10.255.1.3", "-o", "eth0", "-p", "all", "-m", "iprange", "--dst-range", "8.8.4.4-8.8.8.8", "-j", "ACCEPT"},
+					{"-s", "10.255.1.2", "-o", "eth1", "-p", "tcp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "tcp", "--dport", "8080:8081", "-j", "ACCEPT"},
+					{"-s", "10.255.1.2", "-o", "eth1", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "8080:8081", "-j", "ACCEPT"},
+					{"-s", "10.255.1.3", "-o", "eth1", "-p", "icmp", "-m", "iprange", "--dst-range", "1.2.3.6-1.2.3.7", "-m", "icmp", "--icmp-type", "2/3", "-j", "ACCEPT"},
+					{"-s", "10.255.1.3", "-o", "eth1", "-p", "icmp", "-m", "iprange", "--dst-range", "1.2.3.6-1.2.3.7", "-m", "icmp", "--icmp-type", "8", "-j", "ACCEPT"},
+					{"-s", "10.255.1.3", "-o", "eth1", "-p", "icmp", "-m", "iprange", "--dst-range", "1.2.3.6-1.2.3.7", "-j", "ACCEPT"},
+					{"-s", "10.255.1.3", "-o", "eth1", "-p", "tcp", "-m", "iprange", "--dst-range", "1.2.3.6-1.2.3.7", "-j", "ACCEPT"},
+					{"-s", "10.255.1.2", "-o", "eth1", "-p", "udp", "-m", "iprange", "--dst-range", "2.3.4.5-3.3.3.3", "-j", "ACCEPT"},
+					{"-s", "10.255.1.3", "-o", "eth1", "-p", "all", "-m", "iprange", "--dst-range", "8.8.4.4-8.8.8.8", "-j", "ACCEPT"},
+					// allow based on mark
+					{"-d", "10.255.1.3", "-p", "udp", "--dport", "5555:5555", "-m", "mark", "--mark", "0xBB", "--jump", "ACCEPT", "-m", "comment", "--comment", "src:another-app-guid_dst:some-other-app-guid"},
+					{"-d", "10.255.1.3", "-p", "tcp", "--dport", "1234:1234", "-m", "mark", "--mark", "0xAA", "--jump", "ACCEPT", "-m", "comment", "--comment", "src:some-app-guid_dst:some-other-app-guid"},
+					{"-d", "10.255.1.2", "-p", "tcp", "--dport", "8080:8080", "-m", "mark", "--mark", "0xAA", "--jump", "ACCEPT", "-m", "comment", "--comment", "src:some-app-guid_dst:some-app-guid"},
+					{"-d", "10.255.1.2", "-p", "tcp", "-m", "tcp", "--dport", "8080", "-m", "mark", "--mark", "0x5476", "--jump", "ACCEPT"},
+					{"-d", "10.255.1.3", "-p", "tcp", "-m", "tcp", "--dport", "9090", "-m", "mark", "--mark", "0x5476", "--jump", "ACCEPT"},
+					{"-d", "10.255.1.3", "-p", "tcp", "-m", "tcp", "--dport", "8181", "-m", "mark", "--mark", "0x5476", "--jump", "ACCEPT"},
+					// set tags on all outgoing packets, regardless of local vs remote
+					{"--source", "10.255.1.2", "--jump", "MARK", "--set-xmark", "0xAA", "-m", "comment", "--comment", "src:some-app-guid"},
+					{"--source", "10.255.1.3", "--jump", "MARK", "--set-xmark", "0xCC", "-m", "comment", "--comment", "src:some-other-app-guid"},
+					// default
+					{"-s", "10.255.1.3", "-o", "eth0", "-p", "udp", "-m", "iprange", "--dst-range", "8.7.6.5-4.3.2.1", "-j", "ACCEPT"},
+					{"-s", "10.255.1.2", "-o", "eth0", "-p", "udp", "-m", "iprange", "--dst-range", "8.7.6.5-4.3.2.1", "-j", "ACCEPT"},
+					{"-s", "10.255.1.3", "-o", "eth1", "-p", "udp", "-m", "iprange", "--dst-range", "8.7.6.5-4.3.2.1", "-j", "ACCEPT"},
+					{"-s", "10.255.1.2", "-o", "eth1", "-p", "udp", "-m", "iprange", "--dst-range", "8.7.6.5-4.3.2.1", "-j", "ACCEPT"},
+				}))
+			})
+		})
 		It("gets every container's properties from the datastore", func() {
 			_, err := policyPlanner.GetRulesAndChain()
 			Expect(err).NotTo(HaveOccurred())
@@ -312,6 +357,7 @@ var _ = Describe("Planner", func() {
 					Expect(rulesWithChain.Rules).To(ConsistOf([]rules.IPTablesRule{
 						{
 							"-s", "10.255.1.2",
+							"-o", "eth0",
 							"-p", "tcp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.4-1.2.3.5",
@@ -321,6 +367,7 @@ var _ = Describe("Planner", func() {
 						},
 						{
 							"-s", "10.255.1.2",
+							"-o", "eth0",
 							"-p", "udp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.4-1.2.3.5",
@@ -330,6 +377,7 @@ var _ = Describe("Planner", func() {
 						},
 						{
 							"-s", "10.255.1.3",
+							"-o", "eth0",
 							"-p", "icmp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.6-1.2.3.7",
@@ -339,6 +387,7 @@ var _ = Describe("Planner", func() {
 						},
 						{
 							"-s", "10.255.1.3",
+							"-o", "eth0",
 							"-p", "icmp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.6-1.2.3.7",
@@ -348,6 +397,7 @@ var _ = Describe("Planner", func() {
 						},
 						{
 							"-s", "10.255.1.3",
+							"-o", "eth0",
 							"-p", "icmp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.6-1.2.3.7",
@@ -355,6 +405,7 @@ var _ = Describe("Planner", func() {
 						},
 						{
 							"-s", "10.255.1.3",
+							"-o", "eth0",
 							"-p", "tcp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.6-1.2.3.7",
@@ -362,6 +413,7 @@ var _ = Describe("Planner", func() {
 						},
 						{
 							"-s", "10.255.1.2",
+							"-o", "eth0",
 							"-p", "udp",
 							"-m", "iprange",
 							"--dst-range", "2.3.4.5-3.3.3.3",
@@ -369,6 +421,7 @@ var _ = Describe("Planner", func() {
 						},
 						{
 							"-s", "10.255.1.3",
+							"-o", "eth0",
 							"-p", "all",
 							"-m", "iprange",
 							"--dst-range", "8.8.4.4-8.8.8.8",
@@ -433,10 +486,10 @@ var _ = Describe("Planner", func() {
 						},
 						// default
 						{
-							"-s", "10.255.1.3", "-p", "udp", "-m", "iprange", "--dst-range", "8.7.6.5-4.3.2.1", "-j", "ACCEPT",
+							"-s", "10.255.1.3", "-o", "eth0", "-p", "udp", "-m", "iprange", "--dst-range", "8.7.6.5-4.3.2.1", "-j", "ACCEPT",
 						},
 						{
-							"-s", "10.255.1.2", "-p", "udp", "-m", "iprange", "--dst-range", "8.7.6.5-4.3.2.1", "-j", "ACCEPT",
+							"-s", "10.255.1.2", "-o", "eth0", "-p", "udp", "-m", "iprange", "--dst-range", "8.7.6.5-4.3.2.1", "-j", "ACCEPT",
 						},
 					}))
 				})
@@ -455,6 +508,7 @@ var _ = Describe("Planner", func() {
 					Expect(rulesWithChain.Rules).To(ConsistOf([]rules.IPTablesRule{
 						{
 							"-s", "10.255.1.2",
+							"-o", "eth0",
 							"-p", "udp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.4-1.2.3.5",
@@ -464,6 +518,7 @@ var _ = Describe("Planner", func() {
 						},
 						{
 							"-s", "10.255.1.2",
+							"-o", "eth0",
 							"-p", "tcp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.4-1.2.3.5",
@@ -473,6 +528,7 @@ var _ = Describe("Planner", func() {
 						},
 						{
 							"-s", "10.255.1.3",
+							"-o", "eth0",
 							"-p", "tcp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.6-1.2.3.7",
@@ -480,6 +536,7 @@ var _ = Describe("Planner", func() {
 						},
 						{
 							"-s", "10.255.1.3",
+							"-o", "eth0",
 							"-p", "icmp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.6-1.2.3.7",
@@ -489,6 +546,7 @@ var _ = Describe("Planner", func() {
 						},
 						{
 							"-s", "10.255.1.3",
+							"-o", "eth0",
 							"-p", "icmp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.6-1.2.3.7",
@@ -498,6 +556,7 @@ var _ = Describe("Planner", func() {
 						},
 						{
 							"-s", "10.255.1.3",
+							"-o", "eth0",
 							"-p", "icmp",
 							"-m", "iprange",
 							"--dst-range", "1.2.3.6-1.2.3.7",
@@ -505,6 +564,7 @@ var _ = Describe("Planner", func() {
 						},
 						{
 							"-s", "10.255.1.2",
+							"-o", "eth0",
 							"-p", "udp",
 							"-m", "iprange",
 							"--dst-range", "2.3.4.5-3.3.3.3",
@@ -512,6 +572,7 @@ var _ = Describe("Planner", func() {
 						},
 						{
 							"-s", "10.255.1.3",
+							"-o", "eth0",
 							"-p", "all",
 							"-m", "iprange",
 							"--dst-range", "8.8.4.4-8.8.8.8",
@@ -556,6 +617,7 @@ var _ = Describe("Planner", func() {
 						// default policies
 						{
 							"-s", "10.255.1.3",
+							"-o", "eth0",
 							"-p", "udp",
 							"-m", "iprange",
 							"--dst-range", "8.7.6.5-4.3.2.1",
@@ -563,6 +625,7 @@ var _ = Describe("Planner", func() {
 						},
 						{
 							"-s", "10.255.1.2",
+							"-o", "eth0",
 							"-p", "udp",
 							"-m", "iprange",
 							"--dst-range", "8.7.6.5-4.3.2.1",
@@ -853,8 +916,8 @@ var _ = Describe("Planner", func() {
 					Expect(rulesWithChain.Rules).To(ConsistOf(
 						rules.IPTablesRule{"--source", "10.255.1.2", "--jump", "MARK", "--set-xmark", "0xAA", "-m", "comment", "--comment", "src:some-app-guid"},
 						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "--dport", "8080:8080", "-m", "mark", "--mark", "0xAA", "--jump", "ACCEPT", "-m", "comment", "--comment", "src:some-app-guid_dst:some-app-guid"},
-						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "tcp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "tcp", "--dport", "1234:1234", "-j", "ACCEPT"},
-						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "9999:9999", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-o", "eth0", "-p", "tcp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "tcp", "--dport", "1234:1234", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-o", "eth0", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "9999:9999", "-j", "ACCEPT"},
 						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "-m", "tcp", "--dport", "8080", "-m", "mark", "--mark", "0x5476", "--jump", "ACCEPT"},
 					))
 				})
@@ -882,8 +945,8 @@ var _ = Describe("Planner", func() {
 					Expect(rulesWithChain.Rules).To(ConsistOf(
 						rules.IPTablesRule{"--source", "10.255.1.2", "--jump", "MARK", "--set-xmark", "0xAA", "-m", "comment", "--comment", "src:some-app-guid"},
 						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "--dport", "8080:8080", "-m", "mark", "--mark", "0xAA", "--jump", "ACCEPT", "-m", "comment", "--comment", "src:some-app-guid_dst:some-app-guid"},
-						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "tcp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "tcp", "--dport", "1234:1234", "-j", "ACCEPT"},
-						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "9999:9999", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-o", "eth0", "-p", "tcp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "tcp", "--dport", "1234:1234", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-o", "eth0", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "9999:9999", "-j", "ACCEPT"},
 						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "-m", "tcp", "--dport", "8080", "-m", "mark", "--mark", "0x5476", "--jump", "ACCEPT"},
 					))
 				})
@@ -911,8 +974,8 @@ var _ = Describe("Planner", func() {
 					Expect(rulesWithChain.Rules).To(ConsistOf(
 						rules.IPTablesRule{"--source", "10.255.1.2", "--jump", "MARK", "--set-xmark", "0xAA", "-m", "comment", "--comment", "src:some-app-guid"},
 						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "--dport", "8080:8080", "-m", "mark", "--mark", "0xAA", "--jump", "ACCEPT", "-m", "comment", "--comment", "src:some-app-guid_dst:some-app-guid"},
-						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "5678:5678", "-j", "ACCEPT"},
-						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "9999:9999", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-o", "eth0", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "5678:5678", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-o", "eth0", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "9999:9999", "-j", "ACCEPT"},
 						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "-m", "tcp", "--dport", "8080", "-m", "mark", "--mark", "0x5476", "--jump", "ACCEPT"},
 					))
 				})
@@ -939,9 +1002,9 @@ var _ = Describe("Planner", func() {
 					Expect(rulesWithChain.Rules).To(ConsistOf(
 						rules.IPTablesRule{"--source", "10.255.1.2", "--jump", "MARK", "--set-xmark", "0xAA", "-m", "comment", "--comment", "src:some-app-guid"},
 						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "--dport", "8080:8080", "-m", "mark", "--mark", "0xAA", "--jump", "ACCEPT", "-m", "comment", "--comment", "src:some-app-guid_dst:some-app-guid"},
-						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "tcp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "tcp", "--dport", "1234:1234", "-j", "ACCEPT"},
-						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "5678:5678", "-j", "ACCEPT"},
-						rules.IPTablesRule{"-s", "10.255.1.2", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "9999:9999", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-o", "eth0", "-p", "tcp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "tcp", "--dport", "1234:1234", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-o", "eth0", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "5678:5678", "-j", "ACCEPT"},
+						rules.IPTablesRule{"-s", "10.255.1.2", "-o", "eth0", "-p", "udp", "-m", "iprange", "--dst-range", "1.2.3.4-1.2.3.5", "-m", "udp", "--dport", "9999:9999", "-j", "ACCEPT"},
 						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "-m", "tcp", "--dport", "8080", "-m", "mark", "--mark", "0x5476", "--jump", "ACCEPT"},
 					))
 				})

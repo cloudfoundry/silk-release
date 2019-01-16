@@ -2,12 +2,12 @@ package main
 
 import (
 	"cni-wrapper-plugin/adapter"
-	"cni-wrapper-plugin/interfacelookup"
 	"cni-wrapper-plugin/legacynet"
 	"cni-wrapper-plugin/lib"
 	"encoding/json"
 	"fmt"
 	"lib/datastore"
+	"lib/interfacelookup"
 	"lib/rules"
 	"lib/serial"
 	"net"
@@ -17,13 +17,14 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"os/user"
+	"strconv"
+
 	"code.cloudfoundry.org/filelock"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
 	"github.com/coreos/go-iptables/iptables"
-	"os/user"
-	"strconv"
 )
 
 func cmdAdd(args *skel.CmdArgs) error {
@@ -265,7 +266,6 @@ func cmdDel(args *skel.CmdArgs) error {
 	return nil
 }
 
-
 func ensureIptablesFileOwnership(filePath, fileOwner, fileGroup string) error {
 	err := ioutil.WriteFile(filePath, make([]byte, 0), 0600)
 	if err != nil {
@@ -311,7 +311,6 @@ func lookupFileOwnerUIDandGID(fileOwner, fileGroup string) (int, int, error) {
 
 	return uid, gid, nil
 }
-
 
 func newPluginController(config *lib.WrapperConfig) (*lib.PluginController, error) {
 	ipt, err := iptables.New()

@@ -5,6 +5,7 @@ dependencies:
   - golang-1.11-linux
 
 files:
+  - cni-wrapper-plugin/adapter/*.go # gosub
   - code.cloudfoundry.org/bbs/db/sqldb/helpers/monitor/*.go # gosub
   - code.cloudfoundry.org/cf-networking-helpers/json_client/*.go # gosub
   - code.cloudfoundry.org/cf-networking-helpers/marshal/*.go # gosub
@@ -38,12 +39,15 @@ files:
   - github.com/tedsuo/ifrit/grouper/*.go # gosub
   - github.com/tedsuo/ifrit/http_server/*.go # gosub
   - github.com/tedsuo/ifrit/sigmon/*.go # gosub
-  - golang.org/x/sys/windows/*.go # gosub
-  - golang.org/x/sys/windows/*.s # gosub
-  - golang.org/x/sys/windows/**/*.c # gosub
+  - github.com/vishvananda/netlink/*.go # gosub
+  - github.com/vishvananda/netlink/nl/*.go # gosub
+  - github.com/vishvananda/netns/*.go # gosub
+  - golang.org/x/sys/unix/*.go # gosub
+  - golang.org/x/sys/unix/*.s # gosub
   - gopkg.in/validator.v2/*.go # gosub
   - lib/common/*.go # gosub
   - lib/datastore/*.go # gosub
+  - lib/interfacelookup/*.go # gosub
   - lib/policy_client/*.go # gosub
   - lib/poller/*.go # gosub
   - lib/rules/*.go # gosub

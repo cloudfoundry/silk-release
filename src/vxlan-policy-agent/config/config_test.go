@@ -46,7 +46,8 @@ var _ = Describe("Config", func() {
 					"enable_overlay_ingress_rules": true,
 					"force_policy_poll_cycle_port": 6789,
 					"force_policy_poll_cycle_host": "http://6.7.8.9",
-					"disable_container_network_policy": false
+					"disable_container_network_policy": false,
+					"underlay_ips": ["123.1.2.3"]
 				}`)
 				c, err := config.New(file.Name())
 				Expect(err).NotTo(HaveOccurred())
@@ -70,6 +71,7 @@ var _ = Describe("Config", func() {
 				Expect(c.ForcePolicyPollCyclePort).To(Equal(6789))
 				Expect(c.ForcePolicyPollCycleHost).To(Equal("http://6.7.8.9"))
 				Expect(c.DisableContainerNetworkPolicy).To(BeFalse())
+				Expect(c.UnderlayIPs).To(Equal([]string{"123.1.2.3"}))
 			})
 		})
 

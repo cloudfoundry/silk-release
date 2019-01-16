@@ -12,6 +12,9 @@ import (
 
 	"code.cloudfoundry.org/garden"
 
+	"net/http"
+	"syscall"
+
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport/ports"
 	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
 	. "github.com/onsi/ginkgo"
@@ -20,8 +23,6 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/pivotal-cf-experimental/gomegamatchers"
 	"github.com/vishvananda/netlink"
-	"net/http"
-	"syscall"
 )
 
 type InputStruct struct {
@@ -37,7 +38,6 @@ const (
 	UnprivilegedUserId  = uint32(65534)
 	UnprivilegedGroupId = uint32(65534)
 )
-
 
 // Always run serially, this is setup in the test.sh file
 // Test writes to disk and modifies iptables
@@ -149,8 +149,8 @@ var _ = Describe("CniWrapperPlugin", func() {
 			WrapperConfig: lib.WrapperConfig{
 				DatastoreFileOwner: "nobody",
 				DatastoreFileGroup: "nogroup",
-				Datastore:        datastorePath,
-				IPTablesLockFile: iptablesLockFilePath,
+				Datastore:          datastorePath,
+				IPTablesLockFile:   iptablesLockFilePath,
 				Delegate: map[string]interface{}{
 					"type": "noop",
 					"some": "other data",
@@ -410,7 +410,6 @@ var _ = Describe("CniWrapperPlugin", func() {
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
-
 
 			fileInfo, err := os.Stat(iptablesLockFilePath)
 			Expect(err).NotTo(HaveOccurred())
@@ -928,7 +927,6 @@ var _ = Describe("CniWrapperPlugin", func() {
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
-
 
 			fileInfo, err := os.Stat(iptablesLockFilePath)
 			Expect(err).NotTo(HaveOccurred())

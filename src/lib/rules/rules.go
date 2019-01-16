@@ -341,9 +341,10 @@ func NewOverlayAccessMarkRule(tag string) IPTablesRule {
 	}
 }
 
-func NewEgress(ip, protocol, ipStart, ipEnd string, icmpType, icmpCode, portStart, portEnd int) IPTablesRule {
+func NewEgress(interfaceName, ip, protocol, ipStart, ipEnd string, icmpType, icmpCode, portStart, portEnd int) IPTablesRule {
 	egressRule := IPTablesRule{
 		"-s", ip,
+		"-o", interfaceName,
 		"-p", protocol,
 		"-m", "iprange",
 		"--dst-range", fmt.Sprintf("%s-%s", ipStart, ipEnd),

@@ -1,10 +1,12 @@
 package main
 
 import (
+	"cni-wrapper-plugin/adapter"
 	"flag"
 	"fmt"
 	"lib/common"
 	"lib/datastore"
+	"lib/interfacelookup"
 	"lib/policy_client"
 	"lib/poller"
 	"lib/rules"
@@ -66,6 +68,15 @@ func main() {
 	logger, reconfigurableSink := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), common.GetLagerConfig())
 
 	logger.Info("parsed-config", lager.Data{"config": conf})
+
+	interfaceNameLookup := interfacelookup.InterfaceNameLookup{
+		NetlinkAdapter: &adapter.NetlinkAdapter{},
+	}
+
+	interfaceNames, err := interfaceNameLookup.GetNamesFromIPs(conf.UnderlayIPs)
+	if err != nil {
+		log.Fatalf("%s: looking up interface names: %s", logPrefix, err)
+	}
 
 	pollInterval := time.Duration(conf.PollInterval) * time.Second
 	if pollInterval == 0 {
@@ -147,6 +158,7 @@ func main() {
 		LoggingState:                  iptablesLoggingState,
 		IPTablesAcceptedUDPLogsPerSec: conf.IPTablesAcceptedUDPLogsPerSec,
 		EnableOverlayIngressRules:     conf.EnableOverlayIngressRules,
+		HostInterfaceNames:            interfaceNames,
 	}
 
 	timestamper := &enforcer.Timestamper{}

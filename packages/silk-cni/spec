@@ -9,7 +9,6 @@ files:
   - cni-teardown/config/*.go # gosub
   - cni-wrapper-plugin/*.go # gosub
   - cni-wrapper-plugin/adapter/*.go # gosub
-  - cni-wrapper-plugin/interfacelookup/*.go # gosub
   - cni-wrapper-plugin/legacynet/*.go # gosub
   - cni-wrapper-plugin/lib/*.go # gosub
   - code.cloudfoundry.org/cf-networking-helpers/runner/*.go # gosub
@@ -91,5 +90,6 @@ files:
   - gopkg.in/validator.v2/*.go # gosub
   - lib/common/*.go # gosub
   - lib/datastore/*.go # gosub
+  - lib/interfacelookup/*.go # gosub
   - lib/rules/*.go # gosub
   - lib/serial/*.go # gosub

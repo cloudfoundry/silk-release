@@ -56,6 +56,7 @@ module Bosh::Template::Test
               'iptables_lock_file' => '/var/vcap/data/garden-cni/iptables.lock',
               'log_level' => 'error',
               'log_prefix' => 'cfnetworking',
+              'underlay_ips' => ['192.168.0.0'],
               'metron_address' => '127.0.0.1:55',
               'enable_overlay_ingress_rules' => true,
               'policy_server_url' => 'https://policy-server-hostname:4003',

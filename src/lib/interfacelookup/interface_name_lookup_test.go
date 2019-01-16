@@ -2,8 +2,8 @@ package interfacelookup_test
 
 import (
 	"cni-wrapper-plugin/fakes"
-	"cni-wrapper-plugin/interfacelookup"
 	"errors"
+	"lib/interfacelookup"
 	"net"
 
 	"github.com/vishvananda/netlink"
