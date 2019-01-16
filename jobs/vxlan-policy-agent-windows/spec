@@ -1,0 +1,73 @@
+---
+name: vxlan-policy-agent-windows
+
+templates:
+  vxlan-policy-agent-windows.json.erb: config/vxlan-policy-agent-windows.json
+  ca.crt.erb: config/certs/ca.crt
+  client.crt.erb: config/certs/client.crt
+  client.key.erb: config/certs/client.key
+
+packages:
+  - vxlan-policy-agent-windows
+
+consumes:
+- name: cf_network
+  type: cf_network
+
+properties:
+  iptables_logging:
+    description: "Enables iptables logging for container to container traffic. Logs to the kernel log."
+    default: false
+
+  policy_server.hostname:
+    description: "Host name for the policy server.  E.g. the service advertised via Consul DNS.  Must match common name in the policy_server.server_cert"
+    default: "policy-server.service.cf.internal"
+
+  policy_server.internal_listen_port:
+    description: "Policy server handles requests from the vxlan policy agent on this port."
+    default: 4003
+
+  policy_poll_interval_seconds:
+    description: "The VXLAN policy agent queries the policy server on this interval in seconds and updates local policy rules."
+    default: 5
+
+  ca_cert:
+    description: "Trusted CA certificate that was used to sign the policy server's server cert and key."
+
+  client_cert:
+    description: "Client certificate for TLS to access policy server."
+
+  client_key:
+    description: "Client private key for TLS to access policy server."
+
+  metron_port:
+    description: "Port of metron agent on localhost. This is used to forward metrics."
+    default: 3457
+
+  debug_server_port:
+    description: "Port for the debug server. Use this to adjust log level at runtime or dump process stats."
+    default: 8721
+
+  log_level:
+    description: "Logging level (debug, info, warn, error)."
+    default: info
+
+  iptables_accepted_udp_logs_per_sec:
+    description: "Maximum number of iptables logs per second for accepted UDP packets."
+    default: 100
+
+  force_policy_poll_cycle_port:
+    description: "Port for force policy poll cycle server. Use this server to force an immediate poll cycle."
+    default: 8722
+
+  enable_overlay_ingress_rules:
+    description: "Experimental feature. Allows ingress over the overlay network, from a vm running silk-daemon in singleIPMode"
+    default: false
+
+  disable:
+    description: "Disable this monit job.  It will not run. Required for backwards compatability"
+    default: false
+
+  disable_container_network_policy:
+    description: "WARNING!!! Disables network policy enforcement. Setting this property to true allows all app containers to access any other app container with no restrictions."
+    default: false
