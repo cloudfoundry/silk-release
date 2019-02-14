@@ -34,3 +34,4 @@ files:
   - vxlan-policy-agent/config/*.go # gosub
   - vxlan-policy-agent/enforcer/*.go # gosub
   - vxlan-policy-agent/planner/*.go # gosub
+  - exiter.ps1

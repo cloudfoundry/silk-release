@@ -1,3 +1,5 @@
+. ./exiter.ps1
+
 $Enabled=[bool]"True"
 
 Start-Sleep 5
