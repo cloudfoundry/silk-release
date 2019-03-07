@@ -85,6 +85,3 @@
 [submodule "src/code.cloudfoundry.org/bbs"]
 	path = src/code.cloudfoundry.org/bbs
 	url = https://github.com/cloudfoundry/bbs.git
-[submodule "src/github.com/gopkg.in/yaml.v2"]
-	path = src/github.com/gopkg.in/yaml.v2
-	url = https://gopkg.in/yaml.v2
