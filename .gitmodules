@@ -10,6 +10,9 @@
 [submodule "src/github.com/onsi/gomega"]
 	path = src/github.com/onsi/gomega
 	url = https://github.com/onsi/gomega
+[submodule "src/gopkg.in/yaml.v2"]
+	path = src/gopkg.in/yaml.v2
+	url = https://gopkg.in/yaml.v2
 [submodule "src/github.com/vishvananda/netlink"]
 	path = src/github.com/vishvananda/netlink
 	url = https://github.com/vishvananda/netlink
@@ -82,3 +85,6 @@
 [submodule "src/code.cloudfoundry.org/bbs"]
 	path = src/code.cloudfoundry.org/bbs
 	url = https://github.com/cloudfoundry/bbs.git
+[submodule "src/github.com/gopkg.in/yaml.v2"]
+	path = src/github.com/gopkg.in/yaml.v2
+	url = https://gopkg.in/yaml.v2
