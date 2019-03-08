@@ -22,9 +22,18 @@
 [submodule "src/gopkg.in/validator.v2"]
 	path = src/gopkg.in/validator.v2
 	url = https://gopkg.in/validator.v2
+[submodule "src/github.com/go-sql-driver/mysql"]
+	path = src/github.com/go-sql-driver/mysql
+	url = https://github.com/go-sql-driver/mysql
+[submodule "src/github.com/lib/pq"]
+	path = src/github.com/lib/pq
+	url = https://github.com/lib/pq
 [submodule "src/code.cloudfoundry.org/lager"]
 	path = src/code.cloudfoundry.org/lager
 	url = https://github.com/cloudfoundry/lager
+[submodule "src/github.com/jmoiron/sqlx"]
+	path = src/github.com/jmoiron/sqlx
+	url = https://github.com/jmoiron/sqlx
 [submodule "src/github.com/tedsuo/ifrit"]
 	path = src/github.com/tedsuo/ifrit
 	url = https://github.com/tedsuo/ifrit
@@ -37,6 +46,9 @@
 [submodule "src/github.com/tedsuo/rata"]
 	path = src/github.com/tedsuo/rata
 	url = https://github.com/tedsuo/rata
+[submodule "src/github.com/square/certstrap"]
+	path = src/github.com/square/certstrap
+	url = https://github.com/square/certstrap
 [submodule "src/github.com/hashicorp/go-multierror"]
 	path = src/github.com/hashicorp/go-multierror
 	url = https://github.com/hashicorp/go-multierror
