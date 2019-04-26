@@ -41,7 +41,7 @@ properties:
 
   lease_poll_interval_seconds:
     description: "The silk daemon queries the silk controller on this interval in seconds to renew its lease and get all routable leases."
-    default: 5
+    default: 30
 
   ca_cert:
     description: "Trusted CA certificate that was used to sign the silk controller server cert and key."

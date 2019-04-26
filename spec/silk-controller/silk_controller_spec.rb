@@ -32,7 +32,6 @@ module Bosh::Template::Test
           'skip_hostname_validation' => true,
         },
         'max_open_connections' => 1,
-        'max_idle_connections' => 3,
         'connections_max_lifetime_seconds' => 31
       }
     end
@@ -86,7 +85,7 @@ module Bosh::Template::Test
           'staleness_threshold_seconds' => 60*60,
           'metrics_emit_seconds' => 30,
           'log_prefix' => 'cfnetworking',
-          'max_idle_connections' => 3,
+          'max_idle_connections' => 10,
           'max_open_connections' => 1,
           'connections_max_lifetime_seconds' => 31
         })
