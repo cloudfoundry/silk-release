@@ -14,6 +14,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -68,6 +69,11 @@ func main() {
 	logger, reconfigurableSink := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), common.GetLagerConfig())
 
 	logger.Info("parsed-config", lager.Data{"config": conf})
+
+	_, err = os.Stat(filepath.Dir(conf.Datastore))
+	if err != nil {
+		die(logger, "datastore-directory-stat", err)
+	}
 
 	interfaceNameLookup := interfacelookup.InterfaceNameLookup{
 		NetlinkAdapter: &adapter.NetlinkAdapter{},

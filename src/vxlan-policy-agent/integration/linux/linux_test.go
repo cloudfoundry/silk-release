@@ -423,6 +423,21 @@ var _ = Describe("VXLAN Policy Agent", func() {
 				Eventually(session.Err).Should(Say("cfnetworking: could not read config file"))
 			})
 		})
+
+		Context("when datastore directory does not exist", func() {
+			BeforeEach(func() {
+				conf.Datastore = "/garbage/path"
+			})
+
+			JustBeforeEach(func() {
+				session = startAgent(paths.VxlanPolicyAgentPath, configFilePath)
+			})
+
+			It("does not start", func() {
+				Eventually(session).Should(gexec.Exit())
+				Expect(string(session.Out.Contents())).To(MatchRegexp("datastore-directory-stat"))
+			})
+		})
 	})
 })
 
