@@ -60,6 +60,7 @@ files:
   - github.com/containernetworking/cni/pkg/version/*.go # gosub
   - github.com/containernetworking/plugins/pkg/ip/*.go # gosub
   - github.com/containernetworking/plugins/pkg/ns/*.go # gosub
+  - github.com/containernetworking/plugins/pkg/utils/buildversion/*.go # gosub
   - github.com/containernetworking/plugins/pkg/utils/hwaddr/*.go # gosub
   - github.com/containernetworking/plugins/plugins/ipam/host-local/*.go # gosub
   - github.com/containernetworking/plugins/plugins/ipam/host-local/backend/*.go # gosub
