@@ -4,7 +4,7 @@ package planner
 
 import (
 	"fmt"
-	"lib/policy_client"
+	"code.cloudfoundry.org/policy_client"
 	"time"
 )
 

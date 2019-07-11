@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"lib/common"
-	policyClient "lib/policy_client"
+	policyClient "code.cloudfoundry.org/policy_client"
 	"lib/rules"
 	"log"
 	"net/http"

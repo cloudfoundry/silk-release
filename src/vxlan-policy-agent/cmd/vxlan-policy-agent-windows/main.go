@@ -11,7 +11,7 @@ import (
 
 	"lib/common"
 	"lib/datastore"
-	"lib/policy_client"
+	"code.cloudfoundry.org/policy_client"
 	"lib/serial"
 
 	"vxlan-policy-agent/config"
