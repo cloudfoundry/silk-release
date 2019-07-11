@@ -100,3 +100,6 @@
 [submodule "src/code.cloudfoundry.org/bbs"]
 	path = src/code.cloudfoundry.org/bbs
 	url = https://github.com/cloudfoundry/bbs.git
+[submodule "src/code.cloudfoundry.org/policy_client"]
+	path = src/code.cloudfoundry.org/policy_client
+	url = https://github.com/cloudfoundry/policy_client.git
