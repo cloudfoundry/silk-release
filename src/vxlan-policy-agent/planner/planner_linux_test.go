@@ -6,7 +6,7 @@ import (
 	"errors"
 	"lib/datastore"
 	libfakes "lib/fakes"
-	"lib/policy_client"
+	"code.cloudfoundry.org/policy_client"
 	"lib/rules"
 	"vxlan-policy-agent/enforcer"
 	"vxlan-policy-agent/planner"
