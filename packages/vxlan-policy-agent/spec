@@ -16,6 +16,7 @@ files:
   - code.cloudfoundry.org/filelock/*.go # gosub
   - code.cloudfoundry.org/lager/*.go # gosub
   - code.cloudfoundry.org/lager/lagerflags/*.go # gosub
+  - code.cloudfoundry.org/policy_client/*.go # gosub
   - github.com/cloudfoundry/dropsonde/*.go # gosub
   - github.com/cloudfoundry/dropsonde/emitter/*.go # gosub
   - github.com/cloudfoundry/dropsonde/envelope_sender/*.go # gosub
@@ -48,7 +49,6 @@ files:
   - lib/common/*.go # gosub
   - lib/datastore/*.go # gosub
   - lib/interfacelookup/*.go # gosub
-  - lib/policy_client/*.go # gosub
   - lib/poller/*.go # gosub
   - lib/rules/*.go # gosub
   - lib/serial/*.go # gosub

@@ -12,6 +12,7 @@ files:
   - code.cloudfoundry.org/filelock/*.go # gosub
   - code.cloudfoundry.org/lager/*.go # gosub
   - code.cloudfoundry.org/lager/lagerflags/*.go # gosub
+  - code.cloudfoundry.org/policy_client/*.go # gosub
   - code.cloudfoundry.org/silk/client/config/*.go # gosub
   - code.cloudfoundry.org/silk/cmd/silk-daemon/*.go # gosub
   - code.cloudfoundry.org/silk/cmd/silk-teardown/*.go # gosub
@@ -65,7 +66,6 @@ files:
   - code.cloudfoundry.org/silk/vendor/gopkg.in/validator.v2/*.go # gosub
   - github.com/coreos/go-iptables/iptables/*.go # gosub
   - lib/common/*.go # gosub
-  - lib/policy_client/*.go # gosub
   - lib/rules/*.go # gosub
   - silk-daemon-bootstrap/*.go # gosub
   - silk-daemon-bootstrap/config/*.go # gosub
