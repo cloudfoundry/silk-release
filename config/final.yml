@@ -1,7 +1,6 @@
 ---
 name: silk
 blobstore:
-  provider: s3
+  provider: gcs
   options:
-    bucket_name: c2c-networking-blobs
-    region: us-west-2
+    bucket_name: silk-release-blobs
