@@ -45,6 +45,8 @@ files:
   - github.com/vishvananda/netns/*.go # gosub
   - golang.org/x/sys/unix/*.go # gosub
   - golang.org/x/sys/unix/*.s # gosub
+  - golang.org/x/sys/windows/*.go # gosub
+  - golang.org/x/sys/windows/*.s # gosub
   - gopkg.in/validator.v2/*.go # gosub
   - lib/common/*.go # gosub
   - lib/datastore/*.go # gosub

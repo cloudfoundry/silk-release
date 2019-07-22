@@ -33,10 +33,13 @@ files:
   - github.com/hpcloud/tail/vendor/gopkg.in/fsnotify.v1/*.go # gosub
   - github.com/hpcloud/tail/vendor/gopkg.in/tomb.v1/*.go # gosub
   - github.com/hpcloud/tail/watch/*.go # gosub
+  - github.com/hpcloud/tail/winfile/*.go # gosub
   - github.com/nu7hatch/gouuid/*.go # gosub
   - github.com/tedsuo/ifrit/*.go # gosub
   - github.com/tedsuo/ifrit/grouper/*.go # gosub
   - github.com/tedsuo/ifrit/sigmon/*.go # gosub
+  - golang.org/x/sys/windows/*.go # gosub
+  - golang.org/x/sys/windows/*.s # gosub
   - gopkg.in/validator.v2/*.go # gosub
   - iptables-logger/cmd/iptables-logger/*.go # gosub
   - iptables-logger/config/*.go # gosub
