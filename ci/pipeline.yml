@@ -12,7 +12,7 @@ resources:
 jobs:
 - name: silk-test-postgres
   plan:
-  - aggregate:
+  - in_parallel:
     - get: silk
       trigger: true
     - get: weekly-trigger
@@ -23,7 +23,7 @@ jobs:
 
 - name: silk-test-mysql
   plan:
-  - aggregate:
+  - in_parallel:
     - get: silk
       trigger: true
     - get: weekly-trigger
@@ -34,7 +34,7 @@ jobs:
 
 - name: silk-test-mysql-5.6
   plan:
-  - aggregate:
+  - in_parallel:
     - get: silk
       trigger: true
     - get: weekly-trigger
