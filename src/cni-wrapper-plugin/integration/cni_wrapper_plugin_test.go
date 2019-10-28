@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"code.cloudfoundry.org/garden"
 
@@ -95,6 +96,9 @@ var _ = Describe("CniWrapperPlugin", func() {
 	}
 
 	BeforeEach(func() {
+		// iptables 1.8+ takes longer to finish so the 1 second timeout is no longer sufficient
+		SetDefaultEventuallyTimeout(3 * time.Second)
+
 		underlayName1 = "underlay1"
 		underlayIpAddr1 = "169.254.169.253"
 
