@@ -133,6 +133,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		ContainerHandle:       args.ContainerID,
 		ContainerIP:           containerIP.String(),
 		HostTCPServices:       cfg.HostTCPServices,
+		HostUDPServices:       cfg.HostUDPServices,
 		DNSServers:            localDNSServers,
 	}
 	if err := netOutProvider.Initialize(); err != nil {

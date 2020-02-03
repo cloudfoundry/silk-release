@@ -548,6 +548,27 @@ var _ = Describe("CniWrapperPlugin", func() {
 			})
 		})
 
+		Context("when host UDP services are configured", func() {
+			BeforeEach(func() {
+				inputStruct.HostUDPServices = []string{"169.254.0.5:9001", "169.254.0.8:8080"}
+				input = GetInput(inputStruct)
+
+				cmd = cniCommand("ADD", input)
+			})
+			It("writes input chain rules for host UDP services", func() {
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+
+				Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+					"-A " + inputChainName + " -m state --state RELATED,ESTABLISHED -j ACCEPT",
+					"-A " + inputChainName + " -d 169.254.0.5/32 -p udp -m udp --dport 9001 -j ACCEPT",
+					"-A " + inputChainName + " -d 169.254.0.8/32 -p udp -m udp --dport 8080 -j ACCEPT",
+					"-A " + inputChainName + " -j REJECT --reject-with icmp-port-unreachable",
+				}))
+			})
+		})
+
 		Context("when no runtime config is passed in", func() {
 			BeforeEach(func() {
 				inputStruct.RuntimeConfig = lib.RuntimeConfig{}

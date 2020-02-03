@@ -65,3 +65,10 @@ properties:
     example: |
       - 169.254.0.2:9001
       - 169.254.0.2:9002
+
+  host_udp_services:
+    description: "List of UDP addresses running on the BOSH VM that should be accessible from containers.  The address must not be in the 127.0.0.0/8 range.  The network plugin will install an iptables INPUT rule for each service."
+    default: []
+    example: |
+      - 169.254.0.2:9001
+      - 169.254.0.2:9002
