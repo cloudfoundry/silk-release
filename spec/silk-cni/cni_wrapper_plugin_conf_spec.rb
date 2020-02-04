@@ -30,7 +30,12 @@ module Bosh::Template::Test
         'iptables_denied_logs_per_sec' => 2,
         'iptables_accepted_udp_logs_per_sec' => 3,
         'host_tcp_services' => ['169.254.0.2:9001', '169.254.0.2:9002'],
-        'host_udp_services' => ['169.254.0.2:9003', '169.254.0.2:9004']
+        'host_udp_services' => ['169.254.0.2:9003', '169.254.0.2:9004'],
+        'deny_networks' => {
+          'always' => ['1.1.1.1/32'],
+          'running' => ['2.2.2.2/32'],
+          'staging' => ['3.3.3.3/32'],
+        }
       }
     end
     let(:job) {release.job('silk-cni')}
@@ -68,6 +73,11 @@ module Bosh::Template::Test
             'policy_agent_force_poll_address' => '127.0.0.1:5555',
             'host_tcp_services' => ['169.254.0.2:9001', '169.254.0.2:9002'],
             'host_udp_services' => ['169.254.0.2:9003', '169.254.0.2:9004'],
+            'deny_networks' => {
+              'always' => ['1.1.1.1/32'],
+              'running' => ['2.2.2.2/32'],
+              'staging' => ['3.3.3.3/32'],
+            },
             'delegate' => {
               'cniVersion' => '0.3.1',
               'name' => 'silk',
@@ -123,6 +133,46 @@ module Bosh::Template::Test
         it 'subtracts VXLAN_OVERHEAD from the mtu value' do
           clientConfig = JSON.parse(template.render(merged_manifest_properties, spec: spec, consumes: links))
           expect(clientConfig['plugins'][0]['delegate']['mtu']).to eq(50)
+        end
+      end
+
+      context 'when deny_networks are provided' do
+        context 'when a destination is IPv6' do
+          it 'raises a descriptive error' do
+            contents = merged_manifest_properties.merge(
+              'deny_networks' => {
+                'always' => ['2001:db8:0:1:1:1:1:1', '1.1.0.0/16']
+              }
+            )
+
+            expect {
+              template.render(contents, spec: spec, consumes: links)
+            }.to raise_error /Invalid deny_networks.always entry 2001:db8:0:1:1:1:1:1 not an IPv4 address/
+          end
+        end
+
+        context 'when a destination is invalid' do
+          it 'raises a descriptive error' do
+            contents = merged_manifest_properties.merge(
+              'deny_networks' => {
+                'running' => ['invalid-network']
+              }
+            )
+
+            expect {
+              template.render(contents, spec: spec, consumes: links)
+            }.to raise_error /Invalid deny_networks.running entry invalid-network invalid address/
+          end
+        end
+      end
+
+      context 'when deny_networks are not provided' do
+        it 'does not raise an error' do
+          contents = merged_manifest_properties.clone.delete('deny_networks')
+
+          expect {
+            template.render(contents, spec: spec, consumes: links)
+          }.not_to raise_error
         end
       end
     end
