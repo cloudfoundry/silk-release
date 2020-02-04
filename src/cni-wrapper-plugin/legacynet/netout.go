@@ -35,6 +35,7 @@ type NetOut struct {
 	ContainerHandle       string
 	ContainerIP           string
 	HostTCPServices       []string
+	HostUDPServices       []string
 	DNSServers            []string
 }
 
@@ -44,7 +45,7 @@ func (m *NetOut) Initialize() error {
 		return err
 	}
 
-	args, err = m.appendInputRules(args, m.DNSServers, m.HostTCPServices)
+	args, err = m.appendInputRules(args, m.DNSServers, m.HostTCPServices, m.HostUDPServices)
 	if err != nil {
 		return fmt.Errorf("input rules: %s", err)
 	}
@@ -178,7 +179,12 @@ func (m *NetOut) addC2CLogging(c IpTablesFullChain) IpTablesFullChain {
 	return c
 }
 
-func (m *NetOut) appendInputRules(args []IpTablesFullChain, dnsServers []string, hostTCPServices []string) ([]IpTablesFullChain, error) {
+func (m *NetOut) appendInputRules(
+	args []IpTablesFullChain,
+	dnsServers []string,
+	hostTCPServices []string,
+	hostUDPServices []string,
+) ([]IpTablesFullChain, error) {
 	args[0].Rules = []rules.IPTablesRule{
 		rules.NewInputRelatedEstablishedRule(),
 	}
@@ -200,6 +206,20 @@ func (m *NetOut) appendInputRules(args []IpTablesFullChain, dnsServers []string,
 		}
 
 		args[0].Rules = append(args[0].Rules, rules.NewInputAllowRule("tcp", host, portInt))
+	}
+
+	for _, hostService := range hostUDPServices {
+		host, port, err := net.SplitHostPort(hostService)
+		if err != nil {
+			return nil, fmt.Errorf("host udp services: %s", err)
+		}
+
+		portInt, err := strconv.Atoi(port)
+		if err != nil {
+			return nil, fmt.Errorf("host udp services: %s", err)
+		}
+
+		args[0].Rules = append(args[0].Rules, rules.NewInputAllowRule("udp", host, portInt))
 	}
 
 	args[0].Rules = append(args[0].Rules, rules.NewInputDefaultRejectRule())
