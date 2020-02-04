@@ -436,6 +436,32 @@ var _ = Describe("Netout", func() {
 				Expect(err).To(MatchError(MatchRegexp("host udp services.*parsing")))
 			})
 		})
+
+		Context("when deny networks are specified", func() {
+			BeforeEach(func() {
+				netOut.DenyNetworks = []string{"172.16.0.0/12", "192.168.0.0/16"}
+			})
+
+			It("returns an error for an incorrectly formatted deny network", func() {
+				netOut.DenyNetworks = []string{"a.b.c.d", "192.168.0.0/16"}
+				err := netOut.Initialize()
+				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: a.b.c.d")))
+
+				netOut.DenyNetworks = []string{"1.2.3.4/abc", "192.168.0.0/16"}
+				err = netOut.Initialize()
+				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: 1.2.3.4/abc")))
+			})
+
+			It("returns an error for an improperly bounded deny network", func() {
+				netOut.DenyNetworks = []string{"256.256.256.1024/24", "192.168.0.0/16"}
+				err := netOut.Initialize()
+				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: 256.256.256.1024/24")))
+
+				netOut.DenyNetworks = []string{"172.16.0.0/35", "192.168.0.0/16"}
+				err = netOut.Initialize()
+				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: 172.16.0.0/35")))
+			})
+		})
 	})
 
 	Describe("Cleanup", func() {
@@ -668,6 +694,30 @@ var _ = Describe("Netout", func() {
 				Expect(convertedRules).To(Equal(netOutRules))
 				Expect(logChainName).To(Equal("some-other-chain-name"))
 				Expect(logging).To(Equal(true))
+			})
+		})
+
+		Context("when deny networks are specified", func() {
+			BeforeEach(func() {
+				netOut.DenyNetworks = []string{"172.16.0.0/12", "192.168.0.0/16"}
+			})
+			It("prepends allow rules to the container's netout chain", func() {
+				err := netOut.BulkInsertRules(netOutRules)
+				Expect(err).NotTo(HaveOccurred())
+
+				_, _, _, rulespec := ipTables.BulkInsertArgsForCall(0)
+
+				rulesWithDenyNetworksAndDefaults := append(
+					genericRules,
+					[]rules.IPTablesRule{
+						{"-d", "172.16.0.0/12", "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
+						{"-d", "192.168.0.0/16", "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
+						{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
+						{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
+					}...,
+				)
+
+				Expect(rulespec).To(Equal(rulesWithDenyNetworksAndDefaults))
 			})
 		})
 	})

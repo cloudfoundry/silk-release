@@ -36,6 +36,7 @@ type NetOut struct {
 	ContainerIP           string
 	HostTCPServices       []string
 	HostUDPServices       []string
+	DenyNetworks          []string
 	DNSServers            []string
 }
 
@@ -45,7 +46,17 @@ func (m *NetOut) Initialize() error {
 		return err
 	}
 
-	args, err = m.appendInputRules(args, m.DNSServers, m.HostTCPServices, m.HostUDPServices)
+	err = m.validateDenyNetworks()
+	if err != nil {
+		return err
+	}
+
+	args, err = m.appendInputRules(
+		args,
+		m.DNSServers,
+		m.HostTCPServices,
+		m.HostUDPServices,
+	)
 	if err != nil {
 		return fmt.Errorf("input rules: %s", err)
 	}
@@ -76,6 +87,7 @@ func (m *NetOut) BulkInsertRules(netOutRules []garden.NetOutRule) error {
 	}
 
 	ruleSpec := m.Converter.BulkConvert(netOutRules, logChain, m.ASGLogging)
+	ruleSpec = append(ruleSpec, m.denyNetworksRules()...)
 	ruleSpec = append(ruleSpec, []rules.IPTablesRule{
 		{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
 		{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
@@ -225,4 +237,34 @@ func (m *NetOut) appendInputRules(
 	args[0].Rules = append(args[0].Rules, rules.NewInputDefaultRejectRule())
 
 	return args, nil
+}
+
+func (m *NetOut) validateDenyNetworks() error {
+	for destinationIndex, destination := range m.DenyNetworks {
+		_, validatedDestination, err := net.ParseCIDR(destination)
+
+		if err != nil {
+			return fmt.Errorf("deny networks: %s", err)
+		}
+
+		m.DenyNetworks[destinationIndex] = fmt.Sprintf("%s", validatedDestination)
+	}
+
+	return nil
+}
+
+func (m *NetOut) denyNetworksRules() []rules.IPTablesRule {
+	denyRules := []rules.IPTablesRule{}
+
+	for _, denyNetwork := range m.DenyNetworks {
+		rule := rules.IPTablesRule{
+			"-d", denyNetwork,
+			"--jump", "REJECT",
+			"--reject-with", "icmp-port-unreachable",
+		}
+
+		denyRules = append(denyRules, rule)
+	}
+
+	return denyRules
 }

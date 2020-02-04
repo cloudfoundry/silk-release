@@ -864,6 +864,52 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 				})
 			})
+
+			Context("when deny networks are configured", func() {
+				BeforeEach(func() {
+					inputStruct.DenyNetworks = []string{"172.16.0.0/12", "192.168.0.0/16"}
+					input = GetInput(inputStruct)
+
+					cmd = cniCommand("ADD", input)
+				})
+				It("writes input chain rules for deny networks", func() {
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(0))
+
+					By("checking that the default filter rules are installed before the deny")
+					Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+						`-A ` + netoutChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
+						`-A ` + netoutChainName + ` -p tcp -m state --state INVALID -j DROP`,
+
+						`-A ` + netoutChainName + ` -d 192.168.0.0/16 -j REJECT --reject-with icmp-port-unreachable`,
+						`-A ` + netoutChainName + ` -d 172.16.0.0/12 -j REJECT --reject-with icmp-port-unreachable`,
+					}))
+
+					By("checking that the default filter rules are installed before the container rules")
+					Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+						`-A ` + netoutChainName + ` -d 192.168.0.0/16 -j REJECT --reject-with icmp-port-unreachable`,
+						`-A ` + netoutChainName + ` -d 172.16.0.0/12 -j REJECT --reject-with icmp-port-unreachable`,
+
+						`-A ` + netoutChainName + ` -p icmp -m iprange --dst-range 5.5.5.5-6.6.6.6 -m icmp --icmp-type 8/0 -j ACCEPT`,
+						`-A ` + netoutChainName + ` -p udp -m iprange --dst-range 11.11.11.11-22.22.22.22 -m udp --dport 53:54 -j ACCEPT`,
+						`-A ` + netoutChainName + ` -p tcp -m iprange --dst-range 8.8.8.8-9.9.9.9 -m tcp --dport 53:54 -j ACCEPT`,
+						`-A ` + netoutChainName + ` -m iprange --dst-range 3.3.3.3-4.4.4.4 -j ACCEPT`,
+
+						`-A ` + netoutChainName + ` -j REJECT --reject-with icmp-port-unreachable`,
+					}))
+
+					By("checking that the final rules are installed after the container rules")
+					Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+						`-A ` + netoutChainName + ` -p icmp -m iprange --dst-range 5.5.5.5-6.6.6.6 -m icmp --icmp-type 8/0 -j ACCEPT`,
+						`-A ` + netoutChainName + ` -p udp -m iprange --dst-range 11.11.11.11-22.22.22.22 -m udp --dport 53:54 -j ACCEPT`,
+						`-A ` + netoutChainName + ` -p tcp -m iprange --dst-range 8.8.8.8-9.9.9.9 -m tcp --dport 53:54 -j ACCEPT`,
+						`-A ` + netoutChainName + ` -m iprange --dst-range 3.3.3.3-4.4.4.4 -j ACCEPT`,
+
+						`-A ` + netoutChainName + ` -j REJECT --reject-with icmp-port-unreachable`,
+					}))
+				})
+			})
 		})
 
 		Context("When the delegate plugin returns an error", func() {
