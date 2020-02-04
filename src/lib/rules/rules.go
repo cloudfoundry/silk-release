@@ -253,6 +253,14 @@ func NewInputAllowRule(protocol, destination string, destPort int) IPTablesRule 
 	}
 }
 
+func NewInputRejectRule(destinationIP string) IPTablesRule {
+	return IPTablesRule{
+		"-d", destinationIP,
+		"--jump", "REJECT",
+		"--reject-with", "icmp-port-unreachable",
+	}
+}
+
 func NewInputDefaultRejectRule() IPTablesRule {
 	return IPTablesRule{
 		"--jump", "REJECT",

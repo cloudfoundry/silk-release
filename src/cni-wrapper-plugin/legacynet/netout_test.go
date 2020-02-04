@@ -436,6 +436,79 @@ var _ = Describe("Netout", func() {
 				Expect(err).To(MatchError(MatchRegexp("host udp services.*parsing")))
 			})
 		})
+
+		Context("when deny networks are specified", func() {
+			BeforeEach(func() {
+				netOut.DenyNetworks = []string{"172.16.0.0/12", "192.168.0.0/16"}
+			})
+
+			It("creates rules to deny access", func() {
+				err := netOut.Initialize()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ipTables.BulkAppendCallCount()).To(Equal(7))
+
+				table, chain, rulespec := ipTables.BulkAppendArgsForCall(3)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("input-some-container-handle"))
+				Expect(rulespec).To(Equal([]rules.IPTablesRule{
+					{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
+
+					{"-d", "172.16.0.0/12", "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
+					{"-d", "192.168.0.0/16", "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
+
+					{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
+				}))
+			})
+
+			It("returns an error for an incorrectly formatted deny network", func() {
+				netOut.DenyNetworks = []string{"a.b.c.d", "192.168.0.0/16"}
+				err := netOut.Initialize()
+				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: a.b.c.d")))
+
+				netOut.DenyNetworks = []string{"1.2.3.4/abc", "192.168.0.0/16"}
+				err = netOut.Initialize()
+				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: 1.2.3.4/abc")))
+			})
+
+			It("returns an error for an improperly bounded deny network", func() {
+				netOut.DenyNetworks = []string{"256.256.256.1024/24", "192.168.0.0/16"}
+				err := netOut.Initialize()
+				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: 256.256.256.1024/24")))
+
+				netOut.DenyNetworks = []string{"172.16.0.0/35", "192.168.0.0/16"}
+				err = netOut.Initialize()
+				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: 172.16.0.0/35")))
+			})
+
+			Context("when dns servers are specified", func() {
+				BeforeEach(func() {
+					netOut.DNSServers = []string{"8.8.4.4", "1.2.3.4"}
+				})
+
+				It("creates rules to deny access before the dns servers", func() {
+					err := netOut.Initialize()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(ipTables.BulkAppendCallCount()).To(Equal(7))
+
+					table, chain, rulespec := ipTables.BulkAppendArgsForCall(3)
+					Expect(table).To(Equal("filter"))
+					Expect(chain).To(Equal("input-some-container-handle"))
+					Expect(rulespec).To(Equal([]rules.IPTablesRule{
+						{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
+
+						{"-d", "172.16.0.0/12", "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
+						{"-d", "192.168.0.0/16", "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
+
+						{"-p", "tcp", "-d", "8.8.4.4", "--destination-port", "53", "--jump", "ACCEPT"},
+						{"-p", "udp", "-d", "8.8.4.4", "--destination-port", "53", "--jump", "ACCEPT"},
+						{"-p", "tcp", "-d", "1.2.3.4", "--destination-port", "53", "--jump", "ACCEPT"},
+						{"-p", "udp", "-d", "1.2.3.4", "--destination-port", "53", "--jump", "ACCEPT"},
+
+						{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
+					}))
+				})
+			})
+		})
 	})
 
 	Describe("Cleanup", func() {

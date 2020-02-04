@@ -569,6 +569,27 @@ var _ = Describe("CniWrapperPlugin", func() {
 			})
 		})
 
+		Context("when deny networks are configured", func() {
+			BeforeEach(func() {
+				inputStruct.DenyNetworks = []string{"172.16.0.0/12", "192.168.0.0/16"}
+				input = GetInput(inputStruct)
+
+				cmd = cniCommand("ADD", input)
+			})
+			It("writes input chain rules for deny networks", func() {
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+
+				Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+					"-A " + inputChainName + " -m state --state RELATED,ESTABLISHED -j ACCEPT",
+					"-A " + inputChainName + " -d 172.16.0.0/12 -j REJECT --reject-with icmp-port-unreachable",
+					"-A " + inputChainName + " -d 192.168.0.0/16 -j REJECT --reject-with icmp-port-unreachable",
+					"-A " + inputChainName + " -j REJECT --reject-with icmp-port-unreachable",
+				}))
+			})
+		})
+
 		Context("when no runtime config is passed in", func() {
 			BeforeEach(func() {
 				inputStruct.RuntimeConfig = lib.RuntimeConfig{}

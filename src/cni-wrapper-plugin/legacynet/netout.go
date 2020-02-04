@@ -36,6 +36,7 @@ type NetOut struct {
 	ContainerIP           string
 	HostTCPServices       []string
 	HostUDPServices       []string
+	DenyNetworks          []string
 	DNSServers            []string
 }
 
@@ -45,7 +46,13 @@ func (m *NetOut) Initialize() error {
 		return err
 	}
 
-	args, err = m.appendInputRules(args, m.DNSServers, m.HostTCPServices, m.HostUDPServices)
+	args, err = m.appendInputRules(
+		args,
+		m.DenyNetworks,
+		m.DNSServers,
+		m.HostTCPServices,
+		m.HostUDPServices,
+	)
 	if err != nil {
 		return fmt.Errorf("input rules: %s", err)
 	}
@@ -181,12 +188,25 @@ func (m *NetOut) addC2CLogging(c IpTablesFullChain) IpTablesFullChain {
 
 func (m *NetOut) appendInputRules(
 	args []IpTablesFullChain,
+	denyNetworks []string,
 	dnsServers []string,
 	hostTCPServices []string,
 	hostUDPServices []string,
 ) ([]IpTablesFullChain, error) {
 	args[0].Rules = []rules.IPTablesRule{
 		rules.NewInputRelatedEstablishedRule(),
+	}
+
+	for _, destination := range denyNetworks {
+		_, validatedDestination, err := net.ParseCIDR(destination)
+
+		if err != nil {
+			return nil, fmt.Errorf("deny networks: %s", err)
+		}
+
+		destination = fmt.Sprintf("%s", validatedDestination)
+
+		args[0].Rules = append(args[0].Rules, rules.NewInputRejectRule(destination))
 	}
 
 	for _, dnsServer := range dnsServers {
