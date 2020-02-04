@@ -48,10 +48,10 @@ func (m *NetOut) Initialize() error {
 
 	args, err = m.appendInputRules(
 		args,
-		m.DenyNetworks,
 		m.DNSServers,
 		m.HostTCPServices,
 		m.HostUDPServices,
+		m.DenyNetworks,
 	)
 	if err != nil {
 		return fmt.Errorf("input rules: %s", err)
@@ -188,25 +188,13 @@ func (m *NetOut) addC2CLogging(c IpTablesFullChain) IpTablesFullChain {
 
 func (m *NetOut) appendInputRules(
 	args []IpTablesFullChain,
-	denyNetworks []string,
 	dnsServers []string,
 	hostTCPServices []string,
 	hostUDPServices []string,
+	denyNetworks []string,
 ) ([]IpTablesFullChain, error) {
 	args[0].Rules = []rules.IPTablesRule{
 		rules.NewInputRelatedEstablishedRule(),
-	}
-
-	for _, destination := range denyNetworks {
-		_, validatedDestination, err := net.ParseCIDR(destination)
-
-		if err != nil {
-			return nil, fmt.Errorf("deny networks: %s", err)
-		}
-
-		destination = fmt.Sprintf("%s", validatedDestination)
-
-		args[0].Rules = append(args[0].Rules, rules.NewInputRejectRule(destination))
 	}
 
 	for _, dnsServer := range dnsServers {
@@ -240,6 +228,18 @@ func (m *NetOut) appendInputRules(
 		}
 
 		args[0].Rules = append(args[0].Rules, rules.NewInputAllowRule("udp", host, portInt))
+	}
+
+	for _, destination := range denyNetworks {
+		_, validatedDestination, err := net.ParseCIDR(destination)
+
+		if err != nil {
+			return nil, fmt.Errorf("deny networks: %s", err)
+		}
+
+		destination = fmt.Sprintf("%s", validatedDestination)
+
+		args[0].Rules = append(args[0].Rules, rules.NewInputRejectRule(destination))
 	}
 
 	args[0].Rules = append(args[0].Rules, rules.NewInputDefaultRejectRule())

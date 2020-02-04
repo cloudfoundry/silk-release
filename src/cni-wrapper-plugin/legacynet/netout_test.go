@@ -485,7 +485,7 @@ var _ = Describe("Netout", func() {
 					netOut.DNSServers = []string{"8.8.4.4", "1.2.3.4"}
 				})
 
-				It("creates rules to deny access before the dns servers", func() {
+				It("creates rules to deny access after the dns servers", func() {
 					err := netOut.Initialize()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(ipTables.BulkAppendCallCount()).To(Equal(7))
@@ -496,13 +496,13 @@ var _ = Describe("Netout", func() {
 					Expect(rulespec).To(Equal([]rules.IPTablesRule{
 						{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
 
-						{"-d", "172.16.0.0/12", "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
-						{"-d", "192.168.0.0/16", "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
-
 						{"-p", "tcp", "-d", "8.8.4.4", "--destination-port", "53", "--jump", "ACCEPT"},
 						{"-p", "udp", "-d", "8.8.4.4", "--destination-port", "53", "--jump", "ACCEPT"},
 						{"-p", "tcp", "-d", "1.2.3.4", "--destination-port", "53", "--jump", "ACCEPT"},
 						{"-p", "udp", "-d", "1.2.3.4", "--destination-port", "53", "--jump", "ACCEPT"},
+
+						{"-d", "172.16.0.0/12", "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
+						{"-d", "192.168.0.0/16", "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
 
 						{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
 					}))
