@@ -269,14 +269,14 @@ var _ = Describe("Netout", func() {
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("input-some-container-handle"))
 				Expect(rulespec).To(Equal([]rules.IPTablesRule{
-					{"-m", "state", "--state", "RELATED,ESTABLISHED",
-						"--jump", "ACCEPT"},
+					{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
+
 					{"-p", "tcp", "-d", "8.8.4.4", "--destination-port", "53", "--jump", "ACCEPT"},
 					{"-p", "udp", "-d", "8.8.4.4", "--destination-port", "53", "--jump", "ACCEPT"},
 					{"-p", "tcp", "-d", "1.2.3.4", "--destination-port", "53", "--jump", "ACCEPT"},
 					{"-p", "udp", "-d", "1.2.3.4", "--destination-port", "53", "--jump", "ACCEPT"},
-					{"--jump", "REJECT",
-						"--reject-with", "icmp-port-unreachable"},
+
+					{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
 				}))
 			})
 
@@ -383,12 +383,12 @@ var _ = Describe("Netout", func() {
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("input-some-container-handle"))
 				Expect(rulespec).To(Equal([]rules.IPTablesRule{
-					{"-m", "state", "--state", "RELATED,ESTABLISHED",
-						"--jump", "ACCEPT"},
+					{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
+
 					{"-p", "tcp", "-d", "169.125.0.4", "--destination-port", "9001", "--jump", "ACCEPT"},
 					{"-p", "tcp", "-d", "169.125.0.9", "--destination-port", "8080", "--jump", "ACCEPT"},
-					{"--jump", "REJECT",
-						"--reject-with", "icmp-port-unreachable"},
+
+					{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
 				}))
 			})
 
@@ -417,12 +417,12 @@ var _ = Describe("Netout", func() {
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("input-some-container-handle"))
 				Expect(rulespec).To(Equal([]rules.IPTablesRule{
-					{"-m", "state", "--state", "RELATED,ESTABLISHED",
-						"--jump", "ACCEPT"},
+					{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
+
 					{"-p", "udp", "-d", "169.125.0.4", "--destination-port", "9001", "--jump", "ACCEPT"},
 					{"-p", "udp", "-d", "169.125.0.9", "--destination-port", "8080", "--jump", "ACCEPT"},
-					{"--jump", "REJECT",
-						"--reject-with", "icmp-port-unreachable"},
+
+					{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
 				}))
 			})
 
