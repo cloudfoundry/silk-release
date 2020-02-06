@@ -867,7 +867,11 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 			Context("when deny networks are configured", func() {
 				BeforeEach(func() {
-					inputStruct.DenyNetworks = []string{"172.16.0.0/12", "192.168.0.0/16"}
+					inputStruct.Metadata["container_workload"] = "app"
+					inputStruct.DenyNetworks = map[string][]string{
+						"all": []string{"172.16.0.0/12"},
+						"app": []string{"192.168.0.0/16"},
+					}
 					input = GetInput(inputStruct)
 
 					cmd = cniCommand("ADD", input)

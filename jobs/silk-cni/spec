@@ -75,7 +75,13 @@ properties:
 
   deny_networks:
     description: "List of CIDR blocks to which containers will be denied access"
-    default: []
+    default: {}
     example: |
-      - 172.16.0.0/12
-      - 192.168.0.0/16
+      all:
+        - 172.16.0.0/12
+      app:
+        - 192.161.0.0/16
+      staging:
+        - 192.162.0.0/16
+      task:
+        - 192.163.0.0/16

@@ -36,8 +36,9 @@ type NetOut struct {
 	ContainerIP           string
 	HostTCPServices       []string
 	HostUDPServices       []string
-	DenyNetworks          []string
+	DenyNetworks          map[string][]string
 	DNSServers            []string
+	ContainerWorkload     string
 }
 
 func (m *NetOut) Initialize() error {
@@ -240,14 +241,16 @@ func (m *NetOut) appendInputRules(
 }
 
 func (m *NetOut) validateDenyNetworks() error {
-	for destinationIndex, destination := range m.DenyNetworks {
-		_, validatedDestination, err := net.ParseCIDR(destination)
+	for workloadName, denyNetworks := range m.DenyNetworks {
+		for destinationIndex, destination := range denyNetworks {
+			_, validatedDestination, err := net.ParseCIDR(destination)
 
-		if err != nil {
-			return fmt.Errorf("deny networks: %s", err)
+			if err != nil {
+				return fmt.Errorf("deny networks: %s", err)
+			}
+
+			m.DenyNetworks[workloadName][destinationIndex] = fmt.Sprintf("%s", validatedDestination)
 		}
-
-		m.DenyNetworks[destinationIndex] = fmt.Sprintf("%s", validatedDestination)
 	}
 
 	return nil
@@ -256,14 +259,16 @@ func (m *NetOut) validateDenyNetworks() error {
 func (m *NetOut) denyNetworksRules() []rules.IPTablesRule {
 	denyRules := []rules.IPTablesRule{}
 
-	for _, denyNetwork := range m.DenyNetworks {
-		rule := rules.IPTablesRule{
-			"-d", denyNetwork,
-			"--jump", "REJECT",
-			"--reject-with", "icmp-port-unreachable",
+	if denyNetworks, present := m.DenyNetworks["all"]; present {
+		for _, denyNetwork := range denyNetworks {
+			denyRules = append(denyRules, rules.NewInputRejectRule(denyNetwork))
 		}
+	}
 
-		denyRules = append(denyRules, rule)
+	if denyNetworks, present := m.DenyNetworks[m.ContainerWorkload]; present {
+		for _, denyNetwork := range denyNetworks {
+			denyRules = append(denyRules, rules.NewInputRejectRule(denyNetwork))
+		}
 	}
 
 	return denyRules
