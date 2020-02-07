@@ -28,7 +28,6 @@ type WrapperConfig struct {
 	DNSServers                      []string               `json:"dns_servers"`
 	HostTCPServices                 []string               `json:"host_tcp_services"`
 	HostUDPServices                 []string               `json:"host_udp_services"`
-	DenyNetworks                    map[string][]string    `json:"deny_networks"`
 	UnderlayIPs                     []string               `json:"underlay_ips"`
 	TemporaryUnderlayInterfaceNames []string               `json:"temporary_underlay_interface_names"`
 	IPTablesASGLogging              bool                   `json:"iptables_asg_logging"`

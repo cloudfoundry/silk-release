@@ -49,7 +49,6 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	containerIP := result030.IPs[0].Address.IP
-	var containerWorkload string
 
 	// Add container metadata info
 	store := &datastore.Store{
@@ -71,9 +70,6 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 	if err := json.Unmarshal(args.StdinData, &cniAddData); err != nil {
 		return err // not tested, this should be impossible
-	}
-	if workload, present := cniAddData.Metadata["container_workload"]; present {
-		containerWorkload, _ = workload.(string)
 	}
 
 	if err := store.Add(args.ContainerID, containerIP.String(), cniAddData.Metadata); err != nil {
@@ -138,9 +134,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		ContainerIP:           containerIP.String(),
 		HostTCPServices:       cfg.HostTCPServices,
 		HostUDPServices:       cfg.HostUDPServices,
-		DenyNetworks:          cfg.DenyNetworks,
 		DNSServers:            localDNSServers,
-		ContainerWorkload:     containerWorkload,
 	}
 	if err := netOutProvider.Initialize(); err != nil {
 		return fmt.Errorf("initialize net out: %s", err)

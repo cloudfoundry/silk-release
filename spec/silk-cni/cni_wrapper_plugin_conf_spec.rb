@@ -30,11 +30,7 @@ module Bosh::Template::Test
         'iptables_denied_logs_per_sec' => 2,
         'iptables_accepted_udp_logs_per_sec' => 3,
         'host_tcp_services' => ['169.254.0.2:9001', '169.254.0.2:9002'],
-        'host_udp_services' => ['169.254.0.2:9003', '169.254.0.2:9004'],
-        'deny_networks' => {
-          'app' => ['172.16.0.0/12', '192.168.0.0/16'],
-          'task' => ['172.16.0.0/12', '192.168.0.0/16'],
-        }
+        'host_udp_services' => ['169.254.0.2:9003', '169.254.0.2:9004']
       }
     end
     let(:job) {release.job('silk-cni')}
@@ -72,10 +68,6 @@ module Bosh::Template::Test
             'policy_agent_force_poll_address' => '127.0.0.1:5555',
             'host_tcp_services' => ['169.254.0.2:9001', '169.254.0.2:9002'],
             'host_udp_services' => ['169.254.0.2:9003', '169.254.0.2:9004'],
-            'deny_networks' => {
-              'app' => ['172.16.0.0/12', '192.168.0.0/16'],
-              'task' => ['172.16.0.0/12', '192.168.0.0/16'],
-            },
             'delegate' => {
               'cniVersion' => '0.3.1',
               'name' => 'silk',
