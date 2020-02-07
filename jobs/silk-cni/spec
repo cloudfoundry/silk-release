@@ -72,3 +72,16 @@ properties:
     example: |
       - 169.254.0.2:9001
       - 169.254.0.2:9002
+
+  deny_networks:
+    description: "List of CIDR blocks to which containers will be denied access"
+    default: {}
+    example: |
+      all:
+        - 172.16.0.0/12
+      app:
+        - 192.161.0.0/16
+      staging:
+        - 192.162.0.0/16
+      task:
+        - 192.163.0.0/16
