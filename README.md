@@ -24,7 +24,7 @@ For help or questions with this release or any of its submodules, you can reach 
 
 ## Project links
 - [Engineering backlog](https://www.pivotaltracker.com/n/projects/2245594)
-- [CI dashboard](http://dashboard.c2c.cf-app.com) and [config](https://github.com/cloudfoundry-incubator/cf-networking-ci)
+- [CI dashboard](https://networking.ci.cf-app.com/teams/ga/pipelines/cf-networking) and [config](https://github.com/cloudfoundry/cf-networking-release/blob/develop/ci/pipelines/cf-networking.yml)
 
 ## Known Issues
 For known issues related to both `silk-release` and `cf-networking-release` you can find them here:
