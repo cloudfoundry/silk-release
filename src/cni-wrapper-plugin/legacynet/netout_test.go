@@ -11,6 +11,7 @@ import (
 	"lib/rules"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -269,14 +270,14 @@ var _ = Describe("Netout", func() {
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("input-some-container-handle"))
 				Expect(rulespec).To(Equal([]rules.IPTablesRule{
-					{"-m", "state", "--state", "RELATED,ESTABLISHED",
-						"--jump", "ACCEPT"},
+					{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
+
 					{"-p", "tcp", "-d", "8.8.4.4", "--destination-port", "53", "--jump", "ACCEPT"},
 					{"-p", "udp", "-d", "8.8.4.4", "--destination-port", "53", "--jump", "ACCEPT"},
 					{"-p", "tcp", "-d", "1.2.3.4", "--destination-port", "53", "--jump", "ACCEPT"},
 					{"-p", "udp", "-d", "1.2.3.4", "--destination-port", "53", "--jump", "ACCEPT"},
-					{"--jump", "REJECT",
-						"--reject-with", "icmp-port-unreachable"},
+
+					{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
 				}))
 			})
 
@@ -383,12 +384,12 @@ var _ = Describe("Netout", func() {
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("input-some-container-handle"))
 				Expect(rulespec).To(Equal([]rules.IPTablesRule{
-					{"-m", "state", "--state", "RELATED,ESTABLISHED",
-						"--jump", "ACCEPT"},
+					{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
+
 					{"-p", "tcp", "-d", "169.125.0.4", "--destination-port", "9001", "--jump", "ACCEPT"},
 					{"-p", "tcp", "-d", "169.125.0.9", "--destination-port", "8080", "--jump", "ACCEPT"},
-					{"--jump", "REJECT",
-						"--reject-with", "icmp-port-unreachable"},
+
+					{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
 				}))
 			})
 
@@ -417,12 +418,12 @@ var _ = Describe("Netout", func() {
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("input-some-container-handle"))
 				Expect(rulespec).To(Equal([]rules.IPTablesRule{
-					{"-m", "state", "--state", "RELATED,ESTABLISHED",
-						"--jump", "ACCEPT"},
+					{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
+
 					{"-p", "udp", "-d", "169.125.0.4", "--destination-port", "9001", "--jump", "ACCEPT"},
 					{"-p", "udp", "-d", "169.125.0.9", "--destination-port", "8080", "--jump", "ACCEPT"},
-					{"--jump", "REJECT",
-						"--reject-with", "icmp-port-unreachable"},
+
+					{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
 				}))
 			})
 
@@ -434,6 +435,37 @@ var _ = Describe("Netout", func() {
 				netOut.HostUDPServices = []string{"169.125.0.123:port"}
 				err = netOut.Initialize()
 				Expect(err).To(MatchError(MatchRegexp("host udp services.*parsing")))
+			})
+		})
+
+		Context("when deny networks are specified", func() {
+			It("returns an error for an incorrectly formatted deny network", func() {
+				netOut.DenyNetworks = legacynet.DenyNetworks{
+					Always: []string{"a.b.c.d", "192.168.0.0/16"},
+				}
+
+				err := netOut.Initialize()
+				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: a.b.c.d")))
+
+				netOut.DenyNetworks = legacynet.DenyNetworks{
+					Always: []string{"1.2.3.4/abc", "192.168.0.0/16"},
+				}
+				err = netOut.Initialize()
+				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: 1.2.3.4/abc")))
+			})
+
+			It("returns an error for an improperly bounded deny network", func() {
+				netOut.DenyNetworks = legacynet.DenyNetworks{
+					Running: []string{"256.256.256.1024/24", "192.168.0.0/16"},
+				}
+				err := netOut.Initialize()
+				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: 256.256.256.1024/24")))
+
+				netOut.DenyNetworks = legacynet.DenyNetworks{
+					Running: []string{"172.16.0.0/35", "192.168.0.0/16"},
+				}
+				err = netOut.Initialize()
+				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: 172.16.0.0/35")))
 			})
 		})
 	})
@@ -669,6 +701,73 @@ var _ = Describe("Netout", func() {
 				Expect(logChainName).To(Equal("some-other-chain-name"))
 				Expect(logging).To(Equal(true))
 			})
+		})
+
+		Context("when deny networks are specified", func() {
+			BeforeEach(func() {
+				netOut.DenyNetworks = legacynet.DenyNetworks{}
+			})
+
+			DescribeTable(
+				"it should deny the workload networks and the 'all' networks",
+				func(workload string, denyNetworks legacynet.DenyNetworks) {
+					netOut.ContainerWorkload = workload
+					netOut.DenyNetworks = denyNetworks
+					netOut.DenyNetworks.Always = []string{"172.16.0.0/12"}
+
+					err := netOut.BulkInsertRules(netOutRules)
+					Expect(err).NotTo(HaveOccurred())
+
+					_, _, _, rulespec := ipTables.BulkInsertArgsForCall(0)
+
+					rulesWithDenyNetworksAndDefaults := append(
+						genericRules,
+						[]rules.IPTablesRule{
+							{"-d", "172.16.0.0/12", "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
+							{"-d", "192.168.0.0/16", "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
+							{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
+							{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
+						}...,
+					)
+
+					Expect(rulespec).To(Equal(rulesWithDenyNetworksAndDefaults))
+				},
+				Entry("when the workload is an app", "app", legacynet.DenyNetworks{Running: []string{"192.168.0.0/16"}}),
+				Entry("when the workload is a task", "task", legacynet.DenyNetworks{Running: []string{"192.168.0.0/16"}}),
+				Entry("when the workload is staging", "staging", legacynet.DenyNetworks{Staging: []string{"192.168.0.0/16"}}),
+			)
+
+			DescribeTable(
+				"it should only deny the workload networks and the 'all' networks",
+				func(workload string, expectedDenyNetwork string) {
+					netOut.ContainerWorkload = workload
+					netOut.DenyNetworks = legacynet.DenyNetworks{
+						Always:  []string{"1.1.1.1/32"},
+						Running: []string{"2.2.2.2/32"},
+						Staging: []string{"3.3.3.3/32"},
+					}
+
+					err := netOut.BulkInsertRules(netOutRules)
+					Expect(err).NotTo(HaveOccurred())
+
+					_, _, _, rulespec := ipTables.BulkInsertArgsForCall(0)
+
+					rulesWithDenyNetworksAndDefaults := append(
+						genericRules,
+						[]rules.IPTablesRule{
+							{"-d", "1.1.1.1/32", "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
+							{"-d", expectedDenyNetwork, "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
+							{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
+							{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
+						}...,
+					)
+
+					Expect(rulespec).To(Equal(rulesWithDenyNetworksAndDefaults))
+				},
+				Entry("when the workload is an app", "app", "2.2.2.2/32"),
+				Entry("when the workload is a task", "task", "2.2.2.2/32"),
+				Entry("when the workload is staging", "staging", "3.3.3.3/32"),
+			)
 		})
 	})
 })

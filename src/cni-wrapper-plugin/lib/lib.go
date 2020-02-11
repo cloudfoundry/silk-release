@@ -17,6 +17,12 @@ type RuntimeConfig struct {
 	NetOutRules  []garden.NetOutRule `json:"netOutRules"`
 }
 
+type DenyNetworksConfig struct {
+	Always  []string `json:"always"`
+	Running []string `json:"running"`
+	Staging []string `json:"staging"`
+}
+
 type WrapperConfig struct {
 	Datastore                       string                 `json:"datastore"`
 	DatastoreFileOwner              string                 `json:"datastore_file_owner"`
@@ -28,6 +34,7 @@ type WrapperConfig struct {
 	DNSServers                      []string               `json:"dns_servers"`
 	HostTCPServices                 []string               `json:"host_tcp_services"`
 	HostUDPServices                 []string               `json:"host_udp_services"`
+	DenyNetworks                    DenyNetworksConfig     `json:"deny_networks"`
 	UnderlayIPs                     []string               `json:"underlay_ips"`
 	TemporaryUnderlayInterfaceNames []string               `json:"temporary_underlay_interface_names"`
 	IPTablesASGLogging              bool                   `json:"iptables_asg_logging"`

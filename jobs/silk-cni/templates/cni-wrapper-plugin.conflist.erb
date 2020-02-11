@@ -1,5 +1,6 @@
 <% unless p('disable') %>
 <%=
+  require 'ipaddr'
   require 'json'
 
   def compute_mtu
@@ -21,6 +22,22 @@
       end
 
       return no_masquerade_cidr_range
+    end
+  end
+
+  if_p('deny_networks') do |deny_networks|
+    deny_networks.each do |network, destinations|
+      destinations.each do |dest|
+        begin
+          validated_dest = IPAddr.new(dest)
+
+          unless validated_dest.ipv4?
+            raise "Invalid deny_networks.#{network} entry #{dest} not an IPv4 address"
+          end
+        rescue IPAddr::Error => e
+          raise "Invalid deny_networks.#{network} entry #{dest} #{e}"
+        end
+      end
     end
   end
 
@@ -47,6 +64,11 @@
       'dns_servers' => p('dns_servers'),
       'host_tcp_services' => p('host_tcp_services'),
       'host_udp_services' => p('host_udp_services'),
+      'deny_networks' => {
+        'always' => p('deny_networks.always'),
+        'running' => p('deny_networks.running'),
+        'staging' => p('deny_networks.staging'),
+      },
       'delegate' => {
         'cniVersion' => '0.3.1',
         'name' => 'silk',

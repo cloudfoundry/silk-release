@@ -72,3 +72,27 @@ properties:
     example: |
       - 169.254.0.2:9001
       - 169.254.0.2:9002
+
+  deny_networks.always:
+    default: []
+    description: |
+      List of CIDR blocks to which all containers will be denied access, regardless of security groups.
+      This can severely impact the network connectivity of applications.
+      Use with extreme caution and at your own risk.
+      These rules apply to all containers.
+
+  deny_networks.running:
+    default: []
+    description: |
+      List of CIDR blocks to which all containers will be denied access, regardless of security groups.
+      This can severely impact the network connectivity of applications.
+      Use with extreme caution and at your own risk.
+      These rules apply to running scheduled containers: apps and tasks.
+
+  deny_networks.staging:
+    default: []
+    description: |
+      List of CIDR blocks to which all containers will be denied access, regardless of security groups.
+      This can severely impact the network connectivity of applications.
+      Use with extreme caution and at your own risk.
+      These rules apply during the staging process.
