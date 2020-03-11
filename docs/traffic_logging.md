@@ -3,7 +3,7 @@
 ## Enabling kernel logging
 
 * When `iptables_logging` is set to `true` on the
-`vxlan_policy_agent` job, C2C iptables logs will be written to
+`vxlan-policy-agent` job, C2C iptables logs will be written to
 `/var/log/kern.log`.
 * When `iptables_logging` is set to `true` on
 the `silk-cni` job, ASG iptables logs will be written to
