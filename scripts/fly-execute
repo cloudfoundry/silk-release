@@ -17,4 +17,4 @@ DIR=$(cd $(dirname $0)/.. && pwd)
 fly -t $1 execute \
   --privileged \
   --input silk=${DIR} \
-  --config ${DIR}/ci/test-$db.yml
+  --config ${DIR}/ci/tasks/test-$db/task.yml
