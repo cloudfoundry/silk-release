@@ -89,3 +89,10 @@ properties:
   policy_server_url:
     description: "The policy server internal hostname and port"
     default: https://policy-server.service.cf.internal:4003
+
+  logging.format.timestamp:
+    description: |
+        Format for timestamp in component logs. Valid values are 'rfc3339' and 'deprecated'.
+        'rfc3339' is the recommended format. It will result in all timestamps controlled by silk-daemon to be in RFC3339 format, which is human readable. This includes stdout, pre-start, post-start, and drain logs. This does not include stderr logs from golang libraries.
+        'deprecated' will result in all timestamps being in the format they were before the rfc3339 flag was introduced. This format is different for different logs. Some logs were alreday in RFC3339 format. We do not recommend using this flag unless you have scripts that expect a particular timestamp format.
+    default: "rfc3339"

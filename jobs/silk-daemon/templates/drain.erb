@@ -7,6 +7,7 @@ LOG_DIR=/var/vcap/sys/log/silk-daemon
 LOGFILE="${LOG_DIR}"/drain.log
 REP_ADDRESS=<%= p("rep_listen_addr_admin") %>
 SILK_DAEMON_HEALTH_CHECK_ADDRESS=localhost:<%= p("listen_port") %>
+LOG_FORMAT=<%= p("logging.format.timestamp") %>
 export PIDFILE=/var/vcap/sys/run/bpm/silk-daemon/silk-daemon.pid
 
 mkdir -p "${LOG_DIR}"
@@ -33,9 +34,17 @@ output_for_bosh() {
   local exit_code=$?
 
   if [ "${exit_code}" -eq 0 ]; then
-    echo "$(date): drain success"
+    if [ "$log_format" == "deprecated" ]; then
+      echo "$(date): drain success"
+    else
+      echo "$(date +%Y-%m-%dT%H:%M:%S.%sZ): drain success"
+    fi
   else
-    echo "$(date): drain failed"
+    if [ "$log_format" == "deprecated" ]; then
+      echo "$(date): drain failed"
+    else
+      echo "$(date +%Y-%m-%dT%H:%M:%S.%sZ): drain failed"
+    fi
   fi
 
   echo "${exit_code}" >&3
