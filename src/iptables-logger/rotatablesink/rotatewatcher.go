@@ -1,23 +1,25 @@
 package rotatablesink
 
 import (
-	"code.cloudfoundry.org/lager"
+	"fmt"
 	"io"
 	"os"
-	"time"
 	"sync"
-	"fmt"
 	"syscall"
+	"time"
+
+	"code.cloudfoundry.org/lager"
 )
 
 type RotatableSink struct {
-	fileToWatch         string
-	fileToWatchInode    uint64
-	minLogLevel         lager.LogLevel
-	WriterFactory       FileWriterFactory
-	writerSink          lager.Sink
-	writeL              *sync.Mutex
-	DestinationFileInfo DestinationFileInfo
+	fileToWatch                 string
+	fileToWatchInode            uint64
+	minLogLevel                 lager.LogLevel
+	WriterFactory               FileWriterFactory
+	writerSink                  lager.Sink
+	writeL                      *sync.Mutex
+	DestinationFileInfo         DestinationFileInfo
+	EnableRFC339TimestampFormat bool
 }
 
 func (rs *RotatableSink) Log(logFmt lager.LogFormat) {
@@ -26,14 +28,15 @@ func (rs *RotatableSink) Log(logFmt lager.LogFormat) {
 	rs.writerSink.Log(logFmt)
 }
 
-func NewRotatableSink(fileToWatch string, logLevel lager.LogLevel, fileWriterFactory FileWriterFactory, destinationFileInfo DestinationFileInfo, componentLogger lager.Logger) (*RotatableSink, error) {
+func NewRotatableSink(fileToWatch string, logLevel lager.LogLevel, fileWriterFactory FileWriterFactory, destinationFileInfo DestinationFileInfo, componentLogger lager.Logger, enableRFC339TimestampFormat bool) (*RotatableSink, error) {
 	var err error
 	rotatableSink := &RotatableSink{
-		fileToWatch:         fileToWatch,
-		minLogLevel:         logLevel,
-		WriterFactory:       fileWriterFactory,
-		DestinationFileInfo: destinationFileInfo,
-		writeL:              new(sync.Mutex),
+		fileToWatch:                 fileToWatch,
+		minLogLevel:                 logLevel,
+		WriterFactory:               fileWriterFactory,
+		DestinationFileInfo:         destinationFileInfo,
+		writeL:                      new(sync.Mutex),
+		EnableRFC339TimestampFormat: enableRFC339TimestampFormat,
 	}
 
 	err = rotatableSink.registerFileSink(fileToWatch)
@@ -97,7 +100,11 @@ func (rs *RotatableSink) rotateFileSink() error {
 	if err != nil {
 		return fmt.Errorf("create file writer: %s", err)
 	}
-	rs.writerSink = lager.NewWriterSink(outputLogFile, rs.minLogLevel)
+	if rs.EnableRFC339TimestampFormat {
+		rs.writerSink = lager.NewPrettySink(outputLogFile, rs.minLogLevel)
+	} else {
+		rs.writerSink = lager.NewWriterSink(outputLogFile, rs.minLogLevel)
+	}
 	return nil
 }
 

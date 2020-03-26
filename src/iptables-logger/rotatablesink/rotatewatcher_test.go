@@ -39,7 +39,7 @@ var _ = Describe("Rotatewatcher", func() {
 		fakeTestWriterFactory = NewTestWriterFactory(fileToWatch, nil)
 		fakeDestinationFileInfo = &fakes.DestinationFileInfo{}
 		fakeLogger = lagertest.NewTestLogger("test")
-		rotatableSink, err = rotatablesink.NewRotatableSink(fileToWatchName, lager.DEBUG, fakeTestWriterFactory, fakeDestinationFileInfo, fakeLogger)
+		rotatableSink, err = rotatablesink.NewRotatableSink(fileToWatchName, lager.DEBUG, fakeTestWriterFactory, fakeDestinationFileInfo, fakeLogger, false)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -48,7 +48,6 @@ var _ = Describe("Rotatewatcher", func() {
 	})
 
 	Describe("NewRotatableSink", func() {
-
 		Context("when unable to open the destination file that was rotated", func() {
 			BeforeEach(func() {
 				fakeTestWriterFactory.SetReturnedError(errors.New("banana"))
@@ -56,16 +55,18 @@ var _ = Describe("Rotatewatcher", func() {
 
 			It("returns an sensible error", func() {
 				var err error
-				rotatableSink, err = rotatablesink.NewRotatableSink(fileToWatchName, lager.DEBUG, fakeTestWriterFactory, fakeDestinationFileInfo, fakeLogger)
+				rotatableSink, err = rotatablesink.NewRotatableSink(fileToWatchName, lager.DEBUG, fakeTestWriterFactory, fakeDestinationFileInfo, fakeLogger, false)
 				Expect(err).To(MatchError("register file sink: rotate file sink: create file writer: banana"))
 			})
 		})
-
 	})
 
 	Describe("Log", func() {
 		It("writes to output log file", func() {
-			rotatableSink.Log(lager.LogFormat{Message: "hello"})
+			rotatableSink.Log(lager.LogFormat{
+				Timestamp: "some-timestamp",
+				Message:   "hello",
+			})
 
 			Expect(fakeTestWriterFactory.InvocationCount()).To(Equal(1))
 
@@ -73,13 +74,42 @@ var _ = Describe("Rotatewatcher", func() {
 		})
 
 		It("should only open the file when it has been rotated", func() {
-			rotatableSink.Log(lager.LogFormat{Message: "hello"})
+			rotatableSink.Log(lager.LogFormat{
+				Timestamp: "some-timestamp",
+				Message:   "hello",
+			})
 			Expect(fakeTestWriterFactory.InvocationCount()).To(Equal(1))
 
-			rotatableSink.Log(lager.LogFormat{Message: "hello"})
+			rotatableSink.Log(lager.LogFormat{
+				Timestamp: "some-timestamp",
+				Message:   "hello",
+			})
 			Expect(fakeTestWriterFactory.InvocationCount()).To(Equal(1))
 
 			Expect(ReadLines(fileToWatch.Name())).To(ContainElement(MatchJSON(`{"timestamp":"some-timestamp","source":"","message":"hello","log_level":0,"data":null}`)))
+		})
+
+		Context("when rfc3339 timestamp logging has been enabled", func() {
+			BeforeEach(func() {
+				var err error
+				rotatableSink, err = rotatablesink.NewRotatableSink(fileToWatchName, lager.DEBUG, fakeTestWriterFactory, fakeDestinationFileInfo, fakeLogger, true)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("logs with an rfc3339 timestamp", func() {
+				rotatableSink.Log(lager.LogFormat{
+					Message: "hello",
+				})
+
+				logLines := ReadLines(fileToWatch.Name())
+				Expect(len(logLines)).To(Equal(1))
+
+				var logLine lager.LogFormat
+				err := json.Unmarshal([]byte(logLines[0]), &logLine)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(logLine.Timestamp).To(MatchRegexp(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{9}Z`))
+			})
 		})
 
 		Context("when the file is rotated", func() {
@@ -92,7 +122,10 @@ var _ = Describe("Rotatewatcher", func() {
 				fakeTestWriterFactory.SetReturnWriter(rotatedFile)
 
 				time.Sleep(2 * time.Second)
-				rotatableSink.Log(lager.LogFormat{Message: "hello2"})
+				rotatableSink.Log(lager.LogFormat{
+					Timestamp: "some-timestamp",
+					Message:   "hello2",
+				})
 
 				Expect(ReadLines(fileToWatch.Name())).To(ContainElement(MatchJSON(`{"timestamp":"some-timestamp","source":"","message":"hello2","log_level":0,"data":null}`)))
 			})
@@ -120,7 +153,7 @@ var _ = Describe("Rotatewatcher", func() {
 					fakeDestinationFileInfo.FileInodeReturns(1, errors.New("get file inode: watermelon"))
 					fakeTestWriterFactory = NewTestWriterFactory(fileToWatch, nil)
 					var err error
-					rotatableSink, err = rotatablesink.NewRotatableSink(fileToWatchName, lager.DEBUG, fakeTestWriterFactory, fakeDestinationFileInfo, fakeLogger)
+					rotatableSink, err = rotatablesink.NewRotatableSink(fileToWatchName, lager.DEBUG, fakeTestWriterFactory, fakeDestinationFileInfo, fakeLogger, false)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
@@ -305,20 +338,7 @@ func ReadLines(filename string) []string {
 	output := strings.Split(ReadOutput(filename), "\n")
 	output = output[:len(output)-1]
 
-	var outputs []string
-	for _, o := range output {
-		var outputMap map[string]interface{}
-		err := json.Unmarshal([]byte(o), &outputMap)
-		Expect(err).NotTo(HaveOccurred())
-
-		outputMap["timestamp"] = "some-timestamp"
-		outputJson, err := json.Marshal(outputMap)
-		Expect(err).NotTo(HaveOccurred())
-
-		outputs = append(outputs, string(outputJson))
-	}
-
-	return outputs
+	return output
 }
 
 func ReadOutput(outputFile string) string {

@@ -108,6 +108,7 @@ func main() {
 		rotatablesink.DefaultFileWriterFunc(rotatablesink.DefaultFileWriter),
 		rotatablesink.DefaultDestinationFileInfo{},
 		logger,
+		conf.LogTimestampFormat == "rfc3339",
 	)
 
 	if err != nil {
