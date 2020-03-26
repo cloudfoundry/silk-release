@@ -32,7 +32,8 @@ var _ = Describe("Config", func() {
 					"output_log_file": "/var/vcap/sys/log/iptables-logger",
 					"metron_address": "http://1.2.3.4:1234",
 					"host_ip": "1.2.3.4",
-					"host_guid": "some-guid"
+					"host_guid": "some-guid",
+					"log_timestamp_format": "rfc3339"
 				}`)
 			})
 			It("returns the config", func() {
@@ -44,6 +45,7 @@ var _ = Describe("Config", func() {
 				Expect(c.MetronAddress).To(Equal("http://1.2.3.4:1234"))
 				Expect(c.HostIp).To(Equal("1.2.3.4"))
 				Expect(c.HostGuid).To(Equal("some-guid"))
+				Expect(c.LogTimestampFormat).To(Equal("rfc3339"))
 			})
 		})
 

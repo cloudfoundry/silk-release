@@ -48,6 +48,7 @@ files:
   - iptables-logger/repository/*.go # gosub
   - iptables-logger/rotatablesink/*.go # gosub
   - iptables-logger/runner/*.go # gosub
+  - iptables-logger/taillogger/*.go # gosub
   - lib/common/*.go # gosub
   - lib/datastore/*.go # gosub
   - lib/serial/*.go # gosub

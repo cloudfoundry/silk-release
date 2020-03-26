@@ -8,6 +8,7 @@ import (
 	"iptables-logger/parser"
 	"iptables-logger/repository"
 	"iptables-logger/runner"
+	"iptables-logger/taillogger"
 	"lib/common"
 	"lib/datastore"
 	"lib/serial"
@@ -52,7 +53,7 @@ func main() {
 
 	logger.Info("starting")
 
-	t, err := tail.TailFile(conf.KernelLogFile, tail.Config{
+	tailConfig := tail.Config{
 		Location: &tail.SeekInfo{
 			Offset: 0,
 			Whence: io.SeekEnd,
@@ -61,7 +62,13 @@ func main() {
 		Follow:    true,
 		Poll:      true,
 		ReOpen:    true,
-	})
+	}
+
+	if conf.LogTimestampFormat == "rfc3339" {
+		tailConfig.Logger = taillogger.Shim{Logger: logger}
+	}
+
+	t, err := tail.TailFile(conf.KernelLogFile, tailConfig)
 	if err != nil {
 		logger.Fatal("tail-input", err)
 	}

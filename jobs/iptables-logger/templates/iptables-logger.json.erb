@@ -9,6 +9,7 @@
     "metron_address" => "127.0.0.1:#{p("metron_port")}",
     "host_ip" => spec.ip,
     "host_guid" => spec.id,
+    "log_timestamp_format" => p("logging.format.timestamp"),
   }
 
   JSON.pretty_generate(toRender)
