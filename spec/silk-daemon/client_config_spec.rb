@@ -28,6 +28,7 @@ module Bosh::Template::Test
           'vtep_port' => 6666,
           'log_prefix' => 'cfnetworking',
           'single_ip_only' => true,
+          'logging' => {'format' => {'timestamp' => 'rfc3339' }}
         }
       end
 
@@ -112,6 +113,19 @@ module Bosh::Template::Test
             it 'sets the underlay_ip to the ip associated with vxlan_network' do
               clientConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links, spec: spec))
               expect(clientConfig['underlay_ip']).to eq("192.74.65.4")
+            end
+          end
+
+          context 'when logging.format.timestamp is set to an invalid value' do
+            let(:merged_manifest_properties) do
+              {
+                'logging' => {'format' => {'timestamp' => 'meow' }}
+              }
+            end
+            it 'throws a helpful error' do
+              expect {
+                template.render(merged_manifest_properties, consumes: links)
+              }.to raise_error("'meow' is not a valid timestamp format for the property 'logging.format.timestamp'. Valid options are: 'rfc3339' and 'deprecated'.")
             end
           end
         end

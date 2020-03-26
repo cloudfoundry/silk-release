@@ -29,6 +29,10 @@
     underlay_ip = spec.ip
   end
 
+  if !['rfc3339', 'deprecated'].include?(p('logging.format.timestamp'))
+    raise "'#{p('logging.format.timestamp')}' is not a valid timestamp format for the property 'logging.format.timestamp'. Valid options are: 'rfc3339' and 'deprecated'."
+  end
+
   toRender = {
     'underlay_ip' => underlay_ip,
     'subnet_prefix_length' => subnet_prefix_length,
