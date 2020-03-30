@@ -92,7 +92,8 @@ properties:
 
   logging.format.timestamp:
     description: |
-        Format for timestamp in component logs. Valid values are 'rfc3339' and 'deprecated'.
-        'rfc3339' is the recommended format. It will result in all timestamps controlled by silk-daemon to be in RFC3339 format, which is human readable. This includes stdout, pre-start, post-start, and drain logs. This does not include stderr logs from golang libraries.
-        'deprecated' will result in all timestamps being in the format they were before the rfc3339 flag was introduced. This format is different for different logs. Some logs were alreday in RFC3339 format. We do not recommend using this flag unless you have scripts that expect a particular timestamp format.
+        Format for timestamp in the drain log. Valid values are 'rfc3339' and 'deprecated'.
+        This property only affects the drain log because other component and bosh lifecycle logs were already in the rfc3339 format.
+        'rfc3339' is the recommended format. It will result in all timestamps in the drain log controlled by silk-daemon to be in RFC3339 format, which is human readable. This does not include stderr logs from golang libraries.
+        'deprecated' will result in all timestamps being in the format they were before the rfc3339 flag was introduced for the drain log.  We do not recommend using this flag unless you have scripts that expect a particular timestamp format.
     default: "rfc3339"
