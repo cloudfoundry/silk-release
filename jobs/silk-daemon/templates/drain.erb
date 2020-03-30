@@ -34,13 +34,13 @@ output_for_bosh() {
   local exit_code=$?
 
   if [ "${exit_code}" -eq 0 ]; then
-    if [ "$log_format" == "deprecated" ]; then
+    if [ "$LOG_FORMAT" == "deprecated" ]; then
       echo "$(date): drain success"
     else
       echo "$(date +%Y-%m-%dT%H:%M:%S.%sZ): drain success"
     fi
   else
-    if [ "$log_format" == "deprecated" ]; then
+    if [ "$LOG_FORMAT" == "deprecated" ]; then
       echo "$(date): drain failed"
     else
       echo "$(date +%Y-%m-%dT%H:%M:%S.%sZ): drain failed"
