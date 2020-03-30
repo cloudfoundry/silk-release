@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo -n "bump "
-for submodule in $(git diff --cached --submodule | grep '^Submodule' | awk '{print $2}'); do
+for submodule in $(git diff --no-color --cached --submodule | grep '^Submodule' | awk '{print $2}'); do
   echo -n "$(basename $submodule) "
 done
 
@@ -16,4 +16,4 @@ if [ "$#" != "0" ]; then
   echo
 fi
 
-git submodule status | awk '{print $2}' | xargs git diff --cached --submodule
+git submodule status | awk '{print $2}' | xargs git diff --no-color --cached --submodule
