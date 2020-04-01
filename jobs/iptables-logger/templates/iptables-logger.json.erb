@@ -1,6 +1,9 @@
 <%=
   require 'json'
 
+  if !['rfc3339', 'deprecated'].include?(p('logging.format.timestamp'))
+    raise "'#{p('logging.format.timestamp')}' is not a valid timestamp format for the property 'logging.format.timestamp'. Valid options are: 'rfc3339' and 'deprecated'."
+  end
 
   toRender = {
     "kernel_log_file" => p("kernel_log_file"),
