@@ -2,17 +2,17 @@ package main
 
 import (
 	"flag"
-	"path/filepath"
 	"fmt"
 	"io/ioutil"
-	"lib/rules"
 	"lib/datastore"
-	"log"
+	"lib/rules"
 	"lib/serial"
+	"log"
 	"net"
-	"os"
 	"net/http"
 	neturl "net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -43,12 +43,12 @@ func main() {
 func mainWithError() error {
 	containerMetadataFile := flag.String("containerMetadataFile", "", "path to container metadata file. This is used to ensure all containers have been drained before tearing down silk.")
 	fileCheckInterval := flag.Int("containerMetadataFileCheckInterval", 5, "interval (seconds) between checks to the metadata file")
-	fileCheckTimeout := flag.Int("containerMetadataFileCheckTimeout", 300, "timeout (seconds) when checking the metadata file")
+	fileCheckTimeout := flag.Int("containerMetadataFileCheckTimeout", 600, "timeout (seconds) when checking the metadata file")
 
 	silkDaemonUrl := flag.String("silkDaemonUrl", "", "path to silk daemon url")
 	silkDaemonTimeout := flag.Int("silkDaemonTimeout", 2, "timeout (seconds) between calls to silk daemon")
 	silkDaemonPidPath := flag.String("silkDaemonPidPath", "", "pid file of silk daemon")
-	pingServerTimeout := flag.Int("pingServerTimeout", 300, "timeout (seconds) when pinging if server is up")
+	pingServerTimeout := flag.Int("pingServerTimeout", 600, "timeout (seconds) when pinging if server is up")
 
 	iptablesLockFile := flag.String("iptablesLockFile", "", "path to iptablesLockFile")
 
@@ -66,16 +66,16 @@ func mainWithError() error {
 		return err
 	}
 	containerMetadataStore := &datastore.Store{
-		 Serializer: &serial.Serial{},
-		 Locker: &filelock.Locker{
-			 FileLocker: filelock.NewLocker(*containerMetadataFile + "_lock"),
-			 Mutex:      new(sync.Mutex),
-		 },
-		 DataFilePath:    *containerMetadataFile,
-		 VersionFilePath: *containerMetadataFile + "_version",
-		 LockedFilePath:  *containerMetadataFile + "_lock",
-		 CacheMutex:      new(sync.RWMutex),
-	 }
+		Serializer: &serial.Serial{},
+		Locker: &filelock.Locker{
+			FileLocker: filelock.NewLocker(*containerMetadataFile + "_lock"),
+			Mutex:      new(sync.Mutex),
+		},
+		DataFilePath:    *containerMetadataFile,
+		VersionFilePath: *containerMetadataFile + "_version",
+		LockedFilePath:  *containerMetadataFile + "_lock",
+		CacheMutex:      new(sync.RWMutex),
+	}
 
 	fileCheckMaxAttempts := 40
 	isStoreEmpty, err := waitForStoreToEmpty(containerMetadataStore, *fileCheckInterval, fileCheckMaxAttempts, *fileCheckTimeout)
