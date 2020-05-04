@@ -32,8 +32,6 @@ files:
   - github.com/tedsuo/ifrit/*.go # gosub
   - github.com/tedsuo/ifrit/grouper/*.go # gosub
   - github.com/tedsuo/ifrit/sigmon/*.go # gosub
-  - golang.org/x/sys/windows/*.go # gosub
-  - golang.org/x/sys/windows/*.s # gosub
   - gopkg.in/validator.v2/*.go # gosub
   - lib/common/*.go # gosub
   - lib/rules/*.go # gosub

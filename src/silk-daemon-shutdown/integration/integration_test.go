@@ -19,34 +19,28 @@ import (
 )
 
 var (
-	fakeRepServer         *ghttp.Server
-	fakeSilkDaemonServer  *ghttp.Server
-	tempPidFile           *os.File
-	fakeSilkDaemonSession *gexec.Session
-	tag                   string
+	fakeSilkDaemonServer      *ghttp.Server
+	tempPidFile               *os.File
+	fakeContainerMetadataFile *os.File
+	fakeSilkDaemonSession     *gexec.Session
+	tag                       string
 )
 
 const DEFAULT_TIMEOUT = "10s"
 
 var _ = BeforeEach(func() {
-	fakeRepServer = ghttp.NewUnstartedServer()
 	fakeSilkDaemonServer = ghttp.NewUnstartedServer()
-	fakeRepServer.AllowUnhandledRequests = true
 	fakeSilkDaemonServer.AllowUnhandledRequests = true
-	fakeRepServer.UnhandledRequestStatusCode = 500
 	fakeSilkDaemonServer.UnhandledRequestStatusCode = 500
 
-	fakeRepServer.AppendHandlers(ghttp.RespondWith(200, "", nil))
 	fakeSilkDaemonServer.AppendHandlers(ghttp.RespondWith(200, "", nil))
 })
 
 var _ = JustBeforeEach(func() {
-	fakeRepServer.Start()
 	fakeSilkDaemonServer.Start()
 })
 
 var _ = AfterEach(func() {
-	fakeRepServer.Close()
 	fakeSilkDaemonServer.Close()
 
 	if tempPidFile != nil {
@@ -72,15 +66,26 @@ var _ = Describe("Teardown", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(ioutil.WriteFile(tempPidFile.Name(), []byte(strconv.Itoa(sleepCommand.Process.Pid)+"\n"), 0777)).To(Succeed())
+
+		// setup fake silk/store.json file
+		fakeContainerMetadataFile, err = ioutil.TempFile(os.TempDir(), "store.json")
+		Expect(err).NotTo(HaveOccurred())
+		// write fake app contents
+		fakeContainerMetadataFileContents := []byte(`{"some-app-guid": {"handle": "some-app-guid","ip": "1.2.3.4","metadata": null}}`)
+		Expect(ioutil.WriteFile(fakeContainerMetadataFile.Name(), fakeContainerMetadataFileContents, 0777)).To(Succeed())
+
 	})
 
-	Context("when the servers eventually shutdown", func() {
+	Context("when all containers are drained", func() {
 		BeforeEach(func() {
-			fakeRepServer.AppendHandlers(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
-				go func() {
-					fakeRepServer.Close()
-				}()
-			}))
+			go func() {
+				// Wait an arbitrary amount of time to allow the teardown script to
+				// read a populated metadata file before emptying.
+				time.Sleep(2 * time.Second)
+				emptyfakeContainerMetadataFileContents := []byte(`{}`)
+				Expect(ioutil.WriteFile(fakeContainerMetadataFile.Name(), emptyfakeContainerMetadataFileContents, 0777)).To(Succeed())
+				Expect(ioutil.WriteFile(fmt.Sprintf("%s_version", fakeContainerMetadataFile.Name()), []byte("2"), 0777)).To(Succeed())
+			}()
 
 			fakeSilkDaemonServer.AppendHandlers(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 				go func() {
@@ -90,33 +95,16 @@ var _ = Describe("Teardown", func() {
 		})
 
 		It("kills the silk-daemon and pings the silk daemon until it stops responding", func() {
-			session := runTeardown(fakeRepServer.URL(), fakeSilkDaemonServer.URL(), tempPidFile.Name())
+			// Needs to be at least 1 second so we get a least one read of the file
+			// with contents in it before it gets overwritten
+			checkContainerMetadataTimeout := 1
+			session := runTeardown(fakeContainerMetadataFile.Name(), fakeSilkDaemonServer.URL(), tempPidFile.Name(), checkContainerMetadataTimeout)
 			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(0))
 
-			Expect(fakeRepServer.ReceivedRequests()).To(HaveLen(2))
-			Expect(session.Out).To(gbytes.Say("waiting for the rep to exit"))
-			Expect(fakeRepServer.ReceivedRequests()).To(HaveLen(2))
+			Expect(session.Out).To(gbytes.Say(fmt.Sprintf("waiting for the %s to become empty", fakeContainerMetadataFile.Name())))
+			Expect(session.Out).To(gbytes.Say(fmt.Sprintf("reading %s, now empty. There are no containers on the cell.", fakeContainerMetadataFile.Name())))
+
 			Expect(session.Out).To(gbytes.Say("sending TERM signal to silk-daemon"))
-			Expect(session.Out).To(gbytes.Say("waiting for the silk daemon to exit"))
-			Eventually(fakeSilkDaemonSession.ExitCode(), "5s").Should(Equal(143))
-		})
-	})
-
-	Context("pinged servers return non 200 status codes", func() {
-		It("pings the rep until the rep returns non 200 status code", func() {
-			session := runTeardown(fakeRepServer.URL(), fakeSilkDaemonServer.URL(), tempPidFile.Name())
-			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(0))
-
-			Expect(fakeRepServer.ReceivedRequests()).To(HaveLen(2))
-			Expect(session.Out).To(gbytes.Say("waiting for the rep to exit"))
-			Eventually(fakeSilkDaemonSession.ExitCode(), "5s").Should(Equal(143))
-		})
-
-		It("pings the silk daemon until it returns non 200 status code", func() {
-			session := runTeardown(fakeRepServer.URL(), fakeSilkDaemonServer.URL(), tempPidFile.Name())
-			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(0))
-
-			Expect(fakeRepServer.ReceivedRequests()).To(HaveLen(2))
 			Expect(session.Out).To(gbytes.Say("waiting for the silk daemon to exit"))
 			Eventually(fakeSilkDaemonSession.ExitCode(), "5s").Should(Equal(143))
 		})
@@ -139,7 +127,7 @@ var _ = Describe("Teardown", func() {
 		})
 
 		It("deletes the iptables rule that marks overlay destined traffic", func() {
-			session := runTeardown(fakeRepServer.URL(), fakeSilkDaemonServer.URL(), tempPidFile.Name())
+			session := runTeardown(fakeContainerMetadataFile.Name(), fakeSilkDaemonServer.URL(), tempPidFile.Name(), 0)
 			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(0))
 
 			rules := AllIPTablesRules("filter")
@@ -150,38 +138,21 @@ var _ = Describe("Teardown", func() {
 		})
 	})
 
-	Context("when connecting to the rep fails due to a bad url", func() {
+	Context("when the directory of the provided container metadata file does not exist", func() {
 		It("returns an error", func() {
-			session := runTeardown("some/bad/url", fakeSilkDaemonServer.URL(), tempPidFile.Name())
+			session := runTeardown("some/bad/filepath", fakeSilkDaemonServer.URL(), tempPidFile.Name(), 0)
 			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(1))
 
-			Expect(session.Err).To(gbytes.Say("silk-daemon-shutdown: parse some/bad/url: invalid URI for request"))
+			Expect(session.Err).To(gbytes.Say("silk-daemon-shutdown: stat some/bad: no such file or directory"))
 		})
 	})
 
 	Context("when connecting to the silk-daemon fails due to a bad url", func() {
 		It("returns an error", func() {
-			session := runTeardown(fakeRepServer.URL(), "some/bad/url", tempPidFile.Name())
+			session := runTeardown(fakeContainerMetadataFile.Name(), "some/bad/url", tempPidFile.Name(), 0)
 			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(1))
 
 			Expect(session.Err).To(gbytes.Say("silk-daemon-shutdown: parse some/bad/url: invalid URI for request"))
-		})
-	})
-
-	Context("when pinging the rep takes a long time to reply", func() {
-		BeforeEach(func() {
-			fakeRepServer.AppendHandlers(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
-				time.Sleep(10 * time.Second)
-			}))
-		})
-
-		It("should timeout pinging rep and take less than 10 seconds to finish", func() {
-			session := runTeardown(fakeRepServer.URL(), fakeSilkDaemonServer.URL(), tempPidFile.Name())
-			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(0))
-
-			Expect(len(fakeRepServer.ReceivedRequests())).To(Equal(3))
-			Expect(session.Out).To(gbytes.Say("pinging server timed out. trying again."))
-			Expect(session.Out).To(gbytes.Say("waiting for the rep to exit"))
 		})
 	})
 
@@ -191,7 +162,7 @@ var _ = Describe("Teardown", func() {
 		})
 
 		It("pings the silk daemon server 5 times and fails gracefully", func() {
-			session := runTeardown(fakeRepServer.URL(), fakeSilkDaemonServer.URL(), tempPidFile.Name())
+			session := runTeardown(fakeContainerMetadataFile.Name(), fakeSilkDaemonServer.URL(), tempPidFile.Name(), 0)
 			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(1))
 
 			Expect(fakeSilkDaemonServer.ReceivedRequests()).To(HaveLen(5))
@@ -199,24 +170,18 @@ var _ = Describe("Teardown", func() {
 		})
 	})
 
-	Context("When rep server will not exit", func() {
-		BeforeEach(func() {
-			fakeRepServer.UnhandledRequestStatusCode = 200
-		})
-
-		It("pings the rep server 40 times and fails gracefully", func() {
-			session := runTeardown(fakeRepServer.URL(), fakeSilkDaemonServer.URL(), tempPidFile.Name())
+	Context("When the container metadata file will not become empty", func() {
+		It("checks the container metadata file 40 times and then continues to tear down", func() {
+			session := runTeardown(fakeContainerMetadataFile.Name(), fakeSilkDaemonServer.URL(), tempPidFile.Name(), 0)
 			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(0))
 
-			Expect(fakeRepServer.ReceivedRequests()).To(HaveLen(40))
-			Expect(session.Out).To(gbytes.Say("rep did not exit after 40 ping attempts"))
-
-		}, 5)
+			Expect(session.Out).To(gbytes.Say(fmt.Sprintf("reading %s, not empty after 40 check attempts", fakeContainerMetadataFile.Name())))
+		})
 	})
 
 	Context("when silk daemon pid file does not exist", func() {
 		It("returns an error", func() {
-			session := runTeardown(fakeRepServer.URL(), fakeSilkDaemonServer.URL(), "/some-invalid/file-path")
+			session := runTeardown(fakeContainerMetadataFile.Name(), fakeSilkDaemonServer.URL(), "/some-invalid/file-path", 0)
 			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(1))
 
 			Expect(session.Err).To(gbytes.Say("silk-daemon-shutdown: open /some-invalid/file-path: no such file or directory"))
@@ -230,7 +195,7 @@ var _ = Describe("Teardown", func() {
 		})
 
 		It("returns with exit code 0", func() {
-			session := runTeardown(fakeRepServer.URL(), fakeSilkDaemonServer.URL(), tempPidFile.Name())
+			session := runTeardown(fakeContainerMetadataFile.Name(), fakeSilkDaemonServer.URL(), tempPidFile.Name(), 0)
 			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(0))
 		})
 	})
@@ -241,7 +206,7 @@ var _ = Describe("Teardown", func() {
 		})
 
 		It("returns an error", func() {
-			session := runTeardown(fakeRepServer.URL(), fakeSilkDaemonServer.URL(), tempPidFile.Name())
+			session := runTeardown(fakeContainerMetadataFile.Name(), fakeSilkDaemonServer.URL(), tempPidFile.Name(), 0)
 			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(1))
 
 			Expect(session.Err).To(gbytes.Say("silk-daemon-shutdown: strconv.Atoi: parsing \"not-a-number\": invalid syntax"))
@@ -249,11 +214,11 @@ var _ = Describe("Teardown", func() {
 	})
 })
 
-func runTeardown(url, silkDaemonUrl, silkDaemonPidFile string) *gexec.Session {
+func runTeardown(containerMetadataFile, silkDaemonUrl, silkDaemonPidFile string, fileCheckInterval int) *gexec.Session {
 	startCmd := exec.Command(paths.TeardownBin,
-		"--repUrl", url,
+		"--containerMetadataFile", containerMetadataFile,
+		"--containerMetadataFileCheckInterval", strconv.Itoa(fileCheckInterval),
 		"--silkDaemonUrl", silkDaemonUrl,
-		"--repTimeout", "0",
 		"--silkDaemonTimeout", "0",
 		"--silkDaemonPidPath", silkDaemonPidFile,
 		"--iptablesLockFile", "/tmp/someLockWhoReallyCares.lock")

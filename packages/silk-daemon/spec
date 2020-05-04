@@ -65,10 +65,10 @@ files:
   - code.cloudfoundry.org/silk/vendor/github.com/vishvananda/netns/*.go # gosub
   - code.cloudfoundry.org/silk/vendor/gopkg.in/validator.v2/*.go # gosub
   - github.com/coreos/go-iptables/iptables/*.go # gosub
-  - golang.org/x/sys/windows/*.go # gosub
-  - golang.org/x/sys/windows/*.s # gosub
   - lib/common/*.go # gosub
+  - lib/datastore/*.go # gosub
   - lib/rules/*.go # gosub
+  - lib/serial/*.go # gosub
   - silk-daemon-bootstrap/*.go # gosub
   - silk-daemon-bootstrap/config/*.go # gosub
   - silk-daemon-shutdown/*.go # gosub

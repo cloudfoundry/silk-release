@@ -1,13 +1,16 @@
 package main
 
 import (
-	"errors"
 	"flag"
+	"path/filepath"
 	"fmt"
 	"io/ioutil"
 	"lib/rules"
+	"lib/datastore"
 	"log"
+	"lib/serial"
 	"net"
+	"os"
 	"net/http"
 	neturl "net/url"
 	"strconv"
@@ -38,12 +41,15 @@ func main() {
 }
 
 func mainWithError() error {
-	repUrl := flag.String("repUrl", "", "path to rep url")
-	repTimeout := flag.Int("repTimeout", 5, "timeout (seconds) between calls to rep")
+	containerMetadataFile := flag.String("containerMetadataFile", "", "path to container metadata file. This is used to ensure all containers have been drained before tearing down silk.")
+	fileCheckInterval := flag.Int("containerMetadataFileCheckInterval", 5, "interval (seconds) between checks to the metadata file")
+	fileCheckTimeout := flag.Int("containerMetadataFileCheckTimeout", 300, "timeout (seconds) when checking the metadata file")
+
 	silkDaemonUrl := flag.String("silkDaemonUrl", "", "path to silk daemon url")
 	silkDaemonTimeout := flag.Int("silkDaemonTimeout", 2, "timeout (seconds) between calls to silk daemon")
 	silkDaemonPidPath := flag.String("silkDaemonPidPath", "", "pid file of silk daemon")
 	pingServerTimeout := flag.Int("pingServerTimeout", 300, "timeout (seconds) when pinging if server is up")
+
 	iptablesLockFile := flag.String("iptablesLockFile", "", "path to iptablesLockFile")
 
 	flag.Parse()
@@ -55,15 +61,30 @@ func mainWithError() error {
 
 	logger, _ = lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), lagerConfig)
 
-	var err error
-	repMaxAttempts := 40
-	isRepUp, err := waitForServer("rep", *repUrl, *repTimeout, repMaxAttempts, *pingServerTimeout)
+	_, err := os.Stat(filepath.Dir(*containerMetadataFile))
+	if err != nil {
+		return err
+	}
+	containerMetadataStore := &datastore.Store{
+		 Serializer: &serial.Serial{},
+		 Locker: &filelock.Locker{
+			 FileLocker: filelock.NewLocker(*containerMetadataFile + "_lock"),
+			 Mutex:      new(sync.Mutex),
+		 },
+		 DataFilePath:    *containerMetadataFile,
+		 VersionFilePath: *containerMetadataFile + "_version",
+		 LockedFilePath:  *containerMetadataFile + "_lock",
+		 CacheMutex:      new(sync.RWMutex),
+	 }
+
+	fileCheckMaxAttempts := 40
+	isStoreEmpty, err := waitForStoreToEmpty(containerMetadataStore, *fileCheckInterval, fileCheckMaxAttempts, *fileCheckTimeout)
 	if err != nil {
 		return err
 	}
 
-	if isRepUp {
-		logger.Debug(fmt.Sprintf("rep did not exit after %d ping attempts. Continuing", repMaxAttempts))
+	if !isStoreEmpty {
+		logger.Debug(fmt.Sprintf("reading %s, not empty after %d check attempts. Continuing", containerMetadataStore.DataFilePath, fileCheckMaxAttempts))
 	}
 
 	pidFileConents, err := ioutil.ReadFile(*silkDaemonPidPath)
@@ -85,7 +106,7 @@ func mainWithError() error {
 		return err
 	}
 	if silkDaemonIsUp {
-		return errors.New(fmt.Sprintf("Silk Daemon Server did not exit after %d ping attempts", silkDaemonMaxAttempts))
+		return fmt.Errorf("Silk Daemon Server did not exit after %d ping attempts", silkDaemonMaxAttempts)
 	}
 
 	ipt, err := iptables.New()
@@ -184,5 +205,41 @@ func checkIfServerUp(serverName string, url string) bool {
 	}
 
 	logger.Debug(fmt.Sprintf("could not ping %s server. Server is down", serverName))
+	return false
+}
+
+func waitForStoreToEmpty(store *datastore.Store, pollingTimeInSeconds int, maxAttempts int, timeoutInSeconds int) (bool, error) {
+	currentAttempt := 0
+
+	for currentAttempt < maxAttempts {
+		logger.Debug(fmt.Sprintf("waiting for the %s to become empty", store.DataFilePath))
+
+		select {
+		case <-time.After(time.Duration(pollingTimeInSeconds) * time.Second):
+			if checkIfStoreIsEmpty(store) {
+				return true, nil
+			}
+			currentAttempt++
+		case <-time.After(time.Duration(timeoutInSeconds) * time.Second):
+			return false, nil
+		}
+	}
+
+	return false, nil
+}
+
+func checkIfStoreIsEmpty(store *datastore.Store) bool {
+	storeData, err := store.ReadAll()
+	if err != nil {
+		logger.Debug(fmt.Sprintf("failed to read data from %s: %s", store.DataFilePath, err))
+		return false
+	}
+
+	if len(storeData) == 0 {
+		logger.Debug(fmt.Sprintf("reading %s, now empty. There are no containers on the cell.", store.DataFilePath))
+		return true
+	}
+
+	logger.Debug(fmt.Sprintf("reading %s, not empty. %d container(s) still exist on the cell.", store.DataFilePath, len(storeData)))
 	return false
 }

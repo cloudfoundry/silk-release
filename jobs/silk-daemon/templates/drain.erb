@@ -5,9 +5,9 @@ set -o pipefail
 
 LOG_DIR=/var/vcap/sys/log/silk-daemon
 LOGFILE="${LOG_DIR}"/drain.log
-REP_ADDRESS=<%= p("rep_listen_addr_admin") %>
 SILK_DAEMON_HEALTH_CHECK_ADDRESS=localhost:<%= p("listen_port") %>
 LOG_FORMAT=<%= p("logging.format.timestamp") %>
+DATASTORE=/var/vcap/data/container-metadata/store.json
 export PIDFILE=/var/vcap/sys/run/bpm/silk-daemon/silk-daemon.pid
 
 mkdir -p "${LOG_DIR}"
@@ -24,7 +24,7 @@ run_teardown() {
 
 shutdown_silk_daemon() {
   /var/vcap/packages/silk-daemon/bin/silk-daemon-shutdown \
-    --repUrl "http://${REP_ADDRESS}/ping" \
+    --containerMetadataFile "${DATASTORE}" \
     --silkDaemonUrl "http://${SILK_DAEMON_HEALTH_CHECK_ADDRESS}/ping" \
     --silkDaemonPidPath "${PIDFILE}" \
     --iptablesLockFile "/var/vcap/data/garden-cni/iptables.lock"
