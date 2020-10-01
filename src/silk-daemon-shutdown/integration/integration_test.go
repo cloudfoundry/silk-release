@@ -171,11 +171,11 @@ var _ = Describe("Teardown", func() {
 	})
 
 	Context("When the container metadata file will not become empty", func() {
-		It("checks the container metadata file 40 times and then continues to tear down", func() {
+		It("checks the container metadata file a number times and then continues to tear down", func() {
 			session := runTeardown(fakeContainerMetadataFile.Name(), fakeSilkDaemonServer.URL(), tempPidFile.Name(), 0)
 			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(0))
 
-			Expect(session.Out).To(gbytes.Say(fmt.Sprintf("reading %s, not empty after 40 check attempts", fakeContainerMetadataFile.Name())))
+			Expect(session.Out).To(gbytes.Say(fmt.Sprintf("reading %s, not empty after [0-9]+? check attempts", fakeContainerMetadataFile.Name())))
 		})
 	})
 
