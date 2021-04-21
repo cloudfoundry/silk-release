@@ -5,6 +5,7 @@ set -o pipefail
 
 cd $(dirname $0)/..
 export GOPATH=$PWD
+export GO111MODULE=auto
 
 declare -a serial_packages=(
     "src/cni-wrapper-plugin/integration"
