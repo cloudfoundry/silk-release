@@ -347,7 +347,8 @@ var _ = Describe("VXLAN Policy Agent", func() {
 
 			It("times out requests", func() {
 				session = startAgent(paths.VxlanPolicyAgentPath, configFilePath)
-				Eventually(session.Out.Contents, "3s").Should(MatchRegexp("policy-client-get-policies.*request canceled while waiting for connection.*Client.Timeout exceeded"))
+				msg := "policy-client-get-policies.*context deadline exceeded \\(Client.Timeout exceeded while awaiting headers\\)"
+				Eventually(session.Out, "3s").Should(Say(msg))
 				session.Kill()
 			})
 		})
