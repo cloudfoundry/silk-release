@@ -152,7 +152,7 @@ var _ = Describe("Teardown", func() {
 			session := runTeardown(fakeContainerMetadataFile.Name(), "some/bad/url", tempPidFile.Name(), 0)
 			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(1))
 
-			Expect(session.Err).To(gbytes.Say("silk-daemon-shutdown: parse some/bad/url: invalid URI for request"))
+			Expect(session.Err).To(gbytes.Say(`silk-daemon-shutdown: parse "some/bad/url": invalid URI for request`))
 		})
 	})
 
