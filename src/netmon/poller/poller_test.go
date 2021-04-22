@@ -38,7 +38,7 @@ var _ = Describe("Poller Run", func() {
 		go metrics.Run(doneCh, readyCh)
 
 		<-readyCh
-		<-time.After(pollInterval)
+		<-time.After(pollInterval + 10*time.Millisecond)
 		doneCh <- os.Interrupt
 	})
 
