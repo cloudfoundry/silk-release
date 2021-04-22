@@ -1077,7 +1077,7 @@ func (a *mockPolicyAgentServer) start() {
 }
 
 func (a *mockPolicyAgentServer) stop() error {
-	return a.server.Shutdown(nil)
+	return a.server.Close()
 }
 
 func createDummyInterface(interfaceName, ipAddress string) {
