@@ -23,6 +23,13 @@ type DenyNetworksConfig struct {
 	Staging []string `json:"staging"`
 }
 
+type OutConnConfig struct {
+	Limit      bool `json:"limit"`
+	Max        int  `json:"max" validate:"min=1"`
+	Burst      int  `json:"burst" validate:"min=1"`
+	RatePerSec int  `json:"rate_per_sec" validate:"min=1"`
+}
+
 type WrapperConfig struct {
 	Datastore                       string                 `json:"datastore"`
 	DatastoreFileOwner              string                 `json:"datastore_file_owner"`
@@ -45,6 +52,7 @@ type WrapperConfig struct {
 	VTEPName                        string                 `json:"vtep_name"`
 	RuntimeConfig                   RuntimeConfig          `json:"runtimeConfig,omitempty"`
 	PolicyAgentForcePollAddress     string                 `json:"policy_agent_force_poll_address" validate:"nonzero"`
+	OutConn                         OutConnConfig          `json:"outbound_connections"`
 }
 
 func LoadWrapperConfig(bytes []byte) (*WrapperConfig, error) {
@@ -87,6 +95,18 @@ func LoadWrapperConfig(bytes []byte) (*WrapperConfig, error) {
 
 	if _, ok := n.Delegate["cniVersion"]; !ok {
 		n.Delegate["cniVersion"] = version.Current()
+	}
+
+	if n.OutConn.Max <= 0 {
+		return nil, fmt.Errorf("invalid outbound connection max")
+	}
+
+	if n.OutConn.Burst <= 0 {
+		return nil, fmt.Errorf("invalid outbound connection burst")
+	}
+
+	if n.OutConn.RatePerSec <= 0 {
+		return nil, fmt.Errorf("invalid outbound connection rate")
 	}
 
 	validator.Validate(n)
