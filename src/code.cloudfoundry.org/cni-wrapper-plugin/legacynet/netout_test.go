@@ -38,6 +38,9 @@ var _ = Describe("Netout", func() {
 			AcceptedUDPLogsPerSec: 6,
 			ContainerIP:           "5.6.7.8",
 			ContainerHandle:       "some-container-handle",
+			Conn: legacynet.Conn{
+				Limit: false,
+			},
 		}
 		chainNamer.PrefixStub = func(prefix, handle string) string {
 			return prefix + "-" + handle
@@ -769,6 +772,45 @@ var _ = Describe("Netout", func() {
 				Entry("when the workload is a task", "task", "2.2.2.2/32"),
 				Entry("when the workload is staging", "staging", "3.3.3.3/32"),
 			)
+		})
+
+		Context("when container connection limiting is enabled", func() {
+			BeforeEach(func() {
+				netOut.Conn.Limit = true
+				netOut.Conn.Max = "500"
+				netOut.Conn.Burst = "400"
+				netOut.Conn.Rate = "100/sec"
+			})
+
+			It("inserts hard and rate limit rules", func() {
+				err := netOut.BulkInsertRules(netOutRules)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(ipTables.BulkInsertCallCount()).To(Equal(1))
+				table, chain, pos, rulespec := ipTables.BulkInsertArgsForCall(0)
+
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("netout-some-container-handle"))
+				Expect(pos).To(Equal(1))
+
+				expectedRateLimitRule := rules.IPTablesRule{
+					"-m", "conntrack", "--ctstate", "NEW",
+					"-m", "hashlimit", "--hashlimit-above", "100/sec", "--hashlimit-burst", "400",
+					"--hashlimit-mode", "dstip", "--hashlimit-name", "some-container-handle", "-j", "RESET",
+				}
+				expectedHardLimitRule := rules.IPTablesRule{
+					"-m", "conntrack", "--ctstate", "NEW",
+					"-m", "connlimit", "--connlimit-above", "500", "--connlimit-mask", "32", "--connlimit-daddr", "-j", "RESET",
+				}
+				expectedRules := append(genericRules, []rules.IPTablesRule{
+					expectedRateLimitRule,
+					expectedHardLimitRule,
+					{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
+					{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
+				}...)
+
+				Expect(rulespec).To(Equal(expectedRules))
+			})
 		})
 	})
 })
