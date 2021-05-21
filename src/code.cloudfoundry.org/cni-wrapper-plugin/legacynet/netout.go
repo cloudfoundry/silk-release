@@ -14,11 +14,20 @@ const prefixInput = "input"
 const prefixNetOut = "netout"
 const prefixOverlay = "overlay"
 const suffixNetOutLog = "log"
+const suffixNetOutHardLimitLog = "hl-log"
+const suffixNetOutRateLimitLog = "rl-log"
 
 //go:generate counterfeiter -o ../fakes/net_out_rule_converter.go --fake-name NetOutRuleConverter . netOutRuleConverter
 type netOutRuleConverter interface {
 	Convert(rule garden.NetOutRule, logChainName string, logging bool) []rules.IPTablesRule
 	BulkConvert(rules []garden.NetOutRule, logChainName string, logging bool) []rules.IPTablesRule
+}
+
+type OutConn struct {
+	Limit bool
+	Max   string
+	Burst string
+	Rate  string
 }
 
 type NetOut struct {
@@ -39,7 +48,7 @@ type NetOut struct {
 	DenyNetworks          DenyNetworks
 	DNSServers            []string
 	ContainerWorkload     string
-	Conn                  Conn
+	Conn                  OutConn
 }
 
 func (m *NetOut) Initialize() error {
@@ -92,7 +101,12 @@ func (m *NetOut) BulkInsertRules(netOutRules []garden.NetOutRule) error {
 	ruleSpec = append(ruleSpec, m.denyNetworksRules()...)
 
 	if m.Conn.Limit {
-		ruleSpec = append(ruleSpec, m.connCountLimitRules()...)
+		limitRules, err := m.connLimitRules(chain)
+		if err != nil {
+			return fmt.Errorf("getting chain name: %s", err)
+		}
+
+		ruleSpec = append(ruleSpec, limitRules...)
 	}
 
 	ruleSpec = append(ruleSpec, []rules.IPTablesRule{
@@ -112,10 +126,6 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 	inputChainName := m.ChainNamer.Prefix(prefixInput, m.ContainerHandle)
 	forwardChainName := m.ChainNamer.Prefix(prefixNetOut, m.ContainerHandle)
 	overlayChain := m.ChainNamer.Prefix(prefixOverlay, m.ContainerHandle)
-	logChain, err := m.ChainNamer.Postfix(forwardChainName, suffixNetOutLog)
-	if err != nil {
-		return []IpTablesFullChain{}, fmt.Errorf("getting chain name: %s", err)
-	}
 
 	args := []IpTablesFullChain{
 		{
@@ -154,19 +164,27 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 				rules.NewOverlayDefaultRejectRule(m.ContainerIP),
 			},
 		}),
-		{
-			"filter",
-			"",
-			logChain,
-			[]rules.IPTablesRule{{
-				"--jump", logChain,
-			}},
-			[]rules.IPTablesRule{
-				rules.NewNetOutDefaultNonUDPLogRule(m.ContainerHandle),
-				rules.NewNetOutDefaultUDPLogRule(m.ContainerHandle, m.AcceptedUDPLogsPerSec),
-				rules.NewAcceptRule(),
-			},
-		},
+	}
+
+	logChainRules := []rules.IPTablesRule{
+		rules.NewNetOutDefaultNonUDPLogRule(m.ContainerHandle),
+		rules.NewNetOutDefaultUDPLogRule(m.ContainerHandle, m.AcceptedUDPLogsPerSec),
+		rules.NewAcceptRule(),
+	}
+	logChain, err := m.netOutLogChain(forwardChainName, suffixNetOutLog, logChainRules)
+	if err != nil {
+		return []IpTablesFullChain{}, fmt.Errorf("getting chain name: %s", err)
+	}
+
+	args = append(args, logChain)
+
+	if m.Conn.Limit {
+		logChains, err := m.connLimitLogChains(forwardChainName)
+		if err != nil {
+			return []IpTablesFullChain{}, fmt.Errorf("getting chain name: %s", err)
+		}
+
+		args = append(args, logChains...)
 	}
 
 	return args, nil
@@ -290,17 +308,58 @@ func (m *NetOut) denyNetworksRules() []rules.IPTablesRule {
 	return denyRules
 }
 
-func (m *NetOut) connCountLimitRules() []rules.IPTablesRule {
-	rateLimitRule := rules.IPTablesRule{
-		"-m", "conntrack", "--ctstate", "NEW",
-		"-m", "hashlimit", "--hashlimit-above", m.Conn.Rate, "--hashlimit-burst", m.Conn.Burst,
-		"--hashlimit-mode", "dstip", "--hashlimit-name", m.ContainerHandle, "-j", "RESET",
+func (m *NetOut) connLimitRules(forwardChainName string) ([]rules.IPTablesRule, error) {
+	rateLimitLogChainName, err := m.ChainNamer.Postfix(forwardChainName, suffixNetOutRateLimitLog)
+	if err != nil {
+		return []rules.IPTablesRule{}, err
+	}
+	rateLimitRule := rules.NewNetOutConnRateLimitRule(m.Conn.Rate, m.Conn.Burst, m.ContainerHandle, rateLimitLogChainName)
+
+	hardLimitLogChainName, err := m.ChainNamer.Postfix(forwardChainName, suffixNetOutHardLimitLog)
+	if err != nil {
+		return []rules.IPTablesRule{}, err
+	}
+	hardLimitRule := rules.NewNetOutConnHardLimitRule(m.Conn.Max, hardLimitLogChainName)
+
+	return []rules.IPTablesRule{rateLimitRule, hardLimitRule}, nil
+}
+
+func (m *NetOut) connLimitLogChains(forwardChainName string) ([]IpTablesFullChain, error) {
+	hardLimitChain, err := m.connHardLimitLogChain(forwardChainName)
+	if err != nil {
+		return []IpTablesFullChain{}, err
 	}
 
-	hardLimitRule := rules.IPTablesRule{
-		"-m", "conntrack", "--ctstate", "NEW",
-		"-m", "connlimit", "--connlimit-above", m.Conn.Max, "--connlimit-mask", "32", "--connlimit-daddr", "-j", "RESET",
+	rateLimitChain, err := m.connRateLimitLogChain(forwardChainName)
+	if err != nil {
+		return []IpTablesFullChain{}, err
 	}
 
-	return []rules.IPTablesRule{rateLimitRule, hardLimitRule}
+	return []IpTablesFullChain{hardLimitChain, rateLimitChain}, nil
+}
+
+func (m *NetOut) connHardLimitLogChain(forwardChainName string) (IpTablesFullChain, error) {
+	logRules := []rules.IPTablesRule{
+		rules.NewNetOutConnHardLimitRejectLogRule(m.ContainerHandle, m.DeniedLogsPerSec),
+		rules.NewNetOutDefaultRejectRule(),
+	}
+	return m.netOutLogChain(forwardChainName, suffixNetOutHardLimitLog, logRules)
+}
+
+func (m *NetOut) connRateLimitLogChain(forwardChainName string) (IpTablesFullChain, error) {
+	logRules := []rules.IPTablesRule{
+		rules.NewNetOutConnRateLimitRejectLogRule(m.ContainerHandle, m.DeniedLogsPerSec),
+		rules.NewNetOutDefaultRejectRule(),
+	}
+	return m.netOutLogChain(forwardChainName, suffixNetOutRateLimitLog, logRules)
+}
+
+func (m *NetOut) netOutLogChain(forwardChainName, suffix string, logRules []rules.IPTablesRule) (IpTablesFullChain, error) {
+	logChainName, err := m.ChainNamer.Postfix(forwardChainName, suffix)
+	if err != nil {
+		return IpTablesFullChain{}, err
+	}
+
+	jumpConditions := []rules.IPTablesRule{{"--jump", logChainName}}
+	return IpTablesFullChain{"filter", "", logChainName, jumpConditions, logRules}, nil
 }

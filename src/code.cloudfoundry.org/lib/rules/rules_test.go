@@ -143,6 +143,30 @@ var _ = Describe("Rules", func() {
 		})
 	})
 
+	Describe("NewNetOutConnHardLimitRejectLogRule", func() {
+		Context("when the log prefix is greater than 28 characters", func() {
+			It("shortens the log-prefix to 28 characters and adds a space", func() {
+				rule := rules.NewNetOutConnHardLimitRejectLogRule("some-very-very-very-long-app-guid", 4)
+				Expect(rule).To(gomegamatchers.ContainSequence(rules.IPTablesRule{
+					"-m", "limit", "--limit", "4/s", "--limit-burst", "4",
+				}))
+				Expect(rule).To(ContainElement(`"DENY_OHL_some-very-very-very "`))
+			})
+		})
+	})
+
+	Describe("NewNetOutConnRateLimitRejectLogRule", func() {
+		Context("when the log prefix is greater than 28 characters", func() {
+			It("shortens the log-prefix to 28 characters and adds a space", func() {
+				rule := rules.NewNetOutConnRateLimitRejectLogRule("some-very-very-very-long-app-guid", 5)
+				Expect(rule).To(gomegamatchers.ContainSequence(rules.IPTablesRule{
+					"-m", "limit", "--limit", "5/s", "--limit-burst", "5",
+				}))
+				Expect(rule).To(ContainElement(`"DENY_ORL_some-very-very-very "`))
+			})
+		})
+	})
+
 	Describe("NewIngressMarkRules", func() {
 		It("creates a jump rule when given one interface", func() {
 			jumpRule := rules.NewIngressMarkRules([]string{"eth0"}, 2000, "2.3.4.5", "1")
