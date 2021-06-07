@@ -146,6 +146,12 @@ func cmdAdd(args *skel.CmdArgs) error {
 		},
 		DNSServers:        localDNSServers,
 		ContainerWorkload: containerWorkload,
+		Conn: legacynet.OutConn{
+			Limit: cfg.OutConn.Limit,
+			Max:   strconv.Itoa(cfg.OutConn.Max),
+			Burst: strconv.Itoa(cfg.OutConn.Burst),
+			Rate:  fmt.Sprintf("%d/sec", cfg.OutConn.RatePerSec),
+		},
 	}
 	if err := netOutProvider.Initialize(); err != nil {
 		return fmt.Errorf("initialize net out: %s", err)
@@ -264,6 +270,9 @@ func cmdDel(args *skel.CmdArgs) error {
 		ContainerHandle:    args.ContainerID,
 		ContainerIP:        container.IP,
 		HostInterfaceNames: interfaceNames,
+		Conn: legacynet.OutConn{
+			Limit: n.OutConn.Limit,
+		},
 	}
 
 	if err = netOutProvider.Cleanup(); err != nil {
