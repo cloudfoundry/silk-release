@@ -35,6 +35,9 @@ module Bosh::Template::Test
           'always' => ['1.1.1.1/32'],
           'running' => ['2.2.2.2/32'],
           'staging' => ['3.3.3.3/32'],
+        },
+        'outbound_connections' => {
+          'limit' => true,
         }
       }
     end
@@ -86,6 +89,12 @@ module Bosh::Template::Test
               'dataDir' => '/var/vcap/data/host-local',
               'datastore' => '/var/vcap/data/silk/store.json',
               'mtu' => 0
+            },
+            'outbound_connections' => {
+              'limit' => true,
+              'max' => 1000,
+              'burst' => 1000,
+              'rate_per_sec' => 100,
             }
           }, {
             'name' => 'bandwidth-limit',
