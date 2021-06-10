@@ -821,7 +821,9 @@ var _ = Describe("CniWrapperPlugin", func() {
 					By("writing the default forwarding and outbound connection limit rules for that container")
 
 					expectedHardLimitCfg := "-m connlimit --connlimit-above 1000 --connlimit-mask 32 --connlimit-daddr"
-					expectedRateLimitCfg := "-m hashlimit --hashlimit-above 100/sec --hashlimit-burst 999 --hashlimit-mode dstip --hashlimit-name " + containerID
+					expectedRateLimitCfg := "-m hashlimit --hashlimit-above 100/sec --hashlimit-burst 999 --hashlimit-mode dstip"
+					expectedRateLimitCfg += " --hashlimit-name " + containerID + " --hashlimit-htable-expire 10000"
+
 					Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
 						`-A ` + netoutChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
 						`-A ` + netoutChainName + ` -p tcp -m state --state INVALID -j DROP`,

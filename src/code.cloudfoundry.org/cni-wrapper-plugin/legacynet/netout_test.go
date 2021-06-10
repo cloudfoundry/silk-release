@@ -894,9 +894,9 @@ var _ = Describe("Netout", func() {
 		Context("when outbound container connection limiting is enabled", func() {
 			BeforeEach(func() {
 				netOut.Conn.Limit = true
-				netOut.Conn.Max = "500"
-				netOut.Conn.Burst = "400"
-				netOut.Conn.Rate = "100/sec"
+				netOut.Conn.Max = 500
+				netOut.Conn.Burst = 400
+				netOut.Conn.RatePerSec = 99
 
 				chainNamer.PostfixReturnsOnCall(1, "netout-some-container-handle-rl-log", nil)
 				chainNamer.PostfixReturnsOnCall(2, "netout-some-container-handle-hl-log", nil)
@@ -917,8 +917,9 @@ var _ = Describe("Netout", func() {
 
 				expectedRateLimitRule := rules.IPTablesRule{
 					"-m", "conntrack", "--ctstate", "NEW",
-					"-m", "hashlimit", "--hashlimit-above", "100/sec", "--hashlimit-burst", "400",
-					"--hashlimit-mode", "dstip", "--hashlimit-name", "some-container-handle", "-j", "netout-some-container-handle-rl-log",
+					"-m", "hashlimit", "--hashlimit-above", "99/sec", "--hashlimit-burst", "400",
+					"--hashlimit-mode", "dstip", "--hashlimit-name", "some-container-handle",
+					"--hashlimit-htable-expire", "5000", "-j", "netout-some-container-handle-rl-log",
 				}
 				expectedHardLimitRule := rules.IPTablesRule{
 					"-m", "conntrack", "--ctstate", "NEW",

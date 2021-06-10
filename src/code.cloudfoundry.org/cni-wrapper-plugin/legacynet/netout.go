@@ -2,12 +2,12 @@ package legacynet
 
 import (
 	"fmt"
-	"code.cloudfoundry.org/lib/rules"
+	"math"
 	"net"
-
 	"strconv"
 
 	"code.cloudfoundry.org/garden"
+	"code.cloudfoundry.org/lib/rules"
 )
 
 const prefixInput = "input"
@@ -16,6 +16,7 @@ const prefixOverlay = "overlay"
 const suffixNetOutLog = "log"
 const suffixNetOutHardLimitLog = "hl-log"
 const suffixNetOutRateLimitLog = "rl-log"
+const secondInMillis = 1000
 
 //go:generate counterfeiter -o ../fakes/net_out_rule_converter.go --fake-name NetOutRuleConverter . netOutRuleConverter
 type netOutRuleConverter interface {
@@ -24,10 +25,10 @@ type netOutRuleConverter interface {
 }
 
 type OutConn struct {
-	Limit bool
-	Max   string
-	Burst string
-	Rate  string
+	Limit      bool
+	Max        int
+	Burst      int
+	RatePerSec int
 }
 
 type NetOut struct {
@@ -313,15 +314,30 @@ func (m *NetOut) connLimitRules(forwardChainName string) ([]rules.IPTablesRule, 
 	if err != nil {
 		return []rules.IPTablesRule{}, err
 	}
-	rateLimitRule := rules.NewNetOutConnRateLimitRule(m.Conn.Rate, m.Conn.Burst, m.ContainerHandle, rateLimitLogChainName)
+
+	burst := strconv.Itoa(m.Conn.Burst)
+	rate := fmt.Sprintf("%d/sec", m.Conn.RatePerSec)
+	expiryPeriod := m.rateLimitExprityPeriod()
+
+	rateLimitRule := rules.NewNetOutConnRateLimitRule(rate, burst, m.ContainerHandle, expiryPeriod, rateLimitLogChainName)
 
 	hardLimitLogChainName, err := m.ChainNamer.Postfix(forwardChainName, suffixNetOutHardLimitLog)
 	if err != nil {
 		return []rules.IPTablesRule{}, err
 	}
-	hardLimitRule := rules.NewNetOutConnHardLimitRule(m.Conn.Max, hardLimitLogChainName)
+	hardLimit := strconv.Itoa(m.Conn.Max)
+	hardLimitRule := rules.NewNetOutConnHardLimitRule(hardLimit, hardLimitLogChainName)
 
 	return []rules.IPTablesRule{rateLimitRule, hardLimitRule}, nil
+}
+
+func (m *NetOut) rateLimitExprityPeriod() string {
+	burst := float64(m.Conn.Burst)
+	ratePerSec := float64(m.Conn.RatePerSec)
+	expiryPeriodInSeconds := int64(math.Ceil(burst / ratePerSec))
+	expiryPeriodInMillis := expiryPeriodInSeconds * int64(secondInMillis)
+
+	return fmt.Sprintf("%d", expiryPeriodInMillis)
 }
 
 func (m *NetOut) connLimitLogChains(forwardChainName string) ([]IpTablesFullChain, error) {

@@ -282,11 +282,12 @@ func NewNetOutRelatedEstablishedRule() IPTablesRule {
 	}
 }
 
-func NewNetOutConnRateLimitRule(rate, burst, containerHandle, rateLimitLogChainName string) IPTablesRule {
+func NewNetOutConnRateLimitRule(rate, burst, containerHandle, expiryPeriod, rateLimitLogChainName string) IPTablesRule {
 	return IPTablesRule{
 		"-m", "conntrack", "--ctstate", "NEW",
 		"-m", "hashlimit", "--hashlimit-above", rate, "--hashlimit-burst", burst,
-		"--hashlimit-mode", "dstip", "--hashlimit-name", containerHandle, "-j", rateLimitLogChainName,
+		"--hashlimit-mode", "dstip", "--hashlimit-name", containerHandle,
+		"--hashlimit-htable-expire", expiryPeriod, "-j", rateLimitLogChainName,
 	}
 }
 

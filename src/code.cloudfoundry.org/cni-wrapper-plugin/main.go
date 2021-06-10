@@ -147,10 +147,10 @@ func cmdAdd(args *skel.CmdArgs) error {
 		DNSServers:        localDNSServers,
 		ContainerWorkload: containerWorkload,
 		Conn: legacynet.OutConn{
-			Limit: cfg.OutConn.Limit,
-			Max:   strconv.Itoa(cfg.OutConn.Max),
-			Burst: strconv.Itoa(cfg.OutConn.Burst),
-			Rate:  fmt.Sprintf("%d/sec", cfg.OutConn.RatePerSec),
+			Limit:      cfg.OutConn.Limit,
+			Max:        cfg.OutConn.Max,
+			Burst:      cfg.OutConn.Burst,
+			RatePerSec: cfg.OutConn.RatePerSec,
 		},
 	}
 	if err := netOutProvider.Initialize(); err != nil {
