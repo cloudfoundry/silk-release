@@ -12,7 +12,5 @@ This is the README for our scripts. To learn more about `silk-release`, go to th
 | submodule-log | prints the cached submodule log and if you provide story id(s) will add finishes tag(s) | |
 | sync-package-specs | updates the package spec files for our release | |
 | template-tests | runs the template spec tests for the release | |
-| test-windows.ps1 | runs the vxlan-policy-agent tests on windows | |
 | test.sh | runs all the component tests for silk-release | |
 | update | updates all submodules | |
-| winc-sync-package-specs | updates the package spec files for vxlan-policy-agent-windows | |
