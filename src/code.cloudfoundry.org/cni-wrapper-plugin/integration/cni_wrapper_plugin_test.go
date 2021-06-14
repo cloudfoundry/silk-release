@@ -802,9 +802,10 @@ var _ = Describe("CniWrapperPlugin", func() {
 				})
 			})
 
-			Context("when outbound container connection limiting is enabled", func() {
+			Context("when outbound container connection limiting with logging is enabled", func() {
 				BeforeEach(func() {
 					inputStruct.WrapperConfig.OutConn.Limit = true
+					inputStruct.WrapperConfig.OutConn.Logging = true
 					input = GetInput(inputStruct)
 				})
 

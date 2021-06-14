@@ -25,6 +25,7 @@ type DenyNetworksConfig struct {
 
 type OutConnConfig struct {
 	Limit      bool `json:"limit"`
+	Logging    bool `json:"logging"`
 	Max        int  `json:"max" validate:"min=1"`
 	Burst      int  `json:"burst" validate:"min=1"`
 	RatePerSec int  `json:"rate_per_sec" validate:"min=1"`

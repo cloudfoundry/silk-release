@@ -481,74 +481,94 @@ var _ = Describe("Netout", func() {
 				chainNamer.PostfixReturnsOnCall(2, "netout-some-container-handle-rl-log", nil)
 			})
 
-			It("additionally creates the hard and rate limit logging chains", func() {
-				err := netOut.Initialize()
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(chainNamer.PostfixCallCount()).To(Equal(3))
-				body, suffix := chainNamer.PostfixArgsForCall(1)
-				Expect(body).To(Equal("netout-some-container-handle"))
-				Expect(suffix).To(Equal("hl-log"))
-
-				body, suffix = chainNamer.PostfixArgsForCall(2)
-				Expect(body).To(Equal("netout-some-container-handle"))
-				Expect(suffix).To(Equal("rl-log"))
-
-				Expect(ipTables.NewChainCallCount()).To(Equal(6))
-				table, chain := ipTables.NewChainArgsForCall(4)
-				Expect(table).To(Equal("filter"))
-				Expect(chain).To(Equal("netout-some-container-handle-hl-log"))
-
-				table, chain = ipTables.NewChainArgsForCall(5)
-				Expect(table).To(Equal("filter"))
-				Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
-			})
-
-			It("additionally writes the hard and rate limit logging rules", func() {
-				err := netOut.Initialize()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(ipTables.BulkAppendCallCount()).To(Equal(9))
-
-				table, chain, rulespec := ipTables.BulkAppendArgsForCall(7)
-				Expect(table).To(Equal("filter"))
-				Expect(chain).To(Equal("netout-some-container-handle-hl-log"))
-				Expect(rulespec).To(Equal([]rules.IPTablesRule{
-					{"-m", "limit", "--limit", "3/s", "--limit-burst", "3",
-						"--jump", "LOG", "--log-prefix", `"DENY_OHL_some-container-hand "`},
-					{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
-				}))
-
-				table, chain, rulespec = ipTables.BulkAppendArgsForCall(8)
-				Expect(table).To(Equal("filter"))
-				Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
-				Expect(rulespec).To(Equal([]rules.IPTablesRule{
-					{"-m", "limit", "--limit", "3/s", "--limit-burst", "3",
-						"--jump", "LOG", "--log-prefix", `"DENY_ORL_some-container-hand "`},
-					{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
-				}))
-			})
-
-			Context("when the chain namer fails", func() {
-				Context("when naming the hard limit chain", func() {
-					BeforeEach(func() {
-						chainNamer.PostfixReturnsOnCall(1, "", errors.New("pineapple"))
-					})
-
-					It("returns the error", func() {
-						err := netOut.Initialize()
-						Expect(err).To(MatchError("getting chain name: pineapple"))
-					})
+			Context("when denied outbound container connections logging is enabled", func() {
+				BeforeEach(func() {
+					netOut.Conn.Logging = true
 				})
 
-				Context("when naming the rate limit chain", func() {
-					BeforeEach(func() {
-						chainNamer.PostfixReturnsOnCall(2, "", errors.New("mango"))
+				It("additionally creates the hard and rate limit logging chains", func() {
+					err := netOut.Initialize()
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(chainNamer.PostfixCallCount()).To(Equal(3))
+					body, suffix := chainNamer.PostfixArgsForCall(1)
+					Expect(body).To(Equal("netout-some-container-handle"))
+					Expect(suffix).To(Equal("hl-log"))
+
+					body, suffix = chainNamer.PostfixArgsForCall(2)
+					Expect(body).To(Equal("netout-some-container-handle"))
+					Expect(suffix).To(Equal("rl-log"))
+
+					Expect(ipTables.NewChainCallCount()).To(Equal(6))
+					table, chain := ipTables.NewChainArgsForCall(4)
+					Expect(table).To(Equal("filter"))
+					Expect(chain).To(Equal("netout-some-container-handle-hl-log"))
+
+					table, chain = ipTables.NewChainArgsForCall(5)
+					Expect(table).To(Equal("filter"))
+					Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
+				})
+
+				It("additionally writes the hard and rate limit logging rules", func() {
+					err := netOut.Initialize()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(ipTables.BulkAppendCallCount()).To(Equal(9))
+
+					table, chain, rulespec := ipTables.BulkAppendArgsForCall(7)
+					Expect(table).To(Equal("filter"))
+					Expect(chain).To(Equal("netout-some-container-handle-hl-log"))
+					Expect(rulespec).To(Equal([]rules.IPTablesRule{
+						{"-m", "limit", "--limit", "3/s", "--limit-burst", "3",
+							"--jump", "LOG", "--log-prefix", `"DENY_OHL_some-container-hand "`},
+						{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
+					}))
+
+					table, chain, rulespec = ipTables.BulkAppendArgsForCall(8)
+					Expect(table).To(Equal("filter"))
+					Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
+					Expect(rulespec).To(Equal([]rules.IPTablesRule{
+						{"-m", "limit", "--limit", "3/s", "--limit-burst", "3",
+							"--jump", "LOG", "--log-prefix", `"DENY_ORL_some-container-hand "`},
+						{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
+					}))
+				})
+
+				Context("when the chain namer fails", func() {
+					Context("when naming the hard limit chain", func() {
+						BeforeEach(func() {
+							chainNamer.PostfixReturnsOnCall(1, "", errors.New("pineapple"))
+						})
+
+						It("returns the error", func() {
+							err := netOut.Initialize()
+							Expect(err).To(MatchError("getting chain name: pineapple"))
+						})
 					})
 
-					It("returns the error", func() {
-						err := netOut.Initialize()
-						Expect(err).To(MatchError("getting chain name: mango"))
+					Context("when naming the rate limit chain", func() {
+						BeforeEach(func() {
+							chainNamer.PostfixReturnsOnCall(2, "", errors.New("mango"))
+						})
+
+						It("returns the error", func() {
+							err := netOut.Initialize()
+							Expect(err).To(MatchError("getting chain name: mango"))
+						})
 					})
+				})
+			})
+
+			Context("when denied outbound container connections logging is disabled", func() {
+				BeforeEach(func() {
+					netOut.Conn.Logging = false
+				})
+
+				It("doesn't add the hard and rate limit logging chains", func() {
+					err := netOut.Initialize()
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(chainNamer.PostfixCallCount()).To(Equal(1))
+					Expect(ipTables.NewChainCallCount()).To(Equal(4))
 				})
 			})
 		})
@@ -707,32 +727,52 @@ var _ = Describe("Netout", func() {
 				chainNamer.PostfixReturnsOnCall(2, "netout-some-container-handle-rl-log", nil)
 			})
 
-			It("additionally clears the connection limit logging chains", func() {
-				err := netOut.Cleanup()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(ipTables.DeleteChainCallCount()).To(Equal(6))
+			Context("when denied outbound container connections logging is enabled", func() {
+				BeforeEach(func() {
+					netOut.Conn.Logging = true
+				})
 
-				table, chain := ipTables.DeleteChainArgsForCall(4)
-				Expect(table).To(Equal("filter"))
-				Expect(chain).To(Equal("netout-some-container-handle-hl-log"))
+				It("additionally clears the connection limit logging chains", func() {
+					err := netOut.Cleanup()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(ipTables.ClearChainCallCount()).To(Equal(6))
 
-				table, chain = ipTables.DeleteChainArgsForCall(5)
-				Expect(table).To(Equal("filter"))
-				Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
+					table, chain := ipTables.ClearChainArgsForCall(4)
+					Expect(table).To(Equal("filter"))
+					Expect(chain).To(Equal("netout-some-container-handle-hl-log"))
+
+					table, chain = ipTables.ClearChainArgsForCall(5)
+					Expect(table).To(Equal("filter"))
+					Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
+				})
+
+				It("additionally deletes the connection limit logging chains", func() {
+					err := netOut.Cleanup()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(ipTables.DeleteChainCallCount()).To(Equal(6))
+
+					table, chain := ipTables.DeleteChainArgsForCall(4)
+					Expect(table).To(Equal("filter"))
+					Expect(chain).To(Equal("netout-some-container-handle-hl-log"))
+
+					table, chain = ipTables.DeleteChainArgsForCall(5)
+					Expect(table).To(Equal("filter"))
+					Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
+				})
 			})
 
-			It("additionally deletes the connection limit logging chains", func() {
-				err := netOut.Cleanup()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(ipTables.DeleteChainCallCount()).To(Equal(6))
+			Context("when denied outbound container connections logging is disabled", func() {
+				BeforeEach(func() {
+					netOut.Conn.Logging = false
+				})
 
-				table, chain := ipTables.DeleteChainArgsForCall(4)
-				Expect(table).To(Equal("filter"))
-				Expect(chain).To(Equal("netout-some-container-handle-hl-log"))
+				It("doesn't clean up the hard and rate limit logging chains", func() {
+					err := netOut.Cleanup()
+					Expect(err).NotTo(HaveOccurred())
 
-				table, chain = ipTables.DeleteChainArgsForCall(5)
-				Expect(table).To(Equal("filter"))
-				Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
+					Expect(ipTables.ClearChainCallCount()).To(Equal(4))
+					Expect(ipTables.DeleteChainCallCount()).To(Equal(4))
+				})
 			})
 		})
 	})
@@ -902,61 +942,111 @@ var _ = Describe("Netout", func() {
 				chainNamer.PostfixReturnsOnCall(2, "netout-some-container-handle-hl-log", nil)
 			})
 
-			It("inserts hard and rate limit rules", func() {
-				err := netOut.BulkInsertRules(netOutRules)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(ipTables.BulkInsertCallCount()).To(Equal(1))
-				table, chain, pos, rulespec := ipTables.BulkInsertArgsForCall(0)
-
-				Expect(table).To(Equal("filter"))
-				Expect(chain).To(Equal("netout-some-container-handle"))
-				Expect(pos).To(Equal(1))
-
-				Expect(chainNamer.PostfixCallCount()).To(Equal(3))
-
-				expectedRateLimitRule := rules.IPTablesRule{
-					"-m", "conntrack", "--ctstate", "NEW",
-					"-m", "hashlimit", "--hashlimit-above", "99/sec", "--hashlimit-burst", "400",
-					"--hashlimit-mode", "dstip", "--hashlimit-name", "some-container-handle",
-					"--hashlimit-htable-expire", "5000", "-j", "netout-some-container-handle-rl-log",
-				}
-				expectedHardLimitRule := rules.IPTablesRule{
-					"-m", "conntrack", "--ctstate", "NEW",
-					"-m", "connlimit", "--connlimit-above", "500", "--connlimit-mask", "32", "--connlimit-daddr",
-					"-j", "netout-some-container-handle-hl-log",
-				}
-				expectedRules := append(genericRules, []rules.IPTablesRule{
-					expectedRateLimitRule,
-					expectedHardLimitRule,
-					{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
-					{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
-				}...)
-
-				Expect(rulespec).To(Equal(expectedRules))
-			})
-
-			Context("when the chain namer fails", func() {
-				Context("when naming the rate limit chain", func() {
-					BeforeEach(func() {
-						chainNamer.PostfixReturnsOnCall(1, "", errors.New("guacamole"))
-					})
-
-					It("returns the error", func() {
-						err := netOut.BulkInsertRules(netOutRules)
-						Expect(err).To(MatchError("getting chain name: guacamole"))
-					})
+			Context("when denied outbound container connections logging is enabled", func() {
+				BeforeEach(func() {
+					netOut.Conn.Logging = true
 				})
 
-				Context("when naming the rate limit chain", func() {
-					BeforeEach(func() {
-						chainNamer.PostfixReturnsOnCall(2, "", errors.New("papaya"))
+				It("inserts hard and rate limit rules", func() {
+					err := netOut.BulkInsertRules(netOutRules)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(ipTables.BulkInsertCallCount()).To(Equal(1))
+					table, chain, pos, rulespec := ipTables.BulkInsertArgsForCall(0)
+
+					Expect(table).To(Equal("filter"))
+					Expect(chain).To(Equal("netout-some-container-handle"))
+					Expect(pos).To(Equal(1))
+
+					Expect(chainNamer.PostfixCallCount()).To(Equal(3))
+
+					By("specifying a jump condition to the respective logging chains")
+
+					expectedRateLimitRule := rules.IPTablesRule{
+						"-m", "conntrack", "--ctstate", "NEW",
+						"-m", "hashlimit", "--hashlimit-above", "99/sec", "--hashlimit-burst", "400",
+						"--hashlimit-mode", "dstip", "--hashlimit-name", "some-container-handle",
+						"--hashlimit-htable-expire", "5000", "-j", "netout-some-container-handle-rl-log",
+					}
+					expectedHardLimitRule := rules.IPTablesRule{
+						"-m", "conntrack", "--ctstate", "NEW",
+						"-m", "connlimit", "--connlimit-above", "500", "--connlimit-mask", "32", "--connlimit-daddr",
+						"-j", "netout-some-container-handle-hl-log",
+					}
+					expectedRules := append(genericRules, []rules.IPTablesRule{
+						expectedRateLimitRule,
+						expectedHardLimitRule,
+						{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
+						{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
+					}...)
+
+					Expect(rulespec).To(Equal(expectedRules))
+				})
+
+				Context("when the chain namer fails", func() {
+					Context("when naming the rate limit chain", func() {
+						BeforeEach(func() {
+							chainNamer.PostfixReturnsOnCall(1, "", errors.New("guacamole"))
+						})
+
+						It("returns the error", func() {
+							err := netOut.BulkInsertRules(netOutRules)
+							Expect(err).To(MatchError("getting chain name: guacamole"))
+						})
 					})
 
-					It("returns the error", func() {
-						err := netOut.BulkInsertRules(netOutRules)
-						Expect(err).To(MatchError("getting chain name: papaya"))
+					Context("when naming the rate limit chain", func() {
+						BeforeEach(func() {
+							chainNamer.PostfixReturnsOnCall(2, "", errors.New("papaya"))
+						})
+
+						It("returns the error", func() {
+							err := netOut.BulkInsertRules(netOutRules)
+							Expect(err).To(MatchError("getting chain name: papaya"))
+						})
 					})
+				})
+			})
+
+			Context("when denied outbound container connections logging is disabled", func() {
+				BeforeEach(func() {
+					netOut.Conn.Logging = false
+				})
+
+				It("inserts hard and rate limit rules", func() {
+					err := netOut.BulkInsertRules(netOutRules)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(ipTables.BulkInsertCallCount()).To(Equal(1))
+					table, chain, pos, rulespec := ipTables.BulkInsertArgsForCall(0)
+
+					Expect(table).To(Equal("filter"))
+					Expect(chain).To(Equal("netout-some-container-handle"))
+					Expect(pos).To(Equal(1))
+
+					Expect(chainNamer.PostfixCallCount()).To(Equal(1))
+
+					By("specifying a REJECT jump condition")
+
+					expectedRateLimitRule := rules.IPTablesRule{
+						"-m", "conntrack", "--ctstate", "NEW",
+						"-m", "hashlimit", "--hashlimit-above", "99/sec", "--hashlimit-burst", "400",
+						"--hashlimit-mode", "dstip", "--hashlimit-name", "some-container-handle",
+						"--hashlimit-htable-expire", "5000", "-j", "REJECT",
+					}
+					expectedHardLimitRule := rules.IPTablesRule{
+						"-m", "conntrack", "--ctstate", "NEW",
+						"-m", "connlimit", "--connlimit-above", "500", "--connlimit-mask", "32", "--connlimit-daddr",
+						"-j", "REJECT",
+					}
+					expectedRules := append(genericRules, []rules.IPTablesRule{
+						expectedRateLimitRule,
+						expectedHardLimitRule,
+						{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
+						{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
+					}...)
+
+					Expect(rulespec).To(Equal(expectedRules))
 				})
 			})
 		})

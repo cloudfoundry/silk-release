@@ -92,6 +92,7 @@ module Bosh::Template::Test
             },
             'outbound_connections' => {
               'limit' => true,
+              'logging' => true,
               'max' => 1000,
               'burst' => 1000,
               'rate_per_sec' => 100,

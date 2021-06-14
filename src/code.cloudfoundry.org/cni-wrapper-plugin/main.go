@@ -148,6 +148,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		ContainerWorkload: containerWorkload,
 		Conn: legacynet.OutConn{
 			Limit:      cfg.OutConn.Limit,
+			Logging:    cfg.OutConn.Logging,
 			Max:        cfg.OutConn.Max,
 			Burst:      cfg.OutConn.Burst,
 			RatePerSec: cfg.OutConn.RatePerSec,
@@ -271,7 +272,8 @@ func cmdDel(args *skel.CmdArgs) error {
 		ContainerIP:        container.IP,
 		HostInterfaceNames: interfaceNames,
 		Conn: legacynet.OutConn{
-			Limit: n.OutConn.Limit,
+			Limit:   n.OutConn.Limit,
+			Logging: n.OutConn.Logging,
 		},
 	}
 

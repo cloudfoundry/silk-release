@@ -40,6 +40,7 @@ var _ = Describe("LoadWrapperConfig", func() {
 			"iptables_accepted_udp_logs_per_sec": 4,
 			"outbound_connections": {
 				"limit": true,
+				"logging": true,
 				"max": 1000,
 				"burst": 900,
 				"rate_per_sec": 100
@@ -70,6 +71,7 @@ var _ = Describe("LoadWrapperConfig", func() {
 			IPTablesAcceptedUDPLogsPerSec: 4,
 			OutConn: lib.OutConnConfig{
 				Limit:      true,
+				Logging:    true,
 				Max:        1000,
 				Burst:      900,
 				RatePerSec: 100,

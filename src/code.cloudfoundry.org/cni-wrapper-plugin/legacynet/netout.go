@@ -26,6 +26,7 @@ type netOutRuleConverter interface {
 
 type OutConn struct {
 	Limit      bool
+	Logging    bool
 	Max        int
 	Burst      int
 	RatePerSec int
@@ -179,7 +180,7 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 
 	args = append(args, logChain)
 
-	if m.Conn.Limit {
+	if m.Conn.Limit && m.Conn.Logging {
 		logChains, err := m.connLimitLogChains(forwardChainName)
 		if err != nil {
 			return []IpTablesFullChain{}, fmt.Errorf("getting chain name: %s", err)
@@ -309,26 +310,49 @@ func (m *NetOut) denyNetworksRules() []rules.IPTablesRule {
 	return denyRules
 }
 
-func (m *NetOut) connLimitRules(forwardChainName string) ([]rules.IPTablesRule, error) {
-	rateLimitLogChainName, err := m.ChainNamer.Postfix(forwardChainName, suffixNetOutRateLimitLog)
+func (m *NetOut) connLimitRules(forwardChainName string) (iptRules []rules.IPTablesRule, err error) {
+	rateLimitRule, err := m.rateLimitRule(forwardChainName)
 	if err != nil {
 		return []rules.IPTablesRule{}, err
+	}
+
+	hardLimitRule, err := m.hardLimitRule(forwardChainName)
+	if err != nil {
+		return []rules.IPTablesRule{}, err
+	}
+
+	return []rules.IPTablesRule{rateLimitRule, hardLimitRule}, nil
+}
+
+func (m *NetOut) rateLimitRule(forwardChainName string) (rule rules.IPTablesRule, err error) {
+	jumpTarget := "REJECT"
+
+	if m.Conn.Logging {
+		jumpTarget, err = m.ChainNamer.Postfix(forwardChainName, suffixNetOutRateLimitLog)
+		if err != nil {
+			return rules.IPTablesRule{}, err
+		}
 	}
 
 	burst := strconv.Itoa(m.Conn.Burst)
 	rate := fmt.Sprintf("%d/sec", m.Conn.RatePerSec)
 	expiryPeriod := m.rateLimitExprityPeriod()
 
-	rateLimitRule := rules.NewNetOutConnRateLimitRule(rate, burst, m.ContainerHandle, expiryPeriod, rateLimitLogChainName)
+	return rules.NewNetOutConnRateLimitRule(rate, burst, m.ContainerHandle, expiryPeriod, jumpTarget), nil
+}
 
-	hardLimitLogChainName, err := m.ChainNamer.Postfix(forwardChainName, suffixNetOutHardLimitLog)
-	if err != nil {
-		return []rules.IPTablesRule{}, err
+func (m *NetOut) hardLimitRule(forwardChainName string) (rule rules.IPTablesRule, err error) {
+	jumpTarget := "REJECT"
+
+	if m.Conn.Logging {
+		jumpTarget, err = m.ChainNamer.Postfix(forwardChainName, suffixNetOutHardLimitLog)
+		if err != nil {
+			return rules.IPTablesRule{}, err
+		}
 	}
-	hardLimit := strconv.Itoa(m.Conn.Max)
-	hardLimitRule := rules.NewNetOutConnHardLimitRule(hardLimit, hardLimitLogChainName)
 
-	return []rules.IPTablesRule{rateLimitRule, hardLimitRule}, nil
+	hardLimit := strconv.Itoa(m.Conn.Max)
+	return rules.NewNetOutConnHardLimitRule(hardLimit, jumpTarget), nil
 }
 
 func (m *NetOut) rateLimitExprityPeriod() string {
