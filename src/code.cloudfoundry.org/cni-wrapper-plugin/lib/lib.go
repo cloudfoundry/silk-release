@@ -26,7 +26,6 @@ type DenyNetworksConfig struct {
 type OutConnConfig struct {
 	Limit      bool `json:"limit"`
 	Logging    bool `json:"logging"`
-	Max        int  `json:"max" validate:"min=1"`
 	Burst      int  `json:"burst" validate:"min=1"`
 	RatePerSec int  `json:"rate_per_sec" validate:"min=1"`
 }
@@ -96,10 +95,6 @@ func LoadWrapperConfig(bytes []byte) (*WrapperConfig, error) {
 
 	if _, ok := n.Delegate["cniVersion"]; !ok {
 		n.Delegate["cniVersion"] = version.Current()
-	}
-
-	if n.OutConn.Max <= 0 {
-		return nil, fmt.Errorf("invalid outbound connection max")
 	}
 
 	if n.OutConn.Burst <= 0 {

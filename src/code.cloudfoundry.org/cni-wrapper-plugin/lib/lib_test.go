@@ -41,7 +41,6 @@ var _ = Describe("LoadWrapperConfig", func() {
 			"outbound_connections": {
 				"limit": true,
 				"logging": true,
-				"max": 1000,
 				"burst": 900,
 				"rate_per_sec": 100
 			}
@@ -72,7 +71,6 @@ var _ = Describe("LoadWrapperConfig", func() {
 			OutConn: lib.OutConnConfig{
 				Limit:      true,
 				Logging:    true,
-				Max:        1000,
 				Burst:      900,
 				RatePerSec: 100,
 			},
@@ -157,9 +155,8 @@ var _ = Describe("LoadWrapperConfig", func() {
 	},
 		Entry("denied logs per sec", "iptables_denied_logs_per_sec", -1, "invalid denied logs per sec"),
 		Entry("accepted udp logs per sec", "iptables_accepted_udp_logs_per_sec", -1, "invalid accepted udp logs per sec"),
-		Entry("out conn max", "outbound_connections", map[string]interface{}{"max": 0}, "invalid outbound connection max"),
-		Entry("out conn burst", "outbound_connections", map[string]interface{}{"max": 1, "burst": -1}, "invalid outbound connection burst"),
-		Entry("out conn rate", "outbound_connections", map[string]interface{}{"max": 1, "burst": 1, "rate_per_sec": -1}, "invalid outbound connection rate"),
+		Entry("out conn burst", "outbound_connections", map[string]interface{}{"burst": -1}, "invalid outbound connection burst"),
+		Entry("out conn rate", "outbound_connections", map[string]interface{}{"burst": 1, "rate_per_sec": -1}, "invalid outbound connection rate"),
 	)
 })
 

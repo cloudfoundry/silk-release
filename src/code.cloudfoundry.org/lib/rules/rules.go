@@ -291,14 +291,6 @@ func NewNetOutConnRateLimitRule(rate, burst, containerHandle, expiryPeriod, rate
 	}
 }
 
-func NewNetOutConnHardLimitRule(max, hardLimitLogChainName string) IPTablesRule {
-	return IPTablesRule{
-		"-m", "conntrack", "--ctstate", "NEW",
-		"-m", "connlimit", "--connlimit-above", max, "--connlimit-mask", "32", "--connlimit-daddr",
-		"-j", hardLimitLogChainName,
-	}
-}
-
 func NewOverlayTagAcceptRule(containerIP, tag string) IPTablesRule {
 	return IPTablesRule{
 		"-d", containerIP,
@@ -344,10 +336,6 @@ func NewOverlayRelatedEstablishedRule(containerIP string) IPTablesRule {
 
 func NewNetOutDefaultRejectLogRule(containerHandle string, deniedLogsPerSec int) IPTablesRule {
 	return newNetOutRejectLogRule(containerHandle, "DENY", deniedLogsPerSec)
-}
-
-func NewNetOutConnHardLimitRejectLogRule(containerHandle string, deniedLogsPerSec int) IPTablesRule {
-	return newNetOutRejectLogRule(containerHandle, "DENY_OHL", deniedLogsPerSec)
 }
 
 func NewNetOutConnRateLimitRejectLogRule(containerHandle string, deniedLogsPerSec int) IPTablesRule {

@@ -14,7 +14,6 @@ const prefixInput = "input"
 const prefixNetOut = "netout"
 const prefixOverlay = "overlay"
 const suffixNetOutLog = "log"
-const suffixNetOutHardLimitLog = "hl-log"
 const suffixNetOutRateLimitLog = "rl-log"
 const secondInMillis = 1000
 
@@ -27,7 +26,6 @@ type netOutRuleConverter interface {
 type OutConn struct {
 	Limit      bool
 	Logging    bool
-	Max        int
 	Burst      int
 	RatePerSec int
 }
@@ -103,12 +101,12 @@ func (m *NetOut) BulkInsertRules(netOutRules []garden.NetOutRule) error {
 	ruleSpec = append(ruleSpec, m.denyNetworksRules()...)
 
 	if m.Conn.Limit {
-		limitRules, err := m.connLimitRules(chain)
+		rateLimitRule, err := m.rateLimitRule(chain)
 		if err != nil {
 			return fmt.Errorf("getting chain name: %s", err)
 		}
 
-		ruleSpec = append(ruleSpec, limitRules...)
+		ruleSpec = append(ruleSpec, rateLimitRule)
 	}
 
 	ruleSpec = append(ruleSpec, []rules.IPTablesRule{
@@ -181,12 +179,12 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 	args = append(args, logChain)
 
 	if m.Conn.Limit && m.Conn.Logging {
-		logChains, err := m.connLimitLogChains(forwardChainName)
+		rateLimitLogChain, err := m.connRateLimitLogChain(forwardChainName)
 		if err != nil {
 			return []IpTablesFullChain{}, fmt.Errorf("getting chain name: %s", err)
 		}
 
-		args = append(args, logChains...)
+		args = append(args, rateLimitLogChain)
 	}
 
 	return args, nil
@@ -310,20 +308,6 @@ func (m *NetOut) denyNetworksRules() []rules.IPTablesRule {
 	return denyRules
 }
 
-func (m *NetOut) connLimitRules(forwardChainName string) (iptRules []rules.IPTablesRule, err error) {
-	rateLimitRule, err := m.rateLimitRule(forwardChainName)
-	if err != nil {
-		return []rules.IPTablesRule{}, err
-	}
-
-	hardLimitRule, err := m.hardLimitRule(forwardChainName)
-	if err != nil {
-		return []rules.IPTablesRule{}, err
-	}
-
-	return []rules.IPTablesRule{rateLimitRule, hardLimitRule}, nil
-}
-
 func (m *NetOut) rateLimitRule(forwardChainName string) (rule rules.IPTablesRule, err error) {
 	jumpTarget := "REJECT"
 
@@ -336,54 +320,18 @@ func (m *NetOut) rateLimitRule(forwardChainName string) (rule rules.IPTablesRule
 
 	burst := strconv.Itoa(m.Conn.Burst)
 	rate := fmt.Sprintf("%d/sec", m.Conn.RatePerSec)
-	expiryPeriod := m.rateLimitExprityPeriod()
+	expiryPeriod := m.rateLimitExpiryPeriod()
 
 	return rules.NewNetOutConnRateLimitRule(rate, burst, m.ContainerHandle, expiryPeriod, jumpTarget), nil
 }
 
-func (m *NetOut) hardLimitRule(forwardChainName string) (rule rules.IPTablesRule, err error) {
-	jumpTarget := "REJECT"
-
-	if m.Conn.Logging {
-		jumpTarget, err = m.ChainNamer.Postfix(forwardChainName, suffixNetOutHardLimitLog)
-		if err != nil {
-			return rules.IPTablesRule{}, err
-		}
-	}
-
-	hardLimit := strconv.Itoa(m.Conn.Max)
-	return rules.NewNetOutConnHardLimitRule(hardLimit, jumpTarget), nil
-}
-
-func (m *NetOut) rateLimitExprityPeriod() string {
+func (m *NetOut) rateLimitExpiryPeriod() string {
 	burst := float64(m.Conn.Burst)
 	ratePerSec := float64(m.Conn.RatePerSec)
 	expiryPeriodInSeconds := int64(math.Ceil(burst / ratePerSec))
 	expiryPeriodInMillis := expiryPeriodInSeconds * int64(secondInMillis)
 
 	return fmt.Sprintf("%d", expiryPeriodInMillis)
-}
-
-func (m *NetOut) connLimitLogChains(forwardChainName string) ([]IpTablesFullChain, error) {
-	hardLimitChain, err := m.connHardLimitLogChain(forwardChainName)
-	if err != nil {
-		return []IpTablesFullChain{}, err
-	}
-
-	rateLimitChain, err := m.connRateLimitLogChain(forwardChainName)
-	if err != nil {
-		return []IpTablesFullChain{}, err
-	}
-
-	return []IpTablesFullChain{hardLimitChain, rateLimitChain}, nil
-}
-
-func (m *NetOut) connHardLimitLogChain(forwardChainName string) (IpTablesFullChain, error) {
-	logRules := []rules.IPTablesRule{
-		rules.NewNetOutConnHardLimitRejectLogRule(m.ContainerHandle, m.DeniedLogsPerSec),
-		rules.NewNetOutDefaultRejectRule(),
-	}
-	return m.netOutLogChain(forwardChainName, suffixNetOutHardLimitLog, logRules)
 }
 
 func (m *NetOut) connRateLimitLogChain(forwardChainName string) (IpTablesFullChain, error) {

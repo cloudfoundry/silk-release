@@ -237,7 +237,6 @@ var _ = Describe("CniWrapperPlugin", func() {
 				},
 				OutConn: lib.OutConnConfig{
 					Limit:      false,
-					Max:        1000,
 					Burst:      999,
 					RatePerSec: 100,
 				},
@@ -809,26 +808,23 @@ var _ = Describe("CniWrapperPlugin", func() {
 					input = GetInput(inputStruct)
 				})
 
-				It("writes iptables netout connection limiting rules", func() {
+				It("additionally writes iptables netout connection rate limit artifacts", func() {
 					cmd = cniCommand("ADD", input)
 					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 					Expect(err).NotTo(HaveOccurred())
 					Eventually(session).Should(gexec.Exit(0))
 
-					By("creating hard and rate limit logging chains")
-					Expect(AllIPTablesRules("filter")).To(ContainElement(`-N netout--some-contain--hl-log`))
+					By("creating a rate limit logging chain")
 					Expect(AllIPTablesRules("filter")).To(ContainElement(`-N netout--some-contain--rl-log`))
 
-					By("writing the default forwarding and outbound connection limit rules for that container")
+					By("writing the default forwarding and outbound connection rate limit rule for that container")
 
-					expectedHardLimitCfg := "-m connlimit --connlimit-above 1000 --connlimit-mask 32 --connlimit-daddr"
 					expectedRateLimitCfg := "-m hashlimit --hashlimit-above 100/sec --hashlimit-burst 999 --hashlimit-mode dstip"
 					expectedRateLimitCfg += " --hashlimit-name " + containerID + " --hashlimit-htable-expire 10000"
 
 					Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
 						`-A ` + netoutChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
 						`-A ` + netoutChainName + ` -p tcp -m state --state INVALID -j DROP`,
-						`-A ` + netoutChainName + ` -m conntrack --ctstate NEW ` + expectedHardLimitCfg + ` -j netout--some-contain--hl-log`,
 						`-A ` + netoutChainName + ` -m conntrack --ctstate NEW ` + expectedRateLimitCfg + ` -j netout--some-contain--rl-log`,
 						`-A ` + netoutChainName + ` -p icmp -m iprange --dst-range 5.5.5.5-6.6.6.6 -m icmp --icmp-type 8/0 -j ACCEPT`,
 						`-A ` + netoutChainName + ` -p udp -m iprange --dst-range 11.11.11.11-22.22.22.22 -m udp --dport 53:54 -j ACCEPT`,
@@ -837,10 +833,8 @@ var _ = Describe("CniWrapperPlugin", func() {
 						`-A ` + netoutChainName + ` -j REJECT --reject-with icmp-port-unreachable`,
 					}))
 
-					By("writing the hard and rate limit logging rules")
+					By("writing the rate limit logging rules")
 					Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
-						`-A netout--some-contain--hl-log -m limit --limit 5/sec -j LOG --log-prefix "DENY_OHL_` + containerID[:19] + ` "`,
-						`-A netout--some-contain--hl-log -j REJECT --reject-with icmp-port-unreachable`,
 						`-A netout--some-contain--rl-log -m limit --limit 5/sec -j LOG --log-prefix "DENY_ORL_` + containerID[:19] + ` "`,
 						`-A netout--some-contain--rl-log -j REJECT --reject-with icmp-port-unreachable`,
 					}))
