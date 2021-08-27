@@ -14,8 +14,5 @@ run:
   args:
     - -c
     - |
-      cd silk
-      export GOPATH=$PWD
-      export PATH=$PATH:$GOPATH/bin
       export DB=mysql-5.6
-      scripts/test.sh
+      ./silk/scripts/test.sh
