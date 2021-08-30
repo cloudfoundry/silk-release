@@ -16,7 +16,6 @@ docker run \
    -it \
    --privileged \
    -v $PWD:/silk \
-   -e GOPATH=/silk \
    -e DB=$db \
    -w /silk \
    $docker_image \

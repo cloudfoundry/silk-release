@@ -1,0 +1,65 @@
+Running Suite: Integration: CNI wrapper plugin Suite
+====================================================
+Random Seed: [1m1627565867[0m
+Will run [1m1[0m of [1m40[0m specs
+
+[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0m[36mS[0mstore delete: invalid handlenet in cleanup: 6 errors occurred:
+	* delete rule: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+	* clear chain: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+	* delete chain: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+	* delete rule: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+	* clear chain: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+	* delete chain: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+
+net out cleanup: 12 errors occurred:
+	* delete rule: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+	* clear chain: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+	* delete chain: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+	* delete rule: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+	* delete rule: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+	* clear chain: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+	* delete chain: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+	* delete rule: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+	* clear chain: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+	* delete chain: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+	* clear chain: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+	* delete chain: lock: open lock file: open /tmp/iptables-lock938456405: permission denied
+
+removing IP masq: lock: open lock file: open /tmp/iptables-lock938456405: permission denied[1mSTEP[0m: Deleting things
+{
+    "code": 100,
+    "msg": "open /tmp/iptables-lock938456405: permission denied"
+}
+[90m------------------------------[0m
+[91m[1m• Failure in Spec Teardown (AfterEach) [0.035 seconds][0m
+CniWrapperPlugin
+[90m/silk/src/code.cloudfoundry.org/cni-wrapper-plugin/integration/cni_wrapper_plugin_test.go:46[0m
+  [91m[1mWhen call with command DEL [AfterEach][0m
+  [90m/silk/src/code.cloudfoundry.org/cni-wrapper-plugin/integration/cni_wrapper_plugin_test.go:972[0m
+    when the datastore delete fails
+    [90m/silk/src/code.cloudfoundry.org/cni-wrapper-plugin/integration/cni_wrapper_plugin_test.go:1023[0m
+      still calls plugin delete (so that DEL is idempotent)
+      [90m/silk/src/code.cloudfoundry.org/cni-wrapper-plugin/integration/cni_wrapper_plugin_test.go:1036[0m
+
+      [91mNo future change is possible.  Bailing out early after 0.011s.
+      Expected
+          <int>: 1
+      to match exit code:
+          <int>: 0[0m
+
+      /silk/src/code.cloudfoundry.org/cni-wrapper-plugin/integration/cni_wrapper_plugin_test.go:258
+[90m------------------------------[0m
+
+
+[91m[1mSummarizing 1 Failure:[0m
+
+[91m[1m[Fail] [0m[90mCniWrapperPlugin [0m[91m[1m[AfterEach] When call with command DEL [0m[90mwhen the datastore delete fails [0m[0mstill calls plugin delete (so that DEL is idempotent) [0m
+[37m/silk/src/code.cloudfoundry.org/cni-wrapper-plugin/integration/cni_wrapper_plugin_test.go:258[0m
+
+[1m[91mRan 1 of 40 Specs in 0.978 seconds[0m
+[1m[91mFAIL![0m -- [32m[1m0 Passed[0m | [91m[1m1 Failed[0m | [33m[1m0 Pending[0m | [36m[1m39 Skipped[0m
+--- FAIL: TestNoop (0.99s)
+FAIL
+
+Ginkgo ran 1 suite in 7.461254299s
+Test Suite Failed

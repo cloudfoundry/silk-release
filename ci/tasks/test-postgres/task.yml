@@ -14,7 +14,5 @@ run:
     - -c
     - |
       cd silk
-      export GOPATH=${PWD}
-      export PATH=$PATH:$GOPATH/bin
       export DB=postgres
       scripts/test.sh
