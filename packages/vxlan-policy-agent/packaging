@@ -1,10 +1,13 @@
 #!/bin/bash
 set -eu
 
-mkdir ../src && cp -a * ../src/ && mv ../src ./src
-mkdir -p $BOSH_INSTALL_TARGET/bin
+mkdir -p ${BOSH_INSTALL_TARGET}/src
+mv * ${BOSH_INSTALL_TARGET}/src
+mv ${BOSH_INSTALL_TARGET}/src .
+mkdir -p ${BOSH_INSTALL_TARGET}/bin
 
-export GO111MODULE=auto
 source /var/vcap/packages/golang-1-linux/bosh/compile.env
 
-go build -o "${BOSH_INSTALL_TARGET}/bin/vxlan-policy-agent" vxlan-policy-agent/cmd/vxlan-policy-agent...
+pushd src/code.cloudfoundry.org
+go build -o "${BOSH_INSTALL_TARGET}/bin/vxlan-policy-agent" code.cloudfoundry.org/vxlan-policy-agent/cmd/vxlan-policy-agent...
+popd

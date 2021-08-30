@@ -30,11 +30,6 @@ the maintainers on Slack at
 [cloudfoundry.slack.com](https://cloudfoundry.slack.com) in the `#networking`
 channel.
 
-## Project links
-- [Engineering backlog](https://www.pivotaltracker.com/n/projects/2245594)
-- [CI dashboard](https://networking.ci.cf-app.com/teams/ga/pipelines/cf-networking)
-  and [config](https://github.com/cloudfoundry/cf-networking-release/blob/develop/ci/pipelines/cf-networking.yml)
-
 ## Known Issues
 For known issues related to both `silk-release` and `cf-networking-release` you can find them here:
 [cf-networking-release/docs/known-issues](https://github.com/cloudfoundry/cf-networking-release/blob/develop/docs/known-issues.md).

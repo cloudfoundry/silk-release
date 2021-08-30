@@ -1,10 +1,13 @@
 #!/bin/bash
 set -eu
 
-mkdir ../src && cp -a * ../src/ && mv ../src ./src
-mkdir -p $BOSH_INSTALL_TARGET/bin
+mkdir -p ${BOSH_INSTALL_TARGET}/src
+mv * ${BOSH_INSTALL_TARGET}/src
+mv ${BOSH_INSTALL_TARGET}/src .
+mkdir -p ${BOSH_INSTALL_TARGET}/bin
 
-export GO111MODULE=auto
 source /var/vcap/packages/golang-1-linux/bosh/compile.env
 
-go build -o "${BOSH_INSTALL_TARGET}/bin/netmon" netmon/cmd/netmon
+pushd src/code.cloudfoundry.org
+go build -o "${BOSH_INSTALL_TARGET}/bin/netmon" code.cloudfoundry.org/netmon/cmd/netmon
+popd

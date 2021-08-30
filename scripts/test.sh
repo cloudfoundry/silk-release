@@ -4,25 +4,23 @@ set -eu
 set -o pipefail
 
 cd $(dirname $0)/..
-export GOPATH=$PWD
-export GO111MODULE=auto
 
 declare -a serial_packages=(
-    "src/cni-wrapper-plugin/integration"
-    "src/vxlan-policy-agent/integration/linux"
-    "src/silk-daemon-shutdown/integration"
-    "src/silk-daemon-bootstrap/integration"
+    "src/code.cloudfoundry.org/cni-wrapper-plugin/integration"
+    "src/code.cloudfoundry.org/vxlan-policy-agent/integration/linux"
+    "src/code.cloudfoundry.org/silk-daemon-shutdown/integration"
+    "src/code.cloudfoundry.org/silk-daemon-bootstrap/integration"
     )
 
 declare -a windows_packages=(
-    "src/vxlan-policy-agent/integration/windows"
+    "src/code.cloudfoundry.org/vxlan-policy-agent/integration/windows"
     )
 
 function bootDB {
   db=$1
 
   if [ "$db" = "postgres" ]; then
-    launchDB="(/docker-entrypoint.sh postgres &> /var/log/postgres-boot.log) &"
+    launchDB="(docker-entrypoint.sh postgres &> /var/log/postgres-boot.log) &"
     testConnection="psql -h localhost -U postgres -c '\conninfo' &>/dev/null"
   elif [ "$db" = "mysql" ]  || [ "$db" = "mysql-5.6" ]; then
     launchDB="(MYSQL_ROOT_PASSWORD=password /entrypoint.sh mysqld &> /var/log/mysql-boot.log) &"
@@ -57,10 +55,6 @@ declare -a git_modules=($(git config --file .gitmodules --get-regexp path | awk 
 
 declare -a packages=($(find src -type f -name "*_test.go" | xargs -L 1 -I{} dirname {} | sort -u))
 
-# filter out git_modules from packages
-for i in "${git_modules[@]}"; do
-  packages=(${packages[@]//*$i*})
-done
 
 # filter out serial_packages from packages
 for i in "${serial_packages[@]}"; do

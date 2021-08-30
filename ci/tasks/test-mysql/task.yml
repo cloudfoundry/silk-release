@@ -15,7 +15,5 @@ run:
     - -c
     - |
       cd silk
-      export GOPATH=${PWD}
-      export PATH=$PATH:$GOPATH/bin
       export DB=mysql
       scripts/test.sh
