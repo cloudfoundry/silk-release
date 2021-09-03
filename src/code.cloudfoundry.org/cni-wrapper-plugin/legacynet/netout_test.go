@@ -921,9 +921,10 @@ var _ = Describe("Netout", func() {
 					By("specifying a jump condition to the respective logging chains")
 
 					expectedRateLimitRule := rules.IPTablesRule{
+						"-p", "tcp",
 						"-m", "conntrack", "--ctstate", "NEW",
 						"-m", "hashlimit", "--hashlimit-above", "99/sec", "--hashlimit-burst", "400",
-						"--hashlimit-mode", "dstip", "--hashlimit-name", "some-container-handle",
+						"--hashlimit-mode", "dstip,dstport", "--hashlimit-name", "some-container-handle",
 						"--hashlimit-htable-expire", "5000", "-j", "netout-some-container-handle-rl-log",
 					}
 					expectedRules := append(genericRules, []rules.IPTablesRule{
@@ -970,9 +971,10 @@ var _ = Describe("Netout", func() {
 					By("specifying a REJECT jump condition")
 
 					expectedRateLimitRule := rules.IPTablesRule{
+						"-p", "tcp",
 						"-m", "conntrack", "--ctstate", "NEW",
 						"-m", "hashlimit", "--hashlimit-above", "99/sec", "--hashlimit-burst", "400",
-						"--hashlimit-mode", "dstip", "--hashlimit-name", "some-container-handle",
+						"--hashlimit-mode", "dstip,dstport", "--hashlimit-name", "some-container-handle",
 						"--hashlimit-htable-expire", "5000", "-j", "REJECT",
 					}
 					expectedRules := append(genericRules, []rules.IPTablesRule{

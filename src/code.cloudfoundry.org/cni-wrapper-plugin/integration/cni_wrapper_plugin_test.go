@@ -819,13 +819,13 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 					By("writing the default forwarding and outbound connection rate limit rule for that container")
 
-					expectedRateLimitCfg := "-m hashlimit --hashlimit-above 100/sec --hashlimit-burst 999 --hashlimit-mode dstip"
+					expectedRateLimitCfg := "-m hashlimit --hashlimit-above 100/sec --hashlimit-burst 999 --hashlimit-mode dstip,dstport"
 					expectedRateLimitCfg += " --hashlimit-name " + containerID + " --hashlimit-htable-expire 10000"
 
 					Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
 						`-A ` + netoutChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
 						`-A ` + netoutChainName + ` -p tcp -m state --state INVALID -j DROP`,
-						`-A ` + netoutChainName + ` -m conntrack --ctstate NEW ` + expectedRateLimitCfg + ` -j netout--some-contain--rl-log`,
+						`-A ` + netoutChainName + ` -p tcp -m conntrack --ctstate NEW ` + expectedRateLimitCfg + ` -j netout--some-contain--rl-log`,
 						`-A ` + netoutChainName + ` -p icmp -m iprange --dst-range 5.5.5.5-6.6.6.6 -m icmp --icmp-type 8/0 -j ACCEPT`,
 						`-A ` + netoutChainName + ` -p udp -m iprange --dst-range 11.11.11.11-22.22.22.22 -m udp --dport 53:54 -j ACCEPT`,
 						`-A ` + netoutChainName + ` -p tcp -m iprange --dst-range 8.8.8.8-9.9.9.9 -m tcp --dport 53:54 -j ACCEPT`,
