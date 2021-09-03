@@ -99,14 +99,14 @@ properties:
 
   outbound_connections.limit:
     default: false
-    description: "Enables outbound connections count limiting per destination host per container."
+    description: "EXPERIMENTAL: Enables outbound connections count limiting per destination host per container."
 
   outbound_connections.burst:
     default: 1000
-    description: "Maximum number of outbound connections per destination host allowed to be opened at once per container. Has no effect when `outbound_connections.limit` is false."
+    description: "EXPERIMENTAL: Maximum number of outbound connections per destination host allowed to be opened at once per container. Has no effect when `outbound_connections.limit` is false."
 
   outbound_connections.rate_per_sec:
     default: 100
     description: |
-      Maximum number of outbound connections to be opened per second per destination host per container given that the burst is exhausted.
+      EXPERIMENTAL: Maximum number of outbound connections to be opened per second per destination host per container given that the burst is exhausted.
       Has no effect when `outbound_connections.limit` is false.
