@@ -29,7 +29,7 @@ require (
 	code.cloudfoundry.org/silk v0.0.0-20210826171638-22aea0ef1999
 	github.com/cloudfoundry/dropsonde v1.0.0
 	github.com/cloudfoundry/loggregatorlib v0.0.0-20170823162133-36eddf15ef12 // indirect
-	github.com/containernetworking/cni v0.6.0
+	github.com/containernetworking/cni v0.8.1
 	github.com/coreos/go-iptables v0.6.0
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
