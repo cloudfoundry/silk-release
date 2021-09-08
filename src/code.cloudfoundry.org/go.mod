@@ -12,6 +12,8 @@ replace github.com/vishvananda/netns => github.com/vishvananda/netns v0.0.0-2017
 
 replace github.com/containernetworking/plugins => github.com/containernetworking/plugins v0.6.1-0.20171122160932-92c634042c38
 
+replace github.com/containernetworking/cni => github.com/containernetworking/cni v0.6.0
+
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.0.0
 
 replace github.com/square/certstrap => github.com/square/certstrap v1.1.1
