@@ -16,8 +16,6 @@ declare -a windows_packages=(
     "src/code.cloudfoundry.org/vxlan-policy-agent/integration/windows"
     )
 
-export DB=postgres
-
 # get all git submodule paths | print only the path without the extra info | cut the "package root" for go | deduplicate
 declare -a git_modules=($(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | cut -d'/' -f1,2 | sort -u))
 
