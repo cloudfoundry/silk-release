@@ -3,6 +3,14 @@
 set -eu
 set -o pipefail
 
+# In the cf-networking-and-silk-pr.yml pipeline, we need to run db-unit tests for cf-networking, but
+# concourse doesn't have a way of conditionally adding jobs, so it will end up running db-unit tests
+# against silk, which doesn't do anything other than run unit tests again, so we skip it here.
+if [[ -n "${DB:-""}" ]]; then
+  echo "No DB specific silk tests have been defined. Skipping this step."
+  exit 0
+fi
+
 cd $(dirname $0)/..
 
 declare -a serial_packages=(
