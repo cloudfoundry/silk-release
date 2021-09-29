@@ -28,7 +28,7 @@ properties:
     description: "Silk CNI plugin connects to the silk daemon on this port."
     default: 23954
   iptables_logging:
-    description: "Enables iptables logging for overlay network policies and Application Security Groups.  Logs to the kernel log."
+    description: "Enables iptables logging for overlay network policies, Application Security Groups and outbound container connection limits.  Logs to the kernel log."
     default: false
 
   dns_servers:
@@ -96,3 +96,19 @@ properties:
       This can severely impact the network connectivity of applications.
       Use with extreme caution and at your own risk.
       These rules apply during the staging process.
+
+  outbound_connections.limit:
+    default: false
+    description: "EXPERIMENTAL: Enables outbound connections count limiting per port on destination host per container."
+
+  outbound_connections.burst:
+    default: 1000
+    description: |
+      EXPERIMENTAL: Maximum number of outbound connections per port on destination host allowed to be opened at once per container.
+      Has no effect when `outbound_connections.limit` is false.
+
+  outbound_connections.rate_per_sec:
+    default: 100
+    description: |
+      EXPERIMENTAL: Maximum number of outbound connections to be opened per second per port on destination host per container given that the burst is exhausted.
+      Has no effect when `outbound_connections.limit` is false.

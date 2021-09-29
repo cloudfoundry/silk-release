@@ -282,6 +282,16 @@ func NewNetOutRelatedEstablishedRule() IPTablesRule {
 	}
 }
 
+func NewNetOutConnRateLimitRule(rate, burst, containerHandle, expiryPeriod, rateLimitLogChainName string) IPTablesRule {
+	return IPTablesRule{
+		"-p", "tcp",
+		"-m", "conntrack", "--ctstate", "NEW",
+		"-m", "hashlimit", "--hashlimit-above", rate, "--hashlimit-burst", burst,
+		"--hashlimit-mode", "dstip,dstport", "--hashlimit-name", containerHandle,
+		"--hashlimit-htable-expire", expiryPeriod, "-j", rateLimitLogChainName,
+	}
+}
+
 func NewOverlayTagAcceptRule(containerIP, tag string) IPTablesRule {
 	return IPTablesRule{
 		"-d", containerIP,
@@ -326,12 +336,11 @@ func NewOverlayRelatedEstablishedRule(containerIP string) IPTablesRule {
 }
 
 func NewNetOutDefaultRejectLogRule(containerHandle string, deniedLogsPerSec int) IPTablesRule {
-	return IPTablesRule{
-		"-m", "limit", "--limit", fmt.Sprintf("%d/s", deniedLogsPerSec),
-		"--limit-burst", strconv.Itoa(deniedLogsPerSec),
-		"--jump", "LOG",
-		"--log-prefix", trimAndPad(fmt.Sprintf("DENY_%s", containerHandle)),
-	}
+	return newNetOutRejectLogRule(containerHandle, "DENY", deniedLogsPerSec)
+}
+
+func NewNetOutConnRateLimitRejectLogRule(containerHandle string, deniedLogsPerSec int) IPTablesRule {
+	return newNetOutRejectLogRule(containerHandle, "DENY_ORL", deniedLogsPerSec)
 }
 
 func NewNetOutDefaultRejectRule() IPTablesRule {
@@ -384,4 +393,13 @@ func trimAndPad(name string) string {
 		name = name[:28]
 	}
 	return fmt.Sprintf(`"%s "`, name)
+}
+
+func newNetOutRejectLogRule(containerHandle, prefix string, deniedLogsPerSec int) IPTablesRule {
+	return IPTablesRule{
+		"-m", "limit", "--limit", fmt.Sprintf("%d/s", deniedLogsPerSec),
+		"--limit-burst", strconv.Itoa(deniedLogsPerSec),
+		"--jump", "LOG",
+		"--log-prefix", trimAndPad(fmt.Sprintf("%s_%s", prefix, containerHandle)),
+	}
 }

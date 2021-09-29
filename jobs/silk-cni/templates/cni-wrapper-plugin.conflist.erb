@@ -77,7 +77,13 @@
         'dataDir' => '/var/vcap/data/host-local',
         'datastore' => '/var/vcap/data/silk/store.json',
         'mtu' => compute_mtu,
-       }
+      },
+      'outbound_connections' => {
+        'limit' => p('outbound_connections.limit'),
+        'logging' => p('iptables_logging'),
+        'burst' => p('outbound_connections.burst'),
+        'rate_per_sec' => p('outbound_connections.rate_per_sec'),
+      }
     }, {
       'name' => 'bandwidth-limit',
       'type' => 'bandwidth',

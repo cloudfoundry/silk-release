@@ -2,23 +2,32 @@ package legacynet
 
 import (
 	"fmt"
-	"code.cloudfoundry.org/lib/rules"
+	"math"
 	"net"
-
 	"strconv"
 
 	"code.cloudfoundry.org/garden"
+	"code.cloudfoundry.org/lib/rules"
 )
 
 const prefixInput = "input"
 const prefixNetOut = "netout"
 const prefixOverlay = "overlay"
 const suffixNetOutLog = "log"
+const suffixNetOutRateLimitLog = "rl-log"
+const secondInMillis = 1000
 
 //go:generate counterfeiter -o ../fakes/net_out_rule_converter.go --fake-name NetOutRuleConverter . netOutRuleConverter
 type netOutRuleConverter interface {
 	Convert(rule garden.NetOutRule, logChainName string, logging bool) []rules.IPTablesRule
 	BulkConvert(rules []garden.NetOutRule, logChainName string, logging bool) []rules.IPTablesRule
+}
+
+type OutConn struct {
+	Limit      bool
+	Logging    bool
+	Burst      int
+	RatePerSec int
 }
 
 type NetOut struct {
@@ -39,6 +48,7 @@ type NetOut struct {
 	DenyNetworks          DenyNetworks
 	DNSServers            []string
 	ContainerWorkload     string
+	Conn                  OutConn
 }
 
 func (m *NetOut) Initialize() error {
@@ -89,6 +99,16 @@ func (m *NetOut) BulkInsertRules(netOutRules []garden.NetOutRule) error {
 
 	ruleSpec := m.Converter.BulkConvert(netOutRules, logChain, m.ASGLogging)
 	ruleSpec = append(ruleSpec, m.denyNetworksRules()...)
+
+	if m.Conn.Limit {
+		rateLimitRule, err := m.rateLimitRule(chain)
+		if err != nil {
+			return fmt.Errorf("getting chain name: %s", err)
+		}
+
+		ruleSpec = append(ruleSpec, rateLimitRule)
+	}
+
 	ruleSpec = append(ruleSpec, []rules.IPTablesRule{
 		{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
 		{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
@@ -106,10 +126,6 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 	inputChainName := m.ChainNamer.Prefix(prefixInput, m.ContainerHandle)
 	forwardChainName := m.ChainNamer.Prefix(prefixNetOut, m.ContainerHandle)
 	overlayChain := m.ChainNamer.Prefix(prefixOverlay, m.ContainerHandle)
-	logChain, err := m.ChainNamer.Postfix(forwardChainName, suffixNetOutLog)
-	if err != nil {
-		return []IpTablesFullChain{}, fmt.Errorf("getting chain name: %s", err)
-	}
 
 	args := []IpTablesFullChain{
 		{
@@ -148,19 +164,27 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 				rules.NewOverlayDefaultRejectRule(m.ContainerIP),
 			},
 		}),
-		{
-			"filter",
-			"",
-			logChain,
-			[]rules.IPTablesRule{{
-				"--jump", logChain,
-			}},
-			[]rules.IPTablesRule{
-				rules.NewNetOutDefaultNonUDPLogRule(m.ContainerHandle),
-				rules.NewNetOutDefaultUDPLogRule(m.ContainerHandle, m.AcceptedUDPLogsPerSec),
-				rules.NewAcceptRule(),
-			},
-		},
+	}
+
+	logChainRules := []rules.IPTablesRule{
+		rules.NewNetOutDefaultNonUDPLogRule(m.ContainerHandle),
+		rules.NewNetOutDefaultUDPLogRule(m.ContainerHandle, m.AcceptedUDPLogsPerSec),
+		rules.NewAcceptRule(),
+	}
+	logChain, err := m.netOutLogChain(forwardChainName, suffixNetOutLog, logChainRules)
+	if err != nil {
+		return []IpTablesFullChain{}, fmt.Errorf("getting chain name: %s", err)
+	}
+
+	args = append(args, logChain)
+
+	if m.Conn.Limit && m.Conn.Logging {
+		rateLimitLogChain, err := m.connRateLimitLogChain(forwardChainName)
+		if err != nil {
+			return []IpTablesFullChain{}, fmt.Errorf("getting chain name: %s", err)
+		}
+
+		args = append(args, rateLimitLogChain)
 	}
 
 	return args, nil
@@ -282,4 +306,48 @@ func (m *NetOut) denyNetworksRules() []rules.IPTablesRule {
 	}
 
 	return denyRules
+}
+
+func (m *NetOut) rateLimitRule(forwardChainName string) (rule rules.IPTablesRule, err error) {
+	jumpTarget := "REJECT"
+
+	if m.Conn.Logging {
+		jumpTarget, err = m.ChainNamer.Postfix(forwardChainName, suffixNetOutRateLimitLog)
+		if err != nil {
+			return rules.IPTablesRule{}, err
+		}
+	}
+
+	burst := strconv.Itoa(m.Conn.Burst)
+	rate := fmt.Sprintf("%d/sec", m.Conn.RatePerSec)
+	expiryPeriod := m.rateLimitExpiryPeriod()
+
+	return rules.NewNetOutConnRateLimitRule(rate, burst, m.ContainerHandle, expiryPeriod, jumpTarget), nil
+}
+
+func (m *NetOut) rateLimitExpiryPeriod() string {
+	burst := float64(m.Conn.Burst)
+	ratePerSec := float64(m.Conn.RatePerSec)
+	expiryPeriodInSeconds := int64(math.Ceil(burst / ratePerSec))
+	expiryPeriodInMillis := expiryPeriodInSeconds * int64(secondInMillis)
+
+	return fmt.Sprintf("%d", expiryPeriodInMillis)
+}
+
+func (m *NetOut) connRateLimitLogChain(forwardChainName string) (IpTablesFullChain, error) {
+	logRules := []rules.IPTablesRule{
+		rules.NewNetOutConnRateLimitRejectLogRule(m.ContainerHandle, m.DeniedLogsPerSec),
+		rules.NewNetOutDefaultRejectRule(),
+	}
+	return m.netOutLogChain(forwardChainName, suffixNetOutRateLimitLog, logRules)
+}
+
+func (m *NetOut) netOutLogChain(forwardChainName, suffix string, logRules []rules.IPTablesRule) (IpTablesFullChain, error) {
+	logChainName, err := m.ChainNamer.Postfix(forwardChainName, suffix)
+	if err != nil {
+		return IpTablesFullChain{}, err
+	}
+
+	jumpConditions := []rules.IPTablesRule{{"--jump", logChainName}}
+	return IpTablesFullChain{"filter", "", logChainName, jumpConditions, logRules}, nil
 }
