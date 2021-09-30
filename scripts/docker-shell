@@ -4,7 +4,7 @@ set -e -u
 ROOT_DIR_PATH=$(cd $(dirname $0)/.. && pwd)
 cd $ROOT_DIR_PATH
 
-db=${DB:-"postgres"} # if not set, default to postgres
+db=${DB:-"mysql"} # if not set, default to postgres
 
 docker_image=c2cnetworking/dev-$db
 if [ $db = "none" ]; then
@@ -16,7 +16,6 @@ docker run \
    -it \
    --privileged \
    -v $PWD:/silk \
-   -e DB=$db \
    -w /silk \
    $docker_image \
    /bin/bash "$@"
