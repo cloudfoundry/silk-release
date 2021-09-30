@@ -1,6 +1,6 @@
 # code.cloudfoundry.org/bbs v0.0.0-20210727125654-2ad50317f7ed
 code.cloudfoundry.org/bbs/db/sqldb/helpers/monitor
-# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20210825141236-777da71209d5
+# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20210929193536-efcc04207348
 ## explicit
 code.cloudfoundry.org/cf-networking-helpers/db
 code.cloudfoundry.org/cf-networking-helpers/httperror
@@ -129,7 +129,7 @@ github.com/jmoiron/sqlx
 github.com/jmoiron/sqlx/reflectx
 # github.com/josharian/intern v1.0.0
 github.com/josharian/intern
-# github.com/lib/pq v1.10.2
+# github.com/lib/pq v1.10.3
 github.com/lib/pq
 github.com/lib/pq/oid
 github.com/lib/pq/scram
