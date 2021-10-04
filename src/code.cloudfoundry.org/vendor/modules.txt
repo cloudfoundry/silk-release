@@ -35,7 +35,7 @@ code.cloudfoundry.org/policy_client
 # code.cloudfoundry.org/runtimeschema v0.0.0-00010101000000-000000000000 => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 ## explicit
 code.cloudfoundry.org/runtimeschema/metric
-# code.cloudfoundry.org/silk v0.0.0-20211001162133-2da51d0cb552
+# code.cloudfoundry.org/silk v0.0.0-20211004172218-74cc38bf4433
 ## explicit
 code.cloudfoundry.org/silk/client/config
 code.cloudfoundry.org/silk/cmd/silk-cni
@@ -79,8 +79,6 @@ github.com/cloudfoundry/dropsonde/runtime_stats
 # github.com/cloudfoundry/gosteno v0.0.0-20150423193413-0c8581caea35
 github.com/cloudfoundry/gosteno
 github.com/cloudfoundry/gosteno/syslog
-# github.com/cloudfoundry/loggregatorlib v0.0.0-20170823162133-36eddf15ef12
-## explicit
 # github.com/cloudfoundry/sonde-go v0.0.0-20200416163440-a42463ba266b
 github.com/cloudfoundry/sonde-go/events
 # github.com/containernetworking/cni v0.6.0 => github.com/containernetworking/cni v0.6.0
@@ -210,8 +208,6 @@ github.com/vishvananda/netlink/nl
 # github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f => github.com/vishvananda/netns v0.0.0-20171111001504-be1fbeda1936
 ## explicit
 github.com/vishvananda/netns
-# github.com/ziutek/mymysql v1.5.4
-## explicit
 # github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c
 github.com/ziutek/utils/netaddr
 # golang.org/x/net v0.0.0-20210525063256-abc453219eb5
@@ -279,8 +275,6 @@ gopkg.in/tomb.v1
 gopkg.in/validator.v2
 # gopkg.in/yaml.v2 v2.4.0
 gopkg.in/yaml.v2
-# launchpad.net/gocheck v0.0.0-20140225173054-000000000087
-## explicit
 # code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 # code.cloudfoundry.org/lager => code.cloudfoundry.org/lager v1.1.1-0.20210513163233-569157d2803b
 # github.com/vishvananda/netlink => github.com/vishvananda/netlink v0.0.0-20180201184657-c27b7f7359fa
