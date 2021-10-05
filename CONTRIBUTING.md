@@ -37,18 +37,10 @@ automated system uses, then we manually make the Pull Request as having a CLA on
 In order to run the test, docker is required to be installed. All tests are
 running against a recent version of Go.
 
-## Running SQL Tests
-
-### MySQL
+## Running Tests
 
 ```
-DB=mysql ./scripts/docker-test
-```
-
-### Postgres
-
-```
-DB=postgres ./scripts/docker-test
+./scripts/docker-test
 ```
 
 ### Interactive Docker container
