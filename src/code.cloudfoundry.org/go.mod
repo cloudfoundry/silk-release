@@ -26,9 +26,8 @@ require (
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	code.cloudfoundry.org/policy_client v0.0.0-20190731000202-6324003c2bfd
 	code.cloudfoundry.org/runtimeschema v0.0.0-00010101000000-000000000000
-	code.cloudfoundry.org/silk v0.0.0-20210826171638-22aea0ef1999
+	code.cloudfoundry.org/silk v0.0.0-20211004235850-da152076940f
 	github.com/cloudfoundry/dropsonde v1.0.0
-	github.com/cloudfoundry/loggregatorlib v0.0.0-20170823162133-36eddf15ef12 // indirect
 	github.com/containernetworking/cni v0.6.0
 	github.com/coreos/go-iptables v0.6.0
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -40,7 +39,5 @@ require (
 	github.com/tedsuo/ifrit v0.0.0-20191009134036-9a97d0632f00
 	github.com/vishvananda/netlink v1.1.0
 	github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f // indirect
-	github.com/ziutek/mymysql v1.5.4 // indirect
 	gopkg.in/validator.v2 v2.0.0-20210331031555-b37d688a7fb0
-	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect
 )
