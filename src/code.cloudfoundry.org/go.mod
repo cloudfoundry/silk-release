@@ -19,14 +19,14 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.0.0
 replace github.com/square/certstrap => github.com/square/certstrap v1.1.1
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20210825141236-777da71209d5
+	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20210929193536-efcc04207348
 	code.cloudfoundry.org/debugserver v0.0.0-20210608171006-d7658ce493f4
 	code.cloudfoundry.org/filelock v0.0.0-20180314203404-13cd41364639
 	code.cloudfoundry.org/garden v0.0.0-20210608104724-fa3a10d59c82
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	code.cloudfoundry.org/policy_client v0.0.0-20190731000202-6324003c2bfd
 	code.cloudfoundry.org/runtimeschema v0.0.0-00010101000000-000000000000
-	code.cloudfoundry.org/silk v0.0.0-20211004172218-74cc38bf4433
+	code.cloudfoundry.org/silk v0.0.0-20211004235850-da152076940f
 	github.com/cloudfoundry/dropsonde v1.0.0
 	github.com/containernetworking/cni v0.6.0
 	github.com/coreos/go-iptables v0.6.0
