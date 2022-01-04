@@ -11,10 +11,10 @@ if (( $# != 1 )); then
   exit 1
 fi
 
-db=${DB:-"postgres"} # if not set, default to postgres
+export DB=${DB:-"postgres"} # if not set, default to postgres
 
 DIR=$(cd $(dirname $0)/.. && pwd)
 fly -t $1 execute \
   --privileged \
-  --input silk=${DIR} \
-  --config ${DIR}/ci/tasks/test-$db/task.yml
+  --input release=${DIR} \
+  --config ../tas-runtime/ci/tasks/cf-networking/${DB}-tests/task.yml
