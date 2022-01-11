@@ -107,6 +107,57 @@ module Bosh::Template::Test
         })
       end
 
+      context 'when ips have leading 0s' do
+        it 'no_masquerade_cidr_range fails with a nice message' do
+          merged_manifest_properties['no_masquerade_cidr_range'] = '222.022.0.2/16'
+          expect {
+            template.render(merged_manifest_properties, spec: spec, consumes: links)
+          }.to raise_error (/Invalid no_masquerade_cidr_range/)
+        end
+
+        it 'dns_servers fails with a nice message' do
+          merged_manifest_properties['dns_servers'] = ['1.2.3.4', '8.08.08.08']
+          expect {
+            template.render(merged_manifest_properties, spec: spec, consumes: links)
+          }.to raise_error (/Invalid dns_servers '8.08.08.08':/)
+        end
+
+        it 'host_tcp_services fails with a nice message' do
+          merged_manifest_properties['host_tcp_services'] = ['1.2.3.4:33333', '8.08.08.08:8888']
+          expect {
+            template.render(merged_manifest_properties, spec: spec, consumes: links)
+          }.to raise_error (/Invalid host_tcp_services '8.08.08.08':/)
+        end
+
+        it 'host_udp_services fails with a nice message' do
+          merged_manifest_properties['host_udp_services'] = ['1.2.3.4:33333', '8.08.08.08:8888']
+          expect {
+            template.render(merged_manifest_properties, spec: spec, consumes: links)
+          }.to raise_error (/Invalid host_udp_services '8.08.08.08':/)
+        end
+
+        it 'deny_networks.running fails with a nice message' do
+          merged_manifest_properties['deny_networks']['running'] = ['1.2.3.4/12', '8.08.08.08/13']
+          expect {
+            template.render(merged_manifest_properties, spec: spec, consumes: links)
+          }.to raise_error (/Invalid deny_networks.running entry 8.08.08.08\/13/)
+        end
+
+        it 'deny_networks.staging fails with a nice message' do
+          merged_manifest_properties['deny_networks']['staging'] = ['1.2.3.4/12', '8.08.08.08/13']
+          expect {
+            template.render(merged_manifest_properties, spec: spec, consumes: links)
+          }.to raise_error (/Invalid deny_networks.staging entry 8.08.08.08\/13/)
+        end
+
+        it 'deny_networks.always fails with a nice message' do
+          merged_manifest_properties['deny_networks']['always'] = ['1.2.3.4/12', '8.08.08.08/13']
+          expect {
+            template.render(merged_manifest_properties, spec: spec, consumes: links)
+          }.to raise_error (/Invalid deny_networks.always entry 8.08.08.08\/13/)
+        end
+      end
+
       context 'when no_masquerade_cidr_range is not provided' do
         let(:merged_manifest_properties) {}
         it 'does not set the no_masquerade_cidr_range' do

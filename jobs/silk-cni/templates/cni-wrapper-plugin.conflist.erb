@@ -13,12 +13,31 @@
     end
   end
 
+  # this method is here to check for leading 0s
+  def parse_ips (ips, var_name)
+    ips.map {|ip| ip.split(":")[0]}.each do |ip|
+      parse_ip(ip, var_name)
+    end
+  end
+
+  def parse_ip (ip, var_name)
+    unless ip.empty?
+        begin 
+          parsed = IPAddr.new ip
+        rescue  => e
+          raise "Invalid #{var_name} '#{ip}': #{e}"
+        end
+    end
+  end
+
   def no_masquerade_cidr_range
     if_p('no_masquerade_cidr_range') do |no_masquerade_cidr_range|
       if no_masquerade_cidr_range.empty?
         if_link('cf_network') do |link|
           return link.p('network')
         end
+      else
+        parse_ip(no_masquerade_cidr_range, 'no_masquerade_cidr_range')
       end
 
       return no_masquerade_cidr_range
@@ -40,6 +59,11 @@
       end
     end
   end
+
+  parse_ips(p('dns_servers'), 'dns_servers')
+  parse_ips(p('host_tcp_services'), 'host_tcp_services')
+  parse_ips(p('host_udp_services'), 'host_udp_services')
+
 
   toRender = {
     'name' => 'cni-wrapper',
