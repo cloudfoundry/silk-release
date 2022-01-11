@@ -16,7 +16,7 @@ module Bosh::Template::Test
         'debug_port' => 1234,
         'health_check_port' => 2345,
         'health_check_timeout_seconds' => 11,
-        'listen_ip' => '123.456.2.2',
+        'listen_ip' => '123.123.2.2',
         'listen_port' => 2222,
         'metron_port' => 2222,
         'database' => {
@@ -61,7 +61,7 @@ module Bosh::Template::Test
         expect(config).to eq({
           'debug_server_port' => 1234,
           'health_check_port' => 2345,
-          'listen_host' => '123.456.2.2',
+          'listen_host' => '123.123.2.2',
           'listen_port' => 2222,
           'ca_cert_file' => '/var/vcap/jobs/silk-controller/config/certs/ca.crt',
           'server_cert_file' => '/var/vcap/jobs/silk-controller/config/certs/server.crt',
@@ -95,6 +95,22 @@ module Bosh::Template::Test
         merged_manifest_properties['database'].delete('host')
         config = JSON.parse(template.render(merged_manifest_properties, consumes: [database_link]))
         expect(config['database']['host']).to eq('link.instance.address.com')
+      end
+
+      context 'when ips have leading 0s' do
+        it 'network fails with a nice message' do
+          merged_manifest_properties['network'] = '10.255.0.01/12'
+          expect {
+            template.render(merged_manifest_properties, consumes: [database_link])
+          }.to raise_error (/Invalid network/)
+        end
+
+        it 'listen_ip fails with a nice message' do
+          merged_manifest_properties['listen_ip'] = '0.01.0.0'
+          expect {
+            template.render(merged_manifest_properties, consumes: [database_link])
+          }.to raise_error (/Invalid listen_ip/)
+        end
       end
 
       let(:empty_link) {
