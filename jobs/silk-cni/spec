@@ -112,3 +112,9 @@ properties:
     description: |
       EXPERIMENTAL: Maximum number of outbound connections to be opened per second per port on destination host per container given that the burst is exhausted.
       Has no effect when `outbound_connections.limit` is false.
+
+  outbound_connections.dry_run:
+    default: false
+    description: |
+      Enable dry-run mode. Will be used with `outbound_connections.limit` and `iptables_logging` turned on in order to log, and not reject,
+      connection packets whenever apps are rate-limited. Default: false

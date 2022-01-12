@@ -476,6 +476,7 @@ var _ = Describe("Netout", func() {
 		Context("when outbound container connection limiting is enabled", func() {
 			BeforeEach(func() {
 				netOut.Conn.Limit = true
+				netOut.Conn.DryRun = false
 
 				chainNamer.PostfixReturnsOnCall(1, "netout-some-container-handle-rl-log", nil)
 			})
@@ -530,15 +531,55 @@ var _ = Describe("Netout", func() {
 			Context("when denied outbound container connections logging is disabled", func() {
 				BeforeEach(func() {
 					netOut.Conn.Logging = false
+					netOut.Conn.DryRun = false
 				})
 
 				It("doesn't add the rate limit logging chain", func() {
 					err := netOut.Initialize()
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(chainNamer.PostfixCallCount()).To(Equal(1))
-					Expect(ipTables.NewChainCallCount()).To(Equal(4))
+					Expect(chainNamer.PostfixCallCount()).To(Equal(2))
+					Expect(ipTables.NewChainCallCount()).To(Equal(5))
 				})
+			})
+		})
+
+		Context("when dry-run mode for outbound container connection limiting is enabled", func() {
+			BeforeEach(func() {
+				netOut.Conn.DryRun = true
+				netOut.Conn.Limit = true
+				netOut.Conn.Logging = true
+
+				chainNamer.PostfixReturnsOnCall(1, "netout-some-container-handle-rl-log", nil)
+			})
+
+			It("creates rate limit logging chain", func() {
+				err := netOut.Initialize()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(chainNamer.PostfixCallCount()).To(Equal(2))
+				body, suffix := chainNamer.PostfixArgsForCall(1)
+				Expect(body).To(Equal("netout-some-container-handle"))
+				Expect(suffix).To(Equal("rl-log"))
+
+				Expect(ipTables.NewChainCallCount()).To(Equal(5))
+				table, chain := ipTables.NewChainArgsForCall(4)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
+			})
+
+			It("writes rate limit logging rule", func() {
+				err := netOut.Initialize()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ipTables.BulkAppendCallCount()).To(Equal(8))
+
+				table, chain, rulespec := ipTables.BulkAppendArgsForCall(7)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
+				Expect(rulespec).To(Equal([]rules.IPTablesRule{
+					{"-m", "limit", "--limit", "3/s", "--limit-burst", "3",
+						"--jump", "LOG", "--log-prefix", `"DENY_ORL_some-container-hand "`},
+				}))
 			})
 		})
 	})
@@ -691,6 +732,7 @@ var _ = Describe("Netout", func() {
 		Context("when outbound container connection limiting is enabled", func() {
 			BeforeEach(func() {
 				netOut.Conn.Limit = true
+				netOut.Conn.DryRun = false
 
 				chainNamer.PostfixReturnsOnCall(1, "netout-some-container-handle-rl-log", nil)
 			})
@@ -724,15 +766,46 @@ var _ = Describe("Netout", func() {
 			Context("when denied outbound container connections logging is disabled", func() {
 				BeforeEach(func() {
 					netOut.Conn.Logging = false
+					netOut.Conn.DryRun = false
 				})
 
 				It("doesn't clean up the rate limit logging chain", func() {
 					err := netOut.Cleanup()
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(ipTables.ClearChainCallCount()).To(Equal(4))
-					Expect(ipTables.DeleteChainCallCount()).To(Equal(4))
+					Expect(ipTables.ClearChainCallCount()).To(Equal(5))
+					Expect(ipTables.DeleteChainCallCount()).To(Equal(5))
 				})
+			})
+		})
+
+		Context("when dry-run mode for outbound container connection limiting is enabled", func() {
+			BeforeEach(func() {
+				netOut.Conn.DryRun = true
+				netOut.Conn.Limit = true
+				netOut.Conn.Logging = true
+
+				chainNamer.PostfixReturnsOnCall(1, "netout-some-container-handle-rl-log", nil)
+			})
+
+			It("clears the rate limit logging chain", func() {
+				err := netOut.Cleanup()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ipTables.ClearChainCallCount()).To(Equal(5))
+
+				table, chain := ipTables.ClearChainArgsForCall(4)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
+			})
+
+			It("deletes the rate limit logging chain", func() {
+				err := netOut.Cleanup()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ipTables.DeleteChainCallCount()).To(Equal(5))
+
+				table, chain := ipTables.DeleteChainArgsForCall(4)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
 			})
 		})
 	})
@@ -896,6 +969,7 @@ var _ = Describe("Netout", func() {
 				netOut.Conn.Limit = true
 				netOut.Conn.Burst = 400
 				netOut.Conn.RatePerSec = 99
+				netOut.Conn.DryRun = false
 
 				chainNamer.PostfixReturnsOnCall(1, "netout-some-container-handle-rl-log", nil)
 			})
@@ -953,6 +1027,7 @@ var _ = Describe("Netout", func() {
 			Context("when denied outbound container connections logging is disabled", func() {
 				BeforeEach(func() {
 					netOut.Conn.Logging = false
+					netOut.Conn.DryRun = false
 				})
 
 				It("inserts the outbound connection rate limit rule", func() {
