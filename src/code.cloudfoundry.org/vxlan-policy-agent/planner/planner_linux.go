@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package planner
@@ -155,7 +156,7 @@ func (s ingressSlice) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
-func (p *VxlanPolicyPlanner) GetRulesAndChain() (enforcer.RulesWithChain, error) {
+func (p *VxlanPolicyPlanner) GetPolicyRulesAndChain() (enforcer.RulesWithChain, error) {
 	allContainers, err := p.readFile()
 	if err != nil {
 		p.Logger.Error("datastore", err)
@@ -179,6 +180,10 @@ func (p *VxlanPolicyPlanner) GetRulesAndChain() (enforcer.RulesWithChain, error)
 		Chain: p.Chain,
 		Rules: ruleset,
 	}, nil
+}
+
+func (p *VxlanPolicyPlanner) GetASGRulesAndChains() ([]enforcer.RulesWithChain, error) {
+	return nil, nil
 }
 
 func (p *VxlanPolicyPlanner) queryPolicyServer(allContainers []container) ([]policy_client.Policy, []policy_client.EgressPolicy, string, error) {

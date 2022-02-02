@@ -2,11 +2,12 @@ package enforcer
 
 import (
 	"fmt"
-	"code.cloudfoundry.org/lib/rules"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"code.cloudfoundry.org/lib/rules"
 
 	"code.cloudfoundry.org/lager"
 )

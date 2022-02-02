@@ -90,6 +90,11 @@ func main() {
 		pollInterval = time.Second
 	}
 
+	asgPollInterval := time.Duration(conf.ASGPollInterval) * time.Second
+	if asgPollInterval == 0 {
+		asgPollInterval = time.Second
+	}
+
 	clientTLSConfig, err := mutualtls.NewClientTLSConfig(conf.ClientCertFile, conf.ClientKeyFile, conf.ServerCACertFile)
 	if err != nil {
 		die(logger, "mutual tls config", err)
@@ -187,30 +192,29 @@ func main() {
 	uptimeSource := metrics.NewUptimeSource()
 	metricsEmitter := metrics.NewMetricsEmitter(logger, emitInterval, uptimeSource)
 
-	pollCycleFunc := (&converger.SinglePollCycle{
-		Planners: []converger.Planner{
-			dynamicPlanner,
-		},
-		Enforcer:      ruleEnforcer,
-		MetricsSender: metricsSender,
-		Logger:        logger,
-		Mutex:         new(sync.Mutex),
-	}).DoCycle
+	singlePollCycle := converger.NewSinglePollCycle([]converger.Planner{dynamicPlanner}, ruleEnforcer, metricsSender, logger)
 
 	policyPoller := &poller.Poller{
 		Logger:          logger,
 		PollInterval:    pollInterval,
-		SingleCycleFunc: pollCycleFunc,
+		SingleCycleFunc: singlePollCycle.DoPolicyCycle,
+	}
+
+	asgPoller := &poller.Poller{
+		Logger:          logger,
+		PollInterval:    asgPollInterval,
+		SingleCycleFunc: singlePollCycle.DoASGCycle,
 	}
 
 	forcePolicyPollCycleServerAddress := fmt.Sprintf("%s:%d", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort)
-	forcePolicyPollCycleServer := createForcePolicyPollCycleServer(forcePolicyPollCycleServerAddress, pollCycleFunc)
+	forcePolicyPollCycleServer := createForcePolicyPollCycleServer(forcePolicyPollCycleServerAddress, singlePollCycle.DoPolicyCycle)
 
 	debugServerAddress := fmt.Sprintf("%s:%d", conf.DebugServerHost, conf.DebugServerPort)
 	debugServer := createCustomDebugServer(debugServerAddress, reconfigurableSink, iptablesLoggingState)
 	members := grouper.Members{
 		{"metrics_emitter", metricsEmitter},
 		{"policy_poller", policyPoller},
+		{"asg_poller", asgPoller},
 		{"debug-server", debugServer},
 		{"force-policy-poll-cycle-server", forcePolicyPollCycleServer},
 	}

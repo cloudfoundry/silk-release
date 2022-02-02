@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package planner_test
@@ -280,14 +281,14 @@ var _ = Describe("Planner", func() {
 		}
 	})
 
-	Describe("GetRulesAndChain", func() {
+	Describe("GetPolicyRulesAndChain", func() {
 		Context("when multiple underlay interfaces are present", func() {
 			BeforeEach(func() {
 				policyPlanner.HostInterfaceNames = []string{"eth0", "eth1"}
 			})
 
 			It("returns all the rules but no logging rules", func() {
-				rulesWithChain, err := policyPlanner.GetRulesAndChain()
+				rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rulesWithChain.Chain).To(Equal(chain))
 				Expect(rulesWithChain.Rules).To(ConsistOf([]rules.IPTablesRule{
@@ -326,14 +327,14 @@ var _ = Describe("Planner", func() {
 			})
 		})
 		It("gets every container's properties from the datastore", func() {
-			_, err := policyPlanner.GetRulesAndChain()
+			_, err := policyPlanner.GetPolicyRulesAndChain()
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(store.ReadAllCallCount()).To(Equal(1))
 		})
 
 		It("gets policies from the policy server", func() {
-			_, err := policyPlanner.GetRulesAndChain()
+			_, err := policyPlanner.GetPolicyRulesAndChain()
 			Expect(err).NotTo(HaveOccurred())
 
 			By("filtering by ID when calling the internal policy server")
@@ -352,7 +353,7 @@ var _ = Describe("Planner", func() {
 				})
 
 				It("returns all the rules but no logging rules", func() {
-					rulesWithChain, err := policyPlanner.GetRulesAndChain()
+					rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(rulesWithChain.Chain).To(Equal(chain))
 					Expect(rulesWithChain.Rules).To(ConsistOf([]rules.IPTablesRule{
@@ -502,7 +503,7 @@ var _ = Describe("Planner", func() {
 				})
 
 				It("returns the rules without overlay ingress and no logging rules", func() {
-					rulesWithChain, err := policyPlanner.GetRulesAndChain()
+					rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(rulesWithChain.Chain).To(Equal(chain))
 
@@ -643,7 +644,7 @@ var _ = Describe("Planner", func() {
 				loggingStateGetter.IsEnabledReturns(true)
 			})
 			It("returns all the rules including logging rules", func() {
-				rulesWithChain, err := policyPlanner.GetRulesAndChain()
+				rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rulesWithChain.Chain).To(Equal(chain))
 
@@ -705,7 +706,7 @@ var _ = Describe("Planner", func() {
 		})
 
 		It("returns all mark set rules before any mark filter rules", func() {
-			rulesWithChain, err := policyPlanner.GetRulesAndChain()
+			rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rulesWithChain.Rules[0]).To(ContainElement("--set-xmark"))
 			Expect(rulesWithChain.Rules[1]).To(ContainElement("--set-xmark"))
@@ -714,7 +715,7 @@ var _ = Describe("Planner", func() {
 		})
 
 		It("emits time metrics", func() {
-			_, err := policyPlanner.GetRulesAndChain()
+			_, err := policyPlanner.GetPolicyRulesAndChain()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(metricsSender.SendDurationCallCount()).To(Equal(2))
 			name, _ := metricsSender.SendDurationArgsForCall(0)
@@ -736,10 +737,10 @@ var _ = Describe("Planner", func() {
 			})
 
 			It("the order of the rules is not affected", func() {
-				rulesWithChain, err := policyPlanner.GetRulesAndChain()
+				rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
 				policyClient.GetPoliciesByIDReturns(reversed, reversedEgress, nil)
-				rulesWithChain2, err := policyPlanner.GetRulesAndChain()
+				rulesWithChain2, err := policyPlanner.GetPolicyRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(rulesWithChain).To(Equal(rulesWithChain2))
@@ -783,7 +784,7 @@ var _ = Describe("Planner", func() {
 			})
 
 			It("writes only one set mark rule", func() {
-				rulesWithChain, err := policyPlanner.GetRulesAndChain()
+				rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rulesWithChain.Rules).To(HaveLen(6))
 				Expect(rulesWithChain.Rules[0]).To(ContainElement("--set-xmark"))
@@ -832,7 +833,7 @@ var _ = Describe("Planner", func() {
 			})
 
 			It("the order of the rules is not affected", func() {
-				rulesWithChain, err := policyPlanner.GetRulesAndChain()
+				rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rulesWithChain.Rules[0]).To(ContainElement("10.255.1.2"))
 				Expect(rulesWithChain.Rules[1]).To(ContainElement("10.255.1.3"))
@@ -911,7 +912,7 @@ var _ = Describe("Planner", func() {
 				})
 
 				It("assigns the rules correctly", func() {
-					rulesWithChain, err := policyPlanner.GetRulesAndChain()
+					rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(rulesWithChain.Rules).To(ConsistOf(
@@ -940,7 +941,7 @@ var _ = Describe("Planner", func() {
 				})
 
 				It("assigns the rules correctly", func() {
-					rulesWithChain, err := policyPlanner.GetRulesAndChain()
+					rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(rulesWithChain.Rules).To(ConsistOf(
@@ -969,7 +970,7 @@ var _ = Describe("Planner", func() {
 				})
 
 				It("assigns the rules correctly", func() {
-					rulesWithChain, err := policyPlanner.GetRulesAndChain()
+					rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(rulesWithChain.Rules).To(ConsistOf(
@@ -997,7 +998,7 @@ var _ = Describe("Planner", func() {
 				})
 
 				It("assigns all the policies, in a backwards compatible way", func() {
-					rulesWithChain, err := policyPlanner.GetRulesAndChain()
+					rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(rulesWithChain.Rules).To(ConsistOf(
@@ -1017,7 +1018,7 @@ var _ = Describe("Planner", func() {
 				policyClient.GetPoliciesByIDReturns([]policy_client.Policy{}, nil, nil)
 			})
 			It("returns an chain with only the ingress rules", func() {
-				rulesWithChain, err := policyPlanner.GetRulesAndChain()
+				rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(policyClient.GetPoliciesByIDCallCount()).To(Equal(1))
 
@@ -1050,7 +1051,7 @@ var _ = Describe("Planner", func() {
 			Context("when overlay ingress rules are disabled", func() {
 				It("returns a chain with no rules", func() {
 					policyPlanner.EnableOverlayIngressRules = false
-					rulesWithChain, err := policyPlanner.GetRulesAndChain()
+					rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 					Expect(err).NotTo(HaveOccurred())
 					Expect(policyClient.GetPoliciesByIDCallCount()).To(Equal(1))
 
@@ -1067,7 +1068,7 @@ var _ = Describe("Planner", func() {
 			})
 
 			It("does not call the policy client", func() {
-				rulesWithChain, err := policyPlanner.GetRulesAndChain()
+				rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(policyClient.GetPoliciesByIDCallCount()).To(Equal(0))
 
@@ -1088,7 +1089,7 @@ var _ = Describe("Planner", func() {
 			})
 
 			It("logs an error for that container and returns rules for other containers", func() {
-				rulesWithChain, err := policyPlanner.GetRulesAndChain()
+				rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(logger).To(gbytes.Say("container-metadata-policy-group-id.*container-id-fruit.*Container.*metadata.*policy_group_id.*CloudController.*restage"))
 
@@ -1112,7 +1113,7 @@ var _ = Describe("Planner", func() {
 			})
 
 			It("logs an error for that container and returns non ingress rules", func() {
-				rulesWithChain, err := policyPlanner.GetRulesAndChain()
+				rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(logger).To(gbytes.Say("container-metadata-policy-group-id.*container-id-2.*Container.*metadata.*ports.*CloudController.*restage"))
 
@@ -1130,7 +1131,7 @@ var _ = Describe("Planner", func() {
 			})
 
 			It("logs and returns the error", func() {
-				_, err := policyPlanner.GetRulesAndChain()
+				_, err := policyPlanner.GetPolicyRulesAndChain()
 				Expect(err).To(MatchError("banana"))
 				Expect(logger).To(gbytes.Say("datastore.*banana"))
 			})
@@ -1142,7 +1143,7 @@ var _ = Describe("Planner", func() {
 			})
 
 			It("logs and returns the error", func() {
-				_, err := policyPlanner.GetRulesAndChain()
+				_, err := policyPlanner.GetPolicyRulesAndChain()
 				Expect(err).To(MatchError("failed to get policies: kiwi"))
 				Expect(logger).To(gbytes.Say("policy-client-query.*kiwi"))
 			})
@@ -1154,7 +1155,7 @@ var _ = Describe("Planner", func() {
 			})
 
 			It("logs and returns the error", func() {
-				_, err := policyPlanner.GetRulesAndChain()
+				_, err := policyPlanner.GetPolicyRulesAndChain()
 				Expect(err).To(MatchError("failed to get ingress tags: sad kumquat"))
 				Expect(logger).To(gbytes.Say("policy-client-query.*sad kumquat"))
 			})
@@ -1173,7 +1174,7 @@ var _ = Describe("Planner", func() {
 			})
 
 			It("logs and returns the error", func() {
-				_, err := policyPlanner.GetRulesAndChain()
+				_, err := policyPlanner.GetPolicyRulesAndChain()
 				Expect(err).To(MatchError(`converting container metadata port to int: strconv.Atoi: parsing "invalid-port": invalid syntax`))
 				Expect(logger).To(gbytes.Say(`policy-client-get-container-policies.*converting container metadata port to int*`))
 			})

@@ -8,8 +8,9 @@ import (
 type LoggingStateGetter struct {
 	IsEnabledStub        func() bool
 	isEnabledMutex       sync.RWMutex
-	isEnabledArgsForCall []struct{}
-	isEnabledReturns     struct {
+	isEnabledArgsForCall []struct {
+	}
+	isEnabledReturns struct {
 		result1 bool
 	}
 	isEnabledReturnsOnCall map[int]struct {
@@ -22,16 +23,19 @@ type LoggingStateGetter struct {
 func (fake *LoggingStateGetter) IsEnabled() bool {
 	fake.isEnabledMutex.Lock()
 	ret, specificReturn := fake.isEnabledReturnsOnCall[len(fake.isEnabledArgsForCall)]
-	fake.isEnabledArgsForCall = append(fake.isEnabledArgsForCall, struct{}{})
+	fake.isEnabledArgsForCall = append(fake.isEnabledArgsForCall, struct {
+	}{})
+	stub := fake.IsEnabledStub
+	fakeReturns := fake.isEnabledReturns
 	fake.recordInvocation("IsEnabled", []interface{}{})
 	fake.isEnabledMutex.Unlock()
-	if fake.IsEnabledStub != nil {
-		return fake.IsEnabledStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.isEnabledReturns.result1
+	return fakeReturns.result1
 }
 
 func (fake *LoggingStateGetter) IsEnabledCallCount() int {
@@ -40,7 +44,15 @@ func (fake *LoggingStateGetter) IsEnabledCallCount() int {
 	return len(fake.isEnabledArgsForCall)
 }
 
+func (fake *LoggingStateGetter) IsEnabledCalls(stub func() bool) {
+	fake.isEnabledMutex.Lock()
+	defer fake.isEnabledMutex.Unlock()
+	fake.IsEnabledStub = stub
+}
+
 func (fake *LoggingStateGetter) IsEnabledReturns(result1 bool) {
+	fake.isEnabledMutex.Lock()
+	defer fake.isEnabledMutex.Unlock()
 	fake.IsEnabledStub = nil
 	fake.isEnabledReturns = struct {
 		result1 bool
@@ -48,6 +60,8 @@ func (fake *LoggingStateGetter) IsEnabledReturns(result1 bool) {
 }
 
 func (fake *LoggingStateGetter) IsEnabledReturnsOnCall(i int, result1 bool) {
+	fake.isEnabledMutex.Lock()
+	defer fake.isEnabledMutex.Unlock()
 	fake.IsEnabledStub = nil
 	if fake.isEnabledReturnsOnCall == nil {
 		fake.isEnabledReturnsOnCall = make(map[int]struct {

@@ -29,6 +29,7 @@ var _ = Describe("Config", func() {
 			It("returns the config", func() {
 				file.WriteString(`{
 					"poll_interval": 1234,
+					"asg_poll_interval": 5678,
 					"cni_datastore_path": "/some/datastore/path",
 					"policy_server_url": "https://some-url:1234",
 					"vni": 42,
@@ -53,6 +54,7 @@ var _ = Describe("Config", func() {
 				c, err := config.New(file.Name())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c.PollInterval).To(Equal(1234))
+				Expect(c.ASGPollInterval).To(Equal(5678))
 				Expect(c.Datastore).To(Equal("/some/datastore/path"))
 				Expect(c.PolicyServerURL).To(Equal("https://some-url:1234"))
 				Expect(c.VNI).To(Equal(42))
@@ -102,6 +104,7 @@ var _ = Describe("Config", func() {
 			func(missingFlag, errorMsg string) {
 				allData := map[string]interface{}{
 					"poll_interval":                      1234,
+					"asg_poll_interval":                  5678,
 					"cni_datastore_path":                 "/some/datastore/path",
 					"policy_server_url":                  "https://some-url:1234",
 					"vni":                                42,
@@ -125,6 +128,7 @@ var _ = Describe("Config", func() {
 				Expect(err).To(MatchError(fmt.Sprintf("invalid config: %s", errorMsg)))
 			},
 			Entry("missing poll interval", "poll_interval", "PollInterval: zero value"),
+			Entry("missing asg poll interval", "asg_poll_interval", "ASGPollInterval: zero value"),
 			Entry("missing datastore path", "cni_datastore_path", "Datastore: zero value"),
 			Entry("missing policy server url", "policy_server_url", "PolicyServerURL: less than min"),
 			Entry("missing vni", "vni", "VNI: zero value"),

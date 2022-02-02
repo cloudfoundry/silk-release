@@ -11,6 +11,7 @@ import (
 
 type VxlanPolicyAgent struct {
 	PollInterval                  int      `json:"poll_interval" validate:"nonzero"`
+	ASGPollInterval               int      `json:"asg_poll_interval" validate:"nonzero" default:"60"`
 	Datastore                     string   `json:"cni_datastore_path" validate:"nonzero"`
 	PolicyServerURL               string   `json:"policy_server_url" validate:"min=1"`
 	VNI                           int      `json:"vni" validate:"nonzero"`

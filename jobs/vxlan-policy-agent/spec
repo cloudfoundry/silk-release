@@ -43,6 +43,10 @@ properties:
     description: "The VXLAN policy agent queries the policy server on this interval in seconds and updates local policy rules."
     default: 5
 
+  asg_poll_interval_seconds:
+    description: "The VXLAN policy agent queries the policy server on this interval in seconds and updates local security groups rules."
+    default: 60
+
   ca_cert:
     description: "Trusted CA certificate that was used to sign the policy server's server cert and key."
 

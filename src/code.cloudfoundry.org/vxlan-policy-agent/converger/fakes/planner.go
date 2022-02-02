@@ -9,15 +9,27 @@ import (
 )
 
 type Planner struct {
-	GetRulesAndChainStub        func() (enforcer.RulesWithChain, error)
-	getRulesAndChainMutex       sync.RWMutex
-	getRulesAndChainArgsForCall []struct {
+	GetASGRulesAndChainsStub        func() ([]enforcer.RulesWithChain, error)
+	getASGRulesAndChainsMutex       sync.RWMutex
+	getASGRulesAndChainsArgsForCall []struct {
 	}
-	getRulesAndChainReturns struct {
+	getASGRulesAndChainsReturns struct {
+		result1 []enforcer.RulesWithChain
+		result2 error
+	}
+	getASGRulesAndChainsReturnsOnCall map[int]struct {
+		result1 []enforcer.RulesWithChain
+		result2 error
+	}
+	GetPolicyRulesAndChainStub        func() (enforcer.RulesWithChain, error)
+	getPolicyRulesAndChainMutex       sync.RWMutex
+	getPolicyRulesAndChainArgsForCall []struct {
+	}
+	getPolicyRulesAndChainReturns struct {
 		result1 enforcer.RulesWithChain
 		result2 error
 	}
-	getRulesAndChainReturnsOnCall map[int]struct {
+	getPolicyRulesAndChainReturnsOnCall map[int]struct {
 		result1 enforcer.RulesWithChain
 		result2 error
 	}
@@ -25,15 +37,15 @@ type Planner struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *Planner) GetRulesAndChain() (enforcer.RulesWithChain, error) {
-	fake.getRulesAndChainMutex.Lock()
-	ret, specificReturn := fake.getRulesAndChainReturnsOnCall[len(fake.getRulesAndChainArgsForCall)]
-	fake.getRulesAndChainArgsForCall = append(fake.getRulesAndChainArgsForCall, struct {
+func (fake *Planner) GetASGRulesAndChains() ([]enforcer.RulesWithChain, error) {
+	fake.getASGRulesAndChainsMutex.Lock()
+	ret, specificReturn := fake.getASGRulesAndChainsReturnsOnCall[len(fake.getASGRulesAndChainsArgsForCall)]
+	fake.getASGRulesAndChainsArgsForCall = append(fake.getASGRulesAndChainsArgsForCall, struct {
 	}{})
-	stub := fake.GetRulesAndChainStub
-	fakeReturns := fake.getRulesAndChainReturns
-	fake.recordInvocation("GetRulesAndChain", []interface{}{})
-	fake.getRulesAndChainMutex.Unlock()
+	stub := fake.GetASGRulesAndChainsStub
+	fakeReturns := fake.getASGRulesAndChainsReturns
+	fake.recordInvocation("GetASGRulesAndChains", []interface{}{})
+	fake.getASGRulesAndChainsMutex.Unlock()
 	if stub != nil {
 		return stub()
 	}
@@ -43,39 +55,95 @@ func (fake *Planner) GetRulesAndChain() (enforcer.RulesWithChain, error) {
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *Planner) GetRulesAndChainCallCount() int {
-	fake.getRulesAndChainMutex.RLock()
-	defer fake.getRulesAndChainMutex.RUnlock()
-	return len(fake.getRulesAndChainArgsForCall)
+func (fake *Planner) GetASGRulesAndChainsCallCount() int {
+	fake.getASGRulesAndChainsMutex.RLock()
+	defer fake.getASGRulesAndChainsMutex.RUnlock()
+	return len(fake.getASGRulesAndChainsArgsForCall)
 }
 
-func (fake *Planner) GetRulesAndChainCalls(stub func() (enforcer.RulesWithChain, error)) {
-	fake.getRulesAndChainMutex.Lock()
-	defer fake.getRulesAndChainMutex.Unlock()
-	fake.GetRulesAndChainStub = stub
+func (fake *Planner) GetASGRulesAndChainsCalls(stub func() ([]enforcer.RulesWithChain, error)) {
+	fake.getASGRulesAndChainsMutex.Lock()
+	defer fake.getASGRulesAndChainsMutex.Unlock()
+	fake.GetASGRulesAndChainsStub = stub
 }
 
-func (fake *Planner) GetRulesAndChainReturns(result1 enforcer.RulesWithChain, result2 error) {
-	fake.getRulesAndChainMutex.Lock()
-	defer fake.getRulesAndChainMutex.Unlock()
-	fake.GetRulesAndChainStub = nil
-	fake.getRulesAndChainReturns = struct {
+func (fake *Planner) GetASGRulesAndChainsReturns(result1 []enforcer.RulesWithChain, result2 error) {
+	fake.getASGRulesAndChainsMutex.Lock()
+	defer fake.getASGRulesAndChainsMutex.Unlock()
+	fake.GetASGRulesAndChainsStub = nil
+	fake.getASGRulesAndChainsReturns = struct {
+		result1 []enforcer.RulesWithChain
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *Planner) GetASGRulesAndChainsReturnsOnCall(i int, result1 []enforcer.RulesWithChain, result2 error) {
+	fake.getASGRulesAndChainsMutex.Lock()
+	defer fake.getASGRulesAndChainsMutex.Unlock()
+	fake.GetASGRulesAndChainsStub = nil
+	if fake.getASGRulesAndChainsReturnsOnCall == nil {
+		fake.getASGRulesAndChainsReturnsOnCall = make(map[int]struct {
+			result1 []enforcer.RulesWithChain
+			result2 error
+		})
+	}
+	fake.getASGRulesAndChainsReturnsOnCall[i] = struct {
+		result1 []enforcer.RulesWithChain
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *Planner) GetPolicyRulesAndChain() (enforcer.RulesWithChain, error) {
+	fake.getPolicyRulesAndChainMutex.Lock()
+	ret, specificReturn := fake.getPolicyRulesAndChainReturnsOnCall[len(fake.getPolicyRulesAndChainArgsForCall)]
+	fake.getPolicyRulesAndChainArgsForCall = append(fake.getPolicyRulesAndChainArgsForCall, struct {
+	}{})
+	stub := fake.GetPolicyRulesAndChainStub
+	fakeReturns := fake.getPolicyRulesAndChainReturns
+	fake.recordInvocation("GetPolicyRulesAndChain", []interface{}{})
+	fake.getPolicyRulesAndChainMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *Planner) GetPolicyRulesAndChainCallCount() int {
+	fake.getPolicyRulesAndChainMutex.RLock()
+	defer fake.getPolicyRulesAndChainMutex.RUnlock()
+	return len(fake.getPolicyRulesAndChainArgsForCall)
+}
+
+func (fake *Planner) GetPolicyRulesAndChainCalls(stub func() (enforcer.RulesWithChain, error)) {
+	fake.getPolicyRulesAndChainMutex.Lock()
+	defer fake.getPolicyRulesAndChainMutex.Unlock()
+	fake.GetPolicyRulesAndChainStub = stub
+}
+
+func (fake *Planner) GetPolicyRulesAndChainReturns(result1 enforcer.RulesWithChain, result2 error) {
+	fake.getPolicyRulesAndChainMutex.Lock()
+	defer fake.getPolicyRulesAndChainMutex.Unlock()
+	fake.GetPolicyRulesAndChainStub = nil
+	fake.getPolicyRulesAndChainReturns = struct {
 		result1 enforcer.RulesWithChain
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *Planner) GetRulesAndChainReturnsOnCall(i int, result1 enforcer.RulesWithChain, result2 error) {
-	fake.getRulesAndChainMutex.Lock()
-	defer fake.getRulesAndChainMutex.Unlock()
-	fake.GetRulesAndChainStub = nil
-	if fake.getRulesAndChainReturnsOnCall == nil {
-		fake.getRulesAndChainReturnsOnCall = make(map[int]struct {
+func (fake *Planner) GetPolicyRulesAndChainReturnsOnCall(i int, result1 enforcer.RulesWithChain, result2 error) {
+	fake.getPolicyRulesAndChainMutex.Lock()
+	defer fake.getPolicyRulesAndChainMutex.Unlock()
+	fake.GetPolicyRulesAndChainStub = nil
+	if fake.getPolicyRulesAndChainReturnsOnCall == nil {
+		fake.getPolicyRulesAndChainReturnsOnCall = make(map[int]struct {
 			result1 enforcer.RulesWithChain
 			result2 error
 		})
 	}
-	fake.getRulesAndChainReturnsOnCall[i] = struct {
+	fake.getPolicyRulesAndChainReturnsOnCall[i] = struct {
 		result1 enforcer.RulesWithChain
 		result2 error
 	}{result1, result2}
@@ -84,8 +152,10 @@ func (fake *Planner) GetRulesAndChainReturnsOnCall(i int, result1 enforcer.Rules
 func (fake *Planner) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.getRulesAndChainMutex.RLock()
-	defer fake.getRulesAndChainMutex.RUnlock()
+	fake.getASGRulesAndChainsMutex.RLock()
+	defer fake.getASGRulesAndChainsMutex.RUnlock()
+	fake.getPolicyRulesAndChainMutex.RLock()
+	defer fake.getPolicyRulesAndChainMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
