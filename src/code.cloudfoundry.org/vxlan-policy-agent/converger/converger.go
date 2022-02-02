@@ -13,7 +13,8 @@ import (
 
 //go:generate counterfeiter -o fakes/planner.go --fake-name Planner . Planner
 type Planner interface {
-	GetRulesAndChain() (enforcer.RulesWithChain, error)
+	GetPolicyRulesAndChain() (enforcer.RulesWithChain, error)
+	GetASGRulesAndChains() ([]enforcer.RulesWithChain, error)
 }
 
 //go:generate counterfeiter -o fakes/rule_enforcer.go --fake-name RuleEnforcer . ruleEnforcer
@@ -27,59 +28,76 @@ type metricsSender interface {
 }
 
 type SinglePollCycle struct {
-	Planners      []Planner
-	Enforcer      ruleEnforcer
-	MetricsSender metricsSender
-	Logger        lager.Logger
-	ruleSets      map[enforcer.Chain]enforcer.RulesWithChain
-	Mutex         sync.Locker
+	planners       []Planner
+	enforcer       ruleEnforcer
+	metricsSender  metricsSender
+	logger         lager.Logger
+	policyRuleSets map[enforcer.Chain]enforcer.RulesWithChain
+	asgRuleSets    map[enforcer.Chain]enforcer.RulesWithChain
+	policyMutex    sync.Locker
+	asgMutex       sync.Locker
+}
+
+func NewSinglePollCycle(planners []Planner, re ruleEnforcer, ms metricsSender, logger lager.Logger) *SinglePollCycle {
+	return &SinglePollCycle{
+		planners:      planners,
+		enforcer:      re,
+		metricsSender: ms,
+		logger:        logger,
+		policyMutex:   new(sync.Mutex),
+		asgMutex:      new(sync.Mutex),
+	}
 }
 
 const metricEnforceDuration = "iptablesEnforceTime"
 const metricPollDuration = "totalPollTime"
 
-func (m *SinglePollCycle) DoCycle() error {
-	m.Mutex.Lock()
+func (m *SinglePollCycle) DoPolicyCycle() error {
+	m.policyMutex.Lock()
 
-	if m.ruleSets == nil {
-		m.ruleSets = make(map[enforcer.Chain]enforcer.RulesWithChain)
+	if m.policyRuleSets == nil {
+		m.policyRuleSets = make(map[enforcer.Chain]enforcer.RulesWithChain)
 	}
 
 	pollStartTime := time.Now()
 	var enforceDuration time.Duration
-	for _, p := range m.Planners {
-		ruleSet, err := p.GetRulesAndChain()
+	for _, p := range m.planners {
+		ruleSet, err := p.GetPolicyRulesAndChain()
 		if err != nil {
-			m.Mutex.Unlock()
+			m.policyMutex.Unlock()
 			return fmt.Errorf("get-rules: %s", err)
 		}
 		enforceStartTime := time.Now()
 
-		oldRuleSet := m.ruleSets[ruleSet.Chain]
+		oldRuleSet := m.policyRuleSets[ruleSet.Chain]
 		if !ruleSet.Equals(oldRuleSet) {
-			m.Logger.Debug("poll-cycle", lager.Data{
+			m.logger.Debug("poll-cycle", lager.Data{
 				"message":       "updating iptables rules",
 				"num old rules": len(oldRuleSet.Rules),
 				"num new rules": len(ruleSet.Rules),
 				"old rules":     oldRuleSet,
 				"new rules":     ruleSet,
 			})
-			err = m.Enforcer.EnforceRulesAndChain(ruleSet)
+			err = m.enforcer.EnforceRulesAndChain(ruleSet)
 			if err != nil {
-				m.Mutex.Unlock()
+				m.policyMutex.Unlock()
 				return fmt.Errorf("enforce: %s", err)
 			}
-			m.ruleSets[ruleSet.Chain] = ruleSet
+			m.policyRuleSets[ruleSet.Chain] = ruleSet
 		}
 
 		enforceDuration += time.Now().Sub(enforceStartTime)
 	}
 
-	m.Mutex.Unlock()
+	m.policyMutex.Unlock()
 
 	pollDuration := time.Now().Sub(pollStartTime)
-	m.MetricsSender.SendDuration(metricEnforceDuration, enforceDuration)
-	m.MetricsSender.SendDuration(metricPollDuration, pollDuration)
+	m.metricsSender.SendDuration(metricEnforceDuration, enforceDuration)
+	m.metricsSender.SendDuration(metricPollDuration, pollDuration)
 
+	return nil
+}
+
+func (m *SinglePollCycle) DoASGCycle() error {
 	return nil
 }

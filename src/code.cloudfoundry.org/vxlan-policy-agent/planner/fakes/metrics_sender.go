@@ -23,9 +23,10 @@ func (fake *MetricsSender) SendDuration(arg1 string, arg2 time.Duration) {
 		arg1 string
 		arg2 time.Duration
 	}{arg1, arg2})
+	stub := fake.SendDurationStub
 	fake.recordInvocation("SendDuration", []interface{}{arg1, arg2})
 	fake.sendDurationMutex.Unlock()
-	if fake.SendDurationStub != nil {
+	if stub != nil {
 		fake.SendDurationStub(arg1, arg2)
 	}
 }
@@ -36,10 +37,17 @@ func (fake *MetricsSender) SendDurationCallCount() int {
 	return len(fake.sendDurationArgsForCall)
 }
 
+func (fake *MetricsSender) SendDurationCalls(stub func(string, time.Duration)) {
+	fake.sendDurationMutex.Lock()
+	defer fake.sendDurationMutex.Unlock()
+	fake.SendDurationStub = stub
+}
+
 func (fake *MetricsSender) SendDurationArgsForCall(i int) (string, time.Duration) {
 	fake.sendDurationMutex.RLock()
 	defer fake.sendDurationMutex.RUnlock()
-	return fake.sendDurationArgsForCall[i].arg1, fake.sendDurationArgsForCall[i].arg2
+	argsForCall := fake.sendDurationArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *MetricsSender) Invocations() map[string][][]interface{} {

@@ -2,15 +2,30 @@
 package fakes
 
 import (
-	"code.cloudfoundry.org/policy_client"
 	"sync"
+
+	"code.cloudfoundry.org/policy_client"
 )
 
 type PolicyClient struct {
-	GetPoliciesByIDStub        func(ids ...string) ([]policy_client.Policy, []policy_client.EgressPolicy, error)
+	CreateOrGetTagStub        func(string, string) (string, error)
+	createOrGetTagMutex       sync.RWMutex
+	createOrGetTagArgsForCall []struct {
+		arg1 string
+		arg2 string
+	}
+	createOrGetTagReturns struct {
+		result1 string
+		result2 error
+	}
+	createOrGetTagReturnsOnCall map[int]struct {
+		result1 string
+		result2 error
+	}
+	GetPoliciesByIDStub        func(...string) ([]policy_client.Policy, []policy_client.EgressPolicy, error)
 	getPoliciesByIDMutex       sync.RWMutex
 	getPoliciesByIDArgsForCall []struct {
-		ids []string
+		arg1 []string
 	}
 	getPoliciesByIDReturns struct {
 		result1 []policy_client.Policy
@@ -22,39 +37,92 @@ type PolicyClient struct {
 		result2 []policy_client.EgressPolicy
 		result3 error
 	}
-	CreateOrGetTagStub        func(id, groupType string) (string, error)
-	createOrGetTagMutex       sync.RWMutex
-	createOrGetTagArgsForCall []struct {
-		id        string
-		groupType string
-	}
-	createOrGetTagReturns struct {
-		result1 string
-		result2 error
-	}
-	createOrGetTagReturnsOnCall map[int]struct {
-		result1 string
-		result2 error
-	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *PolicyClient) GetPoliciesByID(ids ...string) ([]policy_client.Policy, []policy_client.EgressPolicy, error) {
+func (fake *PolicyClient) CreateOrGetTag(arg1 string, arg2 string) (string, error) {
+	fake.createOrGetTagMutex.Lock()
+	ret, specificReturn := fake.createOrGetTagReturnsOnCall[len(fake.createOrGetTagArgsForCall)]
+	fake.createOrGetTagArgsForCall = append(fake.createOrGetTagArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	stub := fake.CreateOrGetTagStub
+	fakeReturns := fake.createOrGetTagReturns
+	fake.recordInvocation("CreateOrGetTag", []interface{}{arg1, arg2})
+	fake.createOrGetTagMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *PolicyClient) CreateOrGetTagCallCount() int {
+	fake.createOrGetTagMutex.RLock()
+	defer fake.createOrGetTagMutex.RUnlock()
+	return len(fake.createOrGetTagArgsForCall)
+}
+
+func (fake *PolicyClient) CreateOrGetTagCalls(stub func(string, string) (string, error)) {
+	fake.createOrGetTagMutex.Lock()
+	defer fake.createOrGetTagMutex.Unlock()
+	fake.CreateOrGetTagStub = stub
+}
+
+func (fake *PolicyClient) CreateOrGetTagArgsForCall(i int) (string, string) {
+	fake.createOrGetTagMutex.RLock()
+	defer fake.createOrGetTagMutex.RUnlock()
+	argsForCall := fake.createOrGetTagArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *PolicyClient) CreateOrGetTagReturns(result1 string, result2 error) {
+	fake.createOrGetTagMutex.Lock()
+	defer fake.createOrGetTagMutex.Unlock()
+	fake.CreateOrGetTagStub = nil
+	fake.createOrGetTagReturns = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *PolicyClient) CreateOrGetTagReturnsOnCall(i int, result1 string, result2 error) {
+	fake.createOrGetTagMutex.Lock()
+	defer fake.createOrGetTagMutex.Unlock()
+	fake.CreateOrGetTagStub = nil
+	if fake.createOrGetTagReturnsOnCall == nil {
+		fake.createOrGetTagReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 error
+		})
+	}
+	fake.createOrGetTagReturnsOnCall[i] = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *PolicyClient) GetPoliciesByID(arg1 ...string) ([]policy_client.Policy, []policy_client.EgressPolicy, error) {
 	fake.getPoliciesByIDMutex.Lock()
 	ret, specificReturn := fake.getPoliciesByIDReturnsOnCall[len(fake.getPoliciesByIDArgsForCall)]
 	fake.getPoliciesByIDArgsForCall = append(fake.getPoliciesByIDArgsForCall, struct {
-		ids []string
-	}{ids})
-	fake.recordInvocation("GetPoliciesByID", []interface{}{ids})
+		arg1 []string
+	}{arg1})
+	stub := fake.GetPoliciesByIDStub
+	fakeReturns := fake.getPoliciesByIDReturns
+	fake.recordInvocation("GetPoliciesByID", []interface{}{arg1})
 	fake.getPoliciesByIDMutex.Unlock()
-	if fake.GetPoliciesByIDStub != nil {
-		return fake.GetPoliciesByIDStub(ids...)
+	if stub != nil {
+		return stub(arg1...)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2, ret.result3
 	}
-	return fake.getPoliciesByIDReturns.result1, fake.getPoliciesByIDReturns.result2, fake.getPoliciesByIDReturns.result3
+	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
 }
 
 func (fake *PolicyClient) GetPoliciesByIDCallCount() int {
@@ -63,13 +131,22 @@ func (fake *PolicyClient) GetPoliciesByIDCallCount() int {
 	return len(fake.getPoliciesByIDArgsForCall)
 }
 
+func (fake *PolicyClient) GetPoliciesByIDCalls(stub func(...string) ([]policy_client.Policy, []policy_client.EgressPolicy, error)) {
+	fake.getPoliciesByIDMutex.Lock()
+	defer fake.getPoliciesByIDMutex.Unlock()
+	fake.GetPoliciesByIDStub = stub
+}
+
 func (fake *PolicyClient) GetPoliciesByIDArgsForCall(i int) []string {
 	fake.getPoliciesByIDMutex.RLock()
 	defer fake.getPoliciesByIDMutex.RUnlock()
-	return fake.getPoliciesByIDArgsForCall[i].ids
+	argsForCall := fake.getPoliciesByIDArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *PolicyClient) GetPoliciesByIDReturns(result1 []policy_client.Policy, result2 []policy_client.EgressPolicy, result3 error) {
+	fake.getPoliciesByIDMutex.Lock()
+	defer fake.getPoliciesByIDMutex.Unlock()
 	fake.GetPoliciesByIDStub = nil
 	fake.getPoliciesByIDReturns = struct {
 		result1 []policy_client.Policy
@@ -79,6 +156,8 @@ func (fake *PolicyClient) GetPoliciesByIDReturns(result1 []policy_client.Policy,
 }
 
 func (fake *PolicyClient) GetPoliciesByIDReturnsOnCall(i int, result1 []policy_client.Policy, result2 []policy_client.EgressPolicy, result3 error) {
+	fake.getPoliciesByIDMutex.Lock()
+	defer fake.getPoliciesByIDMutex.Unlock()
 	fake.GetPoliciesByIDStub = nil
 	if fake.getPoliciesByIDReturnsOnCall == nil {
 		fake.getPoliciesByIDReturnsOnCall = make(map[int]struct {
@@ -94,65 +173,13 @@ func (fake *PolicyClient) GetPoliciesByIDReturnsOnCall(i int, result1 []policy_c
 	}{result1, result2, result3}
 }
 
-func (fake *PolicyClient) CreateOrGetTag(id string, groupType string) (string, error) {
-	fake.createOrGetTagMutex.Lock()
-	ret, specificReturn := fake.createOrGetTagReturnsOnCall[len(fake.createOrGetTagArgsForCall)]
-	fake.createOrGetTagArgsForCall = append(fake.createOrGetTagArgsForCall, struct {
-		id        string
-		groupType string
-	}{id, groupType})
-	fake.recordInvocation("CreateOrGetTag", []interface{}{id, groupType})
-	fake.createOrGetTagMutex.Unlock()
-	if fake.CreateOrGetTagStub != nil {
-		return fake.CreateOrGetTagStub(id, groupType)
-	}
-	if specificReturn {
-		return ret.result1, ret.result2
-	}
-	return fake.createOrGetTagReturns.result1, fake.createOrGetTagReturns.result2
-}
-
-func (fake *PolicyClient) CreateOrGetTagCallCount() int {
-	fake.createOrGetTagMutex.RLock()
-	defer fake.createOrGetTagMutex.RUnlock()
-	return len(fake.createOrGetTagArgsForCall)
-}
-
-func (fake *PolicyClient) CreateOrGetTagArgsForCall(i int) (string, string) {
-	fake.createOrGetTagMutex.RLock()
-	defer fake.createOrGetTagMutex.RUnlock()
-	return fake.createOrGetTagArgsForCall[i].id, fake.createOrGetTagArgsForCall[i].groupType
-}
-
-func (fake *PolicyClient) CreateOrGetTagReturns(result1 string, result2 error) {
-	fake.CreateOrGetTagStub = nil
-	fake.createOrGetTagReturns = struct {
-		result1 string
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *PolicyClient) CreateOrGetTagReturnsOnCall(i int, result1 string, result2 error) {
-	fake.CreateOrGetTagStub = nil
-	if fake.createOrGetTagReturnsOnCall == nil {
-		fake.createOrGetTagReturnsOnCall = make(map[int]struct {
-			result1 string
-			result2 error
-		})
-	}
-	fake.createOrGetTagReturnsOnCall[i] = struct {
-		result1 string
-		result2 error
-	}{result1, result2}
-}
-
 func (fake *PolicyClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.getPoliciesByIDMutex.RLock()
-	defer fake.getPoliciesByIDMutex.RUnlock()
 	fake.createOrGetTagMutex.RLock()
 	defer fake.createOrGetTagMutex.RUnlock()
+	fake.getPoliciesByIDMutex.RLock()
+	defer fake.getPoliciesByIDMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

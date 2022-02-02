@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package linux_test
@@ -82,6 +83,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 
 		conf = config.VxlanPolicyAgent{
 			PollInterval:                  1,
+			ASGPollInterval:               10,
 			PolicyServerURL:               fmt.Sprintf("https://%s", serverListenAddr),
 			Datastore:                     datastorePath,
 			VNI:                           42,

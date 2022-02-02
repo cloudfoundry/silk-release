@@ -2,15 +2,17 @@
 package fakes
 
 import (
-	"code.cloudfoundry.org/lib/datastore"
 	"sync"
+
+	"code.cloudfoundry.org/lib/datastore"
 )
 
 type Dstore struct {
 	ReadAllStub        func() (map[string]datastore.Container, error)
 	readAllMutex       sync.RWMutex
-	readAllArgsForCall []struct{}
-	readAllReturns     struct {
+	readAllArgsForCall []struct {
+	}
+	readAllReturns struct {
 		result1 map[string]datastore.Container
 		result2 error
 	}
@@ -25,16 +27,19 @@ type Dstore struct {
 func (fake *Dstore) ReadAll() (map[string]datastore.Container, error) {
 	fake.readAllMutex.Lock()
 	ret, specificReturn := fake.readAllReturnsOnCall[len(fake.readAllArgsForCall)]
-	fake.readAllArgsForCall = append(fake.readAllArgsForCall, struct{}{})
+	fake.readAllArgsForCall = append(fake.readAllArgsForCall, struct {
+	}{})
+	stub := fake.ReadAllStub
+	fakeReturns := fake.readAllReturns
 	fake.recordInvocation("ReadAll", []interface{}{})
 	fake.readAllMutex.Unlock()
-	if fake.ReadAllStub != nil {
-		return fake.ReadAllStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.readAllReturns.result1, fake.readAllReturns.result2
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *Dstore) ReadAllCallCount() int {
@@ -43,7 +48,15 @@ func (fake *Dstore) ReadAllCallCount() int {
 	return len(fake.readAllArgsForCall)
 }
 
+func (fake *Dstore) ReadAllCalls(stub func() (map[string]datastore.Container, error)) {
+	fake.readAllMutex.Lock()
+	defer fake.readAllMutex.Unlock()
+	fake.ReadAllStub = stub
+}
+
 func (fake *Dstore) ReadAllReturns(result1 map[string]datastore.Container, result2 error) {
+	fake.readAllMutex.Lock()
+	defer fake.readAllMutex.Unlock()
 	fake.ReadAllStub = nil
 	fake.readAllReturns = struct {
 		result1 map[string]datastore.Container
@@ -52,6 +65,8 @@ func (fake *Dstore) ReadAllReturns(result1 map[string]datastore.Container, resul
 }
 
 func (fake *Dstore) ReadAllReturnsOnCall(i int, result1 map[string]datastore.Container, result2 error) {
+	fake.readAllMutex.Lock()
+	defer fake.readAllMutex.Unlock()
 	fake.ReadAllStub = nil
 	if fake.readAllReturnsOnCall == nil {
 		fake.readAllReturnsOnCall = make(map[int]struct {
