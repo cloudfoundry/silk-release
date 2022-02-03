@@ -1,4 +1,4 @@
-package legacynet
+package netrules
 
 type DenyNetworks struct {
 	Always  []string

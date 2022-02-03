@@ -1,10 +1,10 @@
-package legacynet_test
+package netrules_test
 
 import (
 	"errors"
 
 	"code.cloudfoundry.org/cni-wrapper-plugin/fakes"
-	"code.cloudfoundry.org/cni-wrapper-plugin/legacynet"
+	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
 
 	lib_fakes "code.cloudfoundry.org/lib/fakes"
 	"code.cloudfoundry.org/lib/rules"
@@ -16,7 +16,7 @@ import (
 var _ = Describe("Netin", func() {
 
 	var (
-		netIn      *legacynet.NetIn
+		netIn      *netrules.NetIn
 		ipTables   *lib_fakes.IPTablesAdapter
 		chainNamer *fakes.ChainNamer
 	)
@@ -24,7 +24,7 @@ var _ = Describe("Netin", func() {
 	BeforeEach(func() {
 		ipTables = &lib_fakes.IPTablesAdapter{}
 		chainNamer = &fakes.ChainNamer{}
-		netIn = &legacynet.NetIn{
+		netIn = &netrules.NetIn{
 			ChainNamer:         chainNamer,
 			IPTables:           ipTables,
 			IngressTag:         "FEEDBEEF",

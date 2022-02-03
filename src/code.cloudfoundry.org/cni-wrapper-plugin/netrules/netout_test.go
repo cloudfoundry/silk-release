@@ -1,10 +1,10 @@
-package legacynet_test
+package netrules_test
 
 import (
 	"errors"
 
 	"code.cloudfoundry.org/cni-wrapper-plugin/fakes"
-	"code.cloudfoundry.org/cni-wrapper-plugin/legacynet"
+	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
 
 	"code.cloudfoundry.org/garden"
 
@@ -18,7 +18,7 @@ import (
 
 var _ = Describe("Netout", func() {
 	var (
-		netOut     *legacynet.NetOut
+		netOut     *netrules.NetOut
 		converter  *fakes.NetOutRuleConverter
 		chainNamer *fakes.ChainNamer
 		ipTables   *lib_fakes.IPTablesAdapter
@@ -27,7 +27,7 @@ var _ = Describe("Netout", func() {
 		chainNamer = &fakes.ChainNamer{}
 		converter = &fakes.NetOutRuleConverter{}
 		ipTables = &lib_fakes.IPTablesAdapter{}
-		netOut = &legacynet.NetOut{
+		netOut = &netrules.NetOut{
 			ChainNamer:            chainNamer,
 			IPTables:              ipTables,
 			Converter:             converter,
@@ -38,7 +38,7 @@ var _ = Describe("Netout", func() {
 			AcceptedUDPLogsPerSec: 6,
 			ContainerIP:           "5.6.7.8",
 			ContainerHandle:       "some-container-handle",
-			Conn: legacynet.OutConn{
+			Conn: netrules.OutConn{
 				Limit: false,
 			},
 		}
@@ -444,14 +444,14 @@ var _ = Describe("Netout", func() {
 
 		Context("when deny networks are specified", func() {
 			It("returns an error for an incorrectly formatted deny network", func() {
-				netOut.DenyNetworks = legacynet.DenyNetworks{
+				netOut.DenyNetworks = netrules.DenyNetworks{
 					Always: []string{"a.b.c.d", "192.168.0.0/16"},
 				}
 
 				err := netOut.Initialize()
 				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: a.b.c.d")))
 
-				netOut.DenyNetworks = legacynet.DenyNetworks{
+				netOut.DenyNetworks = netrules.DenyNetworks{
 					Always: []string{"1.2.3.4/abc", "192.168.0.0/16"},
 				}
 				err = netOut.Initialize()
@@ -459,13 +459,13 @@ var _ = Describe("Netout", func() {
 			})
 
 			It("returns an error for an improperly bounded deny network", func() {
-				netOut.DenyNetworks = legacynet.DenyNetworks{
+				netOut.DenyNetworks = netrules.DenyNetworks{
 					Running: []string{"256.256.256.1024/24", "192.168.0.0/16"},
 				}
 				err := netOut.Initialize()
 				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: 256.256.256.1024/24")))
 
-				netOut.DenyNetworks = legacynet.DenyNetworks{
+				netOut.DenyNetworks = netrules.DenyNetworks{
 					Running: []string{"172.16.0.0/35", "192.168.0.0/16"},
 				}
 				err = netOut.Initialize()
@@ -826,12 +826,12 @@ var _ = Describe("Netout", func() {
 
 		Context("when deny networks are specified", func() {
 			BeforeEach(func() {
-				netOut.DenyNetworks = legacynet.DenyNetworks{}
+				netOut.DenyNetworks = netrules.DenyNetworks{}
 			})
 
 			DescribeTable(
 				"it should deny the workload networks and the 'all' networks",
-				func(workload string, denyNetworks legacynet.DenyNetworks) {
+				func(workload string, denyNetworks netrules.DenyNetworks) {
 					netOut.ContainerWorkload = workload
 					netOut.DenyNetworks = denyNetworks
 					netOut.DenyNetworks.Always = []string{"172.16.0.0/12"}
@@ -853,16 +853,16 @@ var _ = Describe("Netout", func() {
 
 					Expect(rulespec).To(Equal(rulesWithDenyNetworksAndDefaults))
 				},
-				Entry("when the workload is an app", "app", legacynet.DenyNetworks{Running: []string{"192.168.0.0/16"}}),
-				Entry("when the workload is a task", "task", legacynet.DenyNetworks{Running: []string{"192.168.0.0/16"}}),
-				Entry("when the workload is staging", "staging", legacynet.DenyNetworks{Staging: []string{"192.168.0.0/16"}}),
+				Entry("when the workload is an app", "app", netrules.DenyNetworks{Running: []string{"192.168.0.0/16"}}),
+				Entry("when the workload is a task", "task", netrules.DenyNetworks{Running: []string{"192.168.0.0/16"}}),
+				Entry("when the workload is staging", "staging", netrules.DenyNetworks{Staging: []string{"192.168.0.0/16"}}),
 			)
 
 			DescribeTable(
 				"it should only deny the workload networks and the 'all' networks",
 				func(workload string, expectedDenyNetwork string) {
 					netOut.ContainerWorkload = workload
-					netOut.DenyNetworks = legacynet.DenyNetworks{
+					netOut.DenyNetworks = netrules.DenyNetworks{
 						Always:  []string{"1.1.1.1/32"},
 						Running: []string{"2.2.2.2/32"},
 						Staging: []string{"3.3.3.3/32"},

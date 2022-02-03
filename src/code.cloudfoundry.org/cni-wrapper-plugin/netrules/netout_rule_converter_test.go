@@ -1,10 +1,11 @@
-package legacynet_test
+package netrules_test
 
 import (
 	"bytes"
-	"code.cloudfoundry.org/cni-wrapper-plugin/legacynet"
-	"code.cloudfoundry.org/lib/rules"
 	"net"
+
+	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
+	"code.cloudfoundry.org/lib/rules"
 
 	"code.cloudfoundry.org/garden"
 
@@ -14,7 +15,7 @@ import (
 
 var _ = Describe("NetOutRuleConverter", func() {
 	var (
-		converter    *legacynet.NetOutRuleConverter
+		converter    *netrules.NetOutRuleConverter
 		netOutRule   garden.NetOutRule
 		logChainName string
 		logger       *bytes.Buffer
@@ -22,7 +23,7 @@ var _ = Describe("NetOutRuleConverter", func() {
 	BeforeEach(func() {
 		logChainName = "some-chain"
 		logger = &bytes.Buffer{}
-		converter = &legacynet.NetOutRuleConverter{Logger: logger}
+		converter = &netrules.NetOutRuleConverter{Logger: logger}
 	})
 	Describe("Convert", func() {
 		Context("when the protocol is TCP or UDP", func() {

@@ -1,4 +1,4 @@
-package legacynet
+package netrules
 
 import (
 	"code.cloudfoundry.org/lib/rules"

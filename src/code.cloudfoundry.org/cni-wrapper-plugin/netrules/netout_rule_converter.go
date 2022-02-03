@@ -1,8 +1,9 @@
-package legacynet
+package netrules
 
 import (
 	"fmt"
 	"io"
+
 	"code.cloudfoundry.org/lib/rules"
 
 	"code.cloudfoundry.org/garden"

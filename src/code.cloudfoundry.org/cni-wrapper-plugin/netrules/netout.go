@@ -1,4 +1,4 @@
-package legacynet
+package netrules
 
 import (
 	"fmt"
