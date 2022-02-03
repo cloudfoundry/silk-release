@@ -3,14 +3,15 @@ package main
 import (
 	"flag"
 	"fmt"
-	"code.cloudfoundry.org/lib/common"
-	policyClient "code.cloudfoundry.org/policy_client"
-	"code.cloudfoundry.org/lib/rules"
 	"log"
 	"net/http"
-	"code.cloudfoundry.org/silk-daemon-bootstrap/config"
 	"sync"
 	"time"
+
+	"code.cloudfoundry.org/lib/common"
+	"code.cloudfoundry.org/lib/rules"
+	policyClient "code.cloudfoundry.org/policy_client"
+	"code.cloudfoundry.org/silk-daemon-bootstrap/config"
 
 	"code.cloudfoundry.org/cf-networking-helpers/mutualtls"
 	"code.cloudfoundry.org/filelock"
@@ -102,6 +103,7 @@ func createPolicyClient(bootstrapConfig *config.SilkDaemonBootstrap, logger lage
 		logger,
 		httpClient,
 		bootstrapConfig.PolicyServerURL,
+		policyClient.DefaultConfig,
 	), nil
 }
 
