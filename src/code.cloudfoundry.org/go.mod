@@ -16,15 +16,13 @@ replace github.com/containernetworking/cni => github.com/containernetworking/cni
 
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.0.0
 
-replace github.com/square/certstrap => github.com/square/certstrap v1.1.1
-
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20210929193536-efcc04207348
+	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20211111210832-d3a705b8ebff
 	code.cloudfoundry.org/debugserver v0.0.0-20210608171006-d7658ce493f4
 	code.cloudfoundry.org/filelock v0.0.0-20180314203404-13cd41364639
 	code.cloudfoundry.org/garden v0.0.0-20210608104724-fa3a10d59c82
 	code.cloudfoundry.org/lager v2.0.0+incompatible
-	code.cloudfoundry.org/policy_client v0.0.0-20190731000202-6324003c2bfd
+	code.cloudfoundry.org/policy_client v0.0.0-20220203234022-670e720134e3
 	code.cloudfoundry.org/runtimeschema v0.0.0-00010101000000-000000000000
 	code.cloudfoundry.org/silk v0.0.0-20211004235850-da152076940f
 	github.com/cloudfoundry/dropsonde v1.0.0
@@ -32,8 +30,8 @@ require (
 	github.com/coreos/go-iptables v0.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hpcloud/tail v1.0.0
-	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.16.0
+	github.com/onsi/ginkgo v1.16.5
+	github.com/onsi/gomega v1.18.1
 	github.com/pivotal-cf-experimental/gomegamatchers v0.0.0-20180326192815-e36bfcc98c3a
 	github.com/tedsuo/ifrit v0.0.0-20191009134036-9a97d0632f00
 	github.com/vishvananda/netlink v1.1.0
@@ -63,7 +61,7 @@ require (
 	github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f // indirect
 	github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c // indirect
 	golang.org/x/net v0.0.0-20210525063256-abc453219eb5 // indirect
-	golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2 // indirect
+	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	golang.org/x/text v0.3.6 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect

@@ -68,6 +68,7 @@ func main() {
 		logger.Session("policy-client"),
 		httpClient,
 		conf.PolicyServerURL,
+		policy_client.DefaultConfig,
 	)
 
 	_, _, err = policyClient.GetPolicies()
