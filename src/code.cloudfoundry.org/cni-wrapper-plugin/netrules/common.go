@@ -1,7 +1,8 @@
-package legacynet
+package netrules
 
 import (
 	"fmt"
+
 	"code.cloudfoundry.org/lib/rules"
 
 	multierror "github.com/hashicorp/go-multierror"

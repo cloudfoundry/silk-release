@@ -18,8 +18,8 @@ files:
   - code.cloudfoundry.org/cni-teardown/config/*.go # gosub-main-module
   - code.cloudfoundry.org/cni-wrapper-plugin/*.go # gosub-main-module
   - code.cloudfoundry.org/cni-wrapper-plugin/adapter/*.go # gosub-main-module
-  - code.cloudfoundry.org/cni-wrapper-plugin/legacynet/*.go # gosub-main-module
   - code.cloudfoundry.org/cni-wrapper-plugin/lib/*.go # gosub-main-module
+  - code.cloudfoundry.org/cni-wrapper-plugin/netrules/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/filelock/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/garden/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/*.go # gosub-main-module

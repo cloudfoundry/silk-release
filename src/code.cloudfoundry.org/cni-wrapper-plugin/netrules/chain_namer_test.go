@@ -1,7 +1,7 @@
-package legacynet_test
+package netrules_test
 
 import (
-	. "code.cloudfoundry.org/cni-wrapper-plugin/legacynet"
+	. "code.cloudfoundry.org/cni-wrapper-plugin/netrules"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

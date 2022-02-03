@@ -8,8 +8,8 @@ import (
 	"sync"
 
 	"code.cloudfoundry.org/cni-wrapper-plugin/adapter"
-	"code.cloudfoundry.org/cni-wrapper-plugin/legacynet"
 	"code.cloudfoundry.org/cni-wrapper-plugin/lib"
+	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
 	"code.cloudfoundry.org/lib/datastore"
 	"code.cloudfoundry.org/lib/interfacelookup"
 	"code.cloudfoundry.org/lib/rules"
@@ -122,12 +122,12 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return fmt.Errorf("invalid Container ID")
 	}
 
-	netOutProvider := legacynet.NetOut{
-		ChainNamer: &legacynet.ChainNamer{
+	netOutProvider := netrules.NetOut{
+		ChainNamer: &netrules.ChainNamer{
 			MaxLength: 28,
 		},
 		IPTables:              pluginController.IPTables,
-		Converter:             &legacynet.NetOutRuleConverter{Logger: os.Stderr},
+		Converter:             &netrules.NetOutRuleConverter{Logger: os.Stderr},
 		ASGLogging:            cfg.IPTablesASGLogging,
 		C2CLogging:            cfg.IPTablesC2CLogging,
 		DeniedLogsPerSec:      cfg.IPTablesDeniedLogsPerSec,
@@ -139,14 +139,14 @@ func cmdAdd(args *skel.CmdArgs) error {
 		ContainerIP:           containerIP.String(),
 		HostTCPServices:       cfg.HostTCPServices,
 		HostUDPServices:       cfg.HostUDPServices,
-		DenyNetworks: legacynet.DenyNetworks{
+		DenyNetworks: netrules.DenyNetworks{
 			Always:  cfg.DenyNetworks.Always,
 			Running: cfg.DenyNetworks.Running,
 			Staging: cfg.DenyNetworks.Staging,
 		},
 		DNSServers:        localDNSServers,
 		ContainerWorkload: containerWorkload,
-		Conn: legacynet.OutConn{
+		Conn: netrules.OutConn{
 			Limit:      cfg.OutConn.Limit,
 			Logging:    cfg.OutConn.Logging,
 			Burst:      cfg.OutConn.Burst,
@@ -157,8 +157,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return fmt.Errorf("initialize net out: %s", err)
 	}
 
-	netinProvider := legacynet.NetIn{
-		ChainNamer: &legacynet.ChainNamer{
+	netinProvider := netrules.NetIn{
+		ChainNamer: &netrules.ChainNamer{
 			MaxLength: 28,
 		},
 		IPTables:           pluginController.IPTables,
@@ -235,8 +235,8 @@ func cmdDel(args *skel.CmdArgs) error {
 		fmt.Fprintf(os.Stderr, "delegate delete: %s", err)
 	}
 
-	netInProvider := legacynet.NetIn{
-		ChainNamer: &legacynet.ChainNamer{
+	netInProvider := netrules.NetIn{
+		ChainNamer: &netrules.ChainNamer{
 			MaxLength: 28,
 		},
 		IPTables:   pluginController.IPTables,
@@ -261,16 +261,16 @@ func cmdDel(args *skel.CmdArgs) error {
 		}
 	}
 
-	netOutProvider := legacynet.NetOut{
-		ChainNamer: &legacynet.ChainNamer{
+	netOutProvider := netrules.NetOut{
+		ChainNamer: &netrules.ChainNamer{
 			MaxLength: 28,
 		},
 		IPTables:           pluginController.IPTables,
-		Converter:          &legacynet.NetOutRuleConverter{Logger: os.Stderr},
+		Converter:          &netrules.NetOutRuleConverter{Logger: os.Stderr},
 		ContainerHandle:    args.ContainerID,
 		ContainerIP:        container.IP,
 		HostInterfaceNames: interfaceNames,
-		Conn: legacynet.OutConn{
+		Conn: netrules.OutConn{
 			Limit:   n.OutConn.Limit,
 			Logging: n.OutConn.Logging,
 		},

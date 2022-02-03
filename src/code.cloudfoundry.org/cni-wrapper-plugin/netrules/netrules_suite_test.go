@@ -1,4 +1,4 @@
-package legacynet_test
+package netrules_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestLegacynet(t *testing.T) {
+func TestNetrules(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Legacynet Suite")
+	RunSpecs(t, "Netrules Suite")
 }
