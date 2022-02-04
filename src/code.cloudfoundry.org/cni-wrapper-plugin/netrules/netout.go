@@ -6,7 +6,6 @@ import (
 	"net"
 	"strconv"
 
-	"code.cloudfoundry.org/garden"
 	"code.cloudfoundry.org/lib/rules"
 )
 
@@ -17,10 +16,10 @@ const suffixNetOutLog = "log"
 const suffixNetOutRateLimitLog = "rl-log"
 const secondInMillis = 1000
 
-//go:generate counterfeiter -o ../fakes/net_out_rule_converter.go --fake-name NetOutRuleConverter . netOutRuleConverter
-type netOutRuleConverter interface {
-	Convert(rule garden.NetOutRule, logChainName string, logging bool) []rules.IPTablesRule
-	BulkConvert(rules []garden.NetOutRule, logChainName string, logging bool) []rules.IPTablesRule
+//go:generate counterfeiter -o ../fakes/rule_converter.go --fake-name RuleConverter . ruleConverter
+type ruleConverter interface {
+	Convert(Rule, string, bool) []rules.IPTablesRule
+	BulkConvert([]Rule, string, bool) []rules.IPTablesRule
 }
 
 type OutConn struct {
@@ -33,7 +32,7 @@ type OutConn struct {
 type NetOut struct {
 	ChainNamer            chainNamer
 	IPTables              rules.IPTablesAdapter
-	Converter             netOutRuleConverter
+	Converter             ruleConverter
 	ASGLogging            bool
 	C2CLogging            bool
 	IngressTag            string
@@ -90,15 +89,15 @@ func (m *NetOut) Cleanup() error {
 	return cleanupChains(args, m.IPTables)
 }
 
-func (m *NetOut) BulkInsertRules(netOutRules []garden.NetOutRule) error {
+func (m *NetOut) BulkInsertRules(ruleSpec []Rule) error {
 	chain := m.ChainNamer.Prefix(prefixNetOut, m.ContainerHandle)
 	logChain, err := m.ChainNamer.Postfix(chain, suffixNetOutLog)
 	if err != nil {
 		return fmt.Errorf("getting chain name: %s", err)
 	}
 
-	ruleSpec := m.Converter.BulkConvert(netOutRules, logChain, m.ASGLogging)
-	ruleSpec = append(ruleSpec, m.denyNetworksRules()...)
+	iptablesRules := m.Converter.BulkConvert(ruleSpec, logChain, m.ASGLogging)
+	iptablesRules = append(iptablesRules, m.denyNetworksRules()...)
 
 	if m.Conn.Limit {
 		rateLimitRule, err := m.rateLimitRule(chain)
@@ -106,15 +105,15 @@ func (m *NetOut) BulkInsertRules(netOutRules []garden.NetOutRule) error {
 			return fmt.Errorf("getting chain name: %s", err)
 		}
 
-		ruleSpec = append(ruleSpec, rateLimitRule)
+		iptablesRules = append(iptablesRules, rateLimitRule)
 	}
 
-	ruleSpec = append(ruleSpec, []rules.IPTablesRule{
+	iptablesRules = append(iptablesRules, []rules.IPTablesRule{
 		{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
 		{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
 	}...)
 
-	err = m.IPTables.BulkInsert("filter", chain, 1, ruleSpec...)
+	err = m.IPTables.BulkInsert("filter", chain, 1, iptablesRules...)
 	if err != nil {
 		return fmt.Errorf("bulk inserting net-out rules: %s", err)
 	}

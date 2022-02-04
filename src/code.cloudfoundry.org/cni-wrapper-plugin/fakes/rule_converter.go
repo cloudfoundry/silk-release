@@ -4,15 +4,15 @@ package fakes
 import (
 	"sync"
 
-	"code.cloudfoundry.org/garden"
+	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
 	"code.cloudfoundry.org/lib/rules"
 )
 
-type NetOutRuleConverter struct {
-	BulkConvertStub        func([]garden.NetOutRule, string, bool) []rules.IPTablesRule
+type RuleConverter struct {
+	BulkConvertStub        func([]netrules.Rule, string, bool) []rules.IPTablesRule
 	bulkConvertMutex       sync.RWMutex
 	bulkConvertArgsForCall []struct {
-		arg1 []garden.NetOutRule
+		arg1 []netrules.Rule
 		arg2 string
 		arg3 bool
 	}
@@ -22,10 +22,10 @@ type NetOutRuleConverter struct {
 	bulkConvertReturnsOnCall map[int]struct {
 		result1 []rules.IPTablesRule
 	}
-	ConvertStub        func(garden.NetOutRule, string, bool) []rules.IPTablesRule
+	ConvertStub        func(netrules.Rule, string, bool) []rules.IPTablesRule
 	convertMutex       sync.RWMutex
 	convertArgsForCall []struct {
-		arg1 garden.NetOutRule
+		arg1 netrules.Rule
 		arg2 string
 		arg3 bool
 	}
@@ -39,16 +39,16 @@ type NetOutRuleConverter struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *NetOutRuleConverter) BulkConvert(arg1 []garden.NetOutRule, arg2 string, arg3 bool) []rules.IPTablesRule {
-	var arg1Copy []garden.NetOutRule
+func (fake *RuleConverter) BulkConvert(arg1 []netrules.Rule, arg2 string, arg3 bool) []rules.IPTablesRule {
+	var arg1Copy []netrules.Rule
 	if arg1 != nil {
-		arg1Copy = make([]garden.NetOutRule, len(arg1))
+		arg1Copy = make([]netrules.Rule, len(arg1))
 		copy(arg1Copy, arg1)
 	}
 	fake.bulkConvertMutex.Lock()
 	ret, specificReturn := fake.bulkConvertReturnsOnCall[len(fake.bulkConvertArgsForCall)]
 	fake.bulkConvertArgsForCall = append(fake.bulkConvertArgsForCall, struct {
-		arg1 []garden.NetOutRule
+		arg1 []netrules.Rule
 		arg2 string
 		arg3 bool
 	}{arg1Copy, arg2, arg3})
@@ -65,26 +65,26 @@ func (fake *NetOutRuleConverter) BulkConvert(arg1 []garden.NetOutRule, arg2 stri
 	return fakeReturns.result1
 }
 
-func (fake *NetOutRuleConverter) BulkConvertCallCount() int {
+func (fake *RuleConverter) BulkConvertCallCount() int {
 	fake.bulkConvertMutex.RLock()
 	defer fake.bulkConvertMutex.RUnlock()
 	return len(fake.bulkConvertArgsForCall)
 }
 
-func (fake *NetOutRuleConverter) BulkConvertCalls(stub func([]garden.NetOutRule, string, bool) []rules.IPTablesRule) {
+func (fake *RuleConverter) BulkConvertCalls(stub func([]netrules.Rule, string, bool) []rules.IPTablesRule) {
 	fake.bulkConvertMutex.Lock()
 	defer fake.bulkConvertMutex.Unlock()
 	fake.BulkConvertStub = stub
 }
 
-func (fake *NetOutRuleConverter) BulkConvertArgsForCall(i int) ([]garden.NetOutRule, string, bool) {
+func (fake *RuleConverter) BulkConvertArgsForCall(i int) ([]netrules.Rule, string, bool) {
 	fake.bulkConvertMutex.RLock()
 	defer fake.bulkConvertMutex.RUnlock()
 	argsForCall := fake.bulkConvertArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
-func (fake *NetOutRuleConverter) BulkConvertReturns(result1 []rules.IPTablesRule) {
+func (fake *RuleConverter) BulkConvertReturns(result1 []rules.IPTablesRule) {
 	fake.bulkConvertMutex.Lock()
 	defer fake.bulkConvertMutex.Unlock()
 	fake.BulkConvertStub = nil
@@ -93,7 +93,7 @@ func (fake *NetOutRuleConverter) BulkConvertReturns(result1 []rules.IPTablesRule
 	}{result1}
 }
 
-func (fake *NetOutRuleConverter) BulkConvertReturnsOnCall(i int, result1 []rules.IPTablesRule) {
+func (fake *RuleConverter) BulkConvertReturnsOnCall(i int, result1 []rules.IPTablesRule) {
 	fake.bulkConvertMutex.Lock()
 	defer fake.bulkConvertMutex.Unlock()
 	fake.BulkConvertStub = nil
@@ -107,11 +107,11 @@ func (fake *NetOutRuleConverter) BulkConvertReturnsOnCall(i int, result1 []rules
 	}{result1}
 }
 
-func (fake *NetOutRuleConverter) Convert(arg1 garden.NetOutRule, arg2 string, arg3 bool) []rules.IPTablesRule {
+func (fake *RuleConverter) Convert(arg1 netrules.Rule, arg2 string, arg3 bool) []rules.IPTablesRule {
 	fake.convertMutex.Lock()
 	ret, specificReturn := fake.convertReturnsOnCall[len(fake.convertArgsForCall)]
 	fake.convertArgsForCall = append(fake.convertArgsForCall, struct {
-		arg1 garden.NetOutRule
+		arg1 netrules.Rule
 		arg2 string
 		arg3 bool
 	}{arg1, arg2, arg3})
@@ -128,26 +128,26 @@ func (fake *NetOutRuleConverter) Convert(arg1 garden.NetOutRule, arg2 string, ar
 	return fakeReturns.result1
 }
 
-func (fake *NetOutRuleConverter) ConvertCallCount() int {
+func (fake *RuleConverter) ConvertCallCount() int {
 	fake.convertMutex.RLock()
 	defer fake.convertMutex.RUnlock()
 	return len(fake.convertArgsForCall)
 }
 
-func (fake *NetOutRuleConverter) ConvertCalls(stub func(garden.NetOutRule, string, bool) []rules.IPTablesRule) {
+func (fake *RuleConverter) ConvertCalls(stub func(netrules.Rule, string, bool) []rules.IPTablesRule) {
 	fake.convertMutex.Lock()
 	defer fake.convertMutex.Unlock()
 	fake.ConvertStub = stub
 }
 
-func (fake *NetOutRuleConverter) ConvertArgsForCall(i int) (garden.NetOutRule, string, bool) {
+func (fake *RuleConverter) ConvertArgsForCall(i int) (netrules.Rule, string, bool) {
 	fake.convertMutex.RLock()
 	defer fake.convertMutex.RUnlock()
 	argsForCall := fake.convertArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
-func (fake *NetOutRuleConverter) ConvertReturns(result1 []rules.IPTablesRule) {
+func (fake *RuleConverter) ConvertReturns(result1 []rules.IPTablesRule) {
 	fake.convertMutex.Lock()
 	defer fake.convertMutex.Unlock()
 	fake.ConvertStub = nil
@@ -156,7 +156,7 @@ func (fake *NetOutRuleConverter) ConvertReturns(result1 []rules.IPTablesRule) {
 	}{result1}
 }
 
-func (fake *NetOutRuleConverter) ConvertReturnsOnCall(i int, result1 []rules.IPTablesRule) {
+func (fake *RuleConverter) ConvertReturnsOnCall(i int, result1 []rules.IPTablesRule) {
 	fake.convertMutex.Lock()
 	defer fake.convertMutex.Unlock()
 	fake.ConvertStub = nil
@@ -170,7 +170,7 @@ func (fake *NetOutRuleConverter) ConvertReturnsOnCall(i int, result1 []rules.IPT
 	}{result1}
 }
 
-func (fake *NetOutRuleConverter) Invocations() map[string][][]interface{} {
+func (fake *RuleConverter) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.bulkConvertMutex.RLock()
@@ -184,7 +184,7 @@ func (fake *NetOutRuleConverter) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
-func (fake *NetOutRuleConverter) recordInvocation(key string, args []interface{}) {
+func (fake *RuleConverter) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {
