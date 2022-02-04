@@ -19,13 +19,13 @@ import (
 var _ = Describe("Netout", func() {
 	var (
 		netOut     *netrules.NetOut
-		converter  *fakes.NetOutRuleConverter
+		converter  *fakes.RuleConverter
 		chainNamer *fakes.ChainNamer
 		ipTables   *lib_fakes.IPTablesAdapter
 	)
 	BeforeEach(func() {
 		chainNamer = &fakes.ChainNamer{}
-		converter = &fakes.NetOutRuleConverter{}
+		converter = &fakes.RuleConverter{}
 		ipTables = &lib_fakes.IPTablesAdapter{}
 		netOut = &netrules.NetOut{
 			ChainNamer:            chainNamer,
@@ -754,7 +754,8 @@ var _ = Describe("Netout", func() {
 		})
 
 		It("prepends allow rules to the container's netout chain", func() {
-			err := netOut.BulkInsertRules(netOutRules)
+			ruleSpec := netrules.NewRulesFromGardenNetOutRules(netOutRules)
+			err := netOut.BulkInsertRules(ruleSpec)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(chainNamer.PrefixCallCount()).To(Equal(1))
@@ -769,7 +770,7 @@ var _ = Describe("Netout", func() {
 
 			Expect(converter.BulkConvertCallCount()).To(Equal(1))
 			convertedRules, logChainName, logging := converter.BulkConvertArgsForCall(0)
-			Expect(convertedRules).To(Equal(netOutRules))
+			Expect(convertedRules).To(Equal(ruleSpec))
 			Expect(logChainName).To(Equal("some-other-chain-name"))
 			Expect(logging).To(Equal(false))
 
@@ -793,7 +794,7 @@ var _ = Describe("Netout", func() {
 				chainNamer.PostfixReturns("", errors.New("banana"))
 			})
 			It("returns the error", func() {
-				err := netOut.BulkInsertRules(netOutRules)
+				err := netOut.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules))
 				Expect(err).To(MatchError("getting chain name: banana"))
 			})
 		})
@@ -803,7 +804,7 @@ var _ = Describe("Netout", func() {
 				ipTables.BulkInsertReturns(errors.New("potato"))
 			})
 			It("returns an error", func() {
-				err := netOut.BulkInsertRules(netOutRules)
+				err := netOut.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules))
 				Expect(err).To(MatchError("bulk inserting net-out rules: potato"))
 			})
 		})
@@ -813,12 +814,13 @@ var _ = Describe("Netout", func() {
 				netOut.ASGLogging = true
 			})
 			It("calls BulkConvert with globalLogging set to true", func() {
-				err := netOut.BulkInsertRules(netOutRules)
+				ruleSpec := netrules.NewRulesFromGardenNetOutRules(netOutRules)
+				err := netOut.BulkInsertRules(ruleSpec)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(converter.BulkConvertCallCount()).To(Equal(1))
 				convertedRules, logChainName, logging := converter.BulkConvertArgsForCall(0)
-				Expect(convertedRules).To(Equal(netOutRules))
+				Expect(convertedRules).To(Equal(ruleSpec))
 				Expect(logChainName).To(Equal("some-other-chain-name"))
 				Expect(logging).To(Equal(true))
 			})
@@ -836,7 +838,7 @@ var _ = Describe("Netout", func() {
 					netOut.DenyNetworks = denyNetworks
 					netOut.DenyNetworks.Always = []string{"172.16.0.0/12"}
 
-					err := netOut.BulkInsertRules(netOutRules)
+					err := netOut.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules))
 					Expect(err).NotTo(HaveOccurred())
 
 					_, _, _, rulespec := ipTables.BulkInsertArgsForCall(0)
@@ -868,7 +870,7 @@ var _ = Describe("Netout", func() {
 						Staging: []string{"3.3.3.3/32"},
 					}
 
-					err := netOut.BulkInsertRules(netOutRules)
+					err := netOut.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules))
 					Expect(err).NotTo(HaveOccurred())
 
 					_, _, _, rulespec := ipTables.BulkInsertArgsForCall(0)
@@ -906,7 +908,7 @@ var _ = Describe("Netout", func() {
 				})
 
 				It("inserts the outbound connection rate limit rule", func() {
-					err := netOut.BulkInsertRules(netOutRules)
+					err := netOut.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules))
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(ipTables.BulkInsertCallCount()).To(Equal(1))
@@ -943,7 +945,7 @@ var _ = Describe("Netout", func() {
 						})
 
 						It("returns the error", func() {
-							err := netOut.BulkInsertRules(netOutRules)
+							err := netOut.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules))
 							Expect(err).To(MatchError("getting chain name: guacamole"))
 						})
 					})
@@ -956,7 +958,7 @@ var _ = Describe("Netout", func() {
 				})
 
 				It("inserts the outbound connection rate limit rule", func() {
-					err := netOut.BulkInsertRules(netOutRules)
+					err := netOut.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules))
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(ipTables.BulkInsertCallCount()).To(Equal(1))

@@ -13,9 +13,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("NetOutRuleConverter", func() {
+var _ = Describe("RuleConverter", func() {
 	var (
-		converter    *netrules.NetOutRuleConverter
+		converter    *netrules.RuleConverter
 		netOutRule   garden.NetOutRule
 		logChainName string
 		logger       *bytes.Buffer
@@ -23,8 +23,9 @@ var _ = Describe("NetOutRuleConverter", func() {
 	BeforeEach(func() {
 		logChainName = "some-chain"
 		logger = &bytes.Buffer{}
-		converter = &netrules.NetOutRuleConverter{Logger: logger}
+		converter = &netrules.RuleConverter{Logger: logger}
 	})
+
 	Describe("Convert", func() {
 		Context("when the protocol is TCP or UDP", func() {
 			BeforeEach(func() {
@@ -42,7 +43,7 @@ var _ = Describe("NetOutRuleConverter", func() {
 			})
 
 			It("converts a netout rule to a list of iptables rules", func() {
-				ruleSpec := converter.Convert(netOutRule, logChainName, false)
+				ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
 				Expect(ruleSpec).To(ConsistOf(
 					rules.IPTablesRule{"-m", "iprange", "-p", "tcp",
 						"--dst-range", "1.1.1.1-2.2.2.2",
@@ -65,7 +66,7 @@ var _ = Describe("NetOutRuleConverter", func() {
 
 			Context("when globalLogging is set to true", func() {
 				It("returns iptables rules that goto the log chain", func() {
-					ruleSpec := converter.Convert(netOutRule, logChainName, true)
+					ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, true)
 					Expect(ruleSpec).To(Equal([]rules.IPTablesRule{
 						rules.IPTablesRule{"-m", "iprange", "-p", "tcp",
 							"--dst-range", "1.1.1.1-2.2.2.2",
@@ -92,7 +93,7 @@ var _ = Describe("NetOutRuleConverter", func() {
 					netOutRule.Log = true
 				})
 				It("returns iptables rules that goto the log chain", func() {
-					ruleSpec := converter.Convert(netOutRule, logChainName, true)
+					ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, true)
 					Expect(ruleSpec).To(ConsistOf(
 						rules.IPTablesRule{
 							"-m", "iprange", "-p", "tcp",
@@ -120,12 +121,12 @@ var _ = Describe("NetOutRuleConverter", func() {
 					netOutRule.Ports = nil
 				})
 				It("adds no iptables rules", func() {
-					ruleSpec := converter.Convert(netOutRule, logChainName, false)
+					ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
 					Expect(ruleSpec).To(BeEmpty())
 				})
 
 				It("logs the warning", func() {
-					converter.Convert(netOutRule, logChainName, false)
+					converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
 					Expect(logger.String()).To(ContainSubstring("UDP/TCP rule must specify ports"))
 				})
 			})
@@ -153,7 +154,7 @@ var _ = Describe("NetOutRuleConverter", func() {
 			})
 
 			It("converts a netout rule to a list of iptables rules", func() {
-				ruleSpec := converter.Convert(netOutRule, logChainName, false)
+				ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
 				Expect(ruleSpec).To(ConsistOf(
 					rules.IPTablesRule{"-m", "iprange",
 						"-p", "icmp",
@@ -168,7 +169,7 @@ var _ = Describe("NetOutRuleConverter", func() {
 
 			Context("when the globalLogging is set to true", func() {
 				It("returns iptables rules that goto the log chain", func() {
-					ruleSpec := converter.Convert(netOutRule, logChainName, true)
+					ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, true)
 					Expect(ruleSpec).To(ConsistOf(
 						rules.IPTablesRule{"-m", "iprange",
 							"-p", "icmp",
@@ -187,7 +188,7 @@ var _ = Describe("NetOutRuleConverter", func() {
 					netOutRule.Log = true
 				})
 				It("returns iptables rules that goto the log chain", func() {
-					ruleSpec := converter.Convert(netOutRule, logChainName, false)
+					ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
 					Expect(ruleSpec).To(ConsistOf(
 						rules.IPTablesRule{"-m", "iprange",
 							"-p", "icmp",
@@ -206,11 +207,11 @@ var _ = Describe("NetOutRuleConverter", func() {
 					netOutRule.ICMPs = nil
 				})
 				It("adds no iptables rules", func() {
-					ruleSpec := converter.Convert(netOutRule, logChainName, false)
+					ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
 					Expect(ruleSpec).To(BeEmpty())
 				})
 				It("logs the warning", func() {
-					converter.Convert(netOutRule, logChainName, false)
+					converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
 					Expect(logger.String()).To(ContainSubstring("ICMP rule must specify ICMP type/code"))
 				})
 			})
@@ -220,11 +221,11 @@ var _ = Describe("NetOutRuleConverter", func() {
 					netOutRule.ICMPs.Code = nil
 				})
 				It("adds no iptables rules", func() {
-					ruleSpec := converter.Convert(netOutRule, logChainName, false)
+					ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
 					Expect(ruleSpec).To(BeEmpty())
 				})
 				It("logs the warning", func() {
-					converter.Convert(netOutRule, logChainName, false)
+					converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
 					Expect(logger.String()).To(ContainSubstring("ICMP rule must specify ICMP type/code"))
 				})
 			})
@@ -237,11 +238,11 @@ var _ = Describe("NetOutRuleConverter", func() {
 					}
 				})
 				It("adds no iptables rules", func() {
-					ruleSpec := converter.Convert(netOutRule, logChainName, false)
+					ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
 					Expect(ruleSpec).To(BeEmpty())
 				})
 				It("logs the warning", func() {
-					converter.Convert(netOutRule, logChainName, false)
+					converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
 					Expect(logger.String()).To(ContainSubstring("ICMP rule must not specify ports"))
 				})
 			})
@@ -259,7 +260,7 @@ var _ = Describe("NetOutRuleConverter", func() {
 			})
 
 			It("converts a netout rule to a list of iptables rules", func() {
-				ruleSpec := converter.Convert(netOutRule, logChainName, false)
+				ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
 				Expect(ruleSpec).To(ConsistOf(
 					rules.IPTablesRule{"-m", "iprange",
 						"--dst-range", "1.1.1.1-2.2.2.2",
@@ -272,7 +273,7 @@ var _ = Describe("NetOutRuleConverter", func() {
 
 			Context("when globalLogging is set to true", func() {
 				It("returns iptables rules that goto the log chain", func() {
-					ruleSpec := converter.Convert(netOutRule, logChainName, true)
+					ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, true)
 					Expect(ruleSpec).To(ConsistOf(
 						rules.IPTablesRule{"-m", "iprange",
 							"--dst-range", "1.1.1.1-2.2.2.2",
@@ -290,7 +291,7 @@ var _ = Describe("NetOutRuleConverter", func() {
 				})
 
 				It("returns iptables rules that goto the log chain", func() {
-					ruleSpec := converter.Convert(netOutRule, logChainName, false)
+					ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
 					Expect(ruleSpec).To(ConsistOf(
 						rules.IPTablesRule{"-m", "iprange",
 							"--dst-range", "1.1.1.1-2.2.2.2",
@@ -310,11 +311,11 @@ var _ = Describe("NetOutRuleConverter", func() {
 					}
 				})
 				It("adds no iptables rules", func() {
-					ruleSpec := converter.Convert(netOutRule, logChainName, true)
+					ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, true)
 					Expect(ruleSpec).To(BeEmpty())
 				})
 				It("logs the warning", func() {
-					converter.Convert(netOutRule, logChainName, false)
+					converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
 					Expect(logger.String()).To(ContainSubstring("Rule for all protocols (TCP/UDP/ICMP) must not specify ports"))
 				})
 			})
@@ -348,7 +349,7 @@ var _ = Describe("NetOutRuleConverter", func() {
 			})
 
 			It("converts a netout rule to a list of iptables rules", func() {
-				ruleSpec := converter.BulkConvert(netOutRules, logChainName, false)
+				ruleSpec := converter.BulkConvert(netrules.NewRulesFromGardenNetOutRules(netOutRules), logChainName, false)
 
 				Expect(ruleSpec).To(ConsistOf(
 					rules.IPTablesRule{"-m", "iprange", "-p", "tcp",
@@ -401,7 +402,7 @@ var _ = Describe("NetOutRuleConverter", func() {
 			})
 
 			It("does not include iptables rules for invalid netout rules", func() {
-				ruleSpec := converter.BulkConvert(netOutRules, logChainName, false)
+				ruleSpec := converter.BulkConvert(netrules.NewRulesFromGardenNetOutRules(netOutRules), logChainName, false)
 
 				Expect(ruleSpec).To(ConsistOf(
 					rules.IPTablesRule{"-m", "iprange", "-p", "tcp",

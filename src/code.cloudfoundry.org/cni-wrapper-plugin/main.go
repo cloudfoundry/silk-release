@@ -127,7 +127,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 			MaxLength: 28,
 		},
 		IPTables:              pluginController.IPTables,
-		Converter:             &netrules.NetOutRuleConverter{Logger: os.Stderr},
+		Converter:             &netrules.RuleConverter{Logger: os.Stderr},
 		ASGLogging:            cfg.IPTablesASGLogging,
 		C2CLogging:            cfg.IPTablesC2CLogging,
 		DeniedLogsPerSec:      cfg.IPTablesDeniedLogsPerSec,
@@ -178,7 +178,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	netOutRules := cfg.RuntimeConfig.NetOutRules
-	if err := netOutProvider.BulkInsertRules(netOutRules); err != nil {
+	if err := netOutProvider.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules)); err != nil {
 		return fmt.Errorf("bulk insert: %s", err) // not tested
 	}
 
@@ -266,7 +266,7 @@ func cmdDel(args *skel.CmdArgs) error {
 			MaxLength: 28,
 		},
 		IPTables:           pluginController.IPTables,
-		Converter:          &netrules.NetOutRuleConverter{Logger: os.Stderr},
+		Converter:          &netrules.RuleConverter{Logger: os.Stderr},
 		ContainerHandle:    args.ContainerID,
 		ContainerIP:        container.IP,
 		HostInterfaceNames: interfaceNames,
