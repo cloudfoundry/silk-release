@@ -2,7 +2,6 @@ package netrules
 
 import (
 	"fmt"
-	"math"
 	"net"
 	"strconv"
 
@@ -32,8 +31,6 @@ type OutConn struct {
 type NetOut struct {
 	ChainNamer            chainNamer
 	IPTables              rules.IPTablesAdapter
-	Converter             ruleConverter
-	ASGLogging            bool
 	C2CLogging            bool
 	IngressTag            string
 	VTEPName              string
@@ -44,10 +41,9 @@ type NetOut struct {
 	ContainerIP           string
 	HostTCPServices       []string
 	HostUDPServices       []string
-	DenyNetworks          DenyNetworks
 	DNSServers            []string
-	ContainerWorkload     string
 	Conn                  OutConn
+	NetOutChain           *NetOutChain
 }
 
 func (m *NetOut) Initialize() error {
@@ -56,7 +52,7 @@ func (m *NetOut) Initialize() error {
 		return err
 	}
 
-	err = m.validateDenyNetworks()
+	err = m.NetOutChain.Validate()
 	if err != nil {
 		return err
 	}
@@ -79,6 +75,11 @@ func (m *NetOut) Initialize() error {
 	return applyRules(m.IPTables, args)
 }
 
+func (m *NetOut) BulkInsertRules(ruleSpec []Rule) error {
+	chain := m.ChainNamer.Prefix(prefixNetOut, m.ContainerHandle)
+	return m.NetOutChain.BulkInsertRules(chain, m.ContainerHandle, ruleSpec)
+}
+
 func (m *NetOut) Cleanup() error {
 	args, err := m.defaultNetOutRules()
 
@@ -87,38 +88,6 @@ func (m *NetOut) Cleanup() error {
 	}
 
 	return cleanupChains(args, m.IPTables)
-}
-
-func (m *NetOut) BulkInsertRules(ruleSpec []Rule) error {
-	chain := m.ChainNamer.Prefix(prefixNetOut, m.ContainerHandle)
-	logChain, err := m.ChainNamer.Postfix(chain, suffixNetOutLog)
-	if err != nil {
-		return fmt.Errorf("getting chain name: %s", err)
-	}
-
-	iptablesRules := m.Converter.BulkConvert(ruleSpec, logChain, m.ASGLogging)
-	iptablesRules = append(iptablesRules, m.denyNetworksRules()...)
-
-	if m.Conn.Limit {
-		rateLimitRule, err := m.rateLimitRule(chain)
-		if err != nil {
-			return fmt.Errorf("getting chain name: %s", err)
-		}
-
-		iptablesRules = append(iptablesRules, rateLimitRule)
-	}
-
-	iptablesRules = append(iptablesRules, []rules.IPTablesRule{
-		{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
-		{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
-	}...)
-
-	err = m.IPTables.BulkInsert("filter", chain, 1, iptablesRules...)
-	if err != nil {
-		return fmt.Errorf("bulk inserting net-out rules: %s", err)
-	}
-
-	return nil
 }
 
 func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
@@ -140,15 +109,13 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 				rules.NewInputDefaultRejectRule(),
 			},
 		},
-		m.addASGLogging(IpTablesFullChain{
+		{
 			"filter",
 			"FORWARD",
 			forwardChainName,
 			rules.NewNetOutJumpConditions(m.HostInterfaceNames, m.ContainerIP, forwardChainName),
-			[]rules.IPTablesRule{
-				rules.NewNetOutDefaultRejectRule(),
-			},
-		}),
+			m.NetOutChain.DefaultRules(m.ContainerHandle),
+		},
 		m.addC2CLogging(IpTablesFullChain{
 			"filter",
 			"FORWARD",
@@ -165,6 +132,7 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 		}),
 	}
 
+	// This log chain is not connected to parent chains, it only gets used when asg logging is set
 	logChainRules := []rules.IPTablesRule{
 		rules.NewNetOutDefaultNonUDPLogRule(m.ContainerHandle),
 		rules.NewNetOutDefaultUDPLogRule(m.ContainerHandle, m.AcceptedUDPLogsPerSec),
@@ -187,19 +155,6 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 	}
 
 	return args, nil
-}
-
-func (m *NetOut) addASGLogging(c IpTablesFullChain) IpTablesFullChain {
-	if m.ASGLogging {
-		lastIndex := len(c.Rules) - 1
-		c.Rules = append(
-			c.Rules[:lastIndex],
-			rules.NewNetOutDefaultRejectLogRule(m.ContainerHandle, m.DeniedLogsPerSec),
-			c.Rules[lastIndex],
-		)
-	}
-
-	return c
 }
 
 func (m *NetOut) addC2CLogging(c IpTablesFullChain) IpTablesFullChain {
@@ -261,76 +216,6 @@ func (m *NetOut) appendInputRules(
 	args[0].Rules = append(args[0].Rules, rules.NewInputDefaultRejectRule())
 
 	return args, nil
-}
-
-func (m *NetOut) validateDenyNetworks() error {
-	allDenyNetworkRules := [][]string{
-		m.DenyNetworks.Always,
-		m.DenyNetworks.Running,
-		m.DenyNetworks.Staging,
-	}
-
-	for _, denyNetworks := range allDenyNetworkRules {
-		for destinationIndex, destination := range denyNetworks {
-			_, validatedDestination, err := net.ParseCIDR(destination)
-
-			if err != nil {
-				return fmt.Errorf("deny networks: %s", err)
-			}
-
-			denyNetworks[destinationIndex] = fmt.Sprintf("%s", validatedDestination)
-		}
-	}
-
-	return nil
-}
-
-func (m *NetOut) denyNetworksRules() []rules.IPTablesRule {
-	denyRules := []rules.IPTablesRule{}
-
-	for _, denyNetwork := range m.DenyNetworks.Always {
-		denyRules = append(denyRules, rules.NewInputRejectRule(denyNetwork))
-	}
-
-	if m.ContainerWorkload == "app" || m.ContainerWorkload == "task" {
-		for _, denyNetwork := range m.DenyNetworks.Running {
-			denyRules = append(denyRules, rules.NewInputRejectRule(denyNetwork))
-		}
-	}
-
-	if m.ContainerWorkload == "staging" {
-		for _, denyNetwork := range m.DenyNetworks.Staging {
-			denyRules = append(denyRules, rules.NewInputRejectRule(denyNetwork))
-		}
-	}
-
-	return denyRules
-}
-
-func (m *NetOut) rateLimitRule(forwardChainName string) (rule rules.IPTablesRule, err error) {
-	jumpTarget := "REJECT"
-
-	if m.Conn.Logging {
-		jumpTarget, err = m.ChainNamer.Postfix(forwardChainName, suffixNetOutRateLimitLog)
-		if err != nil {
-			return rules.IPTablesRule{}, err
-		}
-	}
-
-	burst := strconv.Itoa(m.Conn.Burst)
-	rate := fmt.Sprintf("%d/sec", m.Conn.RatePerSec)
-	expiryPeriod := m.rateLimitExpiryPeriod()
-
-	return rules.NewNetOutConnRateLimitRule(rate, burst, m.ContainerHandle, expiryPeriod, jumpTarget), nil
-}
-
-func (m *NetOut) rateLimitExpiryPeriod() string {
-	burst := float64(m.Conn.Burst)
-	ratePerSec := float64(m.Conn.RatePerSec)
-	expiryPeriodInSeconds := int64(math.Ceil(burst / ratePerSec))
-	expiryPeriodInMillis := expiryPeriodInSeconds * int64(secondInMillis)
-
-	return fmt.Sprintf("%d", expiryPeriodInMillis)
 }
 
 func (m *NetOut) connRateLimitLogChain(forwardChainName string) (IpTablesFullChain, error) {
