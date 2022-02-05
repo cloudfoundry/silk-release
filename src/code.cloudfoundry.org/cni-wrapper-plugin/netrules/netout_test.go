@@ -5,14 +5,12 @@ import (
 
 	"code.cloudfoundry.org/cni-wrapper-plugin/fakes"
 	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
-
 	"code.cloudfoundry.org/garden"
 
 	lib_fakes "code.cloudfoundry.org/lib/fakes"
 	"code.cloudfoundry.org/lib/rules"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -27,10 +25,15 @@ var _ = Describe("Netout", func() {
 		chainNamer = &fakes.ChainNamer{}
 		converter = &fakes.RuleConverter{}
 		ipTables = &lib_fakes.IPTablesAdapter{}
+		netOutChain := &netrules.NetOutChain{
+			Converter:  converter,
+			ChainNamer: chainNamer,
+			IPTables:   ipTables,
+		}
 		netOut = &netrules.NetOut{
 			ChainNamer:            chainNamer,
+			NetOutChain:           netOutChain,
 			IPTables:              ipTables,
-			Converter:             converter,
 			IngressTag:            "FEEDBEEF",
 			VTEPName:              "vtep-name",
 			HostInterfaceNames:    []string{"some-device", "eth0"},
@@ -201,28 +204,6 @@ var _ = Describe("Netout", func() {
 			It("returns the error", func() {
 				err := netOut.Initialize()
 				Expect(err).To(MatchError("appending rule: potato"))
-			})
-		})
-
-		Context("when global ASG logging is enabled", func() {
-			BeforeEach(func() {
-				netOut.ASGLogging = true
-			})
-			It("writes a log rule for denies", func() {
-				err := netOut.Initialize()
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(ipTables.BulkAppendCallCount()).To(Equal(7))
-
-				table, chain, rulespec := ipTables.BulkAppendArgsForCall(4)
-				Expect(table).To(Equal("filter"))
-				Expect(chain).To(Equal("netout-some-container-handle"))
-				Expect(rulespec).To(Equal([]rules.IPTablesRule{
-					{"-m", "limit", "--limit", "3/s", "--limit-burst", "3",
-						"--jump", "LOG", "--log-prefix", `"DENY_some-container-handle "`},
-					{"--jump", "REJECT",
-						"--reject-with", "icmp-port-unreachable"},
-				}))
 			})
 		})
 
@@ -441,105 +422,15 @@ var _ = Describe("Netout", func() {
 				Expect(err).To(MatchError(MatchRegexp("host udp services.*parsing")))
 			})
 		})
+	})
 
-		Context("when deny networks are specified", func() {
-			It("returns an error for an incorrectly formatted deny network", func() {
-				netOut.DenyNetworks = netrules.DenyNetworks{
-					Always: []string{"a.b.c.d", "192.168.0.0/16"},
-				}
-
-				err := netOut.Initialize()
-				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: a.b.c.d")))
-
-				netOut.DenyNetworks = netrules.DenyNetworks{
-					Always: []string{"1.2.3.4/abc", "192.168.0.0/16"},
-				}
-				err = netOut.Initialize()
-				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: 1.2.3.4/abc")))
-			})
-
-			It("returns an error for an improperly bounded deny network", func() {
-				netOut.DenyNetworks = netrules.DenyNetworks{
-					Running: []string{"256.256.256.1024/24", "192.168.0.0/16"},
-				}
-				err := netOut.Initialize()
-				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: 256.256.256.1024/24")))
-
-				netOut.DenyNetworks = netrules.DenyNetworks{
-					Running: []string{"172.16.0.0/35", "192.168.0.0/16"},
-				}
-				err = netOut.Initialize()
-				Expect(err).To(MatchError(MatchRegexp("deny networks: invalid CIDR address: 172.16.0.0/35")))
-			})
-		})
-
-		Context("when outbound container connection limiting is enabled", func() {
-			BeforeEach(func() {
-				netOut.Conn.Limit = true
-
-				chainNamer.PostfixReturnsOnCall(1, "netout-some-container-handle-rl-log", nil)
-			})
-
-			Context("when denied outbound container connections logging is enabled", func() {
-				BeforeEach(func() {
-					netOut.Conn.Logging = true
-				})
-
-				It("additionally creates the rate limit logging chain", func() {
-					err := netOut.Initialize()
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(chainNamer.PostfixCallCount()).To(Equal(2))
-					body, suffix := chainNamer.PostfixArgsForCall(1)
-					Expect(body).To(Equal("netout-some-container-handle"))
-					Expect(suffix).To(Equal("rl-log"))
-
-					Expect(ipTables.NewChainCallCount()).To(Equal(5))
-					table, chain := ipTables.NewChainArgsForCall(4)
-					Expect(table).To(Equal("filter"))
-					Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
-				})
-
-				It("additionally writes the rate limit logging rule", func() {
-					err := netOut.Initialize()
-					Expect(err).NotTo(HaveOccurred())
-					Expect(ipTables.BulkAppendCallCount()).To(Equal(8))
-
-					table, chain, rulespec := ipTables.BulkAppendArgsForCall(7)
-					Expect(table).To(Equal("filter"))
-					Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
-					Expect(rulespec).To(Equal([]rules.IPTablesRule{
-						{"-m", "limit", "--limit", "3/s", "--limit-burst", "3",
-							"--jump", "LOG", "--log-prefix", `"DENY_ORL_some-container-hand "`},
-						{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
-					}))
-				})
-
-				Context("when the chain namer fails to name the rate limit logging chain", func() {
-					BeforeEach(func() {
-						chainNamer.PostfixReturnsOnCall(1, "", errors.New("mango"))
-					})
-
-					It("returns the error", func() {
-						err := netOut.Initialize()
-						Expect(err).To(MatchError("getting chain name: mango"))
-					})
-				})
-			})
-
-			Context("when denied outbound container connections logging is disabled", func() {
-				BeforeEach(func() {
-					netOut.Conn.Logging = false
-				})
-
-				It("doesn't add the rate limit logging chain", func() {
-					err := netOut.Initialize()
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(chainNamer.PostfixCallCount()).To(Equal(1))
-					Expect(ipTables.NewChainCallCount()).To(Equal(4))
-				})
-			})
+	Describe("BulkInsertRules", func() {
+		It("delegates to NetOutChain", func() {
+			ruleSpec := netrules.NewRulesFromGardenNetOutRules([]garden.NetOutRule{})
+			err := netOut.BulkInsertRules(ruleSpec)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(converter.BulkConvertCallCount()).To(Equal(1))
+			Expect(ipTables.BulkInsertCallCount()).To(Equal(1))
 		})
 	})
 
@@ -732,260 +623,6 @@ var _ = Describe("Netout", func() {
 
 					Expect(ipTables.ClearChainCallCount()).To(Equal(4))
 					Expect(ipTables.DeleteChainCallCount()).To(Equal(4))
-				})
-			})
-		})
-	})
-
-	Describe("BulkInsertRules", func() {
-		var (
-			netOutRules  []garden.NetOutRule
-			genericRules []rules.IPTablesRule
-		)
-
-		BeforeEach(func() {
-			genericRules = []rules.IPTablesRule{
-				{"rule1"},
-				{"rule2"},
-			}
-
-			converter.BulkConvertReturns(genericRules)
-
-		})
-
-		It("prepends allow rules to the container's netout chain", func() {
-			ruleSpec := netrules.NewRulesFromGardenNetOutRules(netOutRules)
-			err := netOut.BulkInsertRules(ruleSpec)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(chainNamer.PrefixCallCount()).To(Equal(1))
-			prefix, handle := chainNamer.PrefixArgsForCall(0)
-			Expect(prefix).To(Equal("netout"))
-			Expect(handle).To(Equal("some-container-handle"))
-
-			Expect(chainNamer.PostfixCallCount()).To(Equal(1))
-			body, suffix := chainNamer.PostfixArgsForCall(0)
-			Expect(body).To(Equal("netout-some-container-handle"))
-			Expect(suffix).To(Equal("log"))
-
-			Expect(converter.BulkConvertCallCount()).To(Equal(1))
-			convertedRules, logChainName, logging := converter.BulkConvertArgsForCall(0)
-			Expect(convertedRules).To(Equal(ruleSpec))
-			Expect(logChainName).To(Equal("some-other-chain-name"))
-			Expect(logging).To(Equal(false))
-
-			Expect(ipTables.BulkInsertCallCount()).To(Equal(1))
-			table, chain, pos, rulespec := ipTables.BulkInsertArgsForCall(0)
-
-			Expect(table).To(Equal("filter"))
-			Expect(chain).To(Equal("netout-some-container-handle"))
-			Expect(pos).To(Equal(1))
-
-			rulesWithDefaultAcceptReject := append(genericRules, []rules.IPTablesRule{
-				{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
-				{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
-			}...)
-
-			Expect(rulespec).To(Equal(rulesWithDefaultAcceptReject))
-		})
-
-		Context("when the chain namer fails", func() {
-			BeforeEach(func() {
-				chainNamer.PostfixReturns("", errors.New("banana"))
-			})
-			It("returns the error", func() {
-				err := netOut.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules))
-				Expect(err).To(MatchError("getting chain name: banana"))
-			})
-		})
-
-		Context("when bulk insert fails", func() {
-			BeforeEach(func() {
-				ipTables.BulkInsertReturns(errors.New("potato"))
-			})
-			It("returns an error", func() {
-				err := netOut.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules))
-				Expect(err).To(MatchError("bulk inserting net-out rules: potato"))
-			})
-		})
-
-		Context("when the global logging is enabled", func() {
-			BeforeEach(func() {
-				netOut.ASGLogging = true
-			})
-			It("calls BulkConvert with globalLogging set to true", func() {
-				ruleSpec := netrules.NewRulesFromGardenNetOutRules(netOutRules)
-				err := netOut.BulkInsertRules(ruleSpec)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(converter.BulkConvertCallCount()).To(Equal(1))
-				convertedRules, logChainName, logging := converter.BulkConvertArgsForCall(0)
-				Expect(convertedRules).To(Equal(ruleSpec))
-				Expect(logChainName).To(Equal("some-other-chain-name"))
-				Expect(logging).To(Equal(true))
-			})
-		})
-
-		Context("when deny networks are specified", func() {
-			BeforeEach(func() {
-				netOut.DenyNetworks = netrules.DenyNetworks{}
-			})
-
-			DescribeTable(
-				"it should deny the workload networks and the 'all' networks",
-				func(workload string, denyNetworks netrules.DenyNetworks) {
-					netOut.ContainerWorkload = workload
-					netOut.DenyNetworks = denyNetworks
-					netOut.DenyNetworks.Always = []string{"172.16.0.0/12"}
-
-					err := netOut.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules))
-					Expect(err).NotTo(HaveOccurred())
-
-					_, _, _, rulespec := ipTables.BulkInsertArgsForCall(0)
-
-					rulesWithDenyNetworksAndDefaults := append(
-						genericRules,
-						[]rules.IPTablesRule{
-							{"-d", "172.16.0.0/12", "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
-							{"-d", "192.168.0.0/16", "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
-							{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
-							{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
-						}...,
-					)
-
-					Expect(rulespec).To(Equal(rulesWithDenyNetworksAndDefaults))
-				},
-				Entry("when the workload is an app", "app", netrules.DenyNetworks{Running: []string{"192.168.0.0/16"}}),
-				Entry("when the workload is a task", "task", netrules.DenyNetworks{Running: []string{"192.168.0.0/16"}}),
-				Entry("when the workload is staging", "staging", netrules.DenyNetworks{Staging: []string{"192.168.0.0/16"}}),
-			)
-
-			DescribeTable(
-				"it should only deny the workload networks and the 'all' networks",
-				func(workload string, expectedDenyNetwork string) {
-					netOut.ContainerWorkload = workload
-					netOut.DenyNetworks = netrules.DenyNetworks{
-						Always:  []string{"1.1.1.1/32"},
-						Running: []string{"2.2.2.2/32"},
-						Staging: []string{"3.3.3.3/32"},
-					}
-
-					err := netOut.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules))
-					Expect(err).NotTo(HaveOccurred())
-
-					_, _, _, rulespec := ipTables.BulkInsertArgsForCall(0)
-
-					rulesWithDenyNetworksAndDefaults := append(
-						genericRules,
-						[]rules.IPTablesRule{
-							{"-d", "1.1.1.1/32", "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
-							{"-d", expectedDenyNetwork, "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"},
-							{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
-							{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
-						}...,
-					)
-
-					Expect(rulespec).To(Equal(rulesWithDenyNetworksAndDefaults))
-				},
-				Entry("when the workload is an app", "app", "2.2.2.2/32"),
-				Entry("when the workload is a task", "task", "2.2.2.2/32"),
-				Entry("when the workload is staging", "staging", "3.3.3.3/32"),
-			)
-		})
-
-		Context("when outbound container connection limiting is enabled", func() {
-			BeforeEach(func() {
-				netOut.Conn.Limit = true
-				netOut.Conn.Burst = 400
-				netOut.Conn.RatePerSec = 99
-
-				chainNamer.PostfixReturnsOnCall(1, "netout-some-container-handle-rl-log", nil)
-			})
-
-			Context("when denied outbound container connections logging is enabled", func() {
-				BeforeEach(func() {
-					netOut.Conn.Logging = true
-				})
-
-				It("inserts the outbound connection rate limit rule", func() {
-					err := netOut.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules))
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(ipTables.BulkInsertCallCount()).To(Equal(1))
-					table, chain, pos, rulespec := ipTables.BulkInsertArgsForCall(0)
-
-					Expect(table).To(Equal("filter"))
-					Expect(chain).To(Equal("netout-some-container-handle"))
-					Expect(pos).To(Equal(1))
-
-					Expect(chainNamer.PostfixCallCount()).To(Equal(2))
-
-					By("specifying a jump condition to the respective logging chains")
-
-					expectedRateLimitRule := rules.IPTablesRule{
-						"-p", "tcp",
-						"-m", "conntrack", "--ctstate", "NEW",
-						"-m", "hashlimit", "--hashlimit-above", "99/sec", "--hashlimit-burst", "400",
-						"--hashlimit-mode", "dstip,dstport", "--hashlimit-name", "some-container-handle",
-						"--hashlimit-htable-expire", "5000", "-j", "netout-some-container-handle-rl-log",
-					}
-					expectedRules := append(genericRules, []rules.IPTablesRule{
-						expectedRateLimitRule,
-						{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
-						{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
-					}...)
-
-					Expect(rulespec).To(Equal(expectedRules))
-				})
-
-				Context("when the chain namer fails", func() {
-					Context("when naming the rate limit chain", func() {
-						BeforeEach(func() {
-							chainNamer.PostfixReturnsOnCall(1, "", errors.New("guacamole"))
-						})
-
-						It("returns the error", func() {
-							err := netOut.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules))
-							Expect(err).To(MatchError("getting chain name: guacamole"))
-						})
-					})
-				})
-			})
-
-			Context("when denied outbound container connections logging is disabled", func() {
-				BeforeEach(func() {
-					netOut.Conn.Logging = false
-				})
-
-				It("inserts the outbound connection rate limit rule", func() {
-					err := netOut.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules))
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(ipTables.BulkInsertCallCount()).To(Equal(1))
-					table, chain, pos, rulespec := ipTables.BulkInsertArgsForCall(0)
-
-					Expect(table).To(Equal("filter"))
-					Expect(chain).To(Equal("netout-some-container-handle"))
-					Expect(pos).To(Equal(1))
-
-					Expect(chainNamer.PostfixCallCount()).To(Equal(1))
-
-					By("specifying a REJECT jump condition")
-
-					expectedRateLimitRule := rules.IPTablesRule{
-						"-p", "tcp",
-						"-m", "conntrack", "--ctstate", "NEW",
-						"-m", "hashlimit", "--hashlimit-above", "99/sec", "--hashlimit-burst", "400",
-						"--hashlimit-mode", "dstip,dstport", "--hashlimit-name", "some-container-handle",
-						"--hashlimit-htable-expire", "5000", "-j", "REJECT",
-					}
-					expectedRules := append(genericRules, []rules.IPTablesRule{
-						expectedRateLimitRule,
-						{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
-						{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
-					}...)
-
-					Expect(rulespec).To(Equal(expectedRules))
 				})
 			})
 		})

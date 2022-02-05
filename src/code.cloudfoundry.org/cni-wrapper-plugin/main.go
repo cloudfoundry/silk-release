@@ -122,13 +122,35 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return fmt.Errorf("invalid Container ID")
 	}
 
-	netOutProvider := netrules.NetOut{
-		ChainNamer: &netrules.ChainNamer{
-			MaxLength: 28,
+	chainNamer := &netrules.ChainNamer{
+		MaxLength: 28,
+	}
+	outConn := netrules.OutConn{
+		Limit:      cfg.OutConn.Limit,
+		Logging:    cfg.OutConn.Logging,
+		Burst:      cfg.OutConn.Burst,
+		RatePerSec: cfg.OutConn.RatePerSec,
+	}
+
+	netOutChain := &netrules.NetOutChain{
+		ChainNamer:       chainNamer,
+		IPTables:         pluginController.IPTables,
+		Converter:        &netrules.RuleConverter{Logger: os.Stderr},
+		ASGLogging:       cfg.IPTablesASGLogging,
+		DeniedLogsPerSec: cfg.IPTablesDeniedLogsPerSec,
+		DenyNetworks: netrules.DenyNetworks{
+			Always:  cfg.DenyNetworks.Always,
+			Running: cfg.DenyNetworks.Running,
+			Staging: cfg.DenyNetworks.Staging,
 		},
+		ContainerWorkload: containerWorkload,
+		Conn:              outConn,
+	}
+
+	netOutProvider := netrules.NetOut{
+		ChainNamer:            chainNamer,
 		IPTables:              pluginController.IPTables,
-		Converter:             &netrules.RuleConverter{Logger: os.Stderr},
-		ASGLogging:            cfg.IPTablesASGLogging,
+		NetOutChain:           netOutChain,
 		C2CLogging:            cfg.IPTablesC2CLogging,
 		DeniedLogsPerSec:      cfg.IPTablesDeniedLogsPerSec,
 		AcceptedUDPLogsPerSec: cfg.IPTablesAcceptedUDPLogsPerSec,
@@ -139,19 +161,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 		ContainerIP:           containerIP.String(),
 		HostTCPServices:       cfg.HostTCPServices,
 		HostUDPServices:       cfg.HostUDPServices,
-		DenyNetworks: netrules.DenyNetworks{
-			Always:  cfg.DenyNetworks.Always,
-			Running: cfg.DenyNetworks.Running,
-			Staging: cfg.DenyNetworks.Staging,
-		},
-		DNSServers:        localDNSServers,
-		ContainerWorkload: containerWorkload,
-		Conn: netrules.OutConn{
-			Limit:      cfg.OutConn.Limit,
-			Logging:    cfg.OutConn.Logging,
-			Burst:      cfg.OutConn.Burst,
-			RatePerSec: cfg.OutConn.RatePerSec,
-		},
+		DNSServers:            localDNSServers,
+		Conn:                  outConn,
 	}
 	if err := netOutProvider.Initialize(); err != nil {
 		return fmt.Errorf("initialize net out: %s", err)
@@ -261,19 +272,29 @@ func cmdDel(args *skel.CmdArgs) error {
 		}
 	}
 
+	chainNamer := &netrules.ChainNamer{
+		MaxLength: 28,
+	}
+	outConn := netrules.OutConn{
+		Limit:   n.OutConn.Limit,
+		Logging: n.OutConn.Logging,
+	}
+
+	netOutChain := &netrules.NetOutChain{
+		ChainNamer: chainNamer,
+		IPTables:   pluginController.IPTables,
+		Converter:  &netrules.RuleConverter{Logger: os.Stderr},
+		Conn:       outConn,
+	}
+
 	netOutProvider := netrules.NetOut{
-		ChainNamer: &netrules.ChainNamer{
-			MaxLength: 28,
-		},
+		ChainNamer:         chainNamer,
+		NetOutChain:        netOutChain,
 		IPTables:           pluginController.IPTables,
-		Converter:          &netrules.RuleConverter{Logger: os.Stderr},
 		ContainerHandle:    args.ContainerID,
 		ContainerIP:        container.IP,
 		HostInterfaceNames: interfaceNames,
-		Conn: netrules.OutConn{
-			Limit:   n.OutConn.Limit,
-			Logging: n.OutConn.Logging,
-		},
+		Conn:               outConn,
 	}
 
 	if err = netOutProvider.Cleanup(); err != nil {
