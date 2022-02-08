@@ -19,6 +19,7 @@ import (
 	"code.cloudfoundry.org/cf-networking-helpers/mutualtls"
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics"
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport/ports"
+	cnilib "code.cloudfoundry.org/cni-wrapper-plugin/lib"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -101,6 +102,13 @@ var _ = Describe("VXLAN Policy Agent", func() {
 			IPTablesAcceptedUDPLogsPerSec: 7,
 			EnableOverlayIngressRules:     true,
 			UnderlayIPs:                   []string{"10.0.0.1"},
+			IPTablesASGLogging:            false,
+			IPTablesDeniedLogsPerSec:      2,
+			DenyNetworks:                  cnilib.DenyNetworksConfig{},
+			OutConn: cnilib.OutConnConfig{
+				Burst:      900,
+				RatePerSec: 100,
+			},
 		}
 
 	})

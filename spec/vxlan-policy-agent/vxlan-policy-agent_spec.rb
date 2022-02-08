@@ -33,6 +33,24 @@ module Bosh::Template::Test
             properties: {
               'network' => '10.255.0.0/16',
             }
+          ),
+          Link.new(
+            name: 'cni_config',
+            instances: [LinkInstance.new()],
+            properties: {
+              'iptables_logging' => true,
+              'iptables_denied_logs_per_sec' => 2,
+              'deny_networks' => {
+                'always' => ['1.1.1.1/32'],
+                'running' => ['2.2.2.2/32'],
+                'staging' => ['3.3.3.3/32'],
+              },
+              'outbound_connections' => {
+                'limit' => true,
+                'burst' => 1000,
+                'rate_per_sec' => 100,
+              }
+            }
           )
         ]
       end
@@ -66,8 +84,21 @@ module Bosh::Template::Test
               'vni' => 1,
               'force_policy_poll_cycle_host' => '127.0.0.1',
               'force_policy_poll_cycle_port' => 8722,
-              "disable_container_network_policy" => false,
+              'disable_container_network_policy' => false,
               'overlay_network' => '10.255.0.0/16',
+              'iptables_asg_logging' => true,
+              'iptables_denied_logs_per_sec' => 2,
+              'deny_networks' => {
+                'always' => ['1.1.1.1/32'],
+                'running' => ['2.2.2.2/32'],
+                'staging' => ['3.3.3.3/32'],
+              },
+              'outbound_connections' => {
+                'limit' => true,
+                'logging' => true,
+                'burst' => 1000,
+                'rate_per_sec' => 100,
+              }
             })
           end
         end

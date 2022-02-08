@@ -49,7 +49,20 @@ var _ = Describe("Config", func() {
 					"force_policy_poll_cycle_port": 6789,
 					"force_policy_poll_cycle_host": "http://6.7.8.9",
 					"disable_container_network_policy": false,
-					"underlay_ips": ["123.1.2.3"]
+					"underlay_ips": ["123.1.2.3"],
+					"iptables_asg_logging": true,
+					"iptables_denied_logs_per_sec": 2,
+					"deny_networks": {
+						"always": ["10.0.0.0/24"],
+						"running": ["10.0.1.0/24"],
+						"staging": ["10.0.2.0/24"]
+					},
+					"outbound_connections": {
+						"limit": true,
+						"logging": true,
+						"burst": 900,
+						"rate_per_sec": 100
+					}
 				}`)
 				c, err := config.New(file.Name())
 				Expect(err).NotTo(HaveOccurred())
@@ -75,6 +88,15 @@ var _ = Describe("Config", func() {
 				Expect(c.ForcePolicyPollCycleHost).To(Equal("http://6.7.8.9"))
 				Expect(c.DisableContainerNetworkPolicy).To(BeFalse())
 				Expect(c.UnderlayIPs).To(Equal([]string{"123.1.2.3"}))
+				Expect(c.IPTablesASGLogging).To(BeTrue())
+				Expect(c.IPTablesDeniedLogsPerSec).To(Equal(2))
+				Expect(c.DenyNetworks.Always).To(Equal([]string{"10.0.0.0/24"}))
+				Expect(c.DenyNetworks.Running).To(Equal([]string{"10.0.1.0/24"}))
+				Expect(c.DenyNetworks.Staging).To(Equal([]string{"10.0.2.0/24"}))
+				Expect(c.OutConn.Limit).To(BeTrue())
+				Expect(c.OutConn.Logging).To(BeTrue())
+				Expect(c.OutConn.Burst).To(Equal(900))
+				Expect(c.OutConn.RatePerSec).To(Equal(100))
 			})
 		})
 
@@ -120,6 +142,19 @@ var _ = Describe("Config", func() {
 					"iptables_accepted_udp_logs_per_sec": 4,
 					"force_policy_poll_cycle_port":       6789,
 					"force_policy_poll_cycle_host":       "http://6.7.8.9",
+					"iptables_asg_logging":               true,
+					"iptables_denied_logs_per_sec":       2,
+					"deny_networks": map[string]interface{}{
+						"always":  []string{"10.0.0.0/24"},
+						"running": []string{"10.0.1.0/24"},
+						"staging": []string{"10.0.2.0/24"},
+					},
+					"outbound_connections": map[string]interface{}{
+						"limit":        true,
+						"logging":      true,
+						"burst":        900,
+						"rate_per_sec": 100,
+					},
 				}
 				delete(allData, missingFlag)
 				Expect(json.NewEncoder(file).Encode(allData)).To(Succeed())
