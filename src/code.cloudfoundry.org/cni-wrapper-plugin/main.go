@@ -134,7 +134,6 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	netOutChain := &netrules.NetOutChain{
 		ChainNamer:       chainNamer,
-		IPTables:         pluginController.IPTables,
 		Converter:        &netrules.RuleConverter{Logger: os.Stderr},
 		ASGLogging:       cfg.IPTablesASGLogging,
 		DeniedLogsPerSec: cfg.IPTablesDeniedLogsPerSec,
@@ -282,7 +281,6 @@ func cmdDel(args *skel.CmdArgs) error {
 
 	netOutChain := &netrules.NetOutChain{
 		ChainNamer: chainNamer,
-		IPTables:   pluginController.IPTables,
 		Converter:  &netrules.RuleConverter{Logger: os.Stderr},
 		Conn:       outConn,
 	}

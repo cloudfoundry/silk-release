@@ -76,8 +76,16 @@ func (m *NetOut) Initialize() error {
 }
 
 func (m *NetOut) BulkInsertRules(ruleSpec []Rule) error {
-	chain := m.ChainNamer.Prefix(prefixNetOut, m.ContainerHandle)
-	return m.NetOutChain.BulkInsertRules(chain, m.ContainerHandle, ruleSpec)
+	iptablesRules, err := m.NetOutChain.IPTablesRules(m.ContainerHandle, ruleSpec)
+	if err != nil {
+		return fmt.Errorf("bulk converting net-out rules: %s", err)
+	}
+	chain := m.NetOutChain.Name(m.ContainerHandle)
+	err = m.IPTables.BulkInsert("filter", chain, 1, iptablesRules...)
+	if err != nil {
+		return fmt.Errorf("bulk inserting net-out rules: %s", err)
+	}
+	return nil
 }
 
 func (m *NetOut) Cleanup() error {

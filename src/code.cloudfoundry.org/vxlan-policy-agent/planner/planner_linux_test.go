@@ -5,7 +5,9 @@ package planner_test
 
 import (
 	"errors"
+	"fmt"
 
+	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
 	"code.cloudfoundry.org/lib/datastore"
 	libfakes "code.cloudfoundry.org/lib/fakes"
 	"code.cloudfoundry.org/lib/rules"
@@ -34,6 +36,7 @@ var _ = Describe("Planner", func() {
 		chain                      enforcer.Chain
 		data                       map[string]datastore.Container
 		loggingStateGetter         *fakes.LoggingStateGetter
+		netOutChain                *fakes.NetOutChain
 	)
 
 	BeforeEach(func() {
@@ -42,6 +45,18 @@ var _ = Describe("Planner", func() {
 		metricsSender = &fakes.MetricsSender{}
 		loggingStateGetter = &fakes.LoggingStateGetter{}
 
+		netOutChain = &fakes.NetOutChain{}
+		netOutChain.NameStub = func(handle string) string {
+			return "netout-" + handle
+		}
+		netOutChain.IPTablesRulesStub = func(containerHandle string, ruleSpec []netrules.Rule) ([]rules.IPTablesRule, error) {
+			if containerHandle == "container-id-1" {
+				return []rules.IPTablesRule{{"rule-1"}, {"rule-2"}}, nil
+			} else if containerHandle == "container-id-2" {
+				return []rules.IPTablesRule{{"rule-3"}, {"rule-4"}}, nil
+			}
+			return nil, errors.New("unknown-container-handle")
+		}
 		store = &libfakes.Datastore{}
 
 		data = make(map[string]datastore.Container)
@@ -60,6 +75,7 @@ var _ = Describe("Planner", func() {
 			IP:     "10.255.1.3",
 			Metadata: map[string]interface{}{
 				"policy_group_id":    "some-other-app-guid",
+				"space_id":           "some-other-space-guid",
 				"ports":              " 8181 , 9090",
 				"container_workload": "staging",
 			},
@@ -278,6 +294,7 @@ var _ = Describe("Planner", func() {
 			IPTablesAcceptedUDPLogsPerSec: 3,
 			EnableOverlayIngressRules:     true,
 			HostInterfaceNames:            []string{"eth0"},
+			NetOutChain:                   netOutChain,
 		}
 	})
 
@@ -339,7 +356,7 @@ var _ = Describe("Planner", func() {
 
 			By("filtering by ID when calling the internal policy server")
 			Expect(policyClient.GetPoliciesByIDCallCount()).To(Equal(1))
-			Expect(policyClient.GetPoliciesByIDArgsForCall(0)).To(ConsistOf([]interface{}{"some-app-guid", "some-other-app-guid", "some-space-guid"}))
+			Expect(policyClient.GetPoliciesByIDArgsForCall(0)).To(ConsistOf([]interface{}{"some-app-guid", "some-other-app-guid", "some-space-guid", "some-other-space-guid"}))
 		})
 
 		Context("when iptables logging is disabled", func() {
@@ -1145,7 +1162,7 @@ var _ = Describe("Planner", func() {
 			It("logs and returns the error", func() {
 				_, err := policyPlanner.GetPolicyRulesAndChain()
 				Expect(err).To(MatchError("failed to get policies: kiwi"))
-				Expect(logger).To(gbytes.Say("policy-client-query.*kiwi"))
+				Expect(logger).To(gbytes.Say("policy-client-get-container-policies.*kiwi"))
 			})
 		})
 
@@ -1157,7 +1174,7 @@ var _ = Describe("Planner", func() {
 			It("logs and returns the error", func() {
 				_, err := policyPlanner.GetPolicyRulesAndChain()
 				Expect(err).To(MatchError("failed to get ingress tags: sad kumquat"))
-				Expect(logger).To(gbytes.Say("policy-client-query.*sad kumquat"))
+				Expect(logger).To(gbytes.Say("policy-client-get-container-policies.*sad kumquat"))
 			})
 		})
 
@@ -1177,6 +1194,246 @@ var _ = Describe("Planner", func() {
 				_, err := policyPlanner.GetPolicyRulesAndChain()
 				Expect(err).To(MatchError(`converting container metadata port to int: strconv.Atoi: parsing "invalid-port": invalid syntax`))
 				Expect(logger).To(gbytes.Say(`policy-client-get-container-policies.*converting container metadata port to int*`))
+			})
+		})
+	})
+
+	Describe("GetASGRulesAndChains", func() {
+		It("gets every container's properties from the datastore", func() {
+			_, err := policyPlanner.GetASGRulesAndChains()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(store.ReadAllCallCount()).To(Equal(1))
+		})
+
+		It("emits time metrics", func() {
+			_, err := policyPlanner.GetASGRulesAndChains()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(metricsSender.SendDurationCallCount()).To(Equal(2))
+			name, _ := metricsSender.SendDurationArgsForCall(0)
+			Expect(name).To(Equal("containerMetadataTime"))
+			name, _ = metricsSender.SendDurationArgsForCall(1)
+			Expect(name).To(Equal("policyServerASGPollTime"))
+		})
+
+		Context("when there are no containers in the datastore", func() {
+			BeforeEach(func() {
+				data = make(map[string]datastore.Container)
+				store.ReadAllReturns(data, nil)
+			})
+
+			It("does not call the policy client", func() {
+				rulesWithChains, err := policyPlanner.GetASGRulesAndChains()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(policyClient.GetPoliciesByIDCallCount()).To(Equal(0))
+
+				Expect(rulesWithChains).To(BeEmpty())
+			})
+		})
+
+		Context("when there are containers in datastore", func() {
+			It("gets security groups from the policy server", func() {
+				_, err := policyPlanner.GetASGRulesAndChains()
+				Expect(err).NotTo(HaveOccurred())
+
+				By("filtering by space guid when calling the internal policy server")
+				Expect(policyClient.GetSecurityGroupsForSpaceCallCount()).To(Equal(1))
+				Expect(policyClient.GetSecurityGroupsForSpaceArgsForCall(0)).To(ConsistOf("some-space-guid", "some-other-space-guid"))
+			})
+
+			Context("when there are security groups for staging and running", func() {
+				var (
+					expectedRunningRules policy_client.SecurityGroupRules
+					expectedStagingRules policy_client.SecurityGroupRules
+					securityGroups       []policy_client.SecurityGroup
+				)
+
+				BeforeEach(func() {
+					expectedRunningRules = policy_client.SecurityGroupRules{{Protocol: "all", Destination: "20.0.0.2"}}
+					expectedStagingRules = policy_client.SecurityGroupRules{{Protocol: "icmp", Type: 1, Code: 2, Destination: "10.0.0.1"}}
+					securityGroups = []policy_client.SecurityGroup{
+						{
+							Name:              "staging-security-group",
+							StagingSpaceGuids: []string{"some-space-guid"},
+							Rules:             policy_client.SecurityGroupRules{{Protocol: "tcp"}},
+						},
+						{
+							Name:              "running-security-group",
+							RunningSpaceGuids: []string{"some-space-guid"},
+							Rules:             expectedRunningRules,
+						},
+						{
+							Name:              "other-staging-security-group",
+							StagingSpaceGuids: []string{"some-other-space-guid"},
+							Rules:             expectedStagingRules,
+						},
+						{
+							Name:              "other-running-security-group",
+							RunningSpaceGuids: []string{"some-other-space-guid"},
+							Rules:             policy_client.SecurityGroupRules{{Protocol: "udp"}},
+						},
+					}
+					policyClient.GetSecurityGroupsForSpaceReturns(securityGroups, nil)
+				})
+
+				It("uses security group rules for matching container work load", func() {
+					rulesWithChains, err := policyPlanner.GetASGRulesAndChains()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rulesWithChains).To(HaveLen(2))
+					var containerRules1, containerRules2 enforcer.RulesWithChain
+					for _, containerRules := range rulesWithChains {
+						if containerRules.Chain.ParentChain == "netout-container-id-1" {
+							containerRules1 = containerRules
+						} else if containerRules.Chain.ParentChain == "netout-container-id-2" {
+							containerRules2 = containerRules
+						} else {
+							Fail(fmt.Sprintf("contains unexpected Parent Chain name: %s", containerRules.Chain.ParentChain))
+						}
+					}
+
+					Expect(containerRules1.Rules).To(Equal([]rules.IPTablesRule{{"rule-1"}, {"rule-2"}}))
+					Expect(containerRules2.Rules).To(Equal([]rules.IPTablesRule{{"rule-3"}, {"rule-4"}}))
+
+					Expect([]string{containerRules1.Chain.Prefix, containerRules2.Chain.Prefix}).To(ConsistOf("asg--00000000", "asg--00000001"))
+
+					Expect(netOutChain.IPTablesRulesCallCount()).To(Equal(2))
+
+					handle1, ruleSpec1 := netOutChain.IPTablesRulesArgsForCall(0)
+					handle2, ruleSpec2 := netOutChain.IPTablesRulesArgsForCall(1)
+
+					Expect([]string{handle1, handle2}).To(ConsistOf("container-id-1", "container-id-2"))
+
+					var receivedRunningRules, receivedStagingRules []netrules.Rule
+					if handle1 == "container-id-1" {
+						receivedRunningRules = ruleSpec1
+						receivedStagingRules = ruleSpec2
+					} else {
+						receivedRunningRules = ruleSpec2
+						receivedStagingRules = ruleSpec1
+					}
+
+					By("using running rules for container with running work load")
+					expectedRules, err := netrules.NewRulesFromSecurityGroupRules(expectedRunningRules)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(receivedRunningRules).To(Equal(expectedRules))
+
+					By("using staging rules for container with staging work load")
+					expectedRules, err = netrules.NewRulesFromSecurityGroupRules(expectedStagingRules)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(receivedStagingRules).To(Equal(expectedRules))
+				})
+
+				Context("and there are also global security groups for staging and running", func() {
+					var (
+						expectedGlobalRunningRules policy_client.SecurityGroupRules
+						expectedGlobalStagingRules policy_client.SecurityGroupRules
+					)
+
+					BeforeEach(func() {
+						expectedGlobalStagingRules = policy_client.SecurityGroupRules{{Protocol: "tcp", Destination: "30.0.0.3"}}
+						expectedGlobalRunningRules = policy_client.SecurityGroupRules{{Protocol: "udp", Destination: "40.0.0.4"}}
+						securityGroupsWithGlobal := append(securityGroups, policy_client.SecurityGroup{
+							Name:              "global-staging-security-group",
+							StagingSpaceGuids: []string{"some-space-guid"},
+							Rules:             expectedGlobalStagingRules,
+							StagingDefault:    true,
+						}, policy_client.SecurityGroup{
+							Name:              "global-running-security-group",
+							RunningSpaceGuids: []string{"some-space-guid"},
+							Rules:             expectedGlobalRunningRules,
+							RunningDefault:    true,
+						})
+
+						policyClient.GetSecurityGroupsForSpaceReturns(securityGroupsWithGlobal, nil)
+					})
+
+					It("appends the global security groups as well", func() {
+						rulesWithChains, err := policyPlanner.GetASGRulesAndChains()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(rulesWithChains).To(HaveLen(2))
+
+						var containerRules1, containerRules2 enforcer.RulesWithChain
+						for _, containerRules := range rulesWithChains {
+							if containerRules.Chain.ParentChain == "netout-container-id-1" {
+								containerRules1 = containerRules
+							} else if containerRules.Chain.ParentChain == "netout-container-id-2" {
+								containerRules2 = containerRules
+							} else {
+								Fail(fmt.Sprintf("contains unexpected Parent Chain name: %s", containerRules.Chain.ParentChain))
+							}
+						}
+
+						By("assiging the correct rules to each container")
+						Expect(containerRules1.Rules).To(Equal([]rules.IPTablesRule{{"rule-1"}, {"rule-2"}}))
+						Expect(containerRules2.Rules).To(Equal([]rules.IPTablesRule{{"rule-3"}, {"rule-4"}}))
+
+						By("assigning unique prefixes to each container")
+						Expect([]string{containerRules1.Chain.Prefix, containerRules2.Chain.Prefix}).To(ConsistOf("asg--00000000", "asg--00000001"))
+
+						Expect(netOutChain.IPTablesRulesCallCount()).To(Equal(2))
+
+						handle1, ruleSpec1 := netOutChain.IPTablesRulesArgsForCall(0)
+						handle2, ruleSpec2 := netOutChain.IPTablesRulesArgsForCall(1)
+
+						Expect([]string{handle1, handle2}).To(ConsistOf("container-id-1", "container-id-2"))
+
+						var receivedRunningRules, receivedStagingRules []netrules.Rule
+						if handle1 == "container-id-1" {
+							receivedRunningRules = ruleSpec1
+							receivedStagingRules = ruleSpec2
+						} else {
+							receivedRunningRules = ruleSpec2
+							receivedStagingRules = ruleSpec1
+						}
+
+						By("using running rules for container with running work load")
+						expectedRules, err := netrules.NewRulesFromSecurityGroupRules(append(expectedGlobalRunningRules, expectedRunningRules...))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(receivedRunningRules).To(Equal(expectedRules))
+
+						By("using staging rules for container with staging work load")
+						expectedRules, err = netrules.NewRulesFromSecurityGroupRules(append(expectedGlobalStagingRules, expectedStagingRules...))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(receivedStagingRules).To(Equal(expectedRules))
+					})
+				})
+			})
+
+			It("appends default iptables rules to the list", func() {
+				netOutChain.DefaultRulesReturns([]rules.IPTablesRule{{"default-rule"}})
+
+				rulesWithChains, err := policyPlanner.GetASGRulesAndChains()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rulesWithChains).To(HaveLen(2))
+
+				var containerRules1, containerRules2 enforcer.RulesWithChain
+				for _, containerRules := range rulesWithChains {
+					if containerRules.Chain.ParentChain == "netout-container-id-1" {
+						containerRules1 = containerRules
+					} else if containerRules.Chain.ParentChain == "netout-container-id-2" {
+						containerRules2 = containerRules
+					} else {
+						Fail(fmt.Sprintf("contains unexpected Parent Chain name: %s", containerRules.Chain.ParentChain))
+					}
+				}
+
+				By("assiging the correct rules to each container")
+				Expect(containerRules1.Rules).To(Equal([]rules.IPTablesRule{{"default-rule"}, {"rule-1"}, {"rule-2"}}))
+				Expect(containerRules2.Rules).To(Equal([]rules.IPTablesRule{{"default-rule"}, {"rule-3"}, {"rule-4"}}))
+				Expect(netOutChain.DefaultRulesCallCount()).To(Equal(2))
+				Expect(netOutChain.IPTablesRulesCallCount()).To(Equal(2))
+			})
+		})
+
+		Context("when getting containers from datastore fails", func() {
+			BeforeEach(func() {
+				store.ReadAllReturns(nil, errors.New("banana"))
+			})
+
+			It("logs and returns the error", func() {
+				_, err := policyPlanner.GetASGRulesAndChains()
+				Expect(err).To(MatchError("banana"))
+				Expect(logger).To(gbytes.Say("datastore.*banana"))
 			})
 		})
 	})

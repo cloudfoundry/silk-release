@@ -163,7 +163,7 @@ var _ = Describe("Config", func() {
 				Expect(err).To(MatchError(fmt.Sprintf("invalid config: %s", errorMsg)))
 			},
 			Entry("missing poll interval", "poll_interval", "PollInterval: zero value"),
-			Entry("missing asg poll interval", "asg_poll_interval", "ASGPollInterval: zero value"),
+			Entry("missing asg poll interval", "asg_poll_interval", "ASGPollInterval: less than min"),
 			Entry("missing datastore path", "cni_datastore_path", "Datastore: zero value"),
 			Entry("missing policy server url", "policy_server_url", "PolicyServerURL: less than min"),
 			Entry("missing vni", "vni", "VNI: zero value"),

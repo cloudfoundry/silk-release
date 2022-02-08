@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
 	"code.cloudfoundry.org/lib/rules"
 	"code.cloudfoundry.org/policy_client"
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
@@ -162,13 +163,8 @@ func (p *VxlanPolicyPlanner) GetPolicyRulesAndChain() (enforcer.RulesWithChain, 
 		p.Logger.Error("datastore", err)
 		return enforcer.RulesWithChain{}, err
 	}
-	policy, egressPolicy, ingressTag, err := p.queryPolicyServer(allContainers)
-	if err != nil {
-		p.Logger.Error("policy-client-query", err)
-		return enforcer.RulesWithChain{}, err
-	}
 
-	containerPolicySet, err := p.getContainerPolicies(policy, egressPolicy, ingressTag, allContainers)
+	containerPolicySet, err := p.getContainerPolicies(allContainers)
 	if err != nil {
 		p.Logger.Error("policy-client-get-container-policies", err)
 		return enforcer.RulesWithChain{}, err
@@ -183,10 +179,96 @@ func (p *VxlanPolicyPlanner) GetPolicyRulesAndChain() (enforcer.RulesWithChain, 
 }
 
 func (p *VxlanPolicyPlanner) GetASGRulesAndChains() ([]enforcer.RulesWithChain, error) {
-	return nil, nil
+	allContainers, err := p.readFile()
+	if err != nil {
+		p.Logger.Error("datastore", err)
+		return nil, err
+	}
+
+	securityGroups, err := p.getContainerSecurityGroups(allContainers)
+	if err != nil {
+		p.Logger.Error("policy-client-get-security-group-rules", err)
+		return nil, err
+	}
+
+	rulesWithChains := []enforcer.RulesWithChain{}
+	stagingRulesForSpace := map[string][]policy_client.SecurityGroupRule{}
+	runningRulesForSpace := map[string][]policy_client.SecurityGroupRule{}
+	defaultStagingRules := []policy_client.SecurityGroupRule{}
+	defaultRunningRules := []policy_client.SecurityGroupRule{}
+	for _, securityGroup := range securityGroups {
+		if securityGroup.StagingDefault {
+			defaultStagingRules = append(defaultStagingRules, securityGroup.Rules...)
+		}
+		if securityGroup.RunningDefault {
+			defaultRunningRules = append(defaultRunningRules, securityGroup.Rules...)
+		}
+
+		for _, spaceGuid := range securityGroup.StagingSpaceGuids {
+			if !securityGroup.StagingDefault {
+				stagingRulesForSpace[spaceGuid] = append(stagingRulesForSpace[spaceGuid], securityGroup.Rules...)
+			}
+		}
+		for _, spaceGuid := range securityGroup.RunningSpaceGuids {
+			if !securityGroup.RunningDefault {
+				runningRulesForSpace[spaceGuid] = append(runningRulesForSpace[spaceGuid], securityGroup.Rules...)
+			}
+		}
+	}
+
+	for i, container := range allContainers {
+		if container.SpaceID == "" {
+			continue
+		}
+
+		parentChainName := p.NetOutChain.Name(container.Handle)
+		var sgRules []policy_client.SecurityGroupRule
+		if container.Purpose == "staging" {
+			sgRules = append(defaultStagingRules, stagingRulesForSpace[container.SpaceID]...)
+		} else if container.Purpose == "app" || container.Purpose == "task" {
+			sgRules = append(defaultRunningRules, runningRulesForSpace[container.SpaceID]...)
+		}
+		ruleSpec, err := netrules.NewRulesFromSecurityGroupRules(sgRules)
+		if err != nil {
+			p.Logger.Error("rules-from-security-group-rules", err)
+			continue
+		}
+
+		defaultRules := p.NetOutChain.DefaultRules(container.Handle)
+
+		iptablesRules, err := p.NetOutChain.IPTablesRules(container.Handle, ruleSpec)
+		if err != nil {
+			p.Logger.Error("converting-to-iptables-rules", err)
+			continue
+		}
+		rulesWithChains = append(rulesWithChains, enforcer.RulesWithChain{
+			Chain: enforcer.Chain{
+				Table:       "filter",
+				ParentChain: parentChainName,
+				Prefix:      fmt.Sprintf("asg--%08d", i),
+			},
+			Rules: append(defaultRules, iptablesRules...),
+		})
+	}
+
+	return rulesWithChains, nil
 }
 
-func (p *VxlanPolicyPlanner) queryPolicyServer(allContainers []container) ([]policy_client.Policy, []policy_client.EgressPolicy, string, error) {
+func (p *VxlanPolicyPlanner) getContainerSecurityGroups(allContainers []container) ([]policy_client.SecurityGroup, error) {
+	policyServerStartRequestTime := time.Now()
+	spaceGuids := extractSpaceGUIDs(allContainers)
+	securityGroups, err := p.PolicyClient.GetSecurityGroupsForSpace(spaceGuids...)
+	if err != nil {
+		err = fmt.Errorf("failed to get ingress tags: %s", err)
+		return []policy_client.SecurityGroup{}, err
+	}
+
+	policyServerPollDuration := time.Now().Sub(policyServerStartRequestTime)
+	p.MetricsSender.SendDuration(metricPolicyServerASGPoll, policyServerPollDuration)
+	return securityGroups, nil
+}
+
+func (p *VxlanPolicyPlanner) getContainerPolicies(allContainers []container) (containerPolicySet, error) {
 	policyServerStartRequestTime := time.Now()
 	guids := extractGUIDs(allContainers)
 
@@ -197,7 +279,7 @@ func (p *VxlanPolicyPlanner) queryPolicyServer(allContainers []container) ([]pol
 		policies, egressPolicies, err = p.PolicyClient.GetPoliciesByID(guids...)
 		if err != nil {
 			err = fmt.Errorf("failed to get policies: %s", err)
-			return nil, nil, "", err
+			return containerPolicySet{}, err
 		}
 	}
 
@@ -207,16 +289,13 @@ func (p *VxlanPolicyPlanner) queryPolicyServer(allContainers []container) ([]pol
 		ingressTag, err = p.PolicyClient.CreateOrGetTag("INGRESS_ROUTER", "router")
 		if err != nil {
 			err = fmt.Errorf("failed to get ingress tags: %s", err)
-			return nil, nil, "", err
+			return containerPolicySet{}, err
 		}
 	}
 
 	policyServerPollDuration := time.Now().Sub(policyServerStartRequestTime)
 	p.MetricsSender.SendDuration(metricPolicyServerPoll, policyServerPollDuration)
-	return policies, egressPolicies, ingressTag, nil
-}
 
-func (p *VxlanPolicyPlanner) getContainerPolicies(policies []policy_client.Policy, egressPolicies []policy_client.EgressPolicy, ingressTag string, allContainers []container) (containerPolicySet, error) {
 	visited := make(map[string]bool)
 	var containerPolicySet containerPolicySet
 	for _, container := range allContainers {

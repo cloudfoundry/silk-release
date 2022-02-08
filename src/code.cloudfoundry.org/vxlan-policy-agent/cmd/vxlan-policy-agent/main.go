@@ -91,9 +91,6 @@ func main() {
 	}
 
 	asgPollInterval := time.Duration(conf.ASGPollInterval) * time.Second
-	if asgPollInterval == 0 {
-		asgPollInterval = time.Second
-	}
 
 	clientTLSConfig, err := mutualtls.NewClientTLSConfig(conf.ClientCertFile, conf.ClientKeyFile, conf.ServerCACertFile)
 	if err != nil {

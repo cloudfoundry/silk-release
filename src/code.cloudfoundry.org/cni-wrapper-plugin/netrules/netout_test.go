@@ -28,7 +28,6 @@ var _ = Describe("Netout", func() {
 		netOutChain := &netrules.NetOutChain{
 			Converter:  converter,
 			ChainNamer: chainNamer,
-			IPTables:   ipTables,
 		}
 		netOut = &netrules.NetOut{
 			ChainNamer:            chainNamer,
