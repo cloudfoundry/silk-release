@@ -3,7 +3,9 @@ package planner
 import (
 	"time"
 
+	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
 	"code.cloudfoundry.org/lib/datastore"
+	"code.cloudfoundry.org/lib/rules"
 	"code.cloudfoundry.org/policy_client"
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
 
@@ -11,6 +13,7 @@ import (
 )
 
 type container struct {
+	Handle  string
 	AppID   string
 	SpaceID string
 	Ports   string
@@ -29,6 +32,7 @@ type VxlanPolicyPlanner struct {
 	IPTablesAcceptedUDPLogsPerSec int
 	EnableOverlayIngressRules     bool
 	HostInterfaceNames            []string
+	NetOutChain                   netOutChain
 }
 
 //go:generate counterfeiter -o fakes/dstore.go --fake-name Dstore . dstore
@@ -39,6 +43,7 @@ type dstore interface {
 //go:generate counterfeiter -o fakes/policy_client.go --fake-name PolicyClient . policyClient
 type policyClient interface {
 	GetPoliciesByID(ids ...string) ([]policy_client.Policy, []policy_client.EgressPolicy, error)
+	GetSecurityGroupsForSpace(spaceGuids ...string) ([]policy_client.SecurityGroup, error)
 	CreateOrGetTag(id, groupType string) (string, error)
 }
 
@@ -52,8 +57,16 @@ type loggingStateGetter interface {
 	IsEnabled() bool
 }
 
+//go:generate counterfeiter -o fakes/netout_chain.go --fake-name NetOutChain . netOutChain
+type netOutChain interface {
+	Name(containerHandle string) string
+	DefaultRules(containerHandle string) []rules.IPTablesRule
+	IPTablesRules(containerHandle string, ruleSpec []netrules.Rule) ([]rules.IPTablesRule, error)
+}
+
 const metricContainerMetadata = "containerMetadataTime"
 const metricPolicyServerPoll = "policyServerPollTime"
+const metricPolicyServerASGPoll = "policyServerASGPollTime"
 
 func (p *VxlanPolicyPlanner) readFile() ([]container, error) {
 	containerMetadataStartTime := time.Now()
@@ -88,6 +101,7 @@ func (p *VxlanPolicyPlanner) readFile() ([]container, error) {
 		}
 
 		allContainers = append(allContainers, container{
+			Handle:  containerMeta.Handle,
 			AppID:   policyGroupID,
 			SpaceID: spaceID,
 			Ports:   ports,
@@ -108,6 +122,23 @@ func extractGUIDs(allContainers []container) []string {
 		if container.AppID != "" {
 			allGUIDs[container.AppID] = nil
 		}
+		if container.SpaceID != "" {
+			allGUIDs[container.SpaceID] = nil
+		}
+	}
+
+	i := 0
+	guids := make([]string, len(allGUIDs))
+	for key := range allGUIDs {
+		guids[i] = key
+		i++
+	}
+	return guids
+}
+
+func extractSpaceGUIDs(allContainers []container) []string {
+	allGUIDs := make(map[string]interface{})
+	for _, container := range allContainers {
 		if container.SpaceID != "" {
 			allGUIDs[container.SpaceID] = nil
 		}

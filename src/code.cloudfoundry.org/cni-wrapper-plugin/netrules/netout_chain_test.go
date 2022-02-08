@@ -8,7 +8,6 @@ import (
 
 	"code.cloudfoundry.org/garden"
 
-	lib_fakes "code.cloudfoundry.org/lib/fakes"
 	"code.cloudfoundry.org/lib/rules"
 
 	. "github.com/onsi/ginkgo"
@@ -21,15 +20,12 @@ var _ = Describe("NetOutChain", func() {
 		netOutChain *netrules.NetOutChain
 		converter   *fakes.RuleConverter
 		chainNamer  *fakes.ChainNamer
-		ipTables    *lib_fakes.IPTablesAdapter
 	)
 	BeforeEach(func() {
 		chainNamer = &fakes.ChainNamer{}
 		converter = &fakes.RuleConverter{}
-		ipTables = &lib_fakes.IPTablesAdapter{}
 		netOutChain = &netrules.NetOutChain{
 			ChainNamer:       chainNamer,
-			IPTables:         ipTables,
 			Converter:        converter,
 			DeniedLogsPerSec: 3,
 			Conn: netrules.OutConn{
@@ -68,7 +64,7 @@ var _ = Describe("NetOutChain", func() {
 		})
 	})
 
-	Describe("BulkInsertRules", func() {
+	Describe("IPTablesRules", func() {
 		var (
 			netOutRules  []garden.NetOutRule
 			genericRules []rules.IPTablesRule
@@ -81,11 +77,12 @@ var _ = Describe("NetOutChain", func() {
 			}
 
 			converter.BulkConvertReturns(genericRules)
+
 		})
 
 		It("prepends allow rules to the container's netout chain", func() {
 			ruleSpec := netrules.NewRulesFromGardenNetOutRules(netOutRules)
-			err := netOutChain.BulkInsertRules("netout-some-container-handle", "some-container-handle", ruleSpec)
+			iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", ruleSpec)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(chainNamer.PostfixCallCount()).To(Equal(1))
@@ -99,19 +96,12 @@ var _ = Describe("NetOutChain", func() {
 			Expect(logChainName).To(Equal("some-other-chain-name"))
 			Expect(logging).To(Equal(false))
 
-			Expect(ipTables.BulkInsertCallCount()).To(Equal(1))
-			table, chain, pos, rulespec := ipTables.BulkInsertArgsForCall(0)
-
-			Expect(table).To(Equal("filter"))
-			Expect(chain).To(Equal("netout-some-container-handle"))
-			Expect(pos).To(Equal(1))
-
 			rulesWithDefaultAcceptReject := append(genericRules, []rules.IPTablesRule{
 				{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
 				{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
 			}...)
 
-			Expect(rulespec).To(Equal(rulesWithDefaultAcceptReject))
+			Expect(iptablesRules).To(Equal(rulesWithDefaultAcceptReject))
 		})
 
 		Context("when the chain namer fails", func() {
@@ -121,20 +111,8 @@ var _ = Describe("NetOutChain", func() {
 
 			It("returns the error", func() {
 				ruleSpec := netrules.NewRulesFromGardenNetOutRules(netOutRules)
-				err := netOutChain.BulkInsertRules("netout-some-container-handle", "some-container-handle", ruleSpec)
+				_, err := netOutChain.IPTablesRules("some-container-handle", ruleSpec)
 				Expect(err).To(MatchError("getting chain name: banana"))
-			})
-		})
-
-		Context("when bulk insert fails", func() {
-			BeforeEach(func() {
-				ipTables.BulkInsertReturns(errors.New("potato"))
-			})
-
-			It("returns an error", func() {
-				ruleSpec := netrules.NewRulesFromGardenNetOutRules(netOutRules)
-				err := netOutChain.BulkInsertRules("netout-some-container-handle", "some-container-handle", ruleSpec)
-				Expect(err).To(MatchError("bulk inserting net-out rules: potato"))
 			})
 		})
 
@@ -145,7 +123,7 @@ var _ = Describe("NetOutChain", func() {
 
 			It("calls BulkConvert with globalLogging set to true", func() {
 				ruleSpec := netrules.NewRulesFromGardenNetOutRules(netOutRules)
-				err := netOutChain.BulkInsertRules("netout-some-container-handle", "some-container-handle", ruleSpec)
+				_, err := netOutChain.IPTablesRules("some-container-handle", ruleSpec)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(converter.BulkConvertCallCount()).To(Equal(1))
@@ -168,10 +146,8 @@ var _ = Describe("NetOutChain", func() {
 					netOutChain.DenyNetworks = denyNetworks
 					netOutChain.DenyNetworks.Always = []string{"172.16.0.0/12"}
 
-					err := netOutChain.BulkInsertRules("netout-some-container-handle", "some-container-handle", netrules.NewRulesFromGardenNetOutRules(netOutRules))
+					iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", netrules.NewRulesFromGardenNetOutRules(netOutRules))
 					Expect(err).NotTo(HaveOccurred())
-
-					_, _, _, rulespec := ipTables.BulkInsertArgsForCall(0)
 
 					rulesWithDenyNetworksAndDefaults := append(
 						genericRules,
@@ -183,7 +159,7 @@ var _ = Describe("NetOutChain", func() {
 						}...,
 					)
 
-					Expect(rulespec).To(Equal(rulesWithDenyNetworksAndDefaults))
+					Expect(iptablesRules).To(Equal(rulesWithDenyNetworksAndDefaults))
 				},
 				Entry("when the workload is an app", "app", netrules.DenyNetworks{Running: []string{"192.168.0.0/16"}}),
 				Entry("when the workload is a task", "task", netrules.DenyNetworks{Running: []string{"192.168.0.0/16"}}),
@@ -200,10 +176,8 @@ var _ = Describe("NetOutChain", func() {
 						Staging: []string{"3.3.3.3/32"},
 					}
 
-					err := netOutChain.BulkInsertRules("netout-some-container-handle", "some-container-handle", netrules.NewRulesFromGardenNetOutRules(netOutRules))
+					iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", netrules.NewRulesFromGardenNetOutRules(netOutRules))
 					Expect(err).NotTo(HaveOccurred())
-
-					_, _, _, rulespec := ipTables.BulkInsertArgsForCall(0)
 
 					rulesWithDenyNetworksAndDefaults := append(
 						genericRules,
@@ -215,7 +189,7 @@ var _ = Describe("NetOutChain", func() {
 						}...,
 					)
 
-					Expect(rulespec).To(Equal(rulesWithDenyNetworksAndDefaults))
+					Expect(iptablesRules).To(Equal(rulesWithDenyNetworksAndDefaults))
 				},
 				Entry("when the workload is an app", "app", "2.2.2.2/32"),
 				Entry("when the workload is a task", "task", "2.2.2.2/32"),
@@ -238,15 +212,8 @@ var _ = Describe("NetOutChain", func() {
 				})
 
 				It("inserts the outbound connection rate limit rule", func() {
-					err := netOutChain.BulkInsertRules("netout-some-container-handle", "some-container-handle", netrules.NewRulesFromGardenNetOutRules(netOutRules))
+					iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", netrules.NewRulesFromGardenNetOutRules(netOutRules))
 					Expect(err).NotTo(HaveOccurred())
-
-					Expect(ipTables.BulkInsertCallCount()).To(Equal(1))
-					table, chain, pos, rulespec := ipTables.BulkInsertArgsForCall(0)
-
-					Expect(table).To(Equal("filter"))
-					Expect(chain).To(Equal("netout-some-container-handle"))
-					Expect(pos).To(Equal(1))
 
 					Expect(chainNamer.PostfixCallCount()).To(Equal(2))
 
@@ -265,7 +232,7 @@ var _ = Describe("NetOutChain", func() {
 						{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
 					}...)
 
-					Expect(rulespec).To(Equal(expectedRules))
+					Expect(iptablesRules).To(Equal(expectedRules))
 				})
 
 				Context("when the chain namer fails", func() {
@@ -275,7 +242,7 @@ var _ = Describe("NetOutChain", func() {
 						})
 
 						It("returns the error", func() {
-							err := netOutChain.BulkInsertRules("netout-some-container-handle", "some-container-handle", netrules.NewRulesFromGardenNetOutRules(netOutRules))
+							_, err := netOutChain.IPTablesRules("some-container-handle", netrules.NewRulesFromGardenNetOutRules(netOutRules))
 							Expect(err).To(MatchError("getting chain name: guacamole"))
 						})
 					})
@@ -288,15 +255,8 @@ var _ = Describe("NetOutChain", func() {
 				})
 
 				It("inserts the outbound connection rate limit rule", func() {
-					err := netOutChain.BulkInsertRules("netout-some-container-handle", "some-container-handle", netrules.NewRulesFromGardenNetOutRules(netOutRules))
+					iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", netrules.NewRulesFromGardenNetOutRules(netOutRules))
 					Expect(err).NotTo(HaveOccurred())
-
-					Expect(ipTables.BulkInsertCallCount()).To(Equal(1))
-					table, chain, pos, rulespec := ipTables.BulkInsertArgsForCall(0)
-
-					Expect(table).To(Equal("filter"))
-					Expect(chain).To(Equal("netout-some-container-handle"))
-					Expect(pos).To(Equal(1))
 
 					Expect(chainNamer.PostfixCallCount()).To(Equal(1))
 
@@ -315,7 +275,7 @@ var _ = Describe("NetOutChain", func() {
 						{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
 					}...)
 
-					Expect(rulespec).To(Equal(expectedRules))
+					Expect(iptablesRules).To(Equal(expectedRules))
 				})
 			})
 		})

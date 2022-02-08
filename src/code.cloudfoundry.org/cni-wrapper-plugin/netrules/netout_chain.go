@@ -11,7 +11,6 @@ import (
 
 type NetOutChain struct {
 	ChainNamer        chainNamer
-	IPTables          rules.IPTablesAdapter
 	Converter         ruleConverter
 	DenyNetworks      DenyNetworks
 	ASGLogging        bool
@@ -52,20 +51,24 @@ func (c *NetOutChain) DefaultRules(containerHandle string) []rules.IPTablesRule 
 	return ruleSpec
 }
 
-func (c *NetOutChain) BulkInsertRules(chain string, containerHandle string, ruleSpec []Rule) error {
-	logChainPrefix := c.ChainNamer.Prefix(prefixNetOut, containerHandle)
-	logChain, err := c.ChainNamer.Postfix(logChainPrefix, suffixNetOutLog)
+func (c *NetOutChain) Name(containerHandle string) string {
+	return c.ChainNamer.Prefix(prefixNetOut, containerHandle)
+}
+
+func (c *NetOutChain) IPTablesRules(containerHandle string, ruleSpec []Rule) ([]rules.IPTablesRule, error) {
+	forwardChainName := c.Name(containerHandle)
+	logChain, err := c.ChainNamer.Postfix(forwardChainName, suffixNetOutLog)
 	if err != nil {
-		return fmt.Errorf("getting chain name: %s", err)
+		return nil, fmt.Errorf("getting chain name: %s", err)
 	}
 
 	iptablesRules := c.Converter.BulkConvert(ruleSpec, logChain, c.ASGLogging)
 	iptablesRules = append(iptablesRules, c.denyNetworksRules()...)
 
 	if c.Conn.Limit {
-		rateLimitRule, err := c.rateLimitRule(chain, containerHandle)
+		rateLimitRule, err := c.rateLimitRule(forwardChainName, containerHandle)
 		if err != nil {
-			return fmt.Errorf("getting chain name: %s", err)
+			return nil, fmt.Errorf("getting chain name: %s", err)
 		}
 
 		iptablesRules = append(iptablesRules, rateLimitRule)
@@ -76,12 +79,7 @@ func (c *NetOutChain) BulkInsertRules(chain string, containerHandle string, rule
 		{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
 	}...)
 
-	err = c.IPTables.BulkInsert("filter", chain, 1, iptablesRules...)
-	if err != nil {
-		return fmt.Errorf("bulk inserting net-out rules: %s", err)
-	}
-
-	return nil
+	return iptablesRules, nil
 }
 
 func (c *NetOutChain) denyNetworksRules() []rules.IPTablesRule {
