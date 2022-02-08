@@ -15,6 +15,19 @@ consumes:
 - name: vpa
   type: policy-agent
 
+provides:
+- name: cni_config
+  type: cni_config
+  properties:
+  - iptables_logging
+  - iptables_denied_logs_per_sec
+  - deny_networks.always
+  - deny_networks.running
+  - deny_networks.staging
+  - outbound_connections.limit
+  - outbound_connections.burst
+  - outbound_connections.rate_per_sec
+
 properties:
   no_masquerade_cidr_range:
     description: "CIDR address block that should not be masqueraded.  Fallsback to cf_network.network link property if property is not provided."
@@ -27,6 +40,7 @@ properties:
   silk_daemon.listen_port:
     description: "Silk CNI plugin connects to the silk daemon on this port."
     default: 23954
+
   iptables_logging:
     description: "Enables iptables logging for overlay network policies, Application Security Groups and outbound container connection limits.  Logs to the kernel log."
     default: false

@@ -5,9 +5,22 @@
       'log_level' => p('log_level'),
       'log_prefix' => 'cfnetworking',
       'iptables_c2c_logging' => p('iptables_logging'),
+      'iptables_asg_logging' => link('cni_config').p('iptables_logging'),
       'iptables_accepted_udp_logs_per_sec' => p('iptables_accepted_udp_logs_per_sec'),
       'poll_interval' => p('policy_poll_interval_seconds'),
       'asg_poll_interval' => p('asg_poll_interval_seconds'),
+      'iptables_denied_logs_per_sec' => link('cni_config').p('iptables_denied_logs_per_sec'),
+      'deny_networks' => {
+        'always' => link('cni_config').p('deny_networks.always'),
+        'running' => link('cni_config').p('deny_networks.running'),
+        'staging' => link('cni_config').p('deny_networks.staging'),
+       },
+       'outbound_connections' => {
+         'limit' => link('cni_config').p('outbound_connections.limit'),
+         'logging' => link('cni_config').p('iptables_logging'),
+         'burst' => link('cni_config').p('outbound_connections.burst'),
+         'rate_per_sec' => link('cni_config').p('outbound_connections.rate_per_sec'),
+      },
 
       'policy_server_url' => "https://#{p('policy_server.hostname')}:#{p('policy_server.internal_listen_port')}",
       'metron_address' => "127.0.0.1:#{p('metron_port')}",

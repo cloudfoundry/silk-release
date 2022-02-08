@@ -25,6 +25,8 @@ provides:
 consumes:
 - name: cf_network
   type: cf_network
+- name: cni_config
+  type: cni_config
 
 properties:
   iptables_logging:
