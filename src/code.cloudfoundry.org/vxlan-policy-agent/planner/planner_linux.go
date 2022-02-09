@@ -236,7 +236,7 @@ func (p *VxlanPolicyPlanner) GetASGRulesAndChains() ([]enforcer.RulesWithChain, 
 
 		defaultRules := p.NetOutChain.DefaultRules(container.Handle)
 
-		iptablesRules, err := p.NetOutChain.IPTablesRules(container.Handle, ruleSpec)
+		iptablesRules, err := p.NetOutChain.IPTablesRules(container.Handle, container.Purpose, ruleSpec)
 		if err != nil {
 			p.Logger.Error("converting-to-iptables-rules", err)
 			continue

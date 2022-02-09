@@ -10,13 +10,12 @@ import (
 )
 
 type NetOutChain struct {
-	ChainNamer        chainNamer
-	Converter         ruleConverter
-	DenyNetworks      DenyNetworks
-	ASGLogging        bool
-	ContainerWorkload string
-	DeniedLogsPerSec  int
-	Conn              OutConn
+	ChainNamer       chainNamer
+	Converter        ruleConverter
+	DenyNetworks     DenyNetworks
+	ASGLogging       bool
+	DeniedLogsPerSec int
+	Conn             OutConn
 }
 
 func (c *NetOutChain) Validate() error {
@@ -55,7 +54,7 @@ func (c *NetOutChain) Name(containerHandle string) string {
 	return c.ChainNamer.Prefix(prefixNetOut, containerHandle)
 }
 
-func (c *NetOutChain) IPTablesRules(containerHandle string, ruleSpec []Rule) ([]rules.IPTablesRule, error) {
+func (c *NetOutChain) IPTablesRules(containerHandle string, containerWorkload string, ruleSpec []Rule) ([]rules.IPTablesRule, error) {
 	forwardChainName := c.Name(containerHandle)
 	logChain, err := c.ChainNamer.Postfix(forwardChainName, suffixNetOutLog)
 	if err != nil {
@@ -63,7 +62,7 @@ func (c *NetOutChain) IPTablesRules(containerHandle string, ruleSpec []Rule) ([]
 	}
 
 	iptablesRules := c.Converter.BulkConvert(ruleSpec, logChain, c.ASGLogging)
-	iptablesRules = append(iptablesRules, c.denyNetworksRules()...)
+	iptablesRules = append(iptablesRules, c.denyNetworksRules(containerWorkload)...)
 
 	if c.Conn.Limit {
 		rateLimitRule, err := c.rateLimitRule(forwardChainName, containerHandle)
@@ -82,20 +81,20 @@ func (c *NetOutChain) IPTablesRules(containerHandle string, ruleSpec []Rule) ([]
 	return iptablesRules, nil
 }
 
-func (c *NetOutChain) denyNetworksRules() []rules.IPTablesRule {
+func (c *NetOutChain) denyNetworksRules(containerWorkload string) []rules.IPTablesRule {
 	denyRules := []rules.IPTablesRule{}
 
 	for _, denyNetwork := range c.DenyNetworks.Always {
 		denyRules = append(denyRules, rules.NewInputRejectRule(denyNetwork))
 	}
 
-	if c.ContainerWorkload == "app" || c.ContainerWorkload == "task" {
+	if containerWorkload == "app" || containerWorkload == "task" {
 		for _, denyNetwork := range c.DenyNetworks.Running {
 			denyRules = append(denyRules, rules.NewInputRejectRule(denyNetwork))
 		}
 	}
 
-	if c.ContainerWorkload == "staging" {
+	if containerWorkload == "staging" {
 		for _, denyNetwork := range c.DenyNetworks.Staging {
 			denyRules = append(denyRules, rules.NewInputRejectRule(denyNetwork))
 		}

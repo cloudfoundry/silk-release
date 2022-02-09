@@ -26,8 +26,9 @@ var _ = Describe("Netout", func() {
 		converter = &fakes.RuleConverter{}
 		ipTables = &lib_fakes.IPTablesAdapter{}
 		netOutChain := &netrules.NetOutChain{
-			Converter:  converter,
-			ChainNamer: chainNamer,
+			Converter:    converter,
+			ChainNamer:   chainNamer,
+			DenyNetworks: netrules.DenyNetworks{Running: []string{"10.0.5.0/24"}},
 		}
 		netOut = &netrules.NetOut{
 			ChainNamer:            chainNamer,
@@ -40,6 +41,7 @@ var _ = Describe("Netout", func() {
 			AcceptedUDPLogsPerSec: 6,
 			ContainerIP:           "5.6.7.8",
 			ContainerHandle:       "some-container-handle",
+			ContainerWorkload:     "app",
 			Conn: netrules.OutConn{
 				Limit: false,
 			},
@@ -430,6 +432,11 @@ var _ = Describe("Netout", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(converter.BulkConvertCallCount()).To(Equal(1))
 			Expect(ipTables.BulkInsertCallCount()).To(Equal(1))
+			table, chain, index, iptablesRules := ipTables.BulkInsertArgsForCall(0)
+			Expect(table).To(Equal("filter"))
+			Expect(chain).To(Equal("netout-some-container-handle"))
+			Expect(index).To(Equal(1))
+			Expect(iptablesRules).To(ContainElement(rules.IPTablesRule{"-d", "10.0.5.0/24", "--jump", "REJECT", "--reject-with", "icmp-port-unreachable"}))
 		})
 	})
 

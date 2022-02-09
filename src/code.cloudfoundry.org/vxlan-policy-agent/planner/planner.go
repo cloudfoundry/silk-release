@@ -61,7 +61,7 @@ type loggingStateGetter interface {
 type netOutChain interface {
 	Name(containerHandle string) string
 	DefaultRules(containerHandle string) []rules.IPTablesRule
-	IPTablesRules(containerHandle string, ruleSpec []netrules.Rule) ([]rules.IPTablesRule, error)
+	IPTablesRules(containerHandle string, containerWorkload string, ruleSpec []netrules.Rule) ([]rules.IPTablesRule, error)
 }
 
 const metricContainerMetadata = "containerMetadataTime"

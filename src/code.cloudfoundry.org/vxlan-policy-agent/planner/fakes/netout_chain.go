@@ -20,11 +20,12 @@ type NetOutChain struct {
 	defaultRulesReturnsOnCall map[int]struct {
 		result1 []rules.IPTablesRule
 	}
-	IPTablesRulesStub        func(string, []netrules.Rule) ([]rules.IPTablesRule, error)
+	IPTablesRulesStub        func(string, string, []netrules.Rule) ([]rules.IPTablesRule, error)
 	iPTablesRulesMutex       sync.RWMutex
 	iPTablesRulesArgsForCall []struct {
 		arg1 string
-		arg2 []netrules.Rule
+		arg2 string
+		arg3 []netrules.Rule
 	}
 	iPTablesRulesReturns struct {
 		result1 []rules.IPTablesRule
@@ -110,24 +111,25 @@ func (fake *NetOutChain) DefaultRulesReturnsOnCall(i int, result1 []rules.IPTabl
 	}{result1}
 }
 
-func (fake *NetOutChain) IPTablesRules(arg1 string, arg2 []netrules.Rule) ([]rules.IPTablesRule, error) {
-	var arg2Copy []netrules.Rule
-	if arg2 != nil {
-		arg2Copy = make([]netrules.Rule, len(arg2))
-		copy(arg2Copy, arg2)
+func (fake *NetOutChain) IPTablesRules(arg1 string, arg2 string, arg3 []netrules.Rule) ([]rules.IPTablesRule, error) {
+	var arg3Copy []netrules.Rule
+	if arg3 != nil {
+		arg3Copy = make([]netrules.Rule, len(arg3))
+		copy(arg3Copy, arg3)
 	}
 	fake.iPTablesRulesMutex.Lock()
 	ret, specificReturn := fake.iPTablesRulesReturnsOnCall[len(fake.iPTablesRulesArgsForCall)]
 	fake.iPTablesRulesArgsForCall = append(fake.iPTablesRulesArgsForCall, struct {
 		arg1 string
-		arg2 []netrules.Rule
-	}{arg1, arg2Copy})
+		arg2 string
+		arg3 []netrules.Rule
+	}{arg1, arg2, arg3Copy})
 	stub := fake.IPTablesRulesStub
 	fakeReturns := fake.iPTablesRulesReturns
-	fake.recordInvocation("IPTablesRules", []interface{}{arg1, arg2Copy})
+	fake.recordInvocation("IPTablesRules", []interface{}{arg1, arg2, arg3Copy})
 	fake.iPTablesRulesMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2)
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -141,17 +143,17 @@ func (fake *NetOutChain) IPTablesRulesCallCount() int {
 	return len(fake.iPTablesRulesArgsForCall)
 }
 
-func (fake *NetOutChain) IPTablesRulesCalls(stub func(string, []netrules.Rule) ([]rules.IPTablesRule, error)) {
+func (fake *NetOutChain) IPTablesRulesCalls(stub func(string, string, []netrules.Rule) ([]rules.IPTablesRule, error)) {
 	fake.iPTablesRulesMutex.Lock()
 	defer fake.iPTablesRulesMutex.Unlock()
 	fake.IPTablesRulesStub = stub
 }
 
-func (fake *NetOutChain) IPTablesRulesArgsForCall(i int) (string, []netrules.Rule) {
+func (fake *NetOutChain) IPTablesRulesArgsForCall(i int) (string, string, []netrules.Rule) {
 	fake.iPTablesRulesMutex.RLock()
 	defer fake.iPTablesRulesMutex.RUnlock()
 	argsForCall := fake.iPTablesRulesArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *NetOutChain) IPTablesRulesReturns(result1 []rules.IPTablesRule, result2 error) {

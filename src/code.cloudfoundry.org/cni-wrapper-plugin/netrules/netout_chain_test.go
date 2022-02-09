@@ -82,7 +82,7 @@ var _ = Describe("NetOutChain", func() {
 
 		It("prepends allow rules to the container's netout chain", func() {
 			ruleSpec := netrules.NewRulesFromGardenNetOutRules(netOutRules)
-			iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", ruleSpec)
+			iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", "app", ruleSpec)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(chainNamer.PostfixCallCount()).To(Equal(1))
@@ -111,7 +111,7 @@ var _ = Describe("NetOutChain", func() {
 
 			It("returns the error", func() {
 				ruleSpec := netrules.NewRulesFromGardenNetOutRules(netOutRules)
-				_, err := netOutChain.IPTablesRules("some-container-handle", ruleSpec)
+				_, err := netOutChain.IPTablesRules("some-container-handle", "app", ruleSpec)
 				Expect(err).To(MatchError("getting chain name: banana"))
 			})
 		})
@@ -123,7 +123,7 @@ var _ = Describe("NetOutChain", func() {
 
 			It("calls BulkConvert with globalLogging set to true", func() {
 				ruleSpec := netrules.NewRulesFromGardenNetOutRules(netOutRules)
-				_, err := netOutChain.IPTablesRules("some-container-handle", ruleSpec)
+				_, err := netOutChain.IPTablesRules("some-container-handle", "app", ruleSpec)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(converter.BulkConvertCallCount()).To(Equal(1))
@@ -142,11 +142,10 @@ var _ = Describe("NetOutChain", func() {
 			DescribeTable(
 				"it should deny the workload networks and the 'all' networks",
 				func(workload string, denyNetworks netrules.DenyNetworks) {
-					netOutChain.ContainerWorkload = workload
 					netOutChain.DenyNetworks = denyNetworks
 					netOutChain.DenyNetworks.Always = []string{"172.16.0.0/12"}
 
-					iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", netrules.NewRulesFromGardenNetOutRules(netOutRules))
+					iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", workload, netrules.NewRulesFromGardenNetOutRules(netOutRules))
 					Expect(err).NotTo(HaveOccurred())
 
 					rulesWithDenyNetworksAndDefaults := append(
@@ -169,14 +168,13 @@ var _ = Describe("NetOutChain", func() {
 			DescribeTable(
 				"it should only deny the workload networks and the 'all' networks",
 				func(workload string, expectedDenyNetwork string) {
-					netOutChain.ContainerWorkload = workload
 					netOutChain.DenyNetworks = netrules.DenyNetworks{
 						Always:  []string{"1.1.1.1/32"},
 						Running: []string{"2.2.2.2/32"},
 						Staging: []string{"3.3.3.3/32"},
 					}
 
-					iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", netrules.NewRulesFromGardenNetOutRules(netOutRules))
+					iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", workload, netrules.NewRulesFromGardenNetOutRules(netOutRules))
 					Expect(err).NotTo(HaveOccurred())
 
 					rulesWithDenyNetworksAndDefaults := append(
@@ -212,7 +210,7 @@ var _ = Describe("NetOutChain", func() {
 				})
 
 				It("inserts the outbound connection rate limit rule", func() {
-					iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", netrules.NewRulesFromGardenNetOutRules(netOutRules))
+					iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", "app", netrules.NewRulesFromGardenNetOutRules(netOutRules))
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(chainNamer.PostfixCallCount()).To(Equal(2))
@@ -242,7 +240,7 @@ var _ = Describe("NetOutChain", func() {
 						})
 
 						It("returns the error", func() {
-							_, err := netOutChain.IPTablesRules("some-container-handle", netrules.NewRulesFromGardenNetOutRules(netOutRules))
+							_, err := netOutChain.IPTablesRules("some-container-handle", "app", netrules.NewRulesFromGardenNetOutRules(netOutRules))
 							Expect(err).To(MatchError("getting chain name: guacamole"))
 						})
 					})
@@ -255,7 +253,7 @@ var _ = Describe("NetOutChain", func() {
 				})
 
 				It("inserts the outbound connection rate limit rule", func() {
-					iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", netrules.NewRulesFromGardenNetOutRules(netOutRules))
+					iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", "app", netrules.NewRulesFromGardenNetOutRules(netOutRules))
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(chainNamer.PostfixCallCount()).To(Equal(1))
