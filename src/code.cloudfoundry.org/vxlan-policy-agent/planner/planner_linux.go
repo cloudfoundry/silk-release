@@ -245,7 +245,7 @@ func (p *VxlanPolicyPlanner) GetASGRulesAndChains() ([]enforcer.RulesWithChain, 
 			Chain: enforcer.Chain{
 				Table:       "filter",
 				ParentChain: parentChainName,
-				Prefix:      fmt.Sprintf("asg--%08d", i),
+				Prefix:      fmt.Sprintf("asg-%06d", i),
 			},
 			Rules: append(defaultRules, iptablesRules...),
 		})
