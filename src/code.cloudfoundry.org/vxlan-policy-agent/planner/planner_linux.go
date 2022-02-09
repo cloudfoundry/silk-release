@@ -241,17 +241,29 @@ func (p *VxlanPolicyPlanner) GetASGRulesAndChains() ([]enforcer.RulesWithChain, 
 			p.Logger.Error("converting-to-iptables-rules", err)
 			continue
 		}
+
 		rulesWithChains = append(rulesWithChains, enforcer.RulesWithChain{
 			Chain: enforcer.Chain{
 				Table:       "filter",
 				ParentChain: parentChainName,
 				Prefix:      fmt.Sprintf("asg-%06d", i),
 			},
-			Rules: append(defaultRules, iptablesRules...),
+			Rules: reverseOrderIptablesRules(iptablesRules, defaultRules),
 		})
 	}
 
 	return rulesWithChains, nil
+}
+func reverseOrderIptablesRules(iptablesRules, defaultRules []rules.IPTablesRule) []rules.IPTablesRule {
+	allRules := []rules.IPTablesRule{}
+	for i := len(iptablesRules) - 1; i >= 0; i-- {
+		allRules = append(allRules, iptablesRules[i])
+	}
+
+	for i := len(defaultRules) - 1; i >= 0; i-- {
+		allRules = append(allRules, defaultRules[i])
+	}
+	return allRules
 }
 
 func (p *VxlanPolicyPlanner) getContainerSecurityGroups(allContainers []container) ([]policy_client.SecurityGroup, error) {
