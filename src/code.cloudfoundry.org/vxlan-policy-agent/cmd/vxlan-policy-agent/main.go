@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cni-wrapper-plugin/adapter"
+	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
 	"code.cloudfoundry.org/lib/common"
 	"code.cloudfoundry.org/lib/datastore"
 	"code.cloudfoundry.org/lib/interfacelookup"
@@ -153,6 +154,28 @@ func main() {
 	if conf.IPTablesLogging {
 		iptablesLoggingState.Enable()
 	}
+	chainNamer := &netrules.ChainNamer{
+		MaxLength: 28,
+	}
+	outConn := netrules.OutConn{
+		Limit:      conf.OutConn.Limit,
+		Logging:    conf.OutConn.Logging,
+		Burst:      conf.OutConn.Burst,
+		RatePerSec: conf.OutConn.RatePerSec,
+	}
+
+	netOutChain := &netrules.NetOutChain{
+		ChainNamer: chainNamer,
+		Converter:  &netrules.RuleConverter{Logger: logger},
+		ASGLogging: conf.IPTablesASGLogging,
+		DenyNetworks: netrules.DenyNetworks{
+			Always:  conf.DenyNetworks.Always,
+			Running: conf.DenyNetworks.Running,
+			Staging: conf.DenyNetworks.Staging,
+		},
+		DeniedLogsPerSec: conf.IPTablesDeniedLogsPerSec,
+		Conn:             outConn,
+	}
 
 	dynamicPlanner := &planner.VxlanPolicyPlanner{
 		Datastore:     store,
@@ -169,6 +192,7 @@ func main() {
 		IPTablesAcceptedUDPLogsPerSec: conf.IPTablesAcceptedUDPLogsPerSec,
 		EnableOverlayIngressRules:     conf.EnableOverlayIngressRules,
 		HostInterfaceNames:            interfaceNames,
+		NetOutChain:                   netOutChain,
 	}
 
 	timestamper := &enforcer.Timestamper{}

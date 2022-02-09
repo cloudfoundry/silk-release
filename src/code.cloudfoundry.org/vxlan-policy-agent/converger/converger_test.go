@@ -323,9 +323,9 @@ var _ = Describe("Single Poll Cycle", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(metricsSender.SendDurationCallCount()).To(Equal(2))
 			name, _ := metricsSender.SendDurationArgsForCall(0)
-			Expect(name).To(Equal("ASGiptablesEnforceTime"))
+			Expect(name).To(Equal("asgIptablesEnforceTime"))
 			name, _ = metricsSender.SendDurationArgsForCall(1)
-			Expect(name).To(Equal("ASGtotalPollTime"))
+			Expect(name).To(Equal("asgTotalPollTime"))
 		})
 
 		Context("when a ruleset has not changed since the last poll cycle", func() {
@@ -414,7 +414,7 @@ var _ = Describe("Single Poll Cycle", func() {
 
 			It("logs the error and returns", func() {
 				err := p.DoASGCycle()
-				Expect(err).To(MatchError("get-ASG-rules: eggplant"))
+				Expect(err).To(MatchError("get-asg-rules: eggplant"))
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(0))
 				Expect(metricsSender.SendDurationCallCount()).To(Equal(0))
@@ -428,7 +428,7 @@ var _ = Describe("Single Poll Cycle", func() {
 
 			It("logs the error and returns", func() {
 				err := p.DoASGCycle()
-				Expect(err).To(MatchError("get-ASG-rules: eggplant"))
+				Expect(err).To(MatchError("get-asg-rules: eggplant"))
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(1))
 				Expect(metricsSender.SendDurationCallCount()).To(Equal(0))
@@ -442,7 +442,7 @@ var _ = Describe("Single Poll Cycle", func() {
 
 			It("logs the error and returns", func() {
 				err := p.DoASGCycle()
-				Expect(err).To(MatchError("get-ASG-rules: eggplant"))
+				Expect(err).To(MatchError("get-asg-rules: eggplant"))
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(2))
 				Expect(metricsSender.SendDurationCallCount()).To(Equal(0))
@@ -456,7 +456,7 @@ var _ = Describe("Single Poll Cycle", func() {
 
 			It("logs the error and returns", func() {
 				err := p.DoASGCycle()
-				Expect(err).To(MatchError("ASG enforce: eggplant"))
+				Expect(err).To(MatchError("enforce-asg: eggplant"))
 
 				Expect(metricsSender.SendDurationCallCount()).To(Equal(0))
 			})

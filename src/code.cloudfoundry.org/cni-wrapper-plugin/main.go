@@ -134,7 +134,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	netOutChain := &netrules.NetOutChain{
 		ChainNamer:       chainNamer,
-		Converter:        &netrules.RuleConverter{Logger: os.Stderr},
+		Converter:        &netrules.RuleConverter{LogWriter: os.Stderr},
 		ASGLogging:       cfg.IPTablesASGLogging,
 		DeniedLogsPerSec: cfg.IPTablesDeniedLogsPerSec,
 		DenyNetworks: netrules.DenyNetworks{
@@ -281,7 +281,7 @@ func cmdDel(args *skel.CmdArgs) error {
 
 	netOutChain := &netrules.NetOutChain{
 		ChainNamer: chainNamer,
-		Converter:  &netrules.RuleConverter{Logger: os.Stderr},
+		Converter:  &netrules.RuleConverter{LogWriter: os.Stderr},
 		Conn:       outConn,
 	}
 

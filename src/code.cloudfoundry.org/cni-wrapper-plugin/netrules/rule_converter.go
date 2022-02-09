@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 
+	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lib/rules"
 
 	"code.cloudfoundry.org/garden"
@@ -43,7 +45,8 @@ type Rule interface {
 }
 
 type RuleConverter struct {
-	Logger io.Writer
+	Logger    lager.Logger // used by vxlan-policy-agent
+	LogWriter io.Writer    // used by cni-wrapper-plugin
 }
 
 func (c *RuleConverter) BulkConvert(ruleSpec []Rule, logChainName string, globalLogging bool) []rules.IPTablesRule {
@@ -68,7 +71,7 @@ func (c *RuleConverter) Convert(rule Rule, logChainName string, globalLogging bo
 			fallthrough
 		case ProtocolUDP:
 			if len(ports) == 0 {
-				fmt.Fprintf(c.Logger, "UDP/TCP rule must specify ports: %+v\n", rule)
+				c.log("invalid-rule", "UDP/TCP rule must specify ports: %+v\n", rule)
 				continue
 			}
 			for _, portRange := range ports {
@@ -83,11 +86,11 @@ func (c *RuleConverter) Convert(rule Rule, logChainName string, globalLogging bo
 		case ProtocolICMP:
 			icmpInfo := rule.ICMPInfo()
 			if icmpInfo == nil {
-				fmt.Fprintf(c.Logger, "ICMP rule must specify ICMP type/code: %+v\n", rule)
+				c.log("invalid-rule", "ICMP rule must specify ICMP type/code: %+v\n", rule)
 				continue
 			}
 			if len(ports) > 0 {
-				fmt.Fprintf(c.Logger, "ICMP rule must not specify ports: %+v\n", rule)
+				c.log("invalid-rule", "ICMP rule must not specify ports: %+v\n", rule)
 				continue
 			}
 			if log {
@@ -97,7 +100,7 @@ func (c *RuleConverter) Convert(rule Rule, logChainName string, globalLogging bo
 			}
 		case ProtocolAll:
 			if len(ports) > 0 {
-				fmt.Fprintf(c.Logger, "Rule for all protocols (TCP/UDP/ICMP) must not specify ports: %+v\n", rule)
+				c.log("invalid-rule", "Rule for all protocols (TCP/UDP/ICMP) must not specify ports: %+v\n", rule)
 				continue
 			}
 			if log {
@@ -108,6 +111,17 @@ func (c *RuleConverter) Convert(rule Rule, logChainName string, globalLogging bo
 		}
 	}
 	return ruleSpec
+}
+
+func (c *RuleConverter) log(component, message string, args ...interface{}) {
+	if c.Logger != nil {
+		c.Logger.Error(component, fmt.Errorf(message, args...))
+	} else {
+		if !strings.HasSuffix(message, "\n") {
+			message = message + "\n"
+		}
+		fmt.Fprintf(c.LogWriter, message, args...)
+	}
 }
 
 func udpOrTcp(protocol garden.Protocol) bool {
