@@ -45,6 +45,10 @@ properties:
     description: "The VXLAN policy agent queries the policy server on this interval in seconds and updates local policy rules."
     default: 5
 
+  enable_asg_syncing:
+    description: "Enable dynamic updates to ASG rules for running containers"
+    default: true
+
   asg_poll_interval_seconds:
     description: "The VXLAN policy agent queries the policy server on this interval in seconds and updates local security groups rules."
     default: 60
