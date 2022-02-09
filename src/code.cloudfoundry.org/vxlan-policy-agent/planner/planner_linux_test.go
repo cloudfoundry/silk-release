@@ -1291,8 +1291,8 @@ var _ = Describe("Planner", func() {
 						}
 					}
 
-					Expect(containerRules1.Rules).To(Equal([]rules.IPTablesRule{{"rule-1"}, {"rule-2"}}))
-					Expect(containerRules2.Rules).To(Equal([]rules.IPTablesRule{{"rule-3"}, {"rule-4"}}))
+					Expect(containerRules1.Rules).To(Equal([]rules.IPTablesRule{{"rule-2"}, {"rule-1"}}))
+					Expect(containerRules2.Rules).To(Equal([]rules.IPTablesRule{{"rule-4"}, {"rule-3"}}))
 
 					Expect([]string{containerRules1.Chain.Prefix, containerRules2.Chain.Prefix}).To(ConsistOf("asg-000000", "asg-000001"))
 
@@ -1371,8 +1371,8 @@ var _ = Describe("Planner", func() {
 						}
 
 						By("assiging the correct rules to each container")
-						Expect(containerRules1.Rules).To(Equal([]rules.IPTablesRule{{"rule-1"}, {"rule-2"}}))
-						Expect(containerRules2.Rules).To(Equal([]rules.IPTablesRule{{"rule-3"}, {"rule-4"}}))
+						Expect(containerRules1.Rules).To(Equal([]rules.IPTablesRule{{"rule-2"}, {"rule-1"}}))
+						Expect(containerRules2.Rules).To(Equal([]rules.IPTablesRule{{"rule-4"}, {"rule-3"}}))
 
 						By("assigning unique prefixes to each container")
 						Expect([]string{containerRules1.Chain.Prefix, containerRules2.Chain.Prefix}).To(ConsistOf("asg-000000", "asg-000001"))
@@ -1414,7 +1414,7 @@ var _ = Describe("Planner", func() {
 			})
 
 			It("appends default iptables rules to the list", func() {
-				netOutChain.DefaultRulesReturns([]rules.IPTablesRule{{"default-rule"}})
+				netOutChain.DefaultRulesReturns([]rules.IPTablesRule{{"default-rule-1"}, {"default-rule-2"}})
 
 				rulesWithChains, err := policyPlanner.GetASGRulesAndChains()
 				Expect(err).NotTo(HaveOccurred())
@@ -1432,8 +1432,8 @@ var _ = Describe("Planner", func() {
 				}
 
 				By("assiging the correct rules to each container")
-				Expect(containerRules1.Rules).To(Equal([]rules.IPTablesRule{{"default-rule"}, {"rule-1"}, {"rule-2"}}))
-				Expect(containerRules2.Rules).To(Equal([]rules.IPTablesRule{{"default-rule"}, {"rule-3"}, {"rule-4"}}))
+				Expect(containerRules1.Rules).To(Equal([]rules.IPTablesRule{{"rule-2"}, {"rule-1"}, {"default-rule-2"}, {"default-rule-1"}}))
+				Expect(containerRules2.Rules).To(Equal([]rules.IPTablesRule{{"rule-4"}, {"rule-3"}, {"default-rule-2"}, {"default-rule-1"}}))
 				Expect(netOutChain.DefaultRulesCallCount()).To(Equal(2))
 				Expect(netOutChain.IPTablesRulesCallCount()).To(Equal(2))
 			})
