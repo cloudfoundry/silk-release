@@ -23,7 +23,7 @@ var _ = Describe("RuleConverter", func() {
 	BeforeEach(func() {
 		logChainName = "some-chain"
 		logger = &bytes.Buffer{}
-		converter = &netrules.RuleConverter{Logger: logger}
+		converter = &netrules.RuleConverter{LogWriter: logger}
 	})
 
 	Describe("Convert", func() {

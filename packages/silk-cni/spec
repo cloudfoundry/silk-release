@@ -30,6 +30,7 @@ files:
   - code.cloudfoundry.org/lib/interfacelookup/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/rules/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/serial/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/policy_client/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/cmd/silk-cni/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/cni/adapter/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/cni/config/*.go # gosub-main-module
