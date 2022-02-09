@@ -52,6 +52,9 @@ func NewSinglePollCycle(planners []Planner, re ruleEnforcer, ms metricsSender, l
 const metricEnforceDuration = "iptablesEnforceTime"
 const metricPollDuration = "totalPollTime"
 
+const metricASGEnforceDuration = "ASGiptablesEnforceTime"
+const metricASGPollDuration = "ASGtotalPollTime"
+
 func (m *SinglePollCycle) DoPolicyCycle() error {
 	m.policyMutex.Lock()
 
@@ -99,5 +102,50 @@ func (m *SinglePollCycle) DoPolicyCycle() error {
 }
 
 func (m *SinglePollCycle) DoASGCycle() error {
+	m.asgMutex.Lock()
+
+	if m.asgRuleSets == nil {
+		m.asgRuleSets = make(map[enforcer.Chain]enforcer.RulesWithChain)
+	}
+
+	pollStartTime := time.Now()
+	var enforceDuration time.Duration
+
+	for _, p := range m.planners {
+		asgrulesets, err := p.GetASGRulesAndChains()
+		if err != nil {
+			m.asgMutex.Unlock()
+			return fmt.Errorf("get-ASG-rules: %s", err)
+		}
+		enforceStartTime := time.Now()
+
+		for _, ruleset := range asgrulesets {
+			oldRuleSet := m.asgRuleSets[ruleset.Chain]
+			if !ruleset.Equals(oldRuleSet) {
+				m.logger.Debug("ASG-poll-cycle", lager.Data{
+					"message":       "updating iptables rules",
+					"num old rules": len(oldRuleSet.Rules),
+					"num new rules": len(ruleset.Rules),
+					"old rules":     oldRuleSet,
+					"new rules":     ruleset,
+				})
+				err = m.enforcer.EnforceRulesAndChain(ruleset)
+				if err != nil {
+					m.asgMutex.Unlock()
+					return fmt.Errorf("ASG enforce: %s", err)
+				}
+				m.asgRuleSets[ruleset.Chain] = ruleset
+			}
+		}
+
+		enforceDuration += time.Now().Sub(enforceStartTime)
+	}
+
+	m.asgMutex.Unlock()
+
+	pollDuration := time.Now().Sub(pollStartTime)
+	m.metricsSender.SendDuration(metricASGEnforceDuration, enforceDuration)
+	m.metricsSender.SendDuration(metricASGPollDuration, pollDuration)
+
 	return nil
 }
