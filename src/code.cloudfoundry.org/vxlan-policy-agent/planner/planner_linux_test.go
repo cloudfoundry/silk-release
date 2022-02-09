@@ -1294,7 +1294,7 @@ var _ = Describe("Planner", func() {
 					Expect(containerRules1.Rules).To(Equal([]rules.IPTablesRule{{"rule-1"}, {"rule-2"}}))
 					Expect(containerRules2.Rules).To(Equal([]rules.IPTablesRule{{"rule-3"}, {"rule-4"}}))
 
-					Expect([]string{containerRules1.Chain.Prefix, containerRules2.Chain.Prefix}).To(ConsistOf("asg--00000000", "asg--00000001"))
+					Expect([]string{containerRules1.Chain.Prefix, containerRules2.Chain.Prefix}).To(ConsistOf("asg-000000", "asg-000001"))
 
 					Expect(netOutChain.IPTablesRulesCallCount()).To(Equal(2))
 
@@ -1368,7 +1368,7 @@ var _ = Describe("Planner", func() {
 						Expect(containerRules2.Rules).To(Equal([]rules.IPTablesRule{{"rule-3"}, {"rule-4"}}))
 
 						By("assigning unique prefixes to each container")
-						Expect([]string{containerRules1.Chain.Prefix, containerRules2.Chain.Prefix}).To(ConsistOf("asg--00000000", "asg--00000001"))
+						Expect([]string{containerRules1.Chain.Prefix, containerRules2.Chain.Prefix}).To(ConsistOf("asg-000000", "asg-000001"))
 
 						Expect(netOutChain.IPTablesRulesCallCount()).To(Equal(2))
 
