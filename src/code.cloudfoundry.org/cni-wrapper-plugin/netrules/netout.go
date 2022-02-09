@@ -38,6 +38,7 @@ type NetOut struct {
 	DeniedLogsPerSec      int
 	AcceptedUDPLogsPerSec int
 	ContainerHandle       string
+	ContainerWorkload     string
 	ContainerIP           string
 	HostTCPServices       []string
 	HostUDPServices       []string
@@ -76,7 +77,7 @@ func (m *NetOut) Initialize() error {
 }
 
 func (m *NetOut) BulkInsertRules(ruleSpec []Rule) error {
-	iptablesRules, err := m.NetOutChain.IPTablesRules(m.ContainerHandle, ruleSpec)
+	iptablesRules, err := m.NetOutChain.IPTablesRules(m.ContainerHandle, m.ContainerWorkload, ruleSpec)
 	if err != nil {
 		return fmt.Errorf("bulk converting net-out rules: %s", err)
 	}

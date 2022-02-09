@@ -49,7 +49,7 @@ var _ = Describe("Planner", func() {
 		netOutChain.NameStub = func(handle string) string {
 			return "netout-" + handle
 		}
-		netOutChain.IPTablesRulesStub = func(containerHandle string, ruleSpec []netrules.Rule) ([]rules.IPTablesRule, error) {
+		netOutChain.IPTablesRulesStub = func(containerHandle string, containerWorkload string, ruleSpec []netrules.Rule) ([]rules.IPTablesRule, error) {
 			if containerHandle == "container-id-1" {
 				return []rules.IPTablesRule{{"rule-1"}, {"rule-2"}}, nil
 			} else if containerHandle == "container-id-2" {
@@ -1298,29 +1298,36 @@ var _ = Describe("Planner", func() {
 
 					Expect(netOutChain.IPTablesRulesCallCount()).To(Equal(2))
 
-					handle1, ruleSpec1 := netOutChain.IPTablesRulesArgsForCall(0)
-					handle2, ruleSpec2 := netOutChain.IPTablesRulesArgsForCall(1)
+					handle1, containerWorkload1, ruleSpec1 := netOutChain.IPTablesRulesArgsForCall(0)
+					handle2, containerWorkload2, ruleSpec2 := netOutChain.IPTablesRulesArgsForCall(1)
 
 					Expect([]string{handle1, handle2}).To(ConsistOf("container-id-1", "container-id-2"))
 
 					var receivedRunningRules, receivedStagingRules []netrules.Rule
+					var receivedRunningContainerWorkload, receivedStagingContainerWorkload string
 					if handle1 == "container-id-1" {
 						receivedRunningRules = ruleSpec1
 						receivedStagingRules = ruleSpec2
+						receivedRunningContainerWorkload = containerWorkload1
+						receivedStagingContainerWorkload = containerWorkload2
 					} else {
 						receivedRunningRules = ruleSpec2
 						receivedStagingRules = ruleSpec1
+						receivedRunningContainerWorkload = containerWorkload2
+						receivedStagingContainerWorkload = containerWorkload1
 					}
 
 					By("using running rules for container with running work load")
 					expectedRules, err := netrules.NewRulesFromSecurityGroupRules(expectedRunningRules)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(receivedRunningRules).To(Equal(expectedRules))
+					Expect(receivedRunningContainerWorkload).To(Equal("task"))
 
 					By("using staging rules for container with staging work load")
 					expectedRules, err = netrules.NewRulesFromSecurityGroupRules(expectedStagingRules)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(receivedStagingRules).To(Equal(expectedRules))
+					Expect(receivedStagingContainerWorkload).To(Equal("staging"))
 				})
 
 				Context("and there are also global security groups for staging and running", func() {
@@ -1372,29 +1379,36 @@ var _ = Describe("Planner", func() {
 
 						Expect(netOutChain.IPTablesRulesCallCount()).To(Equal(2))
 
-						handle1, ruleSpec1 := netOutChain.IPTablesRulesArgsForCall(0)
-						handle2, ruleSpec2 := netOutChain.IPTablesRulesArgsForCall(1)
+						handle1, containerWorkload1, ruleSpec1 := netOutChain.IPTablesRulesArgsForCall(0)
+						handle2, containerWorkload2, ruleSpec2 := netOutChain.IPTablesRulesArgsForCall(1)
 
 						Expect([]string{handle1, handle2}).To(ConsistOf("container-id-1", "container-id-2"))
 
 						var receivedRunningRules, receivedStagingRules []netrules.Rule
+						var receivedRunningContainerWorkload, receivedStagingContainerWorkload string
 						if handle1 == "container-id-1" {
 							receivedRunningRules = ruleSpec1
 							receivedStagingRules = ruleSpec2
+							receivedRunningContainerWorkload = containerWorkload1
+							receivedStagingContainerWorkload = containerWorkload2
 						} else {
 							receivedRunningRules = ruleSpec2
 							receivedStagingRules = ruleSpec1
+							receivedRunningContainerWorkload = containerWorkload2
+							receivedStagingContainerWorkload = containerWorkload1
 						}
 
 						By("using running rules for container with running work load")
 						expectedRules, err := netrules.NewRulesFromSecurityGroupRules(append(expectedGlobalRunningRules, expectedRunningRules...))
 						Expect(err).NotTo(HaveOccurred())
 						Expect(receivedRunningRules).To(Equal(expectedRules))
+						Expect(receivedRunningContainerWorkload).To(Equal("task"))
 
 						By("using staging rules for container with staging work load")
 						expectedRules, err = netrules.NewRulesFromSecurityGroupRules(append(expectedGlobalStagingRules, expectedStagingRules...))
 						Expect(err).NotTo(HaveOccurred())
 						Expect(receivedStagingRules).To(Equal(expectedRules))
+						Expect(receivedStagingContainerWorkload).To(Equal("staging"))
 					})
 				})
 			})

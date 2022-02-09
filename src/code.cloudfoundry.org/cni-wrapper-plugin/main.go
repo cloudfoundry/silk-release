@@ -142,8 +142,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 			Running: cfg.DenyNetworks.Running,
 			Staging: cfg.DenyNetworks.Staging,
 		},
-		ContainerWorkload: containerWorkload,
-		Conn:              outConn,
+		Conn: outConn,
 	}
 
 	netOutProvider := netrules.NetOut{
@@ -157,6 +156,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		VTEPName:              cfg.VTEPName,
 		HostInterfaceNames:    interfaceNames,
 		ContainerHandle:       args.ContainerID,
+		ContainerWorkload:     containerWorkload,
 		ContainerIP:           containerIP.String(),
 		HostTCPServices:       cfg.HostTCPServices,
 		HostUDPServices:       cfg.HostUDPServices,
