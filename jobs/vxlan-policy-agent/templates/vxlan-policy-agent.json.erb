@@ -8,6 +8,7 @@
       'iptables_asg_logging' => link('cni_config').p('iptables_logging'),
       'iptables_accepted_udp_logs_per_sec' => p('iptables_accepted_udp_logs_per_sec'),
       'poll_interval' => p('policy_poll_interval_seconds'),
+      'enable_asg_syncing' => p('enable_asg_syncing'),
       'asg_poll_interval' => p('asg_poll_interval_seconds'),
       'iptables_denied_logs_per_sec' => link('cni_config').p('iptables_denied_logs_per_sec'),
       'deny_networks' => {

@@ -236,9 +236,12 @@ func main() {
 	members := grouper.Members{
 		{"metrics_emitter", metricsEmitter},
 		{"policy_poller", policyPoller},
-		{"asg_poller", asgPoller},
 		{"debug-server", debugServer},
 		{"force-policy-poll-cycle-server", forcePolicyPollCycleServer},
+	}
+
+	if conf.EnableASGSyncing {
+		members = append(members, grouper.Member{"asg_poller", asgPoller})
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))

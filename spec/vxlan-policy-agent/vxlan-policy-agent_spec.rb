@@ -16,6 +16,7 @@ module Bosh::Template::Test
           'iptables_accepted_udp_logs_per_sec' => 33,
           'policy_poll_interval_seconds' => 22,
           'asg_poll_interval_seconds' => 66,
+          'enable_asg_syncing' => false,
           'policy_server' => {
             'hostname' => 'policy-server-hostname',
             'internal_listent_port' => 234,
@@ -80,6 +81,7 @@ module Bosh::Template::Test
               'enable_overlay_ingress_rules' => true,
               'policy_server_url' => 'https://policy-server-hostname:4003',
               'poll_interval' => 22,
+              'enable_asg_syncing' => false,
               'asg_poll_interval' => 66,
               'vni' => 1,
               'force_policy_poll_cycle_host' => '127.0.0.1',
