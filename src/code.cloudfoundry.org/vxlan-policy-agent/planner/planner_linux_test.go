@@ -1434,8 +1434,8 @@ var _ = Describe("Planner", func() {
 				}
 
 				By("assiging the correct rules to each container")
-				Expect(containerRules1.Rules).To(Equal([]rules.IPTablesRule{{"rule-2"}, {"rule-1"}, {"default-rule-2"}, {"default-rule-1"}}))
-				Expect(containerRules2.Rules).To(Equal([]rules.IPTablesRule{{"rule-4"}, {"rule-3"}, {"default-rule-2"}, {"default-rule-1"}}))
+				Expect(containerRules1.Rules).To(Equal([]rules.IPTablesRule{{"rule-2"}, {"rule-1"}, {"default-rule-1"}, {"default-rule-2"}}))
+				Expect(containerRules2.Rules).To(Equal([]rules.IPTablesRule{{"rule-4"}, {"rule-3"}, {"default-rule-1"}, {"default-rule-2"}}))
 				Expect(netOutChain.DefaultRulesCallCount()).To(Equal(2))
 				Expect(netOutChain.IPTablesRulesCallCount()).To(Equal(2))
 			})
