@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"code.cloudfoundry.org/lib/rules"
@@ -45,9 +44,10 @@ type EnforcerConfig struct {
 }
 
 type Chain struct {
-	Table       string
-	ParentChain string
-	Prefix      string
+	Table              string
+	ParentChain        string
+	Prefix             string
+	ManagedChainsRegex string
 }
 
 type RulesWithChain struct {
@@ -83,10 +83,16 @@ func (e *Enforcer) EnforceRulesAndChain(rulesAndChain RulesWithChain) error {
 }
 
 func (e *Enforcer) EnforceOnChain(c Chain, rules []rules.IPTablesRule) error {
-	return e.Enforce(c.Table, c.ParentChain, c.Prefix, rules...)
+	var managedChainsRegex string
+	if c.ManagedChainsRegex != "" {
+		managedChainsRegex = c.ManagedChainsRegex
+	} else {
+		managedChainsRegex = c.Prefix
+	}
+	return e.Enforce(c.Table, c.ParentChain, c.Prefix, managedChainsRegex, rules...)
 }
 
-func (e *Enforcer) Enforce(table, parentChain, chainPrefix string, rulespec ...rules.IPTablesRule) error {
+func (e *Enforcer) Enforce(table, parentChain, chainPrefix, managedChainsRegex string, rulespec ...rules.IPTablesRule) error {
 	newTime := e.timestamper.CurrentTime()
 	chain := fmt.Sprintf("%s%d", chainPrefix, newTime)
 
@@ -111,7 +117,7 @@ func (e *Enforcer) Enforce(table, parentChain, chainPrefix string, rulespec ...r
 		return fmt.Errorf("bulk appending: %s", err)
 	}
 
-	err = e.cleanupOldRules(table, parentChain, chainPrefix, newTime)
+	err = e.cleanupOldRules(table, parentChain, managedChainsRegex, newTime)
 	if err != nil {
 		e.Logger.Error("cleanup-rules", err)
 		return err
@@ -120,24 +126,24 @@ func (e *Enforcer) Enforce(table, parentChain, chainPrefix string, rulespec ...r
 	return nil
 }
 
-func (e *Enforcer) cleanupOldRules(table, parentChain, chainPrefix string, newTime int64) error {
+func (e *Enforcer) cleanupOldRules(table, parentChain, managedChainsRegex string, newTime int64) error {
 	chainList, err := e.iptables.List(table, parentChain)
 	if err != nil {
 		return fmt.Errorf("listing forward rules: %s", err)
 	}
 
-	re := regexp.MustCompile(chainPrefix + "[0-9]{10,16}")
+	re := regexp.MustCompile(managedChainsRegex + "([0-9]{10,16})")
 	for _, c := range chainList {
-		timeStampedChain := string(re.Find([]byte(c)))
+		matches := re.FindStringSubmatch(c)
 
-		if timeStampedChain != "" {
-			oldTime, err := strconv.ParseInt(strings.TrimPrefix(timeStampedChain, chainPrefix), 10, 64)
+		if len(matches) > 1 {
+			oldTime, err := strconv.ParseInt(matches[1], 10, 64)
 			if err != nil {
 				return err // not tested
 			}
 
 			if oldTime < newTime {
-				err = e.cleanupOldChain(table, parentChain, timeStampedChain)
+				err = e.cleanupOldChain(table, parentChain, matches[0])
 				if err != nil {
 					return err
 				}
