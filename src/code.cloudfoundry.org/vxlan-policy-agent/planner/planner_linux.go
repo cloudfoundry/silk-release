@@ -263,9 +263,9 @@ func reverseOrderIptablesRules(iptablesRules, defaultRules []rules.IPTablesRule)
 		allRules = append(allRules, iptablesRules[i])
 	}
 
-	for i := len(defaultRules) - 1; i >= 0; i-- {
-		allRules = append(allRules, defaultRules[i])
-	}
+	// default rules come in the correct order. we need to reverse-append the others above, so that the 'insert at 1'
+	// logic puts them above the default rules in the right order. then we can add default rules in the normal order
+	allRules = append(allRules, defaultRules...)
 	return allRules
 }
 
