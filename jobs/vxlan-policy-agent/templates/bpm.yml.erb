@@ -1,9 +1,9 @@
 ---
 processes:
   - name: vxlan-policy-agent
-    executable: "/var/vcap/packages/vxlan-policy-agent/bin/vxlan-policy-agent"
-    args:
-    - "-config-file=/var/vcap/jobs/vxlan-policy-agent/config/vxlan-policy-agent.json"
+    unsafe:
+      privileged: true
+    executable: "/var/vcap/jobs/vxlan-policy-agent/bin/start"
     additional_volumes:
     - path: /var/vcap/data/container-metadata
       writable: true

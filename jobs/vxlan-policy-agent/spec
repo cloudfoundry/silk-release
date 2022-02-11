@@ -2,6 +2,7 @@
 name: vxlan-policy-agent
 templates:
   bpm.yml.erb: config/bpm.yml
+  start.erb: bin/start
   pre-start.erb: bin/pre-start
   post-start.erb: bin/post-start
   vxlan-policy-agent.json.erb: config/vxlan-policy-agent.json
@@ -27,6 +28,9 @@ consumes:
   type: cf_network
 - name: cni_config
   type: cni_config
+- name: iptables
+  type: iptables
+  optional: true
 
 properties:
   iptables_logging:
