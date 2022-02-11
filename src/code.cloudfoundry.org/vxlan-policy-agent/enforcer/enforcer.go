@@ -48,6 +48,7 @@ type Chain struct {
 	ParentChain        string
 	Prefix             string
 	ManagedChainsRegex string
+	CleanUpParentChain bool
 }
 
 type RulesWithChain struct {
@@ -89,10 +90,10 @@ func (e *Enforcer) EnforceOnChain(c Chain, rules []rules.IPTablesRule) error {
 	} else {
 		managedChainsRegex = c.Prefix
 	}
-	return e.Enforce(c.Table, c.ParentChain, c.Prefix, managedChainsRegex, rules...)
+	return e.Enforce(c.Table, c.ParentChain, c.Prefix, managedChainsRegex, c.CleanUpParentChain, rules...)
 }
 
-func (e *Enforcer) Enforce(table, parentChain, chainPrefix, managedChainsRegex string, rulespec ...rules.IPTablesRule) error {
+func (e *Enforcer) Enforce(table, parentChain, chainPrefix, managedChainsRegex string, cleanupParentChain bool, rulespec ...rules.IPTablesRule) error {
 	newTime := e.timestamper.CurrentTime()
 	chain := fmt.Sprintf("%s%d", chainPrefix, newTime)
 
@@ -117,7 +118,7 @@ func (e *Enforcer) Enforce(table, parentChain, chainPrefix, managedChainsRegex s
 		return fmt.Errorf("bulk appending: %s", err)
 	}
 
-	err = e.cleanupOldRules(table, parentChain, managedChainsRegex, newTime)
+	err = e.cleanupOldRules(table, parentChain, managedChainsRegex, cleanupParentChain, newTime)
 	if err != nil {
 		e.Logger.Error("cleanup-rules", err)
 		return err
@@ -126,15 +127,17 @@ func (e *Enforcer) Enforce(table, parentChain, chainPrefix, managedChainsRegex s
 	return nil
 }
 
-func (e *Enforcer) cleanupOldRules(table, parentChain, managedChainsRegex string, newTime int64) error {
-	chainList, err := e.iptables.List(table, parentChain)
+func (e *Enforcer) cleanupOldRules(table, parentChain, managedChainsRegex string, cleanupParentChain bool, newTime int64) error {
+	rulesList, err := e.iptables.List(table, parentChain)
 	if err != nil {
 		return fmt.Errorf("listing forward rules: %s", err)
 	}
 
-	re := regexp.MustCompile(managedChainsRegex + "([0-9]{10,16})")
-	for _, c := range chainList {
-		matches := re.FindStringSubmatch(c)
+	reManagedChain := regexp.MustCompile(managedChainsRegex + "([0-9]{10,16})")
+	reOtherRules := regexp.MustCompile(fmt.Sprintf(`-A\s+%s\s+(.*)`, parentChain))
+
+	for _, r := range rulesList {
+		matches := reManagedChain.FindStringSubmatch(r)
 
 		if len(matches) > 1 {
 			oldTime, err := strconv.ParseInt(matches[1], 10, 64)
@@ -146,6 +149,17 @@ func (e *Enforcer) cleanupOldRules(table, parentChain, managedChainsRegex string
 				err = e.cleanupOldChain(table, parentChain, matches[0])
 				if err != nil {
 					return err
+				}
+			}
+		} else {
+			if cleanupParentChain {
+				matches := reOtherRules.FindStringSubmatch(r)
+
+				if len(matches) > 1 {
+					err := e.iptables.Delete(table, parentChain, rules.NewIPTablesRuleFromIPTablesLine(matches[1]))
+					if err != nil {
+						return fmt.Errorf("clean up parent chain: %s", err)
+					}
 				}
 			}
 		}

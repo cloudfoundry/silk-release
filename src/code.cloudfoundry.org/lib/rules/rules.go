@@ -8,6 +8,10 @@ import (
 
 type IPTablesRule []string
 
+func NewIPTablesRuleFromIPTablesLine(line string) IPTablesRule {
+	return strings.Fields(line)
+}
+
 func AppendComment(rule IPTablesRule, comment string) IPTablesRule {
 	comment = strings.Replace(comment, " ", "_", -1)
 	return IPTablesRule(

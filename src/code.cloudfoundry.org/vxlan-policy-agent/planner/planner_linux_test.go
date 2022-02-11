@@ -1296,6 +1296,7 @@ var _ = Describe("Planner", func() {
 
 					Expect([]string{containerRules1.Chain.Prefix, containerRules2.Chain.Prefix}).To(ConsistOf("asg-000000", "asg-000001"))
 					Expect([]string{containerRules1.Chain.ManagedChainsRegex, containerRules2.Chain.ManagedChainsRegex}).To(ConsistOf(planner.ASGManagedChainsRegex, planner.ASGManagedChainsRegex))
+					Expect([]bool{containerRules1.Chain.CleanUpParentChain, containerRules2.Chain.CleanUpParentChain}).To(ConsistOf(true, true))
 
 					Expect(netOutChain.IPTablesRulesCallCount()).To(Equal(2))
 
