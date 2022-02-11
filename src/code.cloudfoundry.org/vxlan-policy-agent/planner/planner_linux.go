@@ -250,6 +250,7 @@ func (p *VxlanPolicyPlanner) GetASGRulesAndChains() ([]enforcer.RulesWithChain, 
 				ParentChain:        parentChainName,
 				Prefix:             fmt.Sprintf("asg-%06d", i),
 				ManagedChainsRegex: ASGManagedChainsRegex,
+				CleanUpParentChain: true,
 			},
 			Rules: reverseOrderIptablesRules(iptablesRules, defaultRules),
 		})
