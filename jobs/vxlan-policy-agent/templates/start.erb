@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+<% if_link("iptables") do |iptables_link| %>
+export PATH="#{iptables_link["garden.iptables_bin_dir"]}:$PATH"
+<% end %>
+
+/var/vcap/packages/vxlan-policy-agent/bin/vxlan-policy-agent \
+  -config-file=/var/vcap/jobs/vxlan-policy-agent/config/vxlan-policy-agent.json
