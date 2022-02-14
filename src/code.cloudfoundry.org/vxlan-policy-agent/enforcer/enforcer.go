@@ -79,11 +79,11 @@ func (r *RulesWithChain) Equals(other RulesWithChain) bool {
 	return true
 }
 
-func (e *Enforcer) EnforceRulesAndChain(rulesAndChain RulesWithChain) error {
+func (e *Enforcer) EnforceRulesAndChain(rulesAndChain RulesWithChain) (string, error) {
 	return e.EnforceOnChain(rulesAndChain.Chain, rulesAndChain.Rules)
 }
 
-func (e *Enforcer) EnforceOnChain(c Chain, rules []rules.IPTablesRule) error {
+func (e *Enforcer) EnforceOnChain(c Chain, rules []rules.IPTablesRule) (string, error) {
 	var managedChainsRegex string
 	if c.ManagedChainsRegex != "" {
 		managedChainsRegex = c.ManagedChainsRegex
@@ -93,14 +93,14 @@ func (e *Enforcer) EnforceOnChain(c Chain, rules []rules.IPTablesRule) error {
 	return e.Enforce(c.Table, c.ParentChain, c.Prefix, managedChainsRegex, c.CleanUpParentChain, rules...)
 }
 
-func (e *Enforcer) Enforce(table, parentChain, chainPrefix, managedChainsRegex string, cleanupParentChain bool, rulespec ...rules.IPTablesRule) error {
+func (e *Enforcer) Enforce(table, parentChain, chainPrefix, managedChainsRegex string, cleanupParentChain bool, rulespec ...rules.IPTablesRule) (string, error) {
 	newTime := e.timestamper.CurrentTime()
 	chain := fmt.Sprintf("%s%d", chainPrefix, newTime)
 
 	err := e.iptables.NewChain(table, chain)
 	if err != nil {
 		e.Logger.Error("create-chain", err)
-		return fmt.Errorf("creating chain: %s", err)
+		return "", fmt.Errorf("creating chain: %s", err)
 	}
 
 	if e.conf.DisableContainerNetworkPolicy {
@@ -110,21 +110,21 @@ func (e *Enforcer) Enforce(table, parentChain, chainPrefix, managedChainsRegex s
 	err = e.iptables.BulkInsert(table, parentChain, 1, rules.IPTablesRule{"-j", chain})
 	if err != nil {
 		e.Logger.Error("insert-chain", err)
-		return fmt.Errorf("inserting chain: %s", err)
+		return "", fmt.Errorf("inserting chain: %s", err)
 	}
 
 	err = e.iptables.BulkAppend(table, chain, rulespec...)
 	if err != nil {
-		return fmt.Errorf("bulk appending: %s", err)
+		return "", fmt.Errorf("bulk appending: %s", err)
 	}
 
 	err = e.cleanupOldRules(table, parentChain, managedChainsRegex, cleanupParentChain, newTime)
 	if err != nil {
 		e.Logger.Error("cleanup-rules", err)
-		return err
+		return "", err
 	}
 
-	return nil
+	return chain, nil
 }
 
 func (e *Enforcer) cleanupOldRules(table, parentChain, managedChainsRegex string, cleanupParentChain bool, newTime int64) error {
@@ -174,12 +174,19 @@ func (e *Enforcer) cleanupOldChain(table, parentChain, timeStampedChain string) 
 		return fmt.Errorf("cleanup old chain: %s", err)
 	}
 
-	err = e.iptables.ClearChain(table, timeStampedChain)
+	err = e.DeleteChain(table, timeStampedChain)
+
+	return err
+}
+
+func (e *Enforcer) DeleteChain(table string, chain string) error {
+
+	err := e.iptables.ClearChain(table, chain)
 	if err != nil {
 		return fmt.Errorf("cleanup old chain: %s", err)
 	}
 
-	err = e.iptables.DeleteChain(table, timeStampedChain)
+	err = e.iptables.DeleteChain(table, chain)
 	if err != nil {
 		return fmt.Errorf("cleanup old chain: %s", err)
 	}

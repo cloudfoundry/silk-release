@@ -19,7 +19,8 @@ type Planner interface {
 
 //go:generate counterfeiter -o fakes/rule_enforcer.go --fake-name RuleEnforcer . ruleEnforcer
 type ruleEnforcer interface {
-	EnforceRulesAndChain(enforcer.RulesWithChain) error
+	EnforceRulesAndChain(enforcer.RulesWithChain) (string, error)
+	DeleteChain(chainName string, parentChain string) error
 }
 
 //go:generate counterfeiter -o fakes/metrics_sender.go --fake-name MetricsSender . metricsSender
@@ -28,14 +29,15 @@ type metricsSender interface {
 }
 
 type SinglePollCycle struct {
-	planners       []Planner
-	enforcer       ruleEnforcer
-	metricsSender  metricsSender
-	logger         lager.Logger
-	policyRuleSets map[enforcer.Chain]enforcer.RulesWithChain
-	asgRuleSets    map[enforcer.Chain]enforcer.RulesWithChain
-	policyMutex    sync.Locker
-	asgMutex       sync.Locker
+	planners            []Planner
+	enforcer            ruleEnforcer
+	metricsSender       metricsSender
+	logger              lager.Logger
+	policyRuleSets      map[enforcer.Chain]enforcer.RulesWithChain
+	asgRuleSets         map[enforcer.Chain]enforcer.RulesWithChain
+	containerToASGChain map[enforcer.Chain]string
+	policyMutex         sync.Locker
+	asgMutex            sync.Locker
 }
 
 func NewSinglePollCycle(planners []Planner, re ruleEnforcer, ms metricsSender, logger lager.Logger) *SinglePollCycle {
@@ -81,7 +83,7 @@ func (m *SinglePollCycle) DoPolicyCycle() error {
 				"old rules":     oldRuleSet,
 				"new rules":     ruleSet,
 			})
-			err = m.enforcer.EnforceRulesAndChain(ruleSet)
+			_, err = m.enforcer.EnforceRulesAndChain(ruleSet)
 			if err != nil {
 				m.policyMutex.Unlock()
 				return fmt.Errorf("enforce: %s", err)
@@ -107,6 +109,9 @@ func (m *SinglePollCycle) DoASGCycle() error {
 	if m.asgRuleSets == nil {
 		m.asgRuleSets = make(map[enforcer.Chain]enforcer.RulesWithChain)
 	}
+	if m.containerToASGChain == nil {
+		m.containerToASGChain = make(map[enforcer.Chain]string)
+	}
 
 	pollStartTime := time.Now()
 	var enforceDuration time.Duration
@@ -129,12 +134,25 @@ func (m *SinglePollCycle) DoASGCycle() error {
 					"old rules":     oldRuleSet,
 					"new rules":     ruleset,
 				})
-				err = m.enforcer.EnforceRulesAndChain(ruleset)
+				chain, err := m.enforcer.EnforceRulesAndChain(ruleset)
+				m.containerToASGChain[ruleset.Chain] = chain
+
 				if err != nil {
 					m.asgMutex.Unlock()
 					return fmt.Errorf("enforce-asg: %s", err)
 				}
 				m.asgRuleSets[ruleset.Chain] = ruleset
+			}
+		}
+		for parentChain, _ := range m.containerToASGChain {
+			if _, ok := m.asgRuleSets[parentChain]; !ok {
+				err := m.enforcer.DeleteChain(parentChain.Table, m.containerToASGChain[parentChain])
+				if err != nil {
+					m.asgMutex.Unlock()
+					return fmt.Errorf("clean-up-orphaned-asg-chains: %s", err)
+				}
+				delete(m.containerToASGChain, parentChain)
+				delete(m.asgRuleSets, parentChain)
 			}
 		}
 
