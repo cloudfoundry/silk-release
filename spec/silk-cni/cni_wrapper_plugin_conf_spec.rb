@@ -91,10 +91,11 @@ module Bosh::Template::Test
               'mtu' => 0
             },
             'outbound_connections' => {
-              'limit' => true,
-              'logging' => true,
+              'limit' => false,
+              'logging' => false,
               'burst' => 1000,
               'rate_per_sec' => 100,
+              'dry_run' => false,
             }
           }, {
             'name' => 'bandwidth-limit',
