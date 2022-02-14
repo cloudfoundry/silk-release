@@ -224,7 +224,7 @@ var _ = Describe("Single Poll Cycle", func() {
 
 		Context("when policy enforcer errors", func() {
 			BeforeEach(func() {
-				fakeEnforcer.EnforceRulesAndChainReturns(errors.New("eggplant"))
+				fakeEnforcer.EnforceRulesAndChainReturns("professional tests", errors.New("eggplant"))
 			})
 
 			It("logs the error and returns", func() {
@@ -372,6 +372,43 @@ var _ = Describe("Single Poll Cycle", func() {
 			})
 		})
 
+		Context("when an ASG ruleset is  present when there are no contianers associated with it", func() {
+			BeforeEach(func() {
+				//				create some fake ASG iptables
+				var orphanRulesWithChain []enforcer.RulesWithChain
+				orphanRulesWithChain = []enforcer.RulesWithChain{
+					{
+						Rules: []rules.IPTablesRule{[]string{"asg-rule"}},
+						Chain: enforcer.Chain{
+							Table:       "asg-table-orphan",
+							ParentChain: "INPUT",
+							Prefix:      "some-prefix-orphan",
+						},
+					},
+				}
+				fakeLocalPlanner.GetASGRulesAndChainsReturns(orphanRulesWithChain, nil)
+				err := p.DoASGCycle()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(3))
+			})
+
+			It("returns a error when attempting to delete extra ASG Rules ", func() {
+				err := p.DoASGCycle()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeEnforcer.DeleteChainCallCount()).To(Equal(1))
+				Expect(fakeEnforcer.DeleteChainArgsForCall(0)).To(Equal("raises for everybody!"))
+			})
+
+			It("removes the fake ASG iptables/rules", func() {
+
+			})
+
+			It("Does not removoe the valid ASG iptables/rules", func() {
+
+			})
+
+		})
+
 		Context("when a ruleset has all rules removed since the last poll cycle", func() {
 			BeforeEach(func() {
 				err := p.DoASGCycle()
@@ -451,7 +488,7 @@ var _ = Describe("Single Poll Cycle", func() {
 
 		Context("when ASG enforcer errors", func() {
 			BeforeEach(func() {
-				fakeEnforcer.EnforceRulesAndChainReturns(errors.New("eggplant"))
+				fakeEnforcer.EnforceRulesAndChainReturns("word string", errors.New("eggplant"))
 			})
 
 			It("logs the error and returns", func() {
