@@ -28,6 +28,7 @@ type OutConn struct {
 	Logging    bool
 	Burst      int
 	RatePerSec int
+	DryRun     bool
 }
 
 type NetOut struct {
