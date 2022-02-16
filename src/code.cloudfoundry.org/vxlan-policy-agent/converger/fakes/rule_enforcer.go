@@ -2,23 +2,26 @@
 package fakes
 
 import (
+	"regexp"
 	"sync"
 
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
 )
 
 type RuleEnforcer struct {
-	DeleteChainStub        func(string, string) error
-	deleteChainMutex       sync.RWMutex
-	deleteChainArgsForCall []struct {
-		arg1 string
-		arg2 string
+	EnforceChainsMatchingStub        func(*regexp.Regexp, []enforcer.LiveChain) ([]enforcer.LiveChain, error)
+	enforceChainsMatchingMutex       sync.RWMutex
+	enforceChainsMatchingArgsForCall []struct {
+		arg1 *regexp.Regexp
+		arg2 []enforcer.LiveChain
 	}
-	deleteChainReturns struct {
-		result1 error
+	enforceChainsMatchingReturns struct {
+		result1 []enforcer.LiveChain
+		result2 error
 	}
-	deleteChainReturnsOnCall map[int]struct {
-		result1 error
+	enforceChainsMatchingReturnsOnCall map[int]struct {
+		result1 []enforcer.LiveChain
+		result2 error
 	}
 	EnforceRulesAndChainStub        func(enforcer.RulesWithChain) (string, error)
 	enforceRulesAndChainMutex       sync.RWMutex
@@ -37,66 +40,74 @@ type RuleEnforcer struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *RuleEnforcer) DeleteChain(arg1 string, arg2 string) error {
-	fake.deleteChainMutex.Lock()
-	ret, specificReturn := fake.deleteChainReturnsOnCall[len(fake.deleteChainArgsForCall)]
-	fake.deleteChainArgsForCall = append(fake.deleteChainArgsForCall, struct {
-		arg1 string
-		arg2 string
-	}{arg1, arg2})
-	stub := fake.DeleteChainStub
-	fakeReturns := fake.deleteChainReturns
-	fake.recordInvocation("DeleteChain", []interface{}{arg1, arg2})
-	fake.deleteChainMutex.Unlock()
+func (fake *RuleEnforcer) EnforceChainsMatching(arg1 *regexp.Regexp, arg2 []enforcer.LiveChain) ([]enforcer.LiveChain, error) {
+	var arg2Copy []enforcer.LiveChain
+	if arg2 != nil {
+		arg2Copy = make([]enforcer.LiveChain, len(arg2))
+		copy(arg2Copy, arg2)
+	}
+	fake.enforceChainsMatchingMutex.Lock()
+	ret, specificReturn := fake.enforceChainsMatchingReturnsOnCall[len(fake.enforceChainsMatchingArgsForCall)]
+	fake.enforceChainsMatchingArgsForCall = append(fake.enforceChainsMatchingArgsForCall, struct {
+		arg1 *regexp.Regexp
+		arg2 []enforcer.LiveChain
+	}{arg1, arg2Copy})
+	stub := fake.EnforceChainsMatchingStub
+	fakeReturns := fake.enforceChainsMatchingReturns
+	fake.recordInvocation("EnforceChainsMatching", []interface{}{arg1, arg2Copy})
+	fake.enforceChainsMatchingMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2)
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	return fakeReturns.result1
+	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *RuleEnforcer) DeleteChainCallCount() int {
-	fake.deleteChainMutex.RLock()
-	defer fake.deleteChainMutex.RUnlock()
-	return len(fake.deleteChainArgsForCall)
+func (fake *RuleEnforcer) EnforceChainsMatchingCallCount() int {
+	fake.enforceChainsMatchingMutex.RLock()
+	defer fake.enforceChainsMatchingMutex.RUnlock()
+	return len(fake.enforceChainsMatchingArgsForCall)
 }
 
-func (fake *RuleEnforcer) DeleteChainCalls(stub func(string, string) error) {
-	fake.deleteChainMutex.Lock()
-	defer fake.deleteChainMutex.Unlock()
-	fake.DeleteChainStub = stub
+func (fake *RuleEnforcer) EnforceChainsMatchingCalls(stub func(*regexp.Regexp, []enforcer.LiveChain) ([]enforcer.LiveChain, error)) {
+	fake.enforceChainsMatchingMutex.Lock()
+	defer fake.enforceChainsMatchingMutex.Unlock()
+	fake.EnforceChainsMatchingStub = stub
 }
 
-func (fake *RuleEnforcer) DeleteChainArgsForCall(i int) (string, string) {
-	fake.deleteChainMutex.RLock()
-	defer fake.deleteChainMutex.RUnlock()
-	argsForCall := fake.deleteChainArgsForCall[i]
+func (fake *RuleEnforcer) EnforceChainsMatchingArgsForCall(i int) (*regexp.Regexp, []enforcer.LiveChain) {
+	fake.enforceChainsMatchingMutex.RLock()
+	defer fake.enforceChainsMatchingMutex.RUnlock()
+	argsForCall := fake.enforceChainsMatchingArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *RuleEnforcer) DeleteChainReturns(result1 error) {
-	fake.deleteChainMutex.Lock()
-	defer fake.deleteChainMutex.Unlock()
-	fake.DeleteChainStub = nil
-	fake.deleteChainReturns = struct {
-		result1 error
-	}{result1}
+func (fake *RuleEnforcer) EnforceChainsMatchingReturns(result1 []enforcer.LiveChain, result2 error) {
+	fake.enforceChainsMatchingMutex.Lock()
+	defer fake.enforceChainsMatchingMutex.Unlock()
+	fake.EnforceChainsMatchingStub = nil
+	fake.enforceChainsMatchingReturns = struct {
+		result1 []enforcer.LiveChain
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *RuleEnforcer) DeleteChainReturnsOnCall(i int, result1 error) {
-	fake.deleteChainMutex.Lock()
-	defer fake.deleteChainMutex.Unlock()
-	fake.DeleteChainStub = nil
-	if fake.deleteChainReturnsOnCall == nil {
-		fake.deleteChainReturnsOnCall = make(map[int]struct {
-			result1 error
+func (fake *RuleEnforcer) EnforceChainsMatchingReturnsOnCall(i int, result1 []enforcer.LiveChain, result2 error) {
+	fake.enforceChainsMatchingMutex.Lock()
+	defer fake.enforceChainsMatchingMutex.Unlock()
+	fake.EnforceChainsMatchingStub = nil
+	if fake.enforceChainsMatchingReturnsOnCall == nil {
+		fake.enforceChainsMatchingReturnsOnCall = make(map[int]struct {
+			result1 []enforcer.LiveChain
+			result2 error
 		})
 	}
-	fake.deleteChainReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
+	fake.enforceChainsMatchingReturnsOnCall[i] = struct {
+		result1 []enforcer.LiveChain
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *RuleEnforcer) EnforceRulesAndChain(arg1 enforcer.RulesWithChain) (string, error) {
@@ -166,8 +177,8 @@ func (fake *RuleEnforcer) EnforceRulesAndChainReturnsOnCall(i int, result1 strin
 func (fake *RuleEnforcer) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.deleteChainMutex.RLock()
-	defer fake.deleteChainMutex.RUnlock()
+	fake.enforceChainsMatchingMutex.RLock()
+	defer fake.enforceChainsMatchingMutex.RUnlock()
 	fake.enforceRulesAndChainMutex.RLock()
 	defer fake.enforceRulesAndChainMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

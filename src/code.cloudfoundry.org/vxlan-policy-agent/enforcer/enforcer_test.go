@@ -2,6 +2,8 @@ package enforcer_test
 
 import (
 	"errors"
+	"fmt"
+	"regexp"
 
 	libfakes "code.cloudfoundry.org/lib/fakes"
 	"code.cloudfoundry.org/lib/rules"
@@ -72,7 +74,7 @@ var _ = Describe("Enforcer", func() {
 
 		It("returns the chain it created", func() {
 
-			chain, err := ruleEnforcer.Enforce("some-table", "some-chain", "foo", "foo", []rules.IPTablesRule{fakeRule}...)
+			chain, err := ruleEnforcer.Enforce("some-table", "some-chain", "foo", "foo", false, []rules.IPTablesRule{fakeRule}...)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(iptables.NewChainCallCount()).To(Equal(1))
@@ -262,7 +264,7 @@ var _ = Describe("Enforcer", func() {
 
 			It("returns a useful error", func() {
 				_, err := ruleEnforcer.Enforce("some-table", "some-chain", "foo", "foo", false, []rules.IPTablesRule{fakeRule}...)
-				Expect(err).To(MatchError("cleanup old chain: banana"))
+				Expect(err).To(MatchError("remove reference to old chain: banana"))
 			})
 		})
 
@@ -307,29 +309,100 @@ var _ = Describe("Enforcer", func() {
 				Expect(rulespec).To(Equal([]rules.IPTablesRule{{"-s", "10.10.0.0/16", "-d", "10.10.0.0/16", "-j", "ACCEPT"}, {"rule1"}}))
 			})
 		})
-		Describe("DeleteChain", func() {
-			Context("When DeleteChain is called", func() {
+	})
+	Describe("EnforceChainMatching", func() {
 
-				It("calls ClearChain", func() {
-					err := ruleEnforcer.DeleteChain("some-table", "foo9999999999111110")
-					Expect(err).NotTo(HaveOccurred())
+		var (
+			iptables     *libfakes.IPTablesAdapter
+			timestamper  *fakes.TimeStamper
+			logger       *lagertest.TestLogger
+			ruleEnforcer *enforcer.Enforcer
+			fakeChain    []enforcer.LiveChain
+		)
+		BeforeEach(func() {
 
-					Expect(iptables.ClearChainCallCount()).To(Equal(1))
-					table, chain := iptables.ClearChainArgsForCall(0)
-					Expect(table).To(Equal("some-table"))
-					Expect(chain).To(Equal("foo9999999999111110"))
-				})
-				It("calls DeleteChain", func() {
-					err := ruleEnforcer.DeleteChain("some-table", "foo9999999999111110")
-					Expect(err).NotTo(HaveOccurred())
+			timestamper = &fakes.TimeStamper{}
+			logger = lagertest.NewTestLogger("test")
+			iptables = &libfakes.IPTablesAdapter{}
 
-					Expect(iptables.DeleteChainCallCount()).To(Equal(1))
-					table, chain := iptables.DeleteChainArgsForCall(0)
-					Expect(table).To(Equal("some-table"))
-					Expect(chain).To(Equal("foo9999999999111110"))
-				})
+			timestamper.CurrentTimeReturns(42)
+			ruleEnforcer = enforcer.NewEnforcer(logger, timestamper, iptables, enforcer.EnforcerConfig{DisableContainerNetworkPolicy: false, OverlayNetwork: "10.10.0.0/16"})
+
+			fakeChain = []enforcer.LiveChain{
+				{
+					Table: "somestuff",
+					Name:  "chain1",
+				},
+				{
+					Table: "some other stuff",
+					Name:  "chain2",
+				},
+			}
+
+			chainsForTable := map[string][]string{
+				"somestuff":        []string{"chain1", "donttouchme", "chain1234"},
+				"some other stuff": []string{"reallydonttouchme", "chain2"},
+			}
+
+			iptables.ListChainsStub = func(table string) ([]string, error) {
+				return chainsForTable[table], nil
+			}
+		})
+		It("Deletes orphaned chains", func() {
+			var listChainArgs []string
+			deletedChains, err := ruleEnforcer.EnforceChainsMatching(regexp.MustCompile("chain"), fakeChain)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(iptables.ListChainsCallCount()).To(Equal(2))
+
+			listChainArgs = append(listChainArgs, iptables.ListChainsArgsForCall(0))
+			listChainArgs = append(listChainArgs, iptables.ListChainsArgsForCall(1))
+			Expect(listChainArgs).To(ConsistOf([]string{"somestuff", "some other stuff"}))
+
+			Expect(iptables.DeleteChainCallCount()).To(Equal(1)) // BROKED
+			table, chain := iptables.DeleteChainArgsForCall(0)
+			Expect(table).To(Equal("somestuff"))
+			Expect(chain).To(Equal("chain1234"))
+
+			By("returning the list of chains deleted", func() {
+				Expect(deletedChains).To(Equal([]enforcer.LiveChain{{Table: "somestuff", Name: "chain1234"}}))
+			})
+			By("not deleting desired chains", func() {
+				for i := 0; i < iptables.DeleteCallCount(); i++ {
+					_, chain := iptables.DeleteChainArgsForCall(i)
+					Expect(chain).ToNot(BeElementOf([]string{"chain1", "chain2"}))
+				}
+				Expect(deletedChains).ToNot(ContainElements([]string{"chain1", "chain2"}))
+			})
+			By("not deleting chains outside the scope of our regex", func() {
+				for i := 0; i < iptables.DeleteCallCount(); i++ {
+					_, chain := iptables.DeleteChainArgsForCall(i)
+					Expect(chain).ToNot(BeElementOf([]string{"donttouchme", "reallydonttouchme"}))
+				}
+				Expect(deletedChains).ToNot(ContainElements([]string{"donttouchme", "reallydonttouchme"}))
 			})
 		})
+		Context("when ListChains returns an error", func() {
+			BeforeEach(func() {
+				iptables.ListChainsReturnsOnCall(0, []string{""}, fmt.Errorf("iptables list error"))
+			})
+			It("returns an error", func() {
+				_, err := ruleEnforcer.EnforceChainsMatching(regexp.MustCompile("chain"), fakeChain[0:1])
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(fmt.Errorf("listing chains in somestuff: iptables list error")))
+			})
+		})
+		Context("when DeleteChain returns an error", func() {
+			BeforeEach(func() {
+				iptables.DeleteChainReturns(fmt.Errorf("iptables delete chain error"))
+			})
+			It("returns an error", func() {
+				_, err := ruleEnforcer.EnforceChainsMatching(regexp.MustCompile("chain"), fakeChain[0:1])
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(fmt.Errorf("deleting chain chain1234 from table somestuff: delete old chain: iptables delete chain error")))
+			})
+		})
+
 	})
 	Describe("RulesWithChain", func() {
 		Describe("Equals", func() {

@@ -1294,7 +1294,7 @@ var _ = Describe("Planner", func() {
 					Expect(containerRules1.Rules).To(Equal([]rules.IPTablesRule{{"rule-2"}, {"rule-1"}}))
 					Expect(containerRules2.Rules).To(Equal([]rules.IPTablesRule{{"rule-4"}, {"rule-3"}}))
 
-					Expect([]string{containerRules1.Chain.Prefix, containerRules2.Chain.Prefix}).To(ConsistOf("asg-000000", "asg-000001"))
+					Expect([]string{containerRules1.Chain.Prefix, containerRules2.Chain.Prefix}).To(ConsistOf("asg-498471", "asg-2a07ad"))
 					Expect([]string{containerRules1.Chain.ManagedChainsRegex, containerRules2.Chain.ManagedChainsRegex}).To(ConsistOf(planner.ASGManagedChainsRegex, planner.ASGManagedChainsRegex))
 					Expect([]bool{containerRules1.Chain.CleanUpParentChain, containerRules2.Chain.CleanUpParentChain}).To(ConsistOf(true, true))
 
@@ -1377,7 +1377,7 @@ var _ = Describe("Planner", func() {
 						Expect(containerRules2.Rules).To(Equal([]rules.IPTablesRule{{"rule-4"}, {"rule-3"}}))
 
 						By("assigning unique prefixes to each container")
-						Expect([]string{containerRules1.Chain.Prefix, containerRules2.Chain.Prefix}).To(ConsistOf("asg-000000", "asg-000001"))
+						Expect([]string{containerRules1.Chain.Prefix, containerRules2.Chain.Prefix}).To(ConsistOf("asg-498471", "asg-2a07ad"))
 						Expect([]string{containerRules1.Chain.ManagedChainsRegex, containerRules2.Chain.ManagedChainsRegex}).To(ConsistOf(planner.ASGManagedChainsRegex, planner.ASGManagedChainsRegex))
 
 						Expect(netOutChain.IPTablesRulesCallCount()).To(Equal(2))

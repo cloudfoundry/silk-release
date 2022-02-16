@@ -51,6 +51,11 @@ type Chain struct {
 	CleanUpParentChain bool
 }
 
+type LiveChain struct {
+	Table string
+	Name  string
+}
+
 type RulesWithChain struct {
 	Chain Chain
 	Rules []rules.IPTablesRule
@@ -77,6 +82,43 @@ func (r *RulesWithChain) Equals(other RulesWithChain) bool {
 		}
 	}
 	return true
+}
+
+func (e *Enforcer) EnforceChainsMatching(regex *regexp.Regexp, desiredChains []LiveChain) ([]LiveChain, error) {
+	desiredMap := map[string]map[string]struct{}{}
+	for _, chain := range desiredChains {
+		if desiredMap[chain.Table] == nil {
+			desiredMap[chain.Table] = make(map[string]struct{})
+		}
+		desiredMap[chain.Table][chain.Name] = struct{}{}
+	}
+	// find everything we want to clean up
+	// by taking all the things that exist matching our regex
+	var chainsToDelete []LiveChain
+	for table, _ := range desiredMap {
+		allChains, err := e.iptables.ListChains(table)
+		if err != nil {
+			e.Logger.Error(fmt.Sprintf("list-chains-%s", table), err)
+			return []LiveChain{}, fmt.Errorf("listing chains in %s: %s", table, err)
+		}
+		// and subtracting all the things we were told to enforce
+		for _, chain := range allChains {
+			if regex.MatchString(chain) {
+				if _, ok := desiredMap[table][chain]; !ok {
+					chainsToDelete = append(chainsToDelete, LiveChain{Table: table, Name: chain})
+				}
+			}
+		}
+	}
+	for _, chain := range chainsToDelete {
+		err := e.deleteChain(chain)
+		if err != nil {
+			e.Logger.Error(fmt.Sprintf("delete-chain-%s-from-%s", chain.Name, chain.Table), err)
+			return []LiveChain{}, fmt.Errorf("deleting chain %s from table %s: %s", chain.Name, chain.Table, err)
+		}
+	}
+	return chainsToDelete, nil
+
 }
 
 func (e *Enforcer) EnforceRulesAndChain(rulesAndChain RulesWithChain) (string, error) {
@@ -146,7 +188,8 @@ func (e *Enforcer) cleanupOldRules(table, parentChain, managedChainsRegex string
 			}
 
 			if oldTime < newTime {
-				err = e.cleanupOldChain(table, parentChain, matches[0])
+				e.Logger.Debug("cleaning up old chain")
+				err = e.cleanupOldChain(LiveChain{Table: table, Name: matches[0]}, parentChain)
 				if err != nil {
 					return err
 				}
@@ -168,27 +211,26 @@ func (e *Enforcer) cleanupOldRules(table, parentChain, managedChainsRegex string
 	return nil
 }
 
-func (e *Enforcer) cleanupOldChain(table, parentChain, timeStampedChain string) error {
-	err := e.iptables.Delete(table, parentChain, rules.IPTablesRule{"-j", timeStampedChain})
+func (e *Enforcer) cleanupOldChain(chain LiveChain, parentChain string) error {
+	err := e.iptables.Delete(chain.Table, parentChain, rules.IPTablesRule{"-j", chain.Name})
 	if err != nil {
-		return fmt.Errorf("cleanup old chain: %s", err)
+		return fmt.Errorf("remove reference to old chain: %s", err)
 	}
 
-	err = e.DeleteChain(table, timeStampedChain)
+	err = e.deleteChain(chain)
 
 	return err
 }
 
-func (e *Enforcer) DeleteChain(table string, chain string) error {
-
-	err := e.iptables.ClearChain(table, chain)
+func (e *Enforcer) deleteChain(chain LiveChain) error {
+	err := e.iptables.ClearChain(chain.Table, chain.Name)
 	if err != nil {
 		return fmt.Errorf("cleanup old chain: %s", err)
 	}
 
-	err = e.iptables.DeleteChain(table, chain)
+	err = e.iptables.DeleteChain(chain.Table, chain.Name)
 	if err != nil {
-		return fmt.Errorf("cleanup old chain: %s", err)
+		return fmt.Errorf("delete old chain: %s", err)
 	}
 
 	return nil

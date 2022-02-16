@@ -8,10 +8,10 @@ import (
 )
 
 type CommandRunner struct {
-	CombinedOutputStub        func(command runner.Command) ([]byte, error)
+	CombinedOutputStub        func(runner.Command) ([]byte, error)
 	combinedOutputMutex       sync.RWMutex
 	combinedOutputArgsForCall []struct {
-		command runner.Command
+		arg1 runner.Command
 	}
 	combinedOutputReturns struct {
 		result1 []byte
@@ -25,21 +25,23 @@ type CommandRunner struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *CommandRunner) CombinedOutput(command runner.Command) ([]byte, error) {
+func (fake *CommandRunner) CombinedOutput(arg1 runner.Command) ([]byte, error) {
 	fake.combinedOutputMutex.Lock()
 	ret, specificReturn := fake.combinedOutputReturnsOnCall[len(fake.combinedOutputArgsForCall)]
 	fake.combinedOutputArgsForCall = append(fake.combinedOutputArgsForCall, struct {
-		command runner.Command
-	}{command})
-	fake.recordInvocation("CombinedOutput", []interface{}{command})
+		arg1 runner.Command
+	}{arg1})
+	stub := fake.CombinedOutputStub
+	fakeReturns := fake.combinedOutputReturns
+	fake.recordInvocation("CombinedOutput", []interface{}{arg1})
 	fake.combinedOutputMutex.Unlock()
-	if fake.CombinedOutputStub != nil {
-		return fake.CombinedOutputStub(command)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.combinedOutputReturns.result1, fake.combinedOutputReturns.result2
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *CommandRunner) CombinedOutputCallCount() int {
@@ -48,13 +50,22 @@ func (fake *CommandRunner) CombinedOutputCallCount() int {
 	return len(fake.combinedOutputArgsForCall)
 }
 
+func (fake *CommandRunner) CombinedOutputCalls(stub func(runner.Command) ([]byte, error)) {
+	fake.combinedOutputMutex.Lock()
+	defer fake.combinedOutputMutex.Unlock()
+	fake.CombinedOutputStub = stub
+}
+
 func (fake *CommandRunner) CombinedOutputArgsForCall(i int) runner.Command {
 	fake.combinedOutputMutex.RLock()
 	defer fake.combinedOutputMutex.RUnlock()
-	return fake.combinedOutputArgsForCall[i].command
+	argsForCall := fake.combinedOutputArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *CommandRunner) CombinedOutputReturns(result1 []byte, result2 error) {
+	fake.combinedOutputMutex.Lock()
+	defer fake.combinedOutputMutex.Unlock()
 	fake.CombinedOutputStub = nil
 	fake.combinedOutputReturns = struct {
 		result1 []byte
@@ -63,6 +74,8 @@ func (fake *CommandRunner) CombinedOutputReturns(result1 []byte, result2 error) 
 }
 
 func (fake *CommandRunner) CombinedOutputReturnsOnCall(i int, result1 []byte, result2 error) {
+	fake.combinedOutputMutex.Lock()
+	defer fake.combinedOutputMutex.Unlock()
 	fake.CombinedOutputStub = nil
 	if fake.combinedOutputReturnsOnCall == nil {
 		fake.combinedOutputReturnsOnCall = make(map[int]struct {
@@ -81,7 +94,11 @@ func (fake *CommandRunner) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.combinedOutputMutex.RLock()
 	defer fake.combinedOutputMutex.RUnlock()
-	return fake.invocations
+	copiedInvocations := map[string][][]interface{}{}
+	for key, value := range fake.invocations {
+		copiedInvocations[key] = value
+	}
+	return copiedInvocations
 }
 
 func (fake *CommandRunner) recordInvocation(key string, args []interface{}) {

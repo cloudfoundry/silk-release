@@ -2,9 +2,11 @@ package converger
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
+	"code.cloudfoundry.org/vxlan-policy-agent/planner"
 
 	"sync"
 
@@ -20,7 +22,7 @@ type Planner interface {
 //go:generate counterfeiter -o fakes/rule_enforcer.go --fake-name RuleEnforcer . ruleEnforcer
 type ruleEnforcer interface {
 	EnforceRulesAndChain(enforcer.RulesWithChain) (string, error)
-	DeleteChain(chainName string, parentChain string) error
+	EnforceChainsMatching(regex *regexp.Regexp, desiredChains []enforcer.LiveChain) ([]enforcer.LiveChain, error)
 }
 
 //go:generate counterfeiter -o fakes/metrics_sender.go --fake-name MetricsSender . metricsSender
@@ -34,8 +36,8 @@ type SinglePollCycle struct {
 	metricsSender       metricsSender
 	logger              lager.Logger
 	policyRuleSets      map[enforcer.Chain]enforcer.RulesWithChain
-	asgRuleSets         map[enforcer.Chain]enforcer.RulesWithChain
-	containerToASGChain map[enforcer.Chain]string
+	asgRuleSets         map[enforcer.LiveChain]enforcer.RulesWithChain
+	containerToASGChain map[enforcer.LiveChain]string
 	policyMutex         sync.Locker
 	asgMutex            sync.Locker
 }
@@ -55,6 +57,7 @@ const metricEnforceDuration = "iptablesEnforceTime"
 const metricPollDuration = "totalPollTime"
 
 const metricASGEnforceDuration = "asgIptablesEnforceTime"
+const metricASGCleanupDuration = "asgIptablesCleanupTime"
 const metricASGPollDuration = "asgTotalPollTime"
 
 func (m *SinglePollCycle) DoPolicyCycle() error {
@@ -107,14 +110,17 @@ func (m *SinglePollCycle) DoASGCycle() error {
 	m.asgMutex.Lock()
 
 	if m.asgRuleSets == nil {
-		m.asgRuleSets = make(map[enforcer.Chain]enforcer.RulesWithChain)
+		m.asgRuleSets = make(map[enforcer.LiveChain]enforcer.RulesWithChain)
 	}
 	if m.containerToASGChain == nil {
-		m.containerToASGChain = make(map[enforcer.Chain]string)
+		m.containerToASGChain = make(map[enforcer.LiveChain]string)
 	}
 
 	pollStartTime := time.Now()
 	var enforceDuration time.Duration
+
+	var allRuleSets []enforcer.RulesWithChain
+	var desiredChains []enforcer.LiveChain
 
 	for _, p := range m.planners {
 		asgrulesets, err := p.GetASGRulesAndChains()
@@ -122,10 +128,13 @@ func (m *SinglePollCycle) DoASGCycle() error {
 			m.asgMutex.Unlock()
 			return fmt.Errorf("get-asg-rules: %s", err)
 		}
+
 		enforceStartTime := time.Now()
 
+		allRuleSets = append(allRuleSets, asgrulesets...)
 		for _, ruleset := range asgrulesets {
-			oldRuleSet := m.asgRuleSets[ruleset.Chain]
+			chainKey := enforcer.LiveChain{Table: ruleset.Chain.Table, Name: ruleset.Chain.ParentChain}
+			oldRuleSet := m.asgRuleSets[chainKey]
 			if !ruleset.Equals(oldRuleSet) {
 				m.logger.Debug("poll-cycle-asg", lager.Data{
 					"message":       "updating iptables rules",
@@ -135,35 +144,55 @@ func (m *SinglePollCycle) DoASGCycle() error {
 					"new rules":     ruleset,
 				})
 				chain, err := m.enforcer.EnforceRulesAndChain(ruleset)
-				m.containerToASGChain[ruleset.Chain] = chain
+				m.containerToASGChain[chainKey] = chain
 
 				if err != nil {
 					m.asgMutex.Unlock()
 					return fmt.Errorf("enforce-asg: %s", err)
 				}
-				m.asgRuleSets[ruleset.Chain] = ruleset
+				m.asgRuleSets[chainKey] = ruleset
 			}
+			desiredChains = append(desiredChains, enforcer.LiveChain{Table: ruleset.Chain.Table, Name: m.containerToASGChain[chainKey]})
 		}
-		for parentChain, _ := range m.containerToASGChain {
-			if _, ok := m.asgRuleSets[parentChain]; !ok {
-				err := m.enforcer.DeleteChain(parentChain.Table, m.containerToASGChain[parentChain])
-				if err != nil {
-					m.asgMutex.Unlock()
-					return fmt.Errorf("clean-up-orphaned-asg-chains: %s", err)
-				}
-				delete(m.containerToASGChain, parentChain)
-				delete(m.asgRuleSets, parentChain)
-			}
-		}
-
 		enforceDuration += time.Now().Sub(enforceStartTime)
 	}
+
+	cleanupStart := time.Now()
+	deletedChains, err := m.enforcer.EnforceChainsMatching(regexp.MustCompile(planner.ASGManagedChainsRegex), desiredChains)
+	if err != nil {
+		m.asgMutex.Unlock()
+		return fmt.Errorf("clean-up-orphaned-asg-chains: %s", err)
+	}
+	m.logger.Debug("policy-cycle-asg", lager.Data{
+		"message": "deleted-orphaned-chains",
+		"chains":  deletedChains,
+	})
+
+	for chainKey, chainName := range m.containerToASGChain {
+		for _, deletedChain := range deletedChains {
+			if deletedChain.Table == chainKey.Table && deletedChain.Name == chainName {
+				delete(m.containerToASGChain, chainKey)
+				delete(m.asgRuleSets, chainKey)
+			}
+		}
+	}
+	cleanupDuration := time.Now().Sub(cleanupStart)
 
 	m.asgMutex.Unlock()
 
 	pollDuration := time.Now().Sub(pollStartTime)
 	m.metricsSender.SendDuration(metricASGEnforceDuration, enforceDuration)
+	m.metricsSender.SendDuration(metricASGCleanupDuration, cleanupDuration)
 	m.metricsSender.SendDuration(metricASGPollDuration, pollDuration)
 
 	return nil
+}
+
+// used to test that we're deleting the right chains and nothing else
+func (m *SinglePollCycle) CurrentlyAppliedChainNames() []string {
+	chains := []string{}
+	for _, chain := range m.containerToASGChain {
+		chains = append(chains, chain)
+	}
+	return chains
 }
