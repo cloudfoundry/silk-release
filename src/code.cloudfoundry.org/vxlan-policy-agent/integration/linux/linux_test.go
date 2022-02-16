@@ -342,13 +342,13 @@ var _ = Describe("VXLAN Policy Agent", func() {
 					})
 
 					It("sets rules for asgs", func() {
-						Eventually(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-\d+ -m state --state RELATED,ESTABLISHED -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-\d+ -p tcp -m state --state INVALID -j DROP`))
+						Eventually(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m state --state RELATED,ESTABLISHED -j ACCEPT`))
+						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p tcp -m state --state INVALID -j DROP`))
 						Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j asg-\d+`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-\d+ -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-\d+ -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-\d+ -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-\d+ -j REJECT --reject-with icmp-port-unreachable`))
+						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT`))
+						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
+						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
+						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -j REJECT --reject-with icmp-port-unreachable`))
 					})
 
 					Context("when the container is staging", func() {
@@ -370,10 +370,10 @@ var _ = Describe("VXLAN Policy Agent", func() {
 						})
 
 						It("enforces the egress policies for staging", func() {
-							Eventually(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-\d+ -p tcp -m iprange --dst-range 10.0.11.0-10.0.11.255 -m tcp --dport 443 -g netout--some-handle--log`))
-							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-\d+ -p tcp -m iprange --dst-range 10.0.11.0-10.0.11.255 -m tcp --dport 80 -g netout--some-handle--log`))
-							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-\d+ -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
-							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-\d+ -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
+							Eventually(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p tcp -m iprange --dst-range 10.0.11.0-10.0.11.255 -m tcp --dport 443 -g netout--some-handle--log`))
+							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p tcp -m iprange --dst-range 10.0.11.0-10.0.11.255 -m tcp --dport 80 -g netout--some-handle--log`))
+							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
+							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
 						})
 					})
 				})
