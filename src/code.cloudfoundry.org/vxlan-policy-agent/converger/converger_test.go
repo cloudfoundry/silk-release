@@ -2,11 +2,14 @@ package converger_test
 
 import (
 	"errors"
+	"fmt"
+	"regexp"
 
 	"code.cloudfoundry.org/lib/rules"
 	"code.cloudfoundry.org/vxlan-policy-agent/converger"
 	"code.cloudfoundry.org/vxlan-policy-agent/converger/fakes"
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
+	"code.cloudfoundry.org/vxlan-policy-agent/planner"
 
 	"code.cloudfoundry.org/lager/lagertest"
 
@@ -257,6 +260,10 @@ var _ = Describe("Single Poll Cycle", func() {
 			metricsSender = &fakes.MetricsSender{}
 			logger = lagertest.NewTestLogger("test")
 
+			fakeEnforcer.EnforceRulesAndChainStub = func(chain enforcer.RulesWithChain) (string, error) {
+				return fmt.Sprintf("%s-with-suffix", chain.Chain.Prefix), nil
+			}
+
 			p = converger.NewSinglePollCycle(
 				[]converger.Planner{fakeLocalPlanner, fakeRemotePlanner, fakeASGPlanner},
 				fakeEnforcer,
@@ -269,8 +276,8 @@ var _ = Describe("Single Poll Cycle", func() {
 					Rules: []rules.IPTablesRule{[]string{"local-rule"}},
 					Chain: enforcer.Chain{
 						Table:       "local-table",
-						ParentChain: "INPUT",
-						Prefix:      "some-prefix",
+						ParentChain: "local-1234",
+						Prefix:      "local-prefix",
 					},
 				},
 			}
@@ -280,8 +287,8 @@ var _ = Describe("Single Poll Cycle", func() {
 					Rules: []rules.IPTablesRule{[]string{"remote-rule"}},
 					Chain: enforcer.Chain{
 						Table:       "remote-table",
-						ParentChain: "INPUT",
-						Prefix:      "some-prefix",
+						ParentChain: "remote-1234",
+						Prefix:      "remote-prefix",
 					},
 				},
 			}
@@ -291,8 +298,8 @@ var _ = Describe("Single Poll Cycle", func() {
 					Rules: []rules.IPTablesRule{[]string{"asg-rule"}},
 					Chain: enforcer.Chain{
 						Table:       "asg-table",
-						ParentChain: "INPUT",
-						Prefix:      "some-prefix",
+						ParentChain: "asg-1234",
+						Prefix:      "asg-prefix",
 					},
 				},
 			}
@@ -316,15 +323,34 @@ var _ = Describe("Single Poll Cycle", func() {
 				rws := fakeEnforcer.EnforceRulesAndChainArgsForCall(i)
 				Expect(rws).To(Equal(ruleWithChain))
 			}
+
+			Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(1))
+			regex, chains := fakeEnforcer.EnforceChainsMatchingArgsForCall(0)
+			Expect(regex).To(Equal(regexp.MustCompile(planner.ASGManagedChainsRegex)))
+			Expect(chains).To(Equal([]enforcer.LiveChain{
+				{
+					Table: "local-table",
+					Name:  "local-prefix-with-suffix",
+				},
+				{
+					Table: "remote-table",
+					Name:  "remote-prefix-with-suffix",
+				},
+				{
+					Table: "asg-table",
+					Name:  "asg-prefix-with-suffix",
+				}}))
 		})
 
 		It("emits time metrics", func() {
 			err := p.DoASGCycle()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(metricsSender.SendDurationCallCount()).To(Equal(2))
+			Expect(metricsSender.SendDurationCallCount()).To(Equal(3))
 			name, _ := metricsSender.SendDurationArgsForCall(0)
 			Expect(name).To(Equal("asgIptablesEnforceTime"))
 			name, _ = metricsSender.SendDurationArgsForCall(1)
+			Expect(name).To(Equal("asgIptablesCleanupTime"))
+			name, _ = metricsSender.SendDurationArgsForCall(2)
 			Expect(name).To(Equal("asgTotalPollTime"))
 		})
 
@@ -376,35 +402,76 @@ var _ = Describe("Single Poll Cycle", func() {
 			BeforeEach(func() {
 				//				create some fake ASG iptables
 				var orphanRulesWithChain []enforcer.RulesWithChain
-				orphanRulesWithChain = []enforcer.RulesWithChain{
-					{
-						Rules: []rules.IPTablesRule{[]string{"asg-rule"}},
-						Chain: enforcer.Chain{
-							Table:       "asg-table-orphan",
-							ParentChain: "INPUT",
-							Prefix:      "some-prefix-orphan",
-						},
+				orphanRulesWithChain = append(localRulesWithChain, enforcer.RulesWithChain{
+					Rules: []rules.IPTablesRule{[]string{"asg-rule"}},
+					Chain: enforcer.Chain{
+						Table:       "asg-table-orphan",
+						ParentChain: "orphan-1234",
+						Prefix:      "orphan-prefix",
 					},
-				}
+				})
 				fakeLocalPlanner.GetASGRulesAndChainsReturns(orphanRulesWithChain, nil)
 				err := p.DoASGCycle()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(3))
-			})
-
-			It("returns a error when attempting to delete extra ASG Rules ", func() {
-				err := p.DoASGCycle()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(fakeEnforcer.DeleteChainCallCount()).To(Equal(1))
-				Expect(fakeEnforcer.DeleteChainArgsForCall(0)).To(Equal("raises for everybody!"))
+				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(4))
+				Expect(p.CurrentlyAppliedChainNames()).To(ConsistOf([]string{
+					"local-prefix-with-suffix",
+					"remote-prefix-with-suffix",
+					"asg-prefix-with-suffix",
+					"orphan-prefix-with-suffix",
+				}))
+				fakeLocalPlanner.GetASGRulesAndChainsReturns(localRulesWithChain, nil)
+				fakeEnforcer.EnforceChainsMatchingReturns([]enforcer.LiveChain{{
+					Table: "asg-table-orphan", Name: "orphan-prefix-with-suffix"}},
+					nil)
 			})
 
 			It("removes the fake ASG iptables/rules", func() {
-
+				desiredChainsResult := []enforcer.LiveChain{
+					{
+						Table: "local-table",
+						Name:  "local-prefix-with-suffix",
+					},
+					{
+						Table: "asg-table-orphan",
+						Name:  "orphan-prefix-with-suffix",
+					},
+					{
+						Table: "remote-table",
+						Name:  "remote-prefix-with-suffix",
+					},
+					{
+						Table: "asg-table",
+						Name:  "asg-prefix-with-suffix",
+					},
+				}
+				err := p.DoASGCycle()
+				Expect(err).NotTo(HaveOccurred())
+				By("only removing the orphaned rules", func() {
+					Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(2))
+					regex, desiredChains := fakeEnforcer.EnforceChainsMatchingArgsForCall(0)
+					Expect(regex).To(Equal(regexp.MustCompile(planner.ASGManagedChainsRegex)))
+					Expect(desiredChains).To(Equal(desiredChainsResult))
+					Expect(p.CurrentlyAppliedChainNames()).To(ConsistOf([]string{
+						"local-prefix-with-suffix",
+						"remote-prefix-with-suffix",
+						"asg-prefix-with-suffix",
+					}))
+				})
 			})
 
-			It("Does not removoe the valid ASG iptables/rules", func() {
-
+			Context("when errors occur deleting orphaned chains", func() {
+				var metricsCount int
+				BeforeEach(func() {
+					fakeEnforcer.EnforceChainsMatchingReturns([]enforcer.LiveChain{}, fmt.Errorf("eggplant"))
+					metricsCount = metricsSender.SendDurationCallCount()
+				})
+				It("returns a error", func() {
+					err := p.DoASGCycle()
+					Expect(err).To(HaveOccurred())
+					Expect(err).To(MatchError("clean-up-orphaned-asg-chains: eggplant"))
+					Expect(metricsSender.SendDurationCallCount()).To(Equal(metricsCount))
+				})
 			})
 
 		})
@@ -426,6 +493,7 @@ var _ = Describe("Single Poll Cycle", func() {
 				Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(2))
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(4))
+				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(2))
 			})
 		})
 
@@ -440,7 +508,8 @@ var _ = Describe("Single Poll Cycle", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(3))
-				Expect(metricsSender.SendDurationCallCount()).To(Equal(2))
+				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(1))
+				Expect(metricsSender.SendDurationCallCount()).To(Equal(3))
 			})
 		})
 
@@ -454,6 +523,7 @@ var _ = Describe("Single Poll Cycle", func() {
 				Expect(err).To(MatchError("get-asg-rules: eggplant"))
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(0))
+				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(0))
 				Expect(metricsSender.SendDurationCallCount()).To(Equal(0))
 			})
 		})
@@ -468,6 +538,7 @@ var _ = Describe("Single Poll Cycle", func() {
 				Expect(err).To(MatchError("get-asg-rules: eggplant"))
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(1))
+				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(0))
 				Expect(metricsSender.SendDurationCallCount()).To(Equal(0))
 			})
 		})
@@ -482,6 +553,7 @@ var _ = Describe("Single Poll Cycle", func() {
 				Expect(err).To(MatchError("get-asg-rules: eggplant"))
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(2))
+				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(0))
 				Expect(metricsSender.SendDurationCallCount()).To(Equal(0))
 			})
 		})

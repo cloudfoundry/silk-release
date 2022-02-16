@@ -1,6 +1,7 @@
 package planner
 
 import (
+	"sort"
 	"time"
 
 	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
@@ -112,6 +113,10 @@ func (p *VxlanPolicyPlanner) readFile() ([]container, error) {
 	containerMetadataDuration := time.Now().Sub(containerMetadataStartTime)
 	p.Logger.Debug("got-containers", lager.Data{"containers": allContainers})
 	p.MetricsSender.SendDuration(metricContainerMetadata, containerMetadataDuration)
+
+	sort.Slice(allContainers, func(i, j int) bool {
+		return allContainers[i].Handle > allContainers[j].Handle
+	})
 
 	return allContainers, nil
 }

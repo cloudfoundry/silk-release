@@ -18,6 +18,8 @@ import (
 	"encoding/json"
 	"sort"
 
+	"crypto/sha1" //for a unique identifier hash
+
 	"code.cloudfoundry.org/lager"
 )
 
@@ -157,7 +159,7 @@ func (s ingressSlice) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
-const ASGManagedChainsRegex = `asg-\d{6}`
+const ASGManagedChainsRegex = `asg-[a-z0-9]{6}`
 
 func (p *VxlanPolicyPlanner) GetPolicyRulesAndChain() (enforcer.RulesWithChain, error) {
 	allContainers, err := p.readFile()
@@ -218,7 +220,7 @@ func (p *VxlanPolicyPlanner) GetASGRulesAndChains() ([]enforcer.RulesWithChain, 
 		}
 	}
 
-	for i, container := range allContainers {
+	for _, container := range allContainers {
 		if container.SpaceID == "" {
 			continue
 		}
@@ -244,11 +246,13 @@ func (p *VxlanPolicyPlanner) GetASGRulesAndChains() ([]enforcer.RulesWithChain, 
 			continue
 		}
 
+		hashedHandle := hashHandled(container.Handle)
+
 		rulesWithChains = append(rulesWithChains, enforcer.RulesWithChain{
 			Chain: enforcer.Chain{
 				Table:              "filter",
 				ParentChain:        parentChainName,
-				Prefix:             fmt.Sprintf("asg-%06d", i),
+				Prefix:             fmt.Sprintf("asg-%s", hashedHandle),
 				ManagedChainsRegex: ASGManagedChainsRegex,
 				CleanUpParentChain: true,
 			},
@@ -258,6 +262,15 @@ func (p *VxlanPolicyPlanner) GetASGRulesAndChains() ([]enforcer.RulesWithChain, 
 
 	return rulesWithChains, nil
 }
+
+func hashHandled(handle string) string {
+	h := sha1.New()
+	h.Write([]byte(handle))
+	smallHash := h.Sum(nil)
+
+	return fmt.Sprintf("%x", smallHash[0:3]) //only need 6 digits so we use 3.
+}
+
 func reverseOrderIptablesRules(iptablesRules, defaultRules []rules.IPTablesRule) []rules.IPTablesRule {
 	allRules := []rules.IPTablesRule{}
 	for i := len(iptablesRules) - 1; i >= 0; i-- {

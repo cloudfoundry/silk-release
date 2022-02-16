@@ -68,7 +68,13 @@ func main() {
 		logPrefix = conf.LogPrefix
 	}
 
-	logger, reconfigurableSink := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), common.GetLagerConfig())
+	loggerConfig := common.GetLagerConfig()
+
+	if conf.LogLevel != "" {
+		loggerConfig.LogLevel = conf.LogLevel
+	}
+
+	logger, reconfigurableSink := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), loggerConfig)
 
 	logger.Info("parsed-config", lager.Data{"config": conf})
 
