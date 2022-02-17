@@ -101,7 +101,7 @@ func (m *NetOut) BulkInsertRules(netOutRules []garden.NetOutRule) error {
 	ruleSpec := m.Converter.BulkConvert(netOutRules, logChain, m.ASGLogging)
 	ruleSpec = append(ruleSpec, m.denyNetworksRules()...)
 
-	if m.Conn.Limit {
+	if m.Conn.Limit || m.Conn.DryRun {
 		rateLimitRule, err := m.rateLimitRule(chain)
 		if err != nil {
 			return fmt.Errorf("getting chain name: %s", err)
@@ -312,7 +312,7 @@ func (m *NetOut) denyNetworksRules() []rules.IPTablesRule {
 func (m *NetOut) rateLimitRule(forwardChainName string) (rule rules.IPTablesRule, err error) {
 	jumpTarget := "REJECT"
 
-	if m.Conn.Logging {
+	if m.Conn.Logging || m.Conn.DryRun {
 		jumpTarget, err = m.ChainNamer.Postfix(forwardChainName, suffixNetOutRateLimitLog)
 		if err != nil {
 			return rules.IPTablesRule{}, err
@@ -337,7 +337,7 @@ func (m *NetOut) rateLimitExpiryPeriod() string {
 
 func (m *NetOut) connRateLimitLogChain(forwardChainName string) (IpTablesFullChain, error) {
 	logRules := []rules.IPTablesRule{}
-	if m.Conn.Logging {
+	if m.Conn.Logging || m.Conn.Logging {
 		logRules = append(logRules, rules.NewNetOutConnRateLimitRejectLogRule(m.ContainerHandle, m.DeniedLogsPerSec))
 	}
 	if !m.Conn.DryRun {
