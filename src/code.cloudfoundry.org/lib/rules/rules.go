@@ -340,7 +340,7 @@ func NewNetOutDefaultRejectLogRule(containerHandle string, deniedLogsPerSec int)
 }
 
 func NewNetOutConnRateLimitRejectLogRule(containerHandle string, deniedLogsPerSec int) IPTablesRule {
-	return newNetOutRejectLogRule(containerHandle, "DENY_ORL", deniedLogsPerSec)
+	return newNetOutRejectLogRule(containerHandle, "OCRL", deniedLogsPerSec)
 }
 
 func NewNetOutDefaultRejectRule() IPTablesRule {
