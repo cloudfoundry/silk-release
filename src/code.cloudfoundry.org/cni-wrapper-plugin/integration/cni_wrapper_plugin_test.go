@@ -132,9 +132,11 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 		policyAgentAddress = fmt.Sprintf("%s:%v", "127.0.0.1", ports.PickAPort())
 		policyAgentServer = mockPolicyAgentServer{
-			ReturnCode:         200,
-			ReturnErrorMessage: "",
-			Address:            policyAgentAddress,
+			ReturnCode:            200,
+			ASGReturnCode:         200,
+			ASGReturnErrorMessage: "",
+			ReturnErrorMessage:    "",
+			Address:               policyAgentAddress,
 		}
 		policyAgentServer.start()
 
@@ -414,7 +416,15 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
 
-			Expect(policyAgentServer.EndpointCallCount).To(Equal(1))
+			Expect(policyAgentServer.PolicyPollEndpointCallCount).To(Equal(1))
+		})
+
+		It("calls the policy agent asg updater", func() {
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).ToNot(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			Expect(policyAgentServer.SyncASGEndpointCallCount).To(Equal(1))
+			Expect(policyAgentServer.SyncASGEndpointContainerRequested).To(Equal("some-container-id-that-is-long"))
 		})
 
 		It("ensures the iptables.lock file is chowned", func() {
@@ -442,7 +452,30 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Eventually(session).Should(gexec.Exit(1))
 				Expect(session.Out).Should(gbytes.Say(".*vpa response code: 500 with message: an error occurred in the vpa.*"))
 
-				Expect(policyAgentServer.EndpointCallCount).To(Equal(1))
+				Expect(policyAgentServer.PolicyPollEndpointCallCount).To(Equal(1))
+			})
+		})
+		Context("when the policy agent asg updater returns a 405", func() {
+			It("ignores and moves on, since dynamic asgs have been disabled", func() {
+				policyAgentServer.ASGReturnCode = 405
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).ToNot(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+				Expect(policyAgentServer.SyncASGEndpointCallCount).To(Equal(1))
+				Expect(policyAgentServer.SyncASGEndpointContainerRequested).To(Equal("some-container-id-that-is-long"))
+			})
+		})
+		Context("when the policy agent asg updater returns an error", func() {
+			It("returns an error", func() {
+				policyAgentServer.ASGReturnCode = 500
+				policyAgentServer.ASGReturnErrorMessage = "an error occurred in the vpa"
+
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(1))
+				Expect(session.Out).Should(gbytes.Say(".*asg sync returned 500 with message: an error occurred in the vpa.*"))
+
+				Expect(policyAgentServer.PolicyPollEndpointCallCount).To(Equal(1))
 			})
 		})
 
@@ -1100,24 +1133,38 @@ var _ = Describe("CniWrapperPlugin", func() {
 })
 
 type mockPolicyAgentServer struct {
-	ReturnCode         int
-	ReturnErrorMessage string
-	Address            string
-	EndpointCallCount  int
-	server             *http.Server
+	ReturnCode                        int
+	ReturnErrorMessage                string
+	ASGReturnCode                     int
+	ASGReturnErrorMessage             string
+	Address                           string
+	PolicyPollEndpointCallCount       int
+	SyncASGEndpointCallCount          int
+	SyncASGEndpointContainerRequested string
+
+	server *http.Server
 }
 
-func (a *mockPolicyAgentServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	a.EndpointCallCount++
+func (a *mockPolicyAgentServer) PolicyPollEndpoint(w http.ResponseWriter, r *http.Request) {
+	a.PolicyPollEndpointCallCount++
 	w.WriteHeader(a.ReturnCode)
 	if a.ReturnErrorMessage != "" {
 		w.Write([]byte(a.ReturnErrorMessage))
 	}
 }
+func (a *mockPolicyAgentServer) SyncASGEndpoint(w http.ResponseWriter, r *http.Request) {
+	a.SyncASGEndpointCallCount++
+	a.SyncASGEndpointContainerRequested = r.URL.Query().Get("container")
+	w.WriteHeader(a.ASGReturnCode)
+	if a.ASGReturnErrorMessage != "" {
+		w.Write([]byte(a.ASGReturnErrorMessage))
+	}
+}
 
 func (a *mockPolicyAgentServer) start() {
 	mux := http.NewServeMux()
-	mux.Handle("/force-policy-poll-cycle", a)
+	mux.Handle("/force-policy-poll-cycle", http.HandlerFunc(a.PolicyPollEndpoint))
+	mux.Handle("/force-asgs-for-container", http.HandlerFunc(a.SyncASGEndpoint))
 
 	a.server = &http.Server{Addr: a.Address, Handler: mux}
 	go a.server.ListenAndServe()

@@ -235,7 +235,18 @@ func main() {
 	}
 
 	forcePolicyPollCycleServerAddress := fmt.Sprintf("%s:%d", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort)
-	forcePolicyPollCycleServer := createForcePolicyPollCycleServer(forcePolicyPollCycleServerAddress, singlePollCycle.DoPolicyCycle)
+
+	forceUpdateHandlers := map[string]http.Handler{
+		"/force-policy-poll-cycle": &handlers.ForcePolicyPollCycle{
+			PollCycleFunc: singlePollCycle.DoPolicyCycle,
+		},
+		"/force-asgs-for-container": &handlers.ForceASGsForContainer{
+			ASGUpdateFunc:    singlePollCycle.SyncASGsForContainer,
+			EnableASGSyncing: conf.EnableASGSyncing,
+		},
+	}
+
+	forcePolicyPollCycleServer := createForceUpdateServer(forcePolicyPollCycleServerAddress, forceUpdateHandlers)
 
 	debugServerAddress := fmt.Sprintf("%s:%d", conf.DebugServerHost, conf.DebugServerPort)
 	debugServer := createCustomDebugServer(debugServerAddress, reconfigurableSink, iptablesLoggingState)
@@ -291,10 +302,12 @@ func createCustomDebugServer(listenAddress string, sink *lager.ReconfigurableSin
 	return http_server.New(listenAddress, mux)
 }
 
-func createForcePolicyPollCycleServer(listenAddress string, pollCycleFunc func() error) ifrit.Runner {
+func createForceUpdateServer(listenAddress string, handlers map[string]http.Handler) ifrit.Runner {
 	mux := http.NewServeMux()
-	mux.Handle("/force-policy-poll-cycle", &handlers.ForcePolicyPollCycle{
-		PollCycleFunc: pollCycleFunc,
-	})
+
+	for url, handler := range handlers {
+		mux.Handle(url, handler)
+	}
+
 	return http_server.New(listenAddress, mux)
 }

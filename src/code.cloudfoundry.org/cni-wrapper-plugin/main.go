@@ -176,6 +176,9 @@ func cmdAdd(args *skel.CmdArgs) error {
 		HostInterfaceNames: interfaceNames,
 	}
 	err = netinProvider.Initialize(args.ContainerID)
+	if err != nil {
+		return fmt.Errorf("initializing net in: %s", err)
+	}
 
 	portMappings := cfg.RuntimeConfig.PortMappings
 	for _, netIn := range portMappings {
@@ -190,6 +193,16 @@ func cmdAdd(args *skel.CmdArgs) error {
 	netOutRules := cfg.RuntimeConfig.NetOutRules
 	if err := netOutProvider.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules)); err != nil {
 		return fmt.Errorf("bulk insert: %s", err) // not tested
+	}
+
+	resp, err = http.DefaultClient.Get(fmt.Sprintf("http://%s/force-asgs-for-container?container=%s", cfg.PolicyAgentForcePollAddress, args.ContainerID))
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusMethodNotAllowed {
+		body, _ := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		return fmt.Errorf("asg sync returned %v with message: %s", resp.StatusCode, body)
 	}
 
 	err = pluginController.AddIPMasq(containerIP.String(), cfg.NoMasqueradeCIDRRange, cfg.VTEPName)

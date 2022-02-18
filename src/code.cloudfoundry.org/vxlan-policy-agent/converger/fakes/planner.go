@@ -9,9 +9,10 @@ import (
 )
 
 type Planner struct {
-	GetASGRulesAndChainsStub        func() ([]enforcer.RulesWithChain, error)
+	GetASGRulesAndChainsStub        func(...string) ([]enforcer.RulesWithChain, error)
 	getASGRulesAndChainsMutex       sync.RWMutex
 	getASGRulesAndChainsArgsForCall []struct {
+		arg1 []string
 	}
 	getASGRulesAndChainsReturns struct {
 		result1 []enforcer.RulesWithChain
@@ -37,17 +38,18 @@ type Planner struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *Planner) GetASGRulesAndChains() ([]enforcer.RulesWithChain, error) {
+func (fake *Planner) GetASGRulesAndChains(arg1 ...string) ([]enforcer.RulesWithChain, error) {
 	fake.getASGRulesAndChainsMutex.Lock()
 	ret, specificReturn := fake.getASGRulesAndChainsReturnsOnCall[len(fake.getASGRulesAndChainsArgsForCall)]
 	fake.getASGRulesAndChainsArgsForCall = append(fake.getASGRulesAndChainsArgsForCall, struct {
-	}{})
+		arg1 []string
+	}{arg1})
 	stub := fake.GetASGRulesAndChainsStub
 	fakeReturns := fake.getASGRulesAndChainsReturns
-	fake.recordInvocation("GetASGRulesAndChains", []interface{}{})
+	fake.recordInvocation("GetASGRulesAndChains", []interface{}{arg1})
 	fake.getASGRulesAndChainsMutex.Unlock()
 	if stub != nil {
-		return stub()
+		return stub(arg1...)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -61,10 +63,17 @@ func (fake *Planner) GetASGRulesAndChainsCallCount() int {
 	return len(fake.getASGRulesAndChainsArgsForCall)
 }
 
-func (fake *Planner) GetASGRulesAndChainsCalls(stub func() ([]enforcer.RulesWithChain, error)) {
+func (fake *Planner) GetASGRulesAndChainsCalls(stub func(...string) ([]enforcer.RulesWithChain, error)) {
 	fake.getASGRulesAndChainsMutex.Lock()
 	defer fake.getASGRulesAndChainsMutex.Unlock()
 	fake.GetASGRulesAndChainsStub = stub
+}
+
+func (fake *Planner) GetASGRulesAndChainsArgsForCall(i int) []string {
+	fake.getASGRulesAndChainsMutex.RLock()
+	defer fake.getASGRulesAndChainsMutex.RUnlock()
+	argsForCall := fake.getASGRulesAndChainsArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *Planner) GetASGRulesAndChainsReturns(result1 []enforcer.RulesWithChain, result2 error) {

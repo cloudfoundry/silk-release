@@ -16,7 +16,7 @@ import (
 //go:generate counterfeiter -o fakes/planner.go --fake-name Planner . Planner
 type Planner interface {
 	GetPolicyRulesAndChain() (enforcer.RulesWithChain, error)
-	GetASGRulesAndChains() ([]enforcer.RulesWithChain, error)
+	GetASGRulesAndChains(containers ...string) ([]enforcer.RulesWithChain, error)
 }
 
 //go:generate counterfeiter -o fakes/rule_enforcer.go --fake-name RuleEnforcer . ruleEnforcer
@@ -107,6 +107,10 @@ func (m *SinglePollCycle) DoPolicyCycle() error {
 }
 
 func (m *SinglePollCycle) DoASGCycle() error {
+	return m.SyncASGsForContainer() // syncs for all containers when empty
+}
+
+func (m *SinglePollCycle) SyncASGsForContainer(containers ...string) error {
 	m.asgMutex.Lock()
 
 	if m.asgRuleSets == nil {
@@ -123,7 +127,7 @@ func (m *SinglePollCycle) DoASGCycle() error {
 	var desiredChains []enforcer.LiveChain
 
 	for _, p := range m.planners {
-		asgrulesets, err := p.GetASGRulesAndChains()
+		asgrulesets, err := p.GetASGRulesAndChains(containers...)
 		if err != nil {
 			m.asgMutex.Unlock()
 			return fmt.Errorf("get-asg-rules: %s", err)
