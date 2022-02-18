@@ -1199,7 +1199,7 @@ var _ = Describe("Planner", func() {
 	})
 
 	Describe("GetASGRulesAndChains", func() {
-		It("gets every container's properties from the datastore", func() {
+		It("gets container properties from the datastore", func() {
 			_, err := policyPlanner.GetASGRulesAndChains()
 			Expect(err).NotTo(HaveOccurred())
 
@@ -1239,6 +1239,15 @@ var _ = Describe("Planner", func() {
 				By("filtering by space guid when calling the internal policy server")
 				Expect(policyClient.GetSecurityGroupsForSpaceCallCount()).To(Equal(1))
 				Expect(policyClient.GetSecurityGroupsForSpaceArgsForCall(0)).To(ConsistOf("some-space-guid", "some-other-space-guid"))
+			})
+
+			Context("when only one container was specified", func() {
+				It("only gets security groups for the specified container", func() {
+					_, err := policyPlanner.GetASGRulesAndChains("container-id-1")
+					Expect(err).ToNot(HaveOccurred())
+					Expect(policyClient.GetSecurityGroupsForSpaceCallCount()).To(Equal(1))
+					Expect(policyClient.GetSecurityGroupsForSpaceArgsForCall(0)).To(ConsistOf("some-space-guid"))
+				})
 			})
 
 			Context("when there are security groups for staging and running", func() {

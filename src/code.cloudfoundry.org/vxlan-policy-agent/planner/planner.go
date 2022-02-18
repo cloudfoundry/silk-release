@@ -69,15 +69,24 @@ const metricContainerMetadata = "containerMetadataTime"
 const metricPolicyServerPoll = "policyServerPollTime"
 const metricPolicyServerASGPoll = "policyServerASGPollTime"
 
-func (p *VxlanPolicyPlanner) readFile() ([]container, error) {
+func (p *VxlanPolicyPlanner) readFile(specifiedContainers ...string) ([]container, error) {
 	containerMetadataStartTime := time.Now()
 	containerMetadata, err := p.Datastore.ReadAll()
+
+	specifiedContainerMetadata := map[string]datastore.Container{}
+	if len(specifiedContainers) == 0 {
+		specifiedContainerMetadata = containerMetadata
+	} else {
+		for _, specifiedContainer := range specifiedContainers {
+			specifiedContainerMetadata[specifiedContainer] = containerMetadata[specifiedContainer]
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
 
 	var allContainers []container
-	for handle, containerMeta := range containerMetadata {
+	for handle, containerMeta := range specifiedContainerMetadata {
 		ports, ok := containerMeta.Metadata["ports"].(string)
 		if !ok || ports == "" {
 			message := "Container metadata is missing key ports. CloudController version may be out of date or apps may need to be restaged."

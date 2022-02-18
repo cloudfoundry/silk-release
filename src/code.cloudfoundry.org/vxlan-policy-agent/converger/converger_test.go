@@ -314,6 +314,7 @@ var _ = Describe("Single Poll Cycle", func() {
 			Expect(fakeLocalPlanner.GetASGRulesAndChainsCallCount()).To(Equal(1))
 			Expect(fakeRemotePlanner.GetASGRulesAndChainsCallCount()).To(Equal(1))
 			Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(1))
+			Expect(fakeASGPlanner.GetASGRulesAndChainsArgsForCall(0)).To(BeNil())
 			Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(3))
 
 			allRulesWithChains := append(localRulesWithChain, remoteRulesWithChain...)
@@ -568,6 +569,13 @@ var _ = Describe("Single Poll Cycle", func() {
 				Expect(err).To(MatchError("enforce-asg: eggplant"))
 
 				Expect(metricsSender.SendDurationCallCount()).To(Equal(0))
+			})
+		})
+		Describe("SyncASGsForContainer", func() {
+			It("passes specified containers to the planner", func() {
+				err := p.SyncASGsForContainer("container-1", "container-2")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(fakeASGPlanner.GetASGRulesAndChainsArgsForCall(0)).To(Equal([]string{"container-1", "container-2"}))
 			})
 		})
 	})

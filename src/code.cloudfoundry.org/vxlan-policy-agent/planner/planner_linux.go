@@ -182,8 +182,8 @@ func (p *VxlanPolicyPlanner) GetPolicyRulesAndChain() (enforcer.RulesWithChain, 
 	}, nil
 }
 
-func (p *VxlanPolicyPlanner) GetASGRulesAndChains() ([]enforcer.RulesWithChain, error) {
-	allContainers, err := p.readFile()
+func (p *VxlanPolicyPlanner) GetASGRulesAndChains(specifiedContainers ...string) ([]enforcer.RulesWithChain, error) {
+	allContainers, err := p.readFile(specifiedContainers...)
 	if err != nil {
 		p.Logger.Error("datastore", err)
 		return nil, err
