@@ -162,21 +162,25 @@ func (m *SinglePollCycle) SyncASGsForContainer(containers ...string) error {
 	}
 
 	cleanupStart := time.Now()
-	deletedChains, err := m.enforcer.EnforceChainsMatching(regexp.MustCompile(planner.ASGManagedChainsRegex), desiredChains)
-	if err != nil {
-		m.asgMutex.Unlock()
-		return fmt.Errorf("clean-up-orphaned-asg-chains: %s", err)
-	}
-	m.logger.Debug("policy-cycle-asg", lager.Data{
-		"message": "deleted-orphaned-chains",
-		"chains":  deletedChains,
-	})
 
-	for chainKey, chainName := range m.containerToASGChain {
-		for _, deletedChain := range deletedChains {
-			if deletedChain.Table == chainKey.Table && deletedChain.Name == chainName {
-				delete(m.containerToASGChain, chainKey)
-				delete(m.asgRuleSets, chainKey)
+	// only clean up orphans if we lookedat *all* containers in this cycle
+	if len(containers) == 0 {
+		deletedChains, err := m.enforcer.EnforceChainsMatching(regexp.MustCompile(planner.ASGManagedChainsRegex), desiredChains)
+		if err != nil {
+			m.asgMutex.Unlock()
+			return fmt.Errorf("clean-up-orphaned-asg-chains: %s", err)
+		}
+		m.logger.Debug("policy-cycle-asg", lager.Data{
+			"message": "deleted-orphaned-chains",
+			"chains":  deletedChains,
+		})
+
+		for chainKey, chainName := range m.containerToASGChain {
+			for _, deletedChain := range deletedChains {
+				if deletedChain.Table == chainKey.Table && deletedChain.Name == chainName {
+					delete(m.containerToASGChain, chainKey)
+					delete(m.asgRuleSets, chainKey)
+				}
 			}
 		}
 	}
