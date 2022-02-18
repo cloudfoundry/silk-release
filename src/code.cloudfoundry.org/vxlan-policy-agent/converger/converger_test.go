@@ -577,6 +577,12 @@ var _ = Describe("Single Poll Cycle", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(fakeASGPlanner.GetASGRulesAndChainsArgsForCall(0)).To(Equal([]string{"container-1", "container-2"}))
 			})
+
+			It("only looks to clean up orphans that match the included containers", func() {
+				err := p.SyncASGsForContainer("container-1", "container-2")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(0))
+			})
 		})
 	})
 })
