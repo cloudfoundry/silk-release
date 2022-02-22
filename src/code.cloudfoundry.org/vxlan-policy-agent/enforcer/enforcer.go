@@ -199,7 +199,11 @@ func (e *Enforcer) cleanupOldRules(table, parentChain, managedChainsRegex string
 				matches := reOtherRules.FindStringSubmatch(r)
 
 				if len(matches) > 1 {
-					err := e.iptables.Delete(table, parentChain, rules.NewIPTablesRuleFromIPTablesLine(matches[1]))
+					rule, err := rules.NewIPTablesRuleFromIPTablesLine(matches[1])
+					if err != nil {
+						return fmt.Errorf("parsing parent chain rule: %s", err)
+					}
+					err = e.iptables.Delete(table, parentChain, rule)
 					if err != nil {
 						return fmt.Errorf("clean up parent chain: %s", err)
 					}

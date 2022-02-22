@@ -28,6 +28,7 @@ require (
 	github.com/cloudfoundry/dropsonde v1.0.0
 	github.com/containernetworking/cni v0.6.0
 	github.com/coreos/go-iptables v0.6.0
+	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hpcloud/tail v1.0.0
 	github.com/onsi/ginkgo v1.16.5
