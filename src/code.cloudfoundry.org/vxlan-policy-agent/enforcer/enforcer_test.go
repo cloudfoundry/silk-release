@@ -164,6 +164,7 @@ var _ = Describe("Enforcer", func() {
 					"-A some-chain -p tcp -m state --state INVALID -j DROP",
 					"-A some-chain -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT",
 					"-A some-chain -j REJECT --reject-with icmp-port-unreachable",
+					`-A some-chain -j LOG --log-prefix "DENY_ee8fd40b "`,
 				}, nil)
 			})
 
@@ -171,7 +172,7 @@ var _ = Describe("Enforcer", func() {
 				_, err := ruleEnforcer.Enforce("some-table", "some-chain", "asg-001-", "asg-\\d\\d\\d-", true, []rules.IPTablesRule{fakeRule}...)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(iptables.DeleteCallCount()).To(Equal(6))
+				Expect(iptables.DeleteCallCount()).To(Equal(7))
 				table, chain, ruleSpec := iptables.DeleteArgsForCall(0)
 				Expect(table).To(Equal("some-table"))
 				Expect(chain).To(Equal("some-chain"))
@@ -209,6 +210,11 @@ var _ = Describe("Enforcer", func() {
 				Expect(table).To(Equal("some-table"))
 				Expect(chain).To(Equal("some-chain"))
 				Expect(ruleSpec).To(Equal(rules.IPTablesRule{"-j", "REJECT", "--reject-with", "icmp-port-unreachable"}))
+
+				table, chain, ruleSpec = iptables.DeleteArgsForCall(6)
+				Expect(table).To(Equal("some-table"))
+				Expect(chain).To(Equal("some-chain"))
+				Expect(ruleSpec).To(Equal(rules.IPTablesRule{"-j", "LOG", "--log-prefix", "DENY_ee8fd40b "}))
 			})
 
 			It("does not delete other rules in parent chain if parent chain cleanup is not requested", func() {

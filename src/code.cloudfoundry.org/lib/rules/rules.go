@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/google/shlex"
 )
 
 type IPTablesRule []string
 
-func NewIPTablesRuleFromIPTablesLine(line string) IPTablesRule {
-	return strings.Fields(line)
+func NewIPTablesRuleFromIPTablesLine(line string) (IPTablesRule, error) {
+	args, err := shlex.Split(line)
+	return IPTablesRule(args), err
 }
 
 func AppendComment(rule IPTablesRule, comment string) IPTablesRule {

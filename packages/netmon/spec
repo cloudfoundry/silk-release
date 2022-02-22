@@ -39,6 +39,7 @@ files:
   - code.cloudfoundry.org/vendor/github.com/gogo/protobuf/gogoproto/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/gogo/protobuf/proto/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/gogo/protobuf/protoc-gen-gogo/descriptor/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/google/shlex/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/josharian/intern/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/mailru/easyjson/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/mailru/easyjson/buffer/*.go # gosub-main-module

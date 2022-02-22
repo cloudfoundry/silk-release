@@ -51,6 +51,7 @@ files:
   - code.cloudfoundry.org/vendor/github.com/containernetworking/plugins/pkg/utils/hwaddr/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/plugins/pkg/utils/sysctl/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/coreos/go-iptables/iptables/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/google/shlex/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/hashicorp/errwrap/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/hashicorp/go-multierror/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/vishvananda/netlink/*.go # gosub-main-module

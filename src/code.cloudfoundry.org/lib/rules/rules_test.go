@@ -1,6 +1,8 @@
 package rules_test
 
 import (
+	"fmt"
+
 	"code.cloudfoundry.org/lib/rules"
 
 	. "github.com/onsi/ginkgo"
@@ -9,6 +11,22 @@ import (
 )
 
 var _ = Describe("Rules", func() {
+	Describe("NewIPTablesRuleFromIPTablesLine", func() {
+		It("parses rules properly", func() {
+			rule, err := rules.NewIPTablesRuleFromIPTablesLine(`-D netout--ee8fd40b-55f6-4522-5 -m limit --limit 1/sec --limit-burst 1 -j LOG --log-prefix "DENY_ee8fd40b-55f6-4522-51d9 "`)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(rule).To(Equal(rules.IPTablesRule{
+				"-D", "netout--ee8fd40b-55f6-4522-5", "-m", "limit",
+				"--limit", "1/sec", "--limit-burst", "1", "-j", "LOG",
+				"--log-prefix", "DENY_ee8fd40b-55f6-4522-51d9 ",
+			}))
+		})
+		It("throws errors for invalid strings", func() {
+			_, err := rules.NewIPTablesRuleFromIPTablesLine(`--log-prefix "DENY_ee8fd40b-55f6-4522-51d9 `)
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(fmt.Errorf("EOF found when expecting closing quote")))
+		})
+	})
 	Describe("AppendComment", func() {
 		var originalRule rules.IPTablesRule
 		BeforeEach(func() {
