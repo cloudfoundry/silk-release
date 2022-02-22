@@ -91,8 +91,8 @@ module Bosh::Template::Test
               'mtu' => 0
             },
             'outbound_connections' => {
-              'limit' => false,
-              'logging' => false,
+              'limit' => true,
+              'logging' => true,
               'burst' => 1000,
               'rate_per_sec' => 100,
               'dry_run' => false,
