@@ -28,6 +28,7 @@ type OutConnConfig struct {
 	Logging    bool `json:"logging"`
 	Burst      int  `json:"burst" validate:"min=1"`
 	RatePerSec int  `json:"rate_per_sec" validate:"min=1"`
+	DryRun     bool `json:"dry_run"`
 }
 
 type WrapperConfig struct {

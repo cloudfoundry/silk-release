@@ -95,6 +95,7 @@ module Bosh::Template::Test
               'logging' => true,
               'burst' => 1000,
               'rate_per_sec' => 100,
+              'dry_run' => false,
             }
           }, {
             'name' => 'bandwidth-limit',

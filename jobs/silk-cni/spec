@@ -126,3 +126,8 @@ properties:
     description: |
       EXPERIMENTAL: Maximum number of outbound connections to be opened per second per port on destination host per container given that the burst is exhausted.
       Has no effect when `outbound_connections.limit` is false.
+
+  outbound_connections.dry_run:
+    default: false
+    description: |
+      EXPERIMENTAL: When set to true negates the effect of `outbound_connections.limit`. Enables the specific DENY_ORL entries to the kernel log.
