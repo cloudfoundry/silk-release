@@ -64,7 +64,7 @@ func (c *NetOutChain) IPTablesRules(containerHandle string, containerWorkload st
 	iptablesRules := c.Converter.BulkConvert(ruleSpec, logChain, c.ASGLogging)
 	iptablesRules = append(iptablesRules, c.denyNetworksRules(containerWorkload)...)
 
-	if c.Conn.Limit {
+	if c.Conn.Limit || c.Conn.DryRun {
 		rateLimitRule, err := c.rateLimitRule(forwardChainName, containerHandle)
 		if err != nil {
 			return nil, fmt.Errorf("getting chain name: %s", err)
@@ -106,7 +106,7 @@ func (c *NetOutChain) denyNetworksRules(containerWorkload string) []rules.IPTabl
 func (c *NetOutChain) rateLimitRule(forwardChainName string, containerHandle string) (rule rules.IPTablesRule, err error) {
 	jumpTarget := "REJECT"
 
-	if c.Conn.Logging {
+	if c.Conn.Logging || c.Conn.DryRun {
 		jumpTarget, err = c.ChainNamer.Postfix(forwardChainName, suffixNetOutRateLimitLog)
 		if err != nil {
 			return rules.IPTablesRule{}, err

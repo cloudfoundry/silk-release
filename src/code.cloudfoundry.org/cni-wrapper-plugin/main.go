@@ -130,6 +130,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		Logging:    cfg.OutConn.Logging,
 		Burst:      cfg.OutConn.Burst,
 		RatePerSec: cfg.OutConn.RatePerSec,
+		DryRun:     cfg.OutConn.DryRun,
 	}
 
 	netOutChain := &netrules.NetOutChain{
