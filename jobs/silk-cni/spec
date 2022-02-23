@@ -116,5 +116,4 @@ properties:
   outbound_connections.dry_run:
     default: false
     description: |
-      EXPERIMENTAL: When set to True negates the effect of `outbound_connections.limit`. Used together with `iptables_logging` to log what connections would be rejected without actually rejecting them.
-      Has no effect when `outbound_connections.limit` is false.
+      EXPERIMENTAL: When set to true negates the effect of `outbound_connections.limit`. Enables the specific DENY_ORL entries to the kernel log.
