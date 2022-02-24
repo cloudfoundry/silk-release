@@ -27,6 +27,7 @@ provides:
   - outbound_connections.limit
   - outbound_connections.burst
   - outbound_connections.rate_per_sec
+  - outbound_connections.dry_run
 
 properties:
   no_masquerade_cidr_range:

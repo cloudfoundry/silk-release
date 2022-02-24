@@ -44,6 +44,7 @@ var _ = Describe("Netout", func() {
 			ContainerWorkload:     "app",
 			Conn: netrules.OutConn{
 				Limit: false,
+				DryRun: false,
 			},
 		}
 		chainNamer.PrefixStub = func(prefix, handle string) string {

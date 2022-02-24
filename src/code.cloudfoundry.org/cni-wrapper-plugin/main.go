@@ -291,6 +291,7 @@ func cmdDel(args *skel.CmdArgs) error {
 	outConn := netrules.OutConn{
 		Limit:   n.OutConn.Limit,
 		Logging: n.OutConn.Logging,
+		DryRun:  n.OutConn.DryRun,
 	}
 
 	netOutChain := &netrules.NetOutChain{
