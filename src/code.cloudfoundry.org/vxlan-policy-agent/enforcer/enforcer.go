@@ -118,7 +118,6 @@ func (e *Enforcer) EnforceChainsMatching(regex *regexp.Regexp, desiredChains []L
 		}
 	}
 	return chainsToDelete, nil
-
 }
 
 func (e *Enforcer) EnforceRulesAndChain(rulesAndChain RulesWithChain) (string, error) {
@@ -227,7 +226,23 @@ func (e *Enforcer) cleanupOldChain(chain LiveChain, parentChain string) error {
 }
 
 func (e *Enforcer) deleteChain(chain LiveChain) error {
-	err := e.iptables.ClearChain(chain.Table, chain.Name)
+	// find jumps and delete those chains as well (since we may have log tables that we reference that need deleting)
+	rules, err := e.iptables.List(chain.Table, chain.Name)
+	if err != nil {
+		return fmt.Errorf("list rules for chain: %s", err)
+	}
+
+	reJumpRule := regexp.MustCompile(fmt.Sprintf(`-A\s+%s\s+.*-g\s+([^\s]+)`, chain.Name))
+	jumpTargets := map[string]struct{}{}
+	for _, rule := range rules {
+		matches := reJumpRule.FindStringSubmatch(rule)
+		if len(matches) > 1 {
+			jumpTargets[matches[1]] = struct{}{}
+		}
+
+	}
+
+	err = e.iptables.ClearChain(chain.Table, chain.Name)
 	if err != nil {
 		return fmt.Errorf("cleanup old chain: %s", err)
 	}
@@ -235,6 +250,12 @@ func (e *Enforcer) deleteChain(chain LiveChain) error {
 	err = e.iptables.DeleteChain(chain.Table, chain.Name)
 	if err != nil {
 		return fmt.Errorf("delete old chain: %s", err)
+	}
+
+	for target, _ := range jumpTargets {
+		if err := e.iptables.DeleteChain(chain.Table, target); err != nil {
+			return fmt.Errorf("cleanup jump target %s: %s", target, err)
+		}
 	}
 
 	return nil
