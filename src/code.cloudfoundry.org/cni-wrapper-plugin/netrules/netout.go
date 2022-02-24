@@ -232,12 +232,13 @@ func (m *NetOut) connRateLimitLogChain(forwardChainName string) (IpTablesFullCha
 	logRules := []rules.IPTablesRule{}
 	
 	if m.Conn.Logging || m.Conn.DryRun {
-		rules.NewNetOutConnRateLimitRejectLogRule(m.ContainerHandle, m.DeniedLogsPerSec),
+		logRules = append(rules.NewNetOutConnRateLimitRejectLogRule(m.ContainerHandle, m.DeniedLogsPerSec))
 	}
     
 	if !m.Conn.DryRun {
-		rules.NewNetOutDefaultRejectRule(),
+		logRules = append(rules.NewNetOutDefaultRejectRule())
 	}
+	
 	return m.netOutLogChain(forwardChainName, suffixNetOutRateLimitLog, logRules)
 }
 
