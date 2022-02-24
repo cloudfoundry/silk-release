@@ -30,6 +30,7 @@ var _ = Describe("NetOutChain", func() {
 			DeniedLogsPerSec: 3,
 			Conn: netrules.OutConn{
 				Limit: false,
+				DryRun: false,
 			},
 		}
 		chainNamer.PrefixStub = func(prefix, handle string) string {
@@ -233,6 +234,36 @@ var _ = Describe("NetOutChain", func() {
 					Expect(iptablesRules).To(Equal(expectedRules))
 				})
 
+				Context("when denied outbound container connections dry_run is enabled", func() {
+					BeforeEach(func() {
+						netOutChain.Conn.DryRun = true
+					})
+	
+					It("inserts the outbound connection rate limit rule", func() {
+						iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", "app", netrules.NewRulesFromGardenNetOutRules(netOutRules))
+						Expect(err).NotTo(HaveOccurred())
+	
+						Expect(chainNamer.PostfixCallCount()).To(Equal(2))
+	
+						By("specifying a jump condition to the respective logging chains")
+	
+						expectedRateLimitRule := rules.IPTablesRule{
+							"-p", "tcp",
+							"-m", "conntrack", "--ctstate", "NEW",
+							"-m", "hashlimit", "--hashlimit-above", "99/sec", "--hashlimit-burst", "400",
+							"--hashlimit-mode", "dstip,dstport", "--hashlimit-name", "some-container-handle",
+							"--hashlimit-htable-expire", "5000", "-j", "netout-some-container-handle-rl-log",
+						}
+						expectedRules := append(genericRules, []rules.IPTablesRule{
+							expectedRateLimitRule,
+							{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
+							{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
+						}...)
+	
+						Expect(iptablesRules).To(Equal(expectedRules))
+					})
+				})
+
 				Context("when the chain namer fails", func() {
 					Context("when naming the rate limit chain", func() {
 						BeforeEach(func() {
@@ -266,6 +297,76 @@ var _ = Describe("NetOutChain", func() {
 						"-m", "hashlimit", "--hashlimit-above", "99/sec", "--hashlimit-burst", "400",
 						"--hashlimit-mode", "dstip,dstport", "--hashlimit-name", "some-container-handle",
 						"--hashlimit-htable-expire", "5000", "-j", "REJECT",
+					}
+					expectedRules := append(genericRules, []rules.IPTablesRule{
+						expectedRateLimitRule,
+						{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
+						{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
+					}...)
+
+					Expect(iptablesRules).To(Equal(expectedRules))
+				})
+
+				Context("when denied outbound container connections dry_run is enabled", func() {
+					BeforeEach(func() {
+						netOutChain.Conn.DryRun = true
+					})
+	
+					It("inserts the outbound connection rate limit rule", func() {
+						iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", "app", netrules.NewRulesFromGardenNetOutRules(netOutRules))
+						Expect(err).NotTo(HaveOccurred())
+	
+						Expect(chainNamer.PostfixCallCount()).To(Equal(2))
+	
+						By("specifying a jump condition to the respective logging chains")
+	
+						expectedRateLimitRule := rules.IPTablesRule{
+							"-p", "tcp",
+							"-m", "conntrack", "--ctstate", "NEW",
+							"-m", "hashlimit", "--hashlimit-above", "99/sec", "--hashlimit-burst", "400",
+							"--hashlimit-mode", "dstip,dstport", "--hashlimit-name", "some-container-handle",
+							"--hashlimit-htable-expire", "5000", "-j", "netout-some-container-handle-rl-log",
+						}
+						expectedRules := append(genericRules, []rules.IPTablesRule{
+							expectedRateLimitRule,
+							{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
+							{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
+						}...)
+	
+						Expect(iptablesRules).To(Equal(expectedRules))
+					})
+				})
+			})
+		})
+
+		Context("when outbound container connection limiting is disabled", func() {
+			BeforeEach(func() {
+				netOutChain.Conn.Limit = false
+				netOutChain.Conn.Burst = 400
+				netOutChain.Conn.RatePerSec = 99
+
+				chainNamer.PostfixReturnsOnCall(1, "netout-some-container-handle-rl-log", nil)
+			})
+
+			Context("when denied outbound container connections dry_run is enabled", func() {
+				BeforeEach(func() {
+					netOutChain.Conn.DryRun = true
+				})
+
+				It("inserts the outbound connection rate limit rule", func() {
+					iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", "app", netrules.NewRulesFromGardenNetOutRules(netOutRules))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(chainNamer.PostfixCallCount()).To(Equal(2))
+
+					By("specifying a jump condition to the respective logging chains")
+
+					expectedRateLimitRule := rules.IPTablesRule{
+						"-p", "tcp",
+						"-m", "conntrack", "--ctstate", "NEW",
+						"-m", "hashlimit", "--hashlimit-above", "99/sec", "--hashlimit-burst", "400",
+						"--hashlimit-mode", "dstip,dstport", "--hashlimit-name", "some-container-handle",
+						"--hashlimit-htable-expire", "5000", "-j", "netout-some-container-handle-rl-log",
 					}
 					expectedRules := append(genericRules, []rules.IPTablesRule{
 						expectedRateLimitRule,

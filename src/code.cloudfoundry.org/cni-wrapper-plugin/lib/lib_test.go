@@ -42,7 +42,8 @@ var _ = Describe("LoadWrapperConfig", func() {
 				"limit": true,
 				"logging": true,
 				"burst": 900,
-				"rate_per_sec": 100
+				"rate_per_sec": 100,
+				"dry_run": false
 			}
 		}`)
 	})
@@ -73,6 +74,7 @@ var _ = Describe("LoadWrapperConfig", func() {
 				Logging:    true,
 				Burst:      900,
 				RatePerSec: 100,
+				DryRun:     false,
 			},
 		}))
 	})

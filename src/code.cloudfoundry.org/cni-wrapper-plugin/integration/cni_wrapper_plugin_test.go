@@ -874,6 +874,46 @@ var _ = Describe("CniWrapperPlugin", func() {
 				})
 			})
 
+			Context("when outbound container connection limiting with logging and dry_run is enabled", func() {
+				BeforeEach(func() {
+					inputStruct.WrapperConfig.OutConn.Limit = true
+					inputStruct.WrapperConfig.OutConn.Logging = true
+					inputStruct.WrapperConfig.OutConn.DryRun = true
+					input = GetInput(inputStruct)
+				})
+
+				It("additionally writes iptables netout connection rate limit artifacts", func() {
+					cmd = cniCommand("ADD", input)
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(0))
+
+					By("creating a rate limit logging chain")
+					Expect(AllIPTablesRules("filter")).To(ContainElement(`-N netout--some-contain--rl-log`))
+
+					By("writing the default forwarding and outbound connection rate limit rule for that container")
+
+					expectedRateLimitCfg := "-m hashlimit --hashlimit-above 100/sec --hashlimit-burst 999 --hashlimit-mode dstip,dstport"
+					expectedRateLimitCfg += " --hashlimit-name " + containerID + " --hashlimit-htable-expire 10000"
+
+					Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+						`-A ` + netoutChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
+						`-A ` + netoutChainName + ` -p tcp -m state --state INVALID -j DROP`,
+						`-A ` + netoutChainName + ` -p tcp -m conntrack --ctstate NEW ` + expectedRateLimitCfg + ` -j netout--some-contain--rl-log`,
+						`-A ` + netoutChainName + ` -p icmp -m iprange --dst-range 5.5.5.5-6.6.6.6 -m icmp --icmp-type 8/0 -j ACCEPT`,
+						`-A ` + netoutChainName + ` -p udp -m iprange --dst-range 11.11.11.11-22.22.22.22 -m udp --dport 53:54 -j ACCEPT`,
+						`-A ` + netoutChainName + ` -p tcp -m iprange --dst-range 8.8.8.8-9.9.9.9 -m tcp --dport 53:54 -j ACCEPT`,
+						`-A ` + netoutChainName + ` -m iprange --dst-range 3.3.3.3-4.4.4.4 -j ACCEPT`,
+						`-A ` + netoutChainName + ` -j REJECT --reject-with icmp-port-unreachable`,
+					}))
+
+					By("writing the rate limit logging rules")
+					Expect(AllIPTablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+						`-A netout--some-contain--rl-log -m limit --limit 5/sec -j LOG --log-prefix "DENY_ORL_` + containerID[:19] + ` "`,
+					}))
+				})
+			})
+
 			Context("when a TCP rule has logging enabled", func() {
 				BeforeEach(func() {
 					inputStruct.WrapperConfig.RuntimeConfig.NetOutRules[1].Log = true
