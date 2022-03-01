@@ -32,8 +32,8 @@ type IPRange struct {
 }
 
 type ICMPInfo struct {
-	Type int
-	Code int
+	Type garden.ICMPType
+	Code garden.ICMPCode
 }
 
 type Rule interface {

@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"code.cloudfoundry.org/garden"
 	"github.com/google/shlex"
 )
 
@@ -175,7 +176,7 @@ func NewNetOutWithPortsRule(startIP, endIP string, startPort, endPort int, proto
 	}
 }
 
-func NewNetOutICMPRule(startIP, endIP string, icmpType, icmpCode int) IPTablesRule {
+func NewNetOutICMPRule(startIP, endIP string, icmpType garden.ICMPType, icmpCode garden.ICMPCode) IPTablesRule {
 	return IPTablesRule{
 		"-m", "iprange",
 		"-p", "icmp",
@@ -186,7 +187,7 @@ func NewNetOutICMPRule(startIP, endIP string, icmpType, icmpCode int) IPTablesRu
 	}
 }
 
-func NewNetOutICMPLogRule(startIP, endIP string, icmpType, icmpCode int, chain string) IPTablesRule {
+func NewNetOutICMPLogRule(startIP, endIP string, icmpType garden.ICMPType, icmpCode garden.ICMPCode, chain string) IPTablesRule {
 	return IPTablesRule{
 		"-m", "iprange",
 		"-p", "icmp",

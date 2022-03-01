@@ -64,7 +64,7 @@ func (r *gardenNetOutRule) ICMPInfo() *ICMPInfo {
 		return nil
 	}
 	return &ICMPInfo{
-		Type: int(r.rule.ICMPs.Type),
-		Code: int(*r.rule.ICMPs.Code),
+		Type: r.rule.ICMPs.Type,
+		Code: *r.rule.ICMPs.Code,
 	}
 }
