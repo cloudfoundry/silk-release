@@ -1,6 +1,7 @@
 package netrules_test
 
 import (
+	"fmt"
 	"net"
 
 	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
@@ -63,6 +64,39 @@ var _ = Describe("SecurityGroupRule", func() {
 			_, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(Equal(netrules.ErrIPRangeConversionFailed))
+		})
+	})
+
+	Describe("ICMPInfo()", func() {
+		It("parses an ICMP code/type properly", func() {
+			securityGroupRule := policy_client.SecurityGroupRule{
+				Destination: "10.0.0.1",
+				Type:        0,
+				Code:        3,
+			}
+			rule, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(fmt.Sprintf("%d/%d", rule.ICMPInfo().Type, rule.ICMPInfo().Code)).To(Equal("0/3"))
+		})
+		It("parses -1 as all types", func() {
+			securityGroupRule := policy_client.SecurityGroupRule{
+				Destination: "10.0.0.1",
+				Type:        -1,
+				Code:        3,
+			}
+			rule, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(fmt.Sprintf("%d/%d", rule.ICMPInfo().Type, rule.ICMPInfo().Code)).To(Equal("255/3"))
+		})
+		It("parses -1 as all codes", func() {
+			securityGroupRule := policy_client.SecurityGroupRule{
+				Destination: "10.0.0.1",
+				Type:        0,
+				Code:        -1,
+			}
+			rule, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(fmt.Sprintf("%d/%d", rule.ICMPInfo().Type, rule.ICMPInfo().Code)).To(Equal("0/255"))
 		})
 	})
 

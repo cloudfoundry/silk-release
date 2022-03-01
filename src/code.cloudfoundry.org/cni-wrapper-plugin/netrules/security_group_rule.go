@@ -77,8 +77,8 @@ func (r *securityGroupRule) Ports() []PortRange {
 
 func (r *securityGroupRule) ICMPInfo() *ICMPInfo {
 	return &ICMPInfo{
-		Type: int(r.rule.Type),
-		Code: int(r.rule.Code),
+		Type: garden.ICMPType(r.rule.Type),
+		Code: garden.ICMPCode(r.rule.Code),
 	}
 }
 
