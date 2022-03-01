@@ -16,6 +16,7 @@ files:
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/runner/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/debugserver/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/filelock/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/garden/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/internal/truncate/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/lagerflags/*.go # gosub-main-module
