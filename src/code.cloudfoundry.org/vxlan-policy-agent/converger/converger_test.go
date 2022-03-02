@@ -13,6 +13,7 @@ import (
 
 	"code.cloudfoundry.org/lager/lagertest"
 
+	"github.com/hashicorp/go-multierror"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
@@ -78,7 +79,7 @@ var _ = Describe("Single Poll Cycle", func() {
 			fakePolicyPlanner.GetPolicyRulesAndChainReturns(policyRulesWithChain, nil)
 		})
 
-		It("enforces local,remote and policy rules on configured interval", func() {
+		It("enforces local, remote and policy rules on configured interval", func() {
 			err := p.DoPolicyCycle()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(fakeLocalPlanner.GetPolicyRulesAndChainCallCount()).To(Equal(1))
@@ -240,22 +241,16 @@ var _ = Describe("Single Poll Cycle", func() {
 	})
 	Describe("DoASGCycle", func() {
 		var (
-			p                    *converger.SinglePollCycle
-			fakeASGPlanner       *fakes.Planner
-			fakeLocalPlanner     *fakes.Planner
-			fakeRemotePlanner    *fakes.Planner
-			fakeEnforcer         *fakes.RuleEnforcer
-			metricsSender        *fakes.MetricsSender
-			localRulesWithChain  []enforcer.RulesWithChain
-			remoteRulesWithChain []enforcer.RulesWithChain
-			ASGRulesWithChain    []enforcer.RulesWithChain
-			logger               *lagertest.TestLogger
+			p                 *converger.SinglePollCycle
+			fakeASGPlanner    *fakes.Planner
+			fakeEnforcer      *fakes.RuleEnforcer
+			metricsSender     *fakes.MetricsSender
+			ASGRulesWithChain []enforcer.RulesWithChain
+			logger            *lagertest.TestLogger
 		)
 
 		BeforeEach(func() {
 			fakeASGPlanner = &fakes.Planner{}
-			fakeLocalPlanner = &fakes.Planner{}
-			fakeRemotePlanner = &fakes.Planner{}
 			fakeEnforcer = &fakes.RuleEnforcer{}
 			metricsSender = &fakes.MetricsSender{}
 			logger = lagertest.NewTestLogger("test")
@@ -265,62 +260,48 @@ var _ = Describe("Single Poll Cycle", func() {
 			}
 
 			p = converger.NewSinglePollCycle(
-				[]converger.Planner{fakeLocalPlanner, fakeRemotePlanner, fakeASGPlanner},
+				[]converger.Planner{fakeASGPlanner},
 				fakeEnforcer,
 				metricsSender,
 				logger,
 			)
 
-			localRulesWithChain = []enforcer.RulesWithChain{
-				{
-					Rules: []rules.IPTablesRule{[]string{"local-rule"}},
-					Chain: enforcer.Chain{
-						Table:       "local-table",
-						ParentChain: "local-1234",
-						Prefix:      "local-prefix",
-					},
-				},
-			}
-
-			remoteRulesWithChain = []enforcer.RulesWithChain{
-				{
-					Rules: []rules.IPTablesRule{[]string{"remote-rule"}},
-					Chain: enforcer.Chain{
-						Table:       "remote-table",
-						ParentChain: "remote-1234",
-						Prefix:      "remote-prefix",
-					},
-				},
-			}
-
 			ASGRulesWithChain = []enforcer.RulesWithChain{
 				{
-					Rules: []rules.IPTablesRule{[]string{"asg-rule"}},
+					Rules: []rules.IPTablesRule{[]string{"asg-rule2"}},
 					Chain: enforcer.Chain{
-						Table:       "asg-table",
-						ParentChain: "asg-1234",
-						Prefix:      "asg-prefix",
+						Table:       "filter",
+						ParentChain: "netout-1",
+						Prefix:      "asg-1234",
+					},
+				}, {
+					Rules: []rules.IPTablesRule{[]string{"asg-rule2"}},
+					Chain: enforcer.Chain{
+						Table:       "filter",
+						ParentChain: "netout-2",
+						Prefix:      "asg-2345",
+					},
+				},
+				{
+					Rules: []rules.IPTablesRule{[]string{"asg-rule3"}},
+					Chain: enforcer.Chain{
+						Table:       "filter",
+						ParentChain: "netout-3",
+						Prefix:      "asg-3456",
 					},
 				},
 			}
 
-			fakeLocalPlanner.GetASGRulesAndChainsReturns(localRulesWithChain, nil)
-			fakeRemotePlanner.GetASGRulesAndChainsReturns(remoteRulesWithChain, nil)
 			fakeASGPlanner.GetASGRulesAndChainsReturns(ASGRulesWithChain, nil)
 		})
-		It("enforces local,remote and ASG rules on configured interval", func() {
+		It("enforces ASG rules on configured interval", func() {
 			err := p.DoASGCycle()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(fakeLocalPlanner.GetASGRulesAndChainsCallCount()).To(Equal(1))
-			Expect(fakeRemotePlanner.GetASGRulesAndChainsCallCount()).To(Equal(1))
 			Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(1))
 			Expect(fakeASGPlanner.GetASGRulesAndChainsArgsForCall(0)).To(BeNil())
 			Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(3))
 
-			allRulesWithChains := append(localRulesWithChain, remoteRulesWithChain...)
-			allRulesWithChains = append(allRulesWithChains, ASGRulesWithChain...)
-
-			for i, ruleWithChain := range allRulesWithChains {
+			for i, ruleWithChain := range ASGRulesWithChain {
 				rws := fakeEnforcer.EnforceRulesAndChainArgsForCall(i)
 				Expect(rws).To(Equal(ruleWithChain))
 			}
@@ -330,16 +311,16 @@ var _ = Describe("Single Poll Cycle", func() {
 			Expect(regex).To(Equal(regexp.MustCompile(planner.ASGManagedChainsRegex)))
 			Expect(chains).To(Equal([]enforcer.LiveChain{
 				{
-					Table: "local-table",
-					Name:  "local-prefix-with-suffix",
+					Table: "filter",
+					Name:  "asg-1234-with-suffix",
 				},
 				{
-					Table: "remote-table",
-					Name:  "remote-prefix-with-suffix",
+					Table: "filter",
+					Name:  "asg-2345-with-suffix",
 				},
 				{
-					Table: "asg-table",
-					Name:  "asg-prefix-with-suffix",
+					Table: "filter",
+					Name:  "asg-3456-with-suffix",
 				}}))
 		})
 
@@ -365,8 +346,6 @@ var _ = Describe("Single Poll Cycle", func() {
 			It("does not re-write the ip tables rules", func() {
 				err := p.DoASGCycle()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(fakeLocalPlanner.GetASGRulesAndChainsCallCount()).To(Equal(2))
-				Expect(fakeRemotePlanner.GetASGRulesAndChainsCallCount()).To(Equal(2))
 				Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(2))
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(3))
@@ -378,15 +357,13 @@ var _ = Describe("Single Poll Cycle", func() {
 				err := p.DoASGCycle()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(3))
-				localRulesWithChain[0].Rules = []rules.IPTablesRule{[]string{"new-rule"}}
-				fakeLocalPlanner.GetASGRulesAndChainsReturns(localRulesWithChain, nil)
+				ASGRulesWithChain[0].Rules = []rules.IPTablesRule{[]string{"new-rule"}}
+				fakeASGPlanner.GetASGRulesAndChainsReturns(ASGRulesWithChain, nil)
 			})
 
 			It("re-writes the ip tables rules for that chain", func() {
 				err := p.DoASGCycle()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(fakeLocalPlanner.GetASGRulesAndChainsCallCount()).To(Equal(2))
-				Expect(fakeRemotePlanner.GetASGRulesAndChainsCallCount()).To(Equal(2))
 				Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(2))
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(4))
@@ -395,68 +372,64 @@ var _ = Describe("Single Poll Cycle", func() {
 			It("logs a message about writing ip tables rules", func() {
 				err := p.DoASGCycle()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(logger).To(gbytes.Say("poll-cycle.*updating iptables rules.*new rules.*new-rule.*num new rules.*1.*num old rules.*1.*old rules.*local-rule"))
+				Expect(logger).To(gbytes.Say("poll-cycle.*updating iptables rules.*new rules.*new-rule.*num new rules.*1.*num old rules.*1.*old rules.*asg-rule"))
 			})
 		})
 
-		Context("when an ASG ruleset is  present when there are no contianers associated with it", func() {
+		Context("when an ASG ruleset is present when there are no containers associated with it", func() {
 			BeforeEach(func() {
 				//				create some fake ASG iptables
 				var orphanRulesWithChain []enforcer.RulesWithChain
-				orphanRulesWithChain = append(localRulesWithChain, enforcer.RulesWithChain{
+				orphanRulesWithChain = append(ASGRulesWithChain, enforcer.RulesWithChain{
 					Rules: []rules.IPTablesRule{[]string{"asg-rule"}},
 					Chain: enforcer.Chain{
 						Table:       "asg-table-orphan",
-						ParentChain: "orphan-1234",
-						Prefix:      "orphan-prefix",
+						ParentChain: "netout-orphan",
+						Prefix:      "asg-orphaned",
 					},
 				})
-				fakeLocalPlanner.GetASGRulesAndChainsReturns(orphanRulesWithChain, nil)
+				fakeASGPlanner.GetASGRulesAndChainsReturns(orphanRulesWithChain, nil)
 				err := p.DoASGCycle()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(4))
 				Expect(p.CurrentlyAppliedChainNames()).To(ConsistOf([]string{
-					"local-prefix-with-suffix",
-					"remote-prefix-with-suffix",
-					"asg-prefix-with-suffix",
-					"orphan-prefix-with-suffix",
+					"asg-1234-with-suffix",
+					"asg-2345-with-suffix",
+					"asg-3456-with-suffix",
+					"asg-orphaned-with-suffix",
 				}))
-				fakeLocalPlanner.GetASGRulesAndChainsReturns(localRulesWithChain, nil)
+				fakeASGPlanner.GetASGRulesAndChainsReturns(ASGRulesWithChain, nil)
 				fakeEnforcer.EnforceChainsMatchingReturns([]enforcer.LiveChain{{
-					Table: "asg-table-orphan", Name: "orphan-prefix-with-suffix"}},
+					Table: "asg-table-orphan", Name: "asg-orphaned-with-suffix"}},
 					nil)
 			})
 
 			It("removes the fake ASG iptables/rules", func() {
 				desiredChainsResult := []enforcer.LiveChain{
 					{
-						Table: "local-table",
-						Name:  "local-prefix-with-suffix",
+						Table: "filter",
+						Name:  "asg-1234-with-suffix",
 					},
 					{
-						Table: "asg-table-orphan",
-						Name:  "orphan-prefix-with-suffix",
+						Table: "filter",
+						Name:  "asg-2345-with-suffix",
 					},
 					{
-						Table: "remote-table",
-						Name:  "remote-prefix-with-suffix",
-					},
-					{
-						Table: "asg-table",
-						Name:  "asg-prefix-with-suffix",
+						Table: "filter",
+						Name:  "asg-3456-with-suffix",
 					},
 				}
 				err := p.DoASGCycle()
 				Expect(err).NotTo(HaveOccurred())
 				By("only removing the orphaned rules", func() {
 					Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(2))
-					regex, desiredChains := fakeEnforcer.EnforceChainsMatchingArgsForCall(0)
+					regex, desiredChains := fakeEnforcer.EnforceChainsMatchingArgsForCall(1)
 					Expect(regex).To(Equal(regexp.MustCompile(planner.ASGManagedChainsRegex)))
 					Expect(desiredChains).To(Equal(desiredChainsResult))
 					Expect(p.CurrentlyAppliedChainNames()).To(ConsistOf([]string{
-						"local-prefix-with-suffix",
-						"remote-prefix-with-suffix",
-						"asg-prefix-with-suffix",
+						"asg-1234-with-suffix",
+						"asg-2345-with-suffix",
+						"asg-3456-with-suffix",
 					}))
 				})
 			})
@@ -467,14 +440,18 @@ var _ = Describe("Single Poll Cycle", func() {
 					fakeEnforcer.EnforceChainsMatchingReturns([]enforcer.LiveChain{}, fmt.Errorf("eggplant"))
 					metricsCount = metricsSender.SendDurationCallCount()
 				})
+
 				It("returns a error", func() {
 					err := p.DoASGCycle()
 					Expect(err).To(HaveOccurred())
-					Expect(err).To(MatchError("clean-up-orphaned-asg-chains: eggplant"))
-					Expect(metricsSender.SendDurationCallCount()).To(Equal(metricsCount))
+					multiErr, ok := err.(*multierror.Error)
+					Expect(ok).To(BeTrue())
+					errors := multiErr.WrappedErrors()
+					Expect(errors).To(HaveLen(1))
+					Expect(errors[0]).To(MatchError("clean-up-orphaned-asg-chains: eggplant"))
+					Expect(metricsSender.SendDurationCallCount()).To(Equal(metricsCount + 3))
 				})
 			})
-
 		})
 
 		Context("when a ruleset has all rules removed since the last poll cycle", func() {
@@ -482,15 +459,13 @@ var _ = Describe("Single Poll Cycle", func() {
 				err := p.DoASGCycle()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(3))
-				localRulesWithChain[0].Rules = []rules.IPTablesRule{}
-				fakeLocalPlanner.GetASGRulesAndChainsReturns(localRulesWithChain, nil)
+				ASGRulesWithChain[0].Rules = []rules.IPTablesRule{}
+				fakeASGPlanner.GetASGRulesAndChainsReturns(ASGRulesWithChain, nil)
 			})
 
 			It("re-writes the ip tables rules for that chain", func() {
 				err := p.DoASGCycle()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(fakeLocalPlanner.GetASGRulesAndChainsCallCount()).To(Equal(2))
-				Expect(fakeRemotePlanner.GetASGRulesAndChainsCallCount()).To(Equal(2))
 				Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(2))
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(4))
@@ -500,8 +475,8 @@ var _ = Describe("Single Poll Cycle", func() {
 
 		Context("when a new empty chain is created", func() {
 			BeforeEach(func() {
-				localRulesWithChain[0].Rules = []rules.IPTablesRule{}
-				fakeLocalPlanner.GetASGRulesAndChainsReturns(localRulesWithChain, nil)
+				ASGRulesWithChain[0].Rules = []rules.IPTablesRule{}
+				fakeASGPlanner.GetASGRulesAndChainsReturns(ASGRulesWithChain, nil)
 			})
 
 			It("enforces the rules for that chain", func() {
@@ -514,9 +489,9 @@ var _ = Describe("Single Poll Cycle", func() {
 			})
 		})
 
-		Context("when the local planner errors", func() {
+		Context("when the planner errors", func() {
 			BeforeEach(func() {
-				fakeLocalPlanner.GetASGRulesAndChainsReturns(ASGRulesWithChain, errors.New("eggplant"))
+				fakeASGPlanner.GetASGRulesAndChainsReturns(ASGRulesWithChain, errors.New("eggplant"))
 			})
 
 			It("logs the error and returns", func() {
@@ -529,46 +504,125 @@ var _ = Describe("Single Poll Cycle", func() {
 			})
 		})
 
-		Context("when the remote planner errors", func() {
+		Context("when the enforcer errors", func() {
 			BeforeEach(func() {
-				fakeRemotePlanner.GetASGRulesAndChainsReturns(ASGRulesWithChain, errors.New("eggplant"))
+				fakeEnforcer.EnforceRulesAndChainReturns("", errors.New("eggplant"))
+				// set up an initial successful cycle to create the cache of container to asg mappings
+				fakeEnforcer.EnforceRulesAndChainReturnsOnCall(0, "asg-1234-with-suffix", nil)
+				fakeEnforcer.EnforceRulesAndChainReturnsOnCall(1, "asg-2345-with-suffix", nil)
+				fakeEnforcer.EnforceRulesAndChainReturnsOnCall(2, "asg-3456-with-suffix", nil)
+				err := p.DoASGCycle()
+				Expect(err).ToNot(HaveOccurred())
 			})
 
-			It("logs the error and returns", func() {
+			PIt("logs the error and returns", func() {
 				err := p.DoASGCycle()
-				Expect(err).To(MatchError("get-asg-rules: eggplant"))
+				multiErr, ok := err.(*multierror.Error)
+				Expect(ok).To(BeTrue())
+				errors := multiErr.WrappedErrors()
+				Expect(errors).To(HaveLen(3))
+				Expect(errors[0]).To(MatchError("enforce-asg: eggplant"))
+				Expect(errors[1]).To(MatchError("enforce-asg: eggplant"))
+				Expect(errors[2]).To(MatchError("enforce-asg: eggplant"))
 
-				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(1))
-				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(0))
-				Expect(metricsSender.SendDurationCallCount()).To(Equal(0))
+				Expect(metricsSender.SendDurationCallCount()).To(Equal(3))
+			})
+
+			PIt("does NOT attempt to clean up the previously applied chain", func() {
+				err := p.DoASGCycle()
+				Expect(err).To(HaveOccurred())
+				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(1))
+				_, chains := fakeEnforcer.EnforceChainsMatchingArgsForCall(0)
+				Expect(chains).To(Equal([]enforcer.LiveChain{{
+					Table: "filter",
+					Name:  "asg-1234-with-suffix",
+				}, {
+					Table: "filter",
+					Name:  "asg-2345-with-suffix",
+				}, {
+					Table: "",
+					Name:  "asg-3456-with-suffix",
+				}}))
 			})
 		})
 
-		Context("when the ASG planner errors", func() {
+		Context("when there are multiple planners", func() {
+			var fakeOtherPlanner *fakes.Planner
+			var otherRulesWithChain []enforcer.RulesWithChain
 			BeforeEach(func() {
-				fakeASGPlanner.GetASGRulesAndChainsReturns(ASGRulesWithChain, errors.New("eggplant"))
+				fakeOtherPlanner = &fakes.Planner{}
+				p = converger.NewSinglePollCycle(
+					[]converger.Planner{fakeASGPlanner, fakeOtherPlanner},
+					fakeEnforcer,
+					metricsSender,
+					logger,
+				)
+				otherRulesWithChain = []enforcer.RulesWithChain{
+					{
+						Rules: []rules.IPTablesRule{[]string{"rule1"}},
+						Chain: enforcer.Chain{
+							Table:       "mangle",
+							ParentChain: "FORWARD",
+							Prefix:      "other-mangle-rule",
+						},
+					},
+				}
+				fakeOtherPlanner.GetASGRulesAndChainsReturns(otherRulesWithChain, nil)
 			})
-
-			It("logs the error and returns", func() {
+			It("calls all the planners", func() {
 				err := p.DoASGCycle()
-				Expect(err).To(MatchError("get-asg-rules: eggplant"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(1))
+				Expect(fakeASGPlanner.GetASGRulesAndChainsArgsForCall(0)).To(BeNil())
+				Expect(fakeOtherPlanner.GetASGRulesAndChainsCallCount()).To(Equal(1))
+				Expect(fakeOtherPlanner.GetASGRulesAndChainsArgsForCall(0)).To(BeNil())
+				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(4))
 
-				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(2))
-				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(0))
-				Expect(metricsSender.SendDurationCallCount()).To(Equal(0))
+				allRulesWithChain := append(ASGRulesWithChain, otherRulesWithChain...)
+
+				for i, ruleWithChain := range allRulesWithChain {
+					rws := fakeEnforcer.EnforceRulesAndChainArgsForCall(i)
+					Expect(rws).To(Equal(ruleWithChain))
+				}
+
+				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(1))
+				regex, chains := fakeEnforcer.EnforceChainsMatchingArgsForCall(0)
+				Expect(regex).To(Equal(regexp.MustCompile(planner.ASGManagedChainsRegex)))
+				Expect(chains).To(Equal([]enforcer.LiveChain{
+					{
+						Table: "filter",
+						Name:  "asg-1234-with-suffix",
+					}, {
+						Table: "filter",
+						Name:  "asg-2345-with-suffix",
+					}, {
+						Table: "filter",
+						Name:  "asg-3456-with-suffix",
+					}, {
+						Table: "mangle",
+						Name:  "other-mangle-rule-with-suffix",
+					}}))
 			})
-		})
-
-		Context("when ASG enforcer errors", func() {
-			BeforeEach(func() {
-				fakeEnforcer.EnforceRulesAndChainReturns("word string", errors.New("eggplant"))
-			})
-
-			It("logs the error and returns", func() {
-				err := p.DoASGCycle()
-				Expect(err).To(MatchError("enforce-asg: eggplant"))
-
-				Expect(metricsSender.SendDurationCallCount()).To(Equal(0))
+			Context("and a planner fails on GetASGRulesAndChains", func() {
+				BeforeEach(func() {
+					fakeASGPlanner.GetASGRulesAndChainsReturns(ASGRulesWithChain, fmt.Errorf("error on first planner"))
+				})
+				It("fails properly", func() {
+					err := p.DoASGCycle()
+					By("returning the error", func() {
+						Expect(err).To(HaveOccurred())
+						Expect(err).To(MatchError(fmt.Errorf("get-asg-rules: error on first planner")))
+					})
+					By("not planning anything else", func() {
+						Expect(fakeOtherPlanner.GetASGRulesAndChainsCallCount()).To(Equal(0))
+					})
+					By("not enforcing anything", func() {
+						Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(0))
+					})
+					By("not cleaning up orphaned chains", func() {
+						Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(0))
+					})
+				})
 			})
 		})
 		Describe("SyncASGsForContainer", func() {
