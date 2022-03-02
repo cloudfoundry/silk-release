@@ -111,7 +111,7 @@ func (e *Enforcer) EnforceChainsMatching(regex *regexp.Regexp, desiredChains []L
 		}
 	}
 	for _, chain := range chainsToDelete {
-		err := e.deleteChain(chain)
+		err := e.deleteChain(e.Logger, chain)
 		if err != nil {
 			e.Logger.Error(fmt.Sprintf("delete-chain-%s-from-%s", chain.Name, chain.Table), err)
 			return []LiveChain{}, fmt.Errorf("deleting chain %s from table %s: %s", chain.Name, chain.Table, err)
@@ -137,10 +137,12 @@ func (e *Enforcer) EnforceOnChain(c Chain, rules []rules.IPTablesRule) (string, 
 func (e *Enforcer) Enforce(table, parentChain, chainPrefix, managedChainsRegex string, cleanupParentChain bool, rulespec ...rules.IPTablesRule) (string, error) {
 	newTime := e.timestamper.CurrentTime()
 	chain := fmt.Sprintf("%s%d", chainPrefix, newTime)
+	logger := e.Logger.Session(chain)
 
+	logger.Debug("create-chain", lager.Data{"chain": chain, "table": table})
 	err := e.iptables.NewChain(table, chain)
 	if err != nil {
-		e.Logger.Error("create-chain", err)
+		logger.Error("create-chain", err)
 		return "", fmt.Errorf("creating chain: %s", err)
 	}
 
@@ -148,27 +150,39 @@ func (e *Enforcer) Enforce(table, parentChain, chainPrefix, managedChainsRegex s
 		rulespec = append([]rules.IPTablesRule{rules.NewAcceptEverythingRule(e.conf.OverlayNetwork)}, rulespec...)
 	}
 
+	logger.Debug("insert-chain", lager.Data{"chain": parentChain, "table": table, "index": 1, "rule": rules.IPTablesRule{"-j", chain}})
 	err = e.iptables.BulkInsert(table, parentChain, 1, rules.IPTablesRule{"-j", chain})
 	if err != nil {
-		e.Logger.Error("insert-chain", err)
+		logger.Error("insert-chain", err)
+		delErr := e.deleteChain(logger, LiveChain{Table: table, Name: chain})
+		if delErr != nil {
+			logger.Error("cleanup-failed-insert", delErr)
+		}
 		return "", fmt.Errorf("inserting chain: %s", err)
 	}
 
+	logger.Debug("bulk-append", lager.Data{"chain": chain, "table": table, "rules": rulespec})
 	err = e.iptables.BulkAppend(table, chain, rulespec...)
 	if err != nil {
+		logger.Error("bulk-append", err)
+		cleanErr := e.cleanupOldChain(logger, LiveChain{Table: table, Name: chain}, parentChain)
+		if cleanErr != nil {
+			logger.Error("cleanup-failed-append", cleanErr)
+		}
 		return "", fmt.Errorf("bulk appending: %s", err)
 	}
 
-	err = e.cleanupOldRules(table, parentChain, managedChainsRegex, cleanupParentChain, newTime)
+	logger.Debug("cleaning-up-old-rules", lager.Data{"chain": chain, "table": table, "rules": rulespec})
+	err = e.cleanupOldRules(logger, table, parentChain, managedChainsRegex, cleanupParentChain, newTime)
 	if err != nil {
-		e.Logger.Error("cleanup-rules", err)
-		return "", err
+		logger.Error("cleanup-rules", err)
+		return "", fmt.Errorf("cleaning up: %s", err)
 	}
 
 	return chain, nil
 }
 
-func (e *Enforcer) cleanupOldRules(table, parentChain, managedChainsRegex string, cleanupParentChain bool, newTime int64) error {
+func (e *Enforcer) cleanupOldRules(logger lager.Logger, table, parentChain, managedChainsRegex string, cleanupParentChain bool, newTime int64) error {
 	rulesList, err := e.iptables.List(table, parentChain)
 	if err != nil {
 		return fmt.Errorf("listing forward rules: %s", err)
@@ -187,8 +201,8 @@ func (e *Enforcer) cleanupOldRules(table, parentChain, managedChainsRegex string
 			}
 
 			if oldTime < newTime {
-				e.Logger.Debug("cleaning up old chain")
-				err = e.cleanupOldChain(LiveChain{Table: table, Name: matches[0]}, parentChain)
+				logger.Debug("clean-up-old-chain", lager.Data{"name": matches[0]})
+				err = e.cleanupOldChain(logger, LiveChain{Table: table, Name: matches[0]}, parentChain)
 				if err != nil {
 					return err
 				}
@@ -198,10 +212,12 @@ func (e *Enforcer) cleanupOldRules(table, parentChain, managedChainsRegex string
 				matches := reOtherRules.FindStringSubmatch(r)
 
 				if len(matches) > 1 {
+					logger.Debug("cleaning-up-parent-ruleset", lager.Data{"name": matches[0]})
 					rule, err := rules.NewIPTablesRuleFromIPTablesLine(matches[1])
 					if err != nil {
 						return fmt.Errorf("parsing parent chain rule: %s", err)
 					}
+					logger.Debug("removing-rule", lager.Data{"rule": rule})
 					err = e.iptables.Delete(table, parentChain, rule)
 					if err != nil {
 						return fmt.Errorf("clean up parent chain: %s", err)
@@ -214,19 +230,21 @@ func (e *Enforcer) cleanupOldRules(table, parentChain, managedChainsRegex string
 	return nil
 }
 
-func (e *Enforcer) cleanupOldChain(chain LiveChain, parentChain string) error {
+func (e *Enforcer) cleanupOldChain(logger lager.Logger, chain LiveChain, parentChain string) error {
+	logger.Debug("delete-parent-chain-jump-rule", lager.Data{"table": chain.Table, "chain": parentChain, "rule": rules.IPTablesRule{"-j", chain.Name}})
 	err := e.iptables.Delete(chain.Table, parentChain, rules.IPTablesRule{"-j", chain.Name})
 	if err != nil {
 		return fmt.Errorf("remove reference to old chain: %s", err)
 	}
 
-	err = e.deleteChain(chain)
+	err = e.deleteChain(logger, chain)
 
 	return err
 }
 
-func (e *Enforcer) deleteChain(chain LiveChain) error {
-	// find jumps and delete those chains as well (since we may have log tables that we reference that need deleting)
+func (e *Enforcer) deleteChain(logger lager.Logger, chain LiveChain) error {
+	// find gotos and delete those chains as well (since we may have log tables that we reference that need deleting)
+	logger.Debug("list-chain", lager.Data{"table": chain.Table, "chain": chain.Name})
 	rules, err := e.iptables.List(chain.Table, chain.Name)
 	if err != nil {
 		return fmt.Errorf("list rules for chain: %s", err)
@@ -237,22 +255,25 @@ func (e *Enforcer) deleteChain(chain LiveChain) error {
 	for _, rule := range rules {
 		matches := reJumpRule.FindStringSubmatch(rule)
 		if len(matches) > 1 {
+			logger.Debug("found-target-chain-to-recurse", lager.Data{"table": chain.Table, "chain": chain.Name, "target-chain": matches[1]})
 			jumpTargets[matches[1]] = struct{}{}
 		}
-
 	}
 
+	logger.Debug("flush-chain", lager.Data{"table": chain.Table, "chain": chain.Name})
 	err = e.iptables.ClearChain(chain.Table, chain.Name)
 	if err != nil {
 		return fmt.Errorf("cleanup old chain: %s", err)
 	}
 
+	logger.Debug("delete-chain", lager.Data{"table": chain.Table, "chain": chain.Name})
 	err = e.iptables.DeleteChain(chain.Table, chain.Name)
 	if err != nil {
 		return fmt.Errorf("delete old chain: %s", err)
 	}
 
 	for target, _ := range jumpTargets {
+		logger.Debug("deleting-target-chain", lager.Data{"table": chain.Table, "target-chain": target})
 		if err := e.iptables.DeleteChain(chain.Table, target); err != nil {
 			return fmt.Errorf("cleanup jump target %s: %s", target, err)
 		}
