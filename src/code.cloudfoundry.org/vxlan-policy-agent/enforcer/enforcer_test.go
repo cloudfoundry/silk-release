@@ -243,11 +243,52 @@ var _ = Describe("Enforcer", func() {
 				iptables.BulkInsertReturns(errors.New("banana"))
 			})
 
-			It("it logs and returns a useful error", func() {
+			It("it logs, deletes the new chain and returns a useful error", func() {
 				_, err := ruleEnforcer.Enforce("some-table", "some-chain", "foo", "foo", false, []rules.IPTablesRule{fakeRule}...)
 				Expect(err).To(MatchError("inserting chain: banana"))
 
+				Expect(iptables.ClearChainCallCount()).To(Equal(1))
+				Expect(iptables.DeleteChainCallCount()).To(Equal(1))
+
+				table, chain := iptables.ClearChainArgsForCall(0)
+				Expect(table).To(Equal("some-table"))
+				Expect(chain).To(Equal("foo42"))
+
+				table, chain = iptables.DeleteChainArgsForCall(0)
+				Expect(table).To(Equal("some-table"))
+				Expect(chain).To(Equal("foo42"))
+
 				Expect(logger).To(gbytes.Say("insert-chain.*banana"))
+			})
+		})
+
+		Context("when appending the new chain fails", func() {
+			BeforeEach(func() {
+				iptables.BulkAppendReturns(errors.New("banana"))
+			})
+
+			It("it logs, cleans up the new chain and returns a useful error", func() {
+				_, err := ruleEnforcer.Enforce("some-table", "some-chain", "foo", "foo", false, []rules.IPTablesRule{fakeRule}...)
+				Expect(err).To(MatchError("bulk appending: banana"))
+
+				Expect(iptables.ClearChainCallCount()).To(Equal(1))
+				Expect(iptables.DeleteChainCallCount()).To(Equal(1))
+				Expect(iptables.DeleteCallCount()).To(Equal(1))
+
+				table, parentChain, ruleSpec := iptables.DeleteArgsForCall(0)
+				Expect(table).To(Equal("some-table"))
+				Expect(parentChain).To(Equal("some-chain"))
+				Expect(ruleSpec).To(Equal(rules.IPTablesRule{"-j", "foo42"}))
+
+				table, chain := iptables.ClearChainArgsForCall(0)
+				Expect(table).To(Equal("some-table"))
+				Expect(chain).To(Equal("foo42"))
+
+				table, chain = iptables.DeleteChainArgsForCall(0)
+				Expect(table).To(Equal("some-table"))
+				Expect(chain).To(Equal("foo42"))
+
+				Expect(logger).To(gbytes.Say("bulk-append.*banana"))
 			})
 		})
 
@@ -258,7 +299,7 @@ var _ = Describe("Enforcer", func() {
 
 			It("it logs and returns a useful error", func() {
 				_, err := ruleEnforcer.Enforce("some-table", "some-chain", "foo", "foo", false, []rules.IPTablesRule{fakeRule}...)
-				Expect(err).To(MatchError("listing forward rules: blueberry"))
+				Expect(err).To(MatchError("cleaning up: listing forward rules: blueberry"))
 				Expect(logger).To(gbytes.Say("cleanup-rules.*blueberry"))
 			})
 		})
@@ -271,7 +312,7 @@ var _ = Describe("Enforcer", func() {
 
 			It("returns a useful error", func() {
 				_, err := ruleEnforcer.Enforce("some-table", "some-chain", "foo", "foo", false, []rules.IPTablesRule{fakeRule}...)
-				Expect(err).To(MatchError("remove reference to old chain: banana"))
+				Expect(err).To(MatchError("cleaning up: remove reference to old chain: banana"))
 			})
 		})
 

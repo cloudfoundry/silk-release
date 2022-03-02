@@ -506,43 +506,87 @@ var _ = Describe("Single Poll Cycle", func() {
 
 		Context("when the enforcer errors", func() {
 			BeforeEach(func() {
-				fakeEnforcer.EnforceRulesAndChainReturns("", errors.New("eggplant"))
 				// set up an initial successful cycle to create the cache of container to asg mappings
-				fakeEnforcer.EnforceRulesAndChainReturnsOnCall(0, "asg-1234-with-suffix", nil)
-				fakeEnforcer.EnforceRulesAndChainReturnsOnCall(1, "asg-2345-with-suffix", nil)
-				fakeEnforcer.EnforceRulesAndChainReturnsOnCall(2, "asg-3456-with-suffix", nil)
+				// fakeEnforcer.EnforceRulesAndChainStub = func(chain enforcer.RulesWithChain) (string, error) {
+				// 	return fmt.Sprintf("%s-with-suffix", chain.Chain.Prefix), nil
+				// }
 				err := p.DoASGCycle()
 				Expect(err).ToNot(HaveOccurred())
+
+				//simulate changes to rules, so enforcer will get called again
+				newFakeASGs := []enforcer.RulesWithChain{
+					{
+						Rules: []rules.IPTablesRule{[]string{"asg-rule3"}},
+						Chain: enforcer.Chain{
+							Table:       "filter",
+							ParentChain: "netout-1",
+							Prefix:      "asg-1234",
+						},
+					}, {
+						Rules: []rules.IPTablesRule{[]string{"asg-rule4"}},
+						Chain: enforcer.Chain{
+							Table:       "filter",
+							ParentChain: "netout-2",
+							Prefix:      "asg-2345",
+						},
+					},
+					{
+						Rules: []rules.IPTablesRule{[]string{"asg-rule5"}},
+						Chain: enforcer.Chain{
+							Table:       "filter",
+							ParentChain: "netout-3",
+							Prefix:      "asg-3456",
+						},
+					},
+				}
+				fakeASGPlanner.GetASGRulesAndChainsReturns(newFakeASGs, nil)
+				// have enforcerulesandchain return success for first call, and failures on the rest,
+				// to validate that we get multiple errors returned, and also that we desire both
+				// the old ASG chains from failed enforces, and new ASG chains from successful enforces
+				// when cleaning up orphaned chains
+				i := 0
+				fakeEnforcer.EnforceRulesAndChainStub = func(e enforcer.RulesWithChain) (string, error) {
+					var err error
+					if i > 0 {
+						err = fmt.Errorf("eggplant")
+					}
+					i++
+					return fmt.Sprintf("%s-with-new-suffix", e.Chain.Prefix), err
+				}
 			})
 
-			PIt("logs the error and returns", func() {
+			It("logs the error and returns", func() {
 				err := p.DoASGCycle()
 				multiErr, ok := err.(*multierror.Error)
 				Expect(ok).To(BeTrue())
 				errors := multiErr.WrappedErrors()
-				Expect(errors).To(HaveLen(3))
+				Expect(errors).To(HaveLen(2))
 				Expect(errors[0]).To(MatchError("enforce-asg: eggplant"))
 				Expect(errors[1]).To(MatchError("enforce-asg: eggplant"))
-				Expect(errors[2]).To(MatchError("enforce-asg: eggplant"))
 
-				Expect(metricsSender.SendDurationCallCount()).To(Equal(3))
+				Expect(metricsSender.SendDurationCallCount()).To(Equal(6))
 			})
 
-			PIt("does NOT attempt to clean up the previously applied chain", func() {
+			It("handles cleanup of orphaned chains properly", func() {
 				err := p.DoASGCycle()
 				Expect(err).To(HaveOccurred())
-				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(1))
-				_, chains := fakeEnforcer.EnforceChainsMatchingArgsForCall(0)
-				Expect(chains).To(Equal([]enforcer.LiveChain{{
-					Table: "filter",
-					Name:  "asg-1234-with-suffix",
-				}, {
-					Table: "filter",
-					Name:  "asg-2345-with-suffix",
-				}, {
-					Table: "",
-					Name:  "asg-3456-with-suffix",
-				}}))
+				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(2))
+				_, chains := fakeEnforcer.EnforceChainsMatchingArgsForCall(1)
+				By("enforcing that the new chain for successful enforces is desired", func() {
+					Expect(chains[0]).To(Equal(enforcer.LiveChain{
+						Table: "filter",
+						Name:  "asg-1234-with-new-suffix",
+					}))
+				})
+				By("enforcing that the old chains for failed enforces are still desired", func() {
+					Expect(chains[1:]).To(Equal([]enforcer.LiveChain{{
+						Table: "filter",
+						Name:  "asg-2345-with-suffix",
+					}, {
+						Table: "filter",
+						Name:  "asg-3456-with-suffix",
+					}}))
+				})
 			})
 		})
 
