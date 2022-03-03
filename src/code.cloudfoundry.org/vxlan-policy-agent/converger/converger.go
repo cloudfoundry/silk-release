@@ -23,7 +23,7 @@ type Planner interface {
 //go:generate counterfeiter -o fakes/rule_enforcer.go --fake-name RuleEnforcer . ruleEnforcer
 type ruleEnforcer interface {
 	EnforceRulesAndChain(enforcer.RulesWithChain) (string, error)
-	EnforceChainsMatching(regex *regexp.Regexp, desiredChains []enforcer.LiveChain) ([]enforcer.LiveChain, error)
+	CleanChainsMatching(regex *regexp.Regexp, desiredChains []enforcer.LiveChain) ([]enforcer.LiveChain, error)
 }
 
 //go:generate counterfeiter -o fakes/metrics_sender.go --fake-name MetricsSender . metricsSender
@@ -164,11 +164,12 @@ func (m *SinglePollCycle) SyncASGsForContainer(containers ...string) error {
 		enforceDuration += time.Now().Sub(enforceStartTime)
 	}
 
-	cleanupStart := time.Now()
+	var cleanupDuration time.Duration
 
-	// only clean up orphans if we looked at *all* containers in this cycle
 	if len(containers) == 0 {
-		deletedChains, err := m.enforcer.EnforceChainsMatching(regexp.MustCompile(planner.ASGManagedChainsRegex), desiredChains)
+		cleanupStart := time.Now()
+
+		deletedChains, err := m.enforcer.CleanChainsMatching(regexp.MustCompile(planner.ASGManagedChainsRegex), desiredChains)
 		if err != nil {
 			errors = multierror.Append(errors, fmt.Errorf("clean-up-orphaned-asg-chains: %s", err))
 		} else {
@@ -186,14 +187,15 @@ func (m *SinglePollCycle) SyncASGsForContainer(containers ...string) error {
 				}
 			}
 		}
+		cleanupDuration = time.Now().Sub(cleanupStart)
 	}
-	cleanupDuration := time.Now().Sub(cleanupStart)
-
 	m.asgMutex.Unlock()
 
 	pollDuration := time.Now().Sub(pollStartTime)
 	m.metricsSender.SendDuration(metricASGEnforceDuration, enforceDuration)
-	m.metricsSender.SendDuration(metricASGCleanupDuration, cleanupDuration)
+	if cleanupDuration != 0 {
+		m.metricsSender.SendDuration(metricASGCleanupDuration, cleanupDuration)
+	}
 	m.metricsSender.SendDuration(metricASGPollDuration, pollDuration)
 
 	return errors

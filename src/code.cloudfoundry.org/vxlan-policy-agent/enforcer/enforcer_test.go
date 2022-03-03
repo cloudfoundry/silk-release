@@ -402,16 +402,14 @@ var _ = Describe("Enforcer", func() {
 				return rulesForChain[chain], nil
 			}
 		})
-		It("Deletes orphaned chains", func() {
-			var listChainArgs []string
-			deletedChains, err := ruleEnforcer.EnforceChainsMatching(regexp.MustCompile(planner.ASGManagedChainsRegex), fakeChain)
+
+		It("deletes orphaned chains on filter table", func() {
+			deletedChains, err := ruleEnforcer.CleanChainsMatching(regexp.MustCompile(planner.ASGManagedChainsRegex), fakeChain)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(iptables.ListChainsCallCount()).To(Equal(2))
+			Expect(iptables.ListChainsCallCount()).To(Equal(1))
 
-			listChainArgs = append(listChainArgs, iptables.ListChainsArgsForCall(0))
-			listChainArgs = append(listChainArgs, iptables.ListChainsArgsForCall(1))
-			Expect(listChainArgs).To(ConsistOf([]string{"filter", "mangle"}))
+			Expect(iptables.ListChainsArgsForCall(0)).To(Equal("filter"))
 
 			Expect(iptables.DeleteChainCallCount()).To(Equal(2)) // once for the main chain, once for the log-chain it jumps to
 			table, chain := iptables.DeleteChainArgsForCall(0)
@@ -439,15 +437,26 @@ var _ = Describe("Enforcer", func() {
 				table, chain := iptables.DeleteChainArgsForCall(1)
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("log-chain"))
-
 			})
 		})
+
+		Context("when there are no desired chains", func() {
+			It("deletes alls chains on filter table matching pattern", func() {
+				deletedChains, err := ruleEnforcer.CleanChainsMatching(regexp.MustCompile(planner.ASGManagedChainsRegex), []enforcer.LiveChain{})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(deletedChains).To(ConsistOf([]enforcer.LiveChain{
+					{Table: "filter", Name: "asg-bbbbb01645708469990518"},
+					{Table: "filter", Name: "asg-ccccc01645708469990518"},
+				}))
+			})
+		})
+
 		Context("when ListChains returns an error", func() {
 			BeforeEach(func() {
 				iptables.ListChainsReturnsOnCall(0, []string{""}, fmt.Errorf("iptables list error"))
 			})
 			It("returns an error", func() {
-				_, err := ruleEnforcer.EnforceChainsMatching(regexp.MustCompile(planner.ASGManagedChainsRegex), fakeChain[0:1])
+				_, err := ruleEnforcer.CleanChainsMatching(regexp.MustCompile(planner.ASGManagedChainsRegex), fakeChain[0:1])
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(fmt.Errorf("listing chains in filter: iptables list error")))
 			})
@@ -457,7 +466,7 @@ var _ = Describe("Enforcer", func() {
 				iptables.ListReturns([]string{}, fmt.Errorf("iptables list error"))
 			})
 			It("returns an error", func() {
-				_, err := ruleEnforcer.EnforceChainsMatching(regexp.MustCompile(planner.ASGManagedChainsRegex), fakeChain[0:1])
+				_, err := ruleEnforcer.CleanChainsMatching(regexp.MustCompile(planner.ASGManagedChainsRegex), fakeChain[0:1])
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(fmt.Errorf("deleting chain asg-ccccc01645708469990518 from table filter: list rules for chain: iptables list error")))
 			})
@@ -467,7 +476,7 @@ var _ = Describe("Enforcer", func() {
 				iptables.DeleteChainReturns(fmt.Errorf("iptables delete chain error"))
 			})
 			It("returns an error", func() {
-				_, err := ruleEnforcer.EnforceChainsMatching(regexp.MustCompile(planner.ASGManagedChainsRegex), fakeChain[0:1])
+				_, err := ruleEnforcer.CleanChainsMatching(regexp.MustCompile(planner.ASGManagedChainsRegex), fakeChain[0:1])
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(fmt.Errorf("deleting chain asg-ccccc01645708469990518 from table filter: delete old chain: iptables delete chain error")))
 			})
@@ -477,7 +486,7 @@ var _ = Describe("Enforcer", func() {
 				iptables.DeleteChainReturnsOnCall(1, fmt.Errorf("iptables delete chain error"))
 			})
 			It("returns an error", func() {
-				_, err := ruleEnforcer.EnforceChainsMatching(regexp.MustCompile(planner.ASGManagedChainsRegex), fakeChain[0:1])
+				_, err := ruleEnforcer.CleanChainsMatching(regexp.MustCompile(planner.ASGManagedChainsRegex), fakeChain[0:1])
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(fmt.Errorf("deleting chain asg-ccccc01645708469990518 from table filter: cleanup jump target log-chain: iptables delete chain error")))
 			})

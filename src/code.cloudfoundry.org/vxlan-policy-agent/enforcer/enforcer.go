@@ -43,6 +43,8 @@ type EnforcerConfig struct {
 	OverlayNetwork                string
 }
 
+const FilterTable = "filter"
+
 type Chain struct {
 	Table              string
 	ParentChain        string
@@ -84,33 +86,33 @@ func (r *RulesWithChain) Equals(other RulesWithChain) bool {
 	return true
 }
 
-func (e *Enforcer) EnforceChainsMatching(regex *regexp.Regexp, desiredChains []LiveChain) ([]LiveChain, error) {
-	desiredMap := map[string]map[string]struct{}{}
+func (e *Enforcer) CleanChainsMatching(regex *regexp.Regexp, desiredChains []LiveChain) ([]LiveChain, error) {
+	desiredMap := make(map[string]struct{})
 	for _, chain := range desiredChains {
-		if desiredMap[chain.Table] == nil {
-			desiredMap[chain.Table] = make(map[string]struct{})
+		if _, ok := desiredMap[chain.Name]; !ok {
+			desiredMap[chain.Name] = struct{}{}
 		}
-		desiredMap[chain.Table][chain.Name] = struct{}{}
 	}
-	// find everything we want to clean up
-	// by taking all the things that exist matching our regex
+
 	var chainsToDelete []LiveChain
-	for table, _ := range desiredMap {
-		allChains, err := e.iptables.ListChains(table)
-		if err != nil {
-			e.Logger.Error(fmt.Sprintf("list-chains-%s", table), err)
-			return []LiveChain{}, fmt.Errorf("listing chains in %s: %s", table, err)
-		}
-		// and subtracting all the things we were told to enforce
-		for _, chain := range allChains {
-			if regex.MatchString(chain) {
-				if _, ok := desiredMap[table][chain]; !ok {
-					chainsToDelete = append(chainsToDelete, LiveChain{Table: table, Name: chain})
-				}
+
+	allChains, err := e.iptables.ListChains(FilterTable)
+	if err != nil {
+		e.Logger.Error(fmt.Sprintf("list-chains-%s", FilterTable), err)
+		return []LiveChain{}, fmt.Errorf("listing chains in %s: %s", FilterTable, err)
+	}
+	e.Logger.Debug("allchains", lager.Data{"chains": allChains})
+
+	for _, chainName := range allChains {
+		if regex.MatchString(chainName) {
+			if _, ok := desiredMap[chainName]; !ok {
+				chainsToDelete = append(chainsToDelete, LiveChain{Table: FilterTable, Name: chainName})
 			}
 		}
 	}
+
 	for _, chain := range chainsToDelete {
+		e.Logger.Debug("deleting-chain-in-enforce-chains-matching", lager.Data{"chain": chain})
 		err := e.deleteChain(e.Logger, chain)
 		if err != nil {
 			e.Logger.Error(fmt.Sprintf("delete-chain-%s-from-%s", chain.Name, chain.Table), err)

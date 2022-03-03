@@ -250,7 +250,7 @@ func (p *VxlanPolicyPlanner) GetASGRulesAndChains(specifiedContainers ...string)
 
 		rulesWithChains = append(rulesWithChains, enforcer.RulesWithChain{
 			Chain: enforcer.Chain{
-				Table:              "filter",
+				Table:              enforcer.FilterTable,
 				ParentChain:        parentChainName,
 				Prefix:             fmt.Sprintf("asg-%s", hashedHandle),
 				ManagedChainsRegex: ASGManagedChainsRegex,

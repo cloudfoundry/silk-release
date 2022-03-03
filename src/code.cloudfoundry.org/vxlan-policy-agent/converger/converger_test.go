@@ -239,6 +239,7 @@ var _ = Describe("Single Poll Cycle", func() {
 			})
 		})
 	})
+
 	Describe("DoASGCycle", func() {
 		var (
 			p                 *converger.SinglePollCycle
@@ -294,6 +295,7 @@ var _ = Describe("Single Poll Cycle", func() {
 
 			fakeASGPlanner.GetASGRulesAndChainsReturns(ASGRulesWithChain, nil)
 		})
+
 		It("enforces ASG rules on configured interval", func() {
 			err := p.DoASGCycle()
 			Expect(err).NotTo(HaveOccurred())
@@ -306,8 +308,8 @@ var _ = Describe("Single Poll Cycle", func() {
 				Expect(rws).To(Equal(ruleWithChain))
 			}
 
-			Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(1))
-			regex, chains := fakeEnforcer.EnforceChainsMatchingArgsForCall(0)
+			Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(1))
+			regex, chains := fakeEnforcer.CleanChainsMatchingArgsForCall(0)
 			Expect(regex).To(Equal(regexp.MustCompile(planner.ASGManagedChainsRegex)))
 			Expect(chains).To(Equal([]enforcer.LiveChain{
 				{
@@ -378,7 +380,7 @@ var _ = Describe("Single Poll Cycle", func() {
 
 		Context("when an ASG ruleset is present when there are no containers associated with it", func() {
 			BeforeEach(func() {
-				//				create some fake ASG iptables
+				// create some fake ASG iptables
 				var orphanRulesWithChain []enforcer.RulesWithChain
 				orphanRulesWithChain = append(ASGRulesWithChain, enforcer.RulesWithChain{
 					Rules: []rules.IPTablesRule{[]string{"asg-rule"}},
@@ -399,7 +401,7 @@ var _ = Describe("Single Poll Cycle", func() {
 					"asg-orphaned-with-suffix",
 				}))
 				fakeASGPlanner.GetASGRulesAndChainsReturns(ASGRulesWithChain, nil)
-				fakeEnforcer.EnforceChainsMatchingReturns([]enforcer.LiveChain{{
+				fakeEnforcer.CleanChainsMatchingReturns([]enforcer.LiveChain{{
 					Table: "asg-table-orphan", Name: "asg-orphaned-with-suffix"}},
 					nil)
 			})
@@ -422,8 +424,8 @@ var _ = Describe("Single Poll Cycle", func() {
 				err := p.DoASGCycle()
 				Expect(err).NotTo(HaveOccurred())
 				By("only removing the orphaned rules", func() {
-					Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(2))
-					regex, desiredChains := fakeEnforcer.EnforceChainsMatchingArgsForCall(1)
+					Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(2))
+					regex, desiredChains := fakeEnforcer.CleanChainsMatchingArgsForCall(1)
 					Expect(regex).To(Equal(regexp.MustCompile(planner.ASGManagedChainsRegex)))
 					Expect(desiredChains).To(Equal(desiredChainsResult))
 					Expect(p.CurrentlyAppliedChainNames()).To(ConsistOf([]string{
@@ -437,7 +439,7 @@ var _ = Describe("Single Poll Cycle", func() {
 			Context("when errors occur deleting orphaned chains", func() {
 				var metricsCount int
 				BeforeEach(func() {
-					fakeEnforcer.EnforceChainsMatchingReturns([]enforcer.LiveChain{}, fmt.Errorf("eggplant"))
+					fakeEnforcer.CleanChainsMatchingReturns([]enforcer.LiveChain{}, fmt.Errorf("eggplant"))
 					metricsCount = metricsSender.SendDurationCallCount()
 				})
 
@@ -469,7 +471,7 @@ var _ = Describe("Single Poll Cycle", func() {
 				Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(2))
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(4))
-				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(2))
+				Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(2))
 			})
 		})
 
@@ -484,7 +486,7 @@ var _ = Describe("Single Poll Cycle", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(3))
-				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(1))
+				Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(1))
 				Expect(metricsSender.SendDurationCallCount()).To(Equal(3))
 			})
 		})
@@ -499,7 +501,7 @@ var _ = Describe("Single Poll Cycle", func() {
 				Expect(err).To(MatchError("get-asg-rules: eggplant"))
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(0))
-				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(0))
+				Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(0))
 				Expect(metricsSender.SendDurationCallCount()).To(Equal(0))
 			})
 		})
@@ -570,8 +572,8 @@ var _ = Describe("Single Poll Cycle", func() {
 			It("handles cleanup of orphaned chains properly", func() {
 				err := p.DoASGCycle()
 				Expect(err).To(HaveOccurred())
-				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(2))
-				_, chains := fakeEnforcer.EnforceChainsMatchingArgsForCall(1)
+				Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(2))
+				_, chains := fakeEnforcer.CleanChainsMatchingArgsForCall(1)
 				By("enforcing that the new chain for successful enforces is desired", func() {
 					Expect(chains[0]).To(Equal(enforcer.LiveChain{
 						Table: "filter",
@@ -613,6 +615,7 @@ var _ = Describe("Single Poll Cycle", func() {
 				}
 				fakeOtherPlanner.GetASGRulesAndChainsReturns(otherRulesWithChain, nil)
 			})
+
 			It("calls all the planners", func() {
 				err := p.DoASGCycle()
 				Expect(err).NotTo(HaveOccurred())
@@ -629,8 +632,8 @@ var _ = Describe("Single Poll Cycle", func() {
 					Expect(rws).To(Equal(ruleWithChain))
 				}
 
-				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(1))
-				regex, chains := fakeEnforcer.EnforceChainsMatchingArgsForCall(0)
+				Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(1))
+				regex, chains := fakeEnforcer.CleanChainsMatchingArgsForCall(0)
 				Expect(regex).To(Equal(regexp.MustCompile(planner.ASGManagedChainsRegex)))
 				Expect(chains).To(Equal([]enforcer.LiveChain{
 					{
@@ -664,11 +667,12 @@ var _ = Describe("Single Poll Cycle", func() {
 						Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(0))
 					})
 					By("not cleaning up orphaned chains", func() {
-						Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(0))
+						Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(0))
 					})
 				})
 			})
 		})
+
 		Describe("SyncASGsForContainer", func() {
 			It("passes specified containers to the planner", func() {
 				err := p.SyncASGsForContainer("container-1", "container-2")
@@ -676,10 +680,10 @@ var _ = Describe("Single Poll Cycle", func() {
 				Expect(fakeASGPlanner.GetASGRulesAndChainsArgsForCall(0)).To(Equal([]string{"container-1", "container-2"}))
 			})
 
-			It("only looks to clean up orphans that match the included containers", func() {
+			It("does not clean up orphans when syncing specific containers", func() {
 				err := p.SyncASGsForContainer("container-1", "container-2")
 				Expect(err).ToNot(HaveOccurred())
-				Expect(fakeEnforcer.EnforceChainsMatchingCallCount()).To(Equal(0))
+				Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(0))
 			})
 		})
 	})
