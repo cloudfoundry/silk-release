@@ -1,9 +1,7 @@
 ---
 processes:
   - name: netmon
-    executable: "/var/vcap/packages/netmon/bin/netmon"
-    args:
-    - "-config-file=/var/vcap/jobs/netmon/config/netmon.json"
+    executable: "/var/vcap/jobs/netmon/bin/start"
     additional_volumes:
     - path: /var/vcap/data/container-metadata
       writable: true

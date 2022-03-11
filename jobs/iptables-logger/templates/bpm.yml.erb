@@ -1,9 +1,7 @@
 ---
 processes:
   - name: iptables-logger
-    executable: "/var/vcap/packages/iptables-logger/bin/iptables-logger"
-    args:
-    - "-config-file=/var/vcap/jobs/iptables-logger/config/iptables-logger.json"
+    executable: "/var/vcap/jobs/iptables-logger/bin/start"
     additional_volumes:
     - path: /var/vcap/data/container-metadata
       writable: true

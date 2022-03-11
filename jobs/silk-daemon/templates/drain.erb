@@ -3,6 +3,8 @@
 <% unless p("disable") %>
 set -o pipefail
 
+export PATH="<%= link("iptables").p("garden.iptables_bin_dir") %>:$PATH"
+
 LOG_DIR=/var/vcap/sys/log/silk-daemon
 LOGFILE="${LOG_DIR}"/drain.log
 SILK_DAEMON_HEALTH_CHECK_ADDRESS=localhost:<%= p("listen_port") %>

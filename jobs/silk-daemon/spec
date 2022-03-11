@@ -22,6 +22,9 @@ packages:
 consumes:
 - name: cf_network
   type: cf_network
+- name: iptables
+  type: iptables
+  optional: true
 
 - name: vpa
   type: policy-agent
