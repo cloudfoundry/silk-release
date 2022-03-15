@@ -30,6 +30,7 @@ files:
   - code.cloudfoundry.org/lib/rules/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/serial/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/policy_client/*.go # gosub-main-module
+  - code.cloudfoundry.org/vxlan-policy-agent/cmd/pre-start/*.go # gosub-main-module
   - code.cloudfoundry.org/vxlan-policy-agent/cmd/vxlan-policy-agent/*.go # gosub-main-module
   - code.cloudfoundry.org/vxlan-policy-agent/config/*.go # gosub-main-module
   - code.cloudfoundry.org/vxlan-policy-agent/converger/*.go # gosub-main-module

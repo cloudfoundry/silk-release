@@ -98,6 +98,17 @@ type IPTablesAdapter struct {
 		result1 bool
 		result2 error
 	}
+	FlushAndRestoreStub        func(string) error
+	flushAndRestoreMutex       sync.RWMutex
+	flushAndRestoreArgsForCall []struct {
+		arg1 string
+	}
+	flushAndRestoreReturns struct {
+		result1 error
+	}
+	flushAndRestoreReturnsOnCall map[int]struct {
+		result1 error
+	}
 	ListStub        func(string, string) ([]string, error)
 	listMutex       sync.RWMutex
 	listArgsForCall []struct {
@@ -595,6 +606,67 @@ func (fake *IPTablesAdapter) ExistsReturnsOnCall(i int, result1 bool, result2 er
 	}{result1, result2}
 }
 
+func (fake *IPTablesAdapter) FlushAndRestore(arg1 string) error {
+	fake.flushAndRestoreMutex.Lock()
+	ret, specificReturn := fake.flushAndRestoreReturnsOnCall[len(fake.flushAndRestoreArgsForCall)]
+	fake.flushAndRestoreArgsForCall = append(fake.flushAndRestoreArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.FlushAndRestoreStub
+	fakeReturns := fake.flushAndRestoreReturns
+	fake.recordInvocation("FlushAndRestore", []interface{}{arg1})
+	fake.flushAndRestoreMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *IPTablesAdapter) FlushAndRestoreCallCount() int {
+	fake.flushAndRestoreMutex.RLock()
+	defer fake.flushAndRestoreMutex.RUnlock()
+	return len(fake.flushAndRestoreArgsForCall)
+}
+
+func (fake *IPTablesAdapter) FlushAndRestoreCalls(stub func(string) error) {
+	fake.flushAndRestoreMutex.Lock()
+	defer fake.flushAndRestoreMutex.Unlock()
+	fake.FlushAndRestoreStub = stub
+}
+
+func (fake *IPTablesAdapter) FlushAndRestoreArgsForCall(i int) string {
+	fake.flushAndRestoreMutex.RLock()
+	defer fake.flushAndRestoreMutex.RUnlock()
+	argsForCall := fake.flushAndRestoreArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *IPTablesAdapter) FlushAndRestoreReturns(result1 error) {
+	fake.flushAndRestoreMutex.Lock()
+	defer fake.flushAndRestoreMutex.Unlock()
+	fake.FlushAndRestoreStub = nil
+	fake.flushAndRestoreReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *IPTablesAdapter) FlushAndRestoreReturnsOnCall(i int, result1 error) {
+	fake.flushAndRestoreMutex.Lock()
+	defer fake.flushAndRestoreMutex.Unlock()
+	fake.FlushAndRestoreStub = nil
+	if fake.flushAndRestoreReturnsOnCall == nil {
+		fake.flushAndRestoreReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.flushAndRestoreReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *IPTablesAdapter) List(arg1 string, arg2 string) ([]string, error) {
 	fake.listMutex.Lock()
 	ret, specificReturn := fake.listReturnsOnCall[len(fake.listArgsForCall)]
@@ -867,6 +939,8 @@ func (fake *IPTablesAdapter) Invocations() map[string][][]interface{} {
 	defer fake.deleteChainMutex.RUnlock()
 	fake.existsMutex.RLock()
 	defer fake.existsMutex.RUnlock()
+	fake.flushAndRestoreMutex.RLock()
+	defer fake.flushAndRestoreMutex.RUnlock()
 	fake.listMutex.RLock()
 	defer fake.listMutex.RUnlock()
 	fake.listChainsMutex.RLock()

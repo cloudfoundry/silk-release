@@ -23,6 +23,7 @@ type iptables interface {
 
 //go:generate counterfeiter -o ../fakes/iptables_extended.go --fake-name IPTablesAdapter . IPTablesAdapter
 type IPTablesAdapter interface {
+	FlushAndRestore(rawInput string) error
 	Exists(table, chain string, rulespec IPTablesRule) (bool, error)
 	Delete(table, chain string, rulespec IPTablesRule) error
 	List(table, chain string) ([]string, error)
@@ -50,12 +51,17 @@ type locker interface {
 //go:generate counterfeiter -o ../fakes/restorer.go --fake-name Restorer . restorer
 type restorer interface {
 	Restore(ruleState string) error
+	RestoreWithFlags(ruleState string, iptablesFlags ...string) error
 }
 
 type Restorer struct{}
 
 func (r *Restorer) Restore(input string) error {
-	cmd := exec.Command("iptables-restore", "--noflush")
+	return r.RestoreWithFlags(input, "--noflush")
+}
+
+func (r *Restorer) RestoreWithFlags(input string, iptablesFlags ...string) error {
+	cmd := exec.Command("iptables-restore", iptablesFlags...)
 	cmd.Stdin = strings.NewReader(input)
 
 	bytes, err := cmd.CombinedOutput()
@@ -74,6 +80,19 @@ type LockedIPTables struct {
 
 func handleIPTablesError(err1, err2 error) error {
 	return fmt.Errorf("iptables call: %+v and unlock: %+v", err1, err2)
+}
+
+func (l *LockedIPTables) FlushAndRestore(rawInput string) error {
+	if err := l.Locker.Lock(); err != nil {
+		return fmt.Errorf("lock: %s", err)
+	}
+
+	err := l.Restorer.RestoreWithFlags(rawInput)
+	if err != nil {
+		return handleIPTablesError(err, l.Locker.Unlock())
+	}
+
+	return l.Locker.Unlock()
 }
 
 func (l *LockedIPTables) Exists(table, chain string, rulespec IPTablesRule) (bool, error) {

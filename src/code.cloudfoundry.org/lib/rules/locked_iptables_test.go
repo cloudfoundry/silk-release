@@ -532,4 +532,47 @@ var _ = Describe("LockedIptables", func() {
 			})
 		})
 	})
+
+	Describe("FlushAndRestore", func() {
+		var toRestore string
+		BeforeEach(func() {
+			toRestore = "rule1\nrule2\n"
+		})
+		It("executes the command specified with a raw iptables-flush", func() {
+			err := lockedIPT.FlushAndRestore(toRestore)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(lock.LockCallCount()).To(Equal(1))
+			Expect(lock.UnlockCallCount()).To(Equal(1))
+			Expect(lockedIPT.Restorer.(*fakes.Restorer).RestoreWithFlagsCallCount()).To(Equal(1))
+			Expect(lockedIPT.Restorer.(*fakes.Restorer).RestoreWithFlagsArgsForCall(0)).To(Equal("rule1\nrule2\n"))
+		})
+		Context("when locking fails", func() {
+			BeforeEach(func() {
+				lock.LockReturns(errors.New("banana"))
+			})
+			It("returns an error", func() {
+				_, err := lockedIPT.RuleCount("table-name")
+				Expect(err).To(MatchError("lock: banana"))
+			})
+		})
+		Context("when call fails and unlock succeeds", func() {
+			It("returns an error", func() {
+				ipTablesRunner.CombinedOutputReturns([]byte{}, errors.New("nope"))
+
+				_, err := lockedIPT.RuleCount("table-name")
+				Expect(err).To(MatchError("iptablesCommandRunner: nope and unlock: <nil>"))
+			})
+		})
+
+		Context("when call fails and unlock fails", func() {
+			It("returns an error", func() {
+				ipTablesRunner.CombinedOutputReturns([]byte{}, errors.New("nope"))
+				lock.UnlockReturns(errors.New("banana"))
+
+				_, err := lockedIPT.RuleCount("table-name")
+				Expect(err).To(MatchError("iptablesCommandRunner: nope and unlock: banana"))
+			})
+		})
+	})
 })

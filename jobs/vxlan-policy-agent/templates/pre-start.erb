@@ -4,17 +4,5 @@
 export PATH="<%= link("iptables").p("garden.iptables_bin_dir") %>:$PATH"
 
 # Completely cleanup IPTables Filter and NAT tables
-iptables-restore <( echo '
-*filter
-:INPUT ACCEPT [0:0]
-:FORWARD ACCEPT [0:0]
-:OUTPUT ACCEPT [0:0]
-COMMIT
-*nat
-:PREROUTING ACCEPT [0:0]
-:INPUT ACCEPT [0:0]
-:OUTPUT ACCEPT [0:0]
-:POSTROUTING ACCEPT [0:0]
-COMMIT
-')
+/var/vcap/packages/vxlan-policy-agent/bin/pre-start -lock-file var/vcap/data/garden-cni/iptables.lock
 <% end %>
