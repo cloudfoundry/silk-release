@@ -59,6 +59,7 @@ const metricPollDuration = "totalPollTime"
 
 const metricASGEnforceDuration = "asgIptablesEnforceTime"
 const metricASGCleanupDuration = "asgIptablesCleanupTime"
+const metricASGOrphanCleanupDuration = "asgIptablesOrphanedCleanupTime"
 const metricASGPollDuration = "asgTotalPollTime"
 
 func (m *SinglePollCycle) DoPolicyCycle() error {
@@ -165,40 +166,65 @@ func (m *SinglePollCycle) SyncASGsForContainer(containers ...string) error {
 	}
 
 	var cleanupDuration time.Duration
-
 	if len(containers) == 0 {
 		cleanupStart := time.Now()
-
-		deletedChains, err := m.enforcer.CleanChainsMatching(regexp.MustCompile(planner.ASGManagedChainsRegex), desiredChains)
+		err := m.cleanupASGsChains(planner.ASGManagedChainsRegex, desiredChains)
 		if err != nil {
-			errors = multierror.Append(errors, fmt.Errorf("clean-up-orphaned-asg-chains: %s", err))
-		} else {
-			m.logger.Debug("policy-cycle-asg", lager.Data{
-				"message": "deleted-orphaned-chains",
-				"chains":  deletedChains,
-			})
-
-			for chainKey, chainName := range m.containerToASGChain {
-				for _, deletedChain := range deletedChains {
-					if deletedChain.Table == chainKey.Table && deletedChain.Name == chainName {
-						delete(m.containerToASGChain, chainKey)
-						delete(m.asgRuleSets, chainKey)
-					}
-				}
-			}
+			errors = multierror.Append(errors, err)
 		}
 		cleanupDuration = time.Now().Sub(cleanupStart)
 	}
 	m.asgMutex.Unlock()
 
-	pollDuration := time.Now().Sub(pollStartTime)
 	m.metricsSender.SendDuration(metricASGEnforceDuration, enforceDuration)
+
 	if cleanupDuration != 0 {
 		m.metricsSender.SendDuration(metricASGCleanupDuration, cleanupDuration)
 	}
+	pollDuration := time.Now().Sub(pollStartTime)
 	m.metricsSender.SendDuration(metricASGPollDuration, pollDuration)
 
 	return errors
+}
+
+func (m *SinglePollCycle) CleanupOrphanedASGsChains(containerHandle string) error {
+	m.asgMutex.Lock()
+	defer m.asgMutex.Unlock()
+
+	var cleanupDuration time.Duration
+	cleanupStart := time.Now()
+	var err error
+	err = m.cleanupASGsChains(planner.ASGChainPrefix(containerHandle), []enforcer.LiveChain{})
+	cleanupDuration = time.Now().Sub(cleanupStart)
+
+	if cleanupDuration != 0 {
+		m.metricsSender.SendDuration(metricASGOrphanCleanupDuration, cleanupDuration)
+	}
+
+	return err
+}
+
+func (m *SinglePollCycle) cleanupASGsChains(prefix string, desiredChains []enforcer.LiveChain) error {
+	deletedChains, err := m.enforcer.CleanChainsMatching(regexp.MustCompile(prefix), desiredChains)
+	if err != nil {
+		return fmt.Errorf("clean-up-orphaned-asg-chains: %s", err)
+	} else {
+		m.logger.Debug("policy-cycle-asg", lager.Data{
+			"message": "deleted-orphaned-chains",
+			"chains":  deletedChains,
+		})
+
+		for chainKey, chainName := range m.containerToASGChain {
+			for _, deletedChain := range deletedChains {
+				if deletedChain.Table == chainKey.Table && deletedChain.Name == chainName {
+					delete(m.containerToASGChain, chainKey)
+					delete(m.asgRuleSets, chainKey)
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 // used to test that we're deleting the right chains and nothing else

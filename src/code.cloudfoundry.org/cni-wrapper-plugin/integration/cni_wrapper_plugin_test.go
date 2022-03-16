@@ -132,11 +132,13 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 		policyAgentAddress = fmt.Sprintf("%s:%v", "127.0.0.1", ports.PickAPort())
 		policyAgentServer = mockPolicyAgentServer{
-			ReturnCode:            200,
-			ASGReturnCode:         200,
-			ASGReturnErrorMessage: "",
-			ReturnErrorMessage:    "",
-			Address:               policyAgentAddress,
+			ReturnCode:                            200,
+			ASGReturnCode:                         200,
+			ASGReturnErrorMessage:                 "",
+			ReturnErrorMessage:                    "",
+			Address:                               policyAgentAddress,
+			CleanupOrphanedASGsReturnCode:         200,
+			CleanupOrphanedASGsReturnErrorMessage: "",
 		}
 		policyAgentServer.start()
 
@@ -1123,6 +1125,43 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Expect(statInfo.Gid).To(Equal(UnprivilegedGroupId))
 		})
 
+		It("calls the policy agent orphaned asg cleanup", func() {
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).ToNot(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			Expect(policyAgentServer.CleanupOrphanedASGsEndpointCallCount).To(Equal(1))
+			Expect(policyAgentServer.CleanupOrphanedASGsEndpointContainerRequested).To(Equal(containerID))
+		})
+
+		Context("when the policy agent asg cleanup returns a 405", func() {
+			It("ignores and moves on, since dynamic asgs have been disabled", func() {
+				policyAgentServer.CleanupOrphanedASGsReturnCode = 405
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).ToNot(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+				Expect(policyAgentServer.CleanupOrphanedASGsEndpointCallCount).To(Equal(1))
+			})
+		})
+
+		Context("when the policy agent asg updater returns an error", func() {
+			AfterEach(func() {
+				policyAgentServer.CleanupOrphanedASGsReturnCode = 200
+				policyAgentServer.CleanupOrphanedASGsReturnErrorMessage = ""
+			})
+
+			It("returns an error", func() {
+				policyAgentServer.CleanupOrphanedASGsReturnCode = 500
+				policyAgentServer.CleanupOrphanedASGsReturnErrorMessage = "an error occurred in the vpa"
+
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(1))
+				Expect(session.Out).Should(gbytes.Say(".*asg cleanup returned 500 with message: an error occurred in the vpa.*"))
+
+				Expect(policyAgentServer.CleanupOrphanedASGsEndpointCallCount).To(Equal(1))
+			})
+		})
+
 		Context("When the delegate plugin return an error", func() {
 			BeforeEach(func() {
 				debug.ReportError = "banana"
@@ -1173,14 +1212,20 @@ var _ = Describe("CniWrapperPlugin", func() {
 })
 
 type mockPolicyAgentServer struct {
-	ReturnCode                        int
-	ReturnErrorMessage                string
-	ASGReturnCode                     int
-	ASGReturnErrorMessage             string
-	Address                           string
-	PolicyPollEndpointCallCount       int
+	ReturnCode                  int
+	ReturnErrorMessage          string
+	Address                     string
+	PolicyPollEndpointCallCount int
+
 	SyncASGEndpointCallCount          int
 	SyncASGEndpointContainerRequested string
+	ASGReturnCode                     int
+	ASGReturnErrorMessage             string
+
+	CleanupOrphanedASGsEndpointCallCount          int
+	CleanupOrphanedASGsEndpointContainerRequested string
+	CleanupOrphanedASGsReturnCode                 int
+	CleanupOrphanedASGsReturnErrorMessage         string
 
 	server *http.Server
 }
@@ -1200,11 +1245,20 @@ func (a *mockPolicyAgentServer) SyncASGEndpoint(w http.ResponseWriter, r *http.R
 		w.Write([]byte(a.ASGReturnErrorMessage))
 	}
 }
+func (a *mockPolicyAgentServer) CleanupOrphanedASGsEndpoint(w http.ResponseWriter, r *http.Request) {
+	a.CleanupOrphanedASGsEndpointCallCount++
+	a.CleanupOrphanedASGsEndpointContainerRequested = r.URL.Query().Get("container")
+	w.WriteHeader(a.CleanupOrphanedASGsReturnCode)
+	if a.CleanupOrphanedASGsReturnErrorMessage != "" {
+		w.Write([]byte(a.CleanupOrphanedASGsReturnErrorMessage))
+	}
+}
 
 func (a *mockPolicyAgentServer) start() {
 	mux := http.NewServeMux()
 	mux.Handle("/force-policy-poll-cycle", http.HandlerFunc(a.PolicyPollEndpoint))
 	mux.Handle("/force-asgs-for-container", http.HandlerFunc(a.SyncASGEndpoint))
+	mux.Handle("/force-orphaned-asgs-cleanup", http.HandlerFunc(a.CleanupOrphanedASGsEndpoint))
 
 	a.server = &http.Server{Addr: a.Address, Handler: mux}
 	go a.server.ListenAndServe()

@@ -2,7 +2,6 @@ package handlers_test
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -12,26 +11,26 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Force ASGs for Container Handler", func() {
+var _ = Describe("Force Orphanded ASGs Cleanup", func() {
 	var (
 		response         *httptest.ResponseRecorder
 		request          *http.Request
 		wasInvoked       bool
-		handler          *handlers.ForceASGsForContainer
-		updatedContainer string
+		cleanupContainer string
+		handler          *handlers.ForceOrphanedASGsCleanup
 	)
 
 	BeforeEach(func() {
 		response = httptest.NewRecorder()
-		request = httptest.NewRequest("GET", "/force-asgs-for-container?container=some-guid", nil)
+		request = httptest.NewRequest("GET", "/force-orphaned-asgs-cleanup?container=some-guid", nil)
 
 		wasInvoked = false
 
-		handler = &handlers.ForceASGsForContainer{
+		handler = &handlers.ForceOrphanedASGsCleanup{
 			EnableASGSyncing: true,
-			ASGUpdateFunc: func(container ...string) error {
+			ASGCleanupFunc: func(container string) error {
 				wasInvoked = true
-				updatedContainer = container[0]
+				cleanupContainer = container
 				return nil
 			},
 		}
@@ -41,8 +40,8 @@ var _ = Describe("Force ASGs for Container Handler", func() {
 		handler.ServeHTTP(response, request)
 		Expect(response.Code).To(Equal(200))
 		Expect(wasInvoked).To(BeTrue())
-		Expect(updatedContainer).To(Equal("some-guid"))
-		Expect(ioutil.ReadAll(response.Body)).To(Equal([]byte(fmt.Sprintf("updated container %s", updatedContainer))))
+		Expect(cleanupContainer).To(Equal("some-guid"))
+		Expect(ioutil.ReadAll(response.Body)).To(Equal([]byte("cleaned up ASGs for container some-guid")))
 	})
 
 	It("returns 405 response when enable asg syncing is disabled", func() {
@@ -54,18 +53,18 @@ var _ = Describe("Force ASGs for Container Handler", func() {
 	})
 
 	It("returns 400 response when no container guid was provided", func() {
-		request = httptest.NewRequest("GET", "/force-asgs-for-container", nil)
+		request = httptest.NewRequest("GET", "/force-orphaned-asgs-cleanup", nil)
 		handler.ServeHTTP(response, request)
 		Expect(response.Code).To(Equal(400))
 		Expect(ioutil.ReadAll(response.Body)).To(Equal([]byte("no container specified")))
 	})
 	It("returns 500 response when the poll cycle func returns an error", func() {
-		handler.ASGUpdateFunc = func(container ...string) error {
+		handler.ASGCleanupFunc = func(container string) error {
 			return errors.New("failure")
 		}
 
 		handler.ServeHTTP(response, request)
 		Expect(response.Code).To(Equal(500))
-		Expect(ioutil.ReadAll(response.Body)).To(Equal([]byte("failed to update asgs for container some-guid: failure")))
+		Expect(ioutil.ReadAll(response.Body)).To(Equal([]byte("failed to cleanup ASGs for container some-guid: failure")))
 	})
 })

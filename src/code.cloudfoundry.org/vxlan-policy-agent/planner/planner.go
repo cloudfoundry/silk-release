@@ -1,6 +1,8 @@
 package planner
 
 import (
+	"crypto/sha1"
+	"fmt"
 	"sort"
 	"time"
 
@@ -68,6 +70,14 @@ type netOutChain interface {
 const metricContainerMetadata = "containerMetadataTime"
 const metricPolicyServerPoll = "policyServerPollTime"
 const metricPolicyServerASGPoll = "policyServerASGPollTime"
+
+func ASGChainPrefix(handle string) string {
+	h := sha1.New()
+	h.Write([]byte(handle))
+	smallHash := h.Sum(nil)
+
+	return fmt.Sprintf("asg-%x", smallHash[0:3]) //only need 6 digits so we use 3.
+}
 
 func (p *VxlanPolicyPlanner) readFile(specifiedContainers ...string) ([]container, error) {
 	containerMetadataStartTime := time.Now()

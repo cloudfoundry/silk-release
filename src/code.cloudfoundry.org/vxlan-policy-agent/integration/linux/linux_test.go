@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/vxlan-policy-agent/config"
+	"code.cloudfoundry.org/vxlan-policy-agent/planner"
 
 	"code.cloudfoundry.org/cf-networking-helpers/mutualtls"
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics"
@@ -376,7 +377,8 @@ var _ = Describe("VXLAN Policy Agent", func() {
 							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
 						})
 					})
-					Describe("the force policy poll cycle endpoint", func() {
+
+					Describe("the force asgs poll cycle endpoint", func() {
 						BeforeEach(func() {
 							conf.ASGPollInterval = math.MaxInt32
 						})
@@ -421,6 +423,41 @@ var _ = Describe("VXLAN Policy Agent", func() {
 							})
 						})
 					})
+
+					Describe("the force orphaned asgs cleanup endpoint", func() {
+						It("should not delete the asg chain referenced in netout chain", func() {
+							Eventually(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m state --state RELATED,ESTABLISHED -j ACCEPT`))
+
+							Eventually(func() (int, error) {
+								resp, err := http.Get(fmt.Sprintf("http://%s:%d/force-orphaned-asgs-cleanup?container=some-handle", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort))
+								if err != nil {
+									return -1, err
+								}
+								return resp.StatusCode, nil
+							}).Should(Equal(http.StatusInternalServerError))
+
+							Consistently(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A netout--some-handle -j asg-\d+`))
+						})
+
+						Context("when EnableASGSyncing is disabled", func() {
+							BeforeEach(func() {
+								conf.EnableASGSyncing = false
+								runIptablesCommand("-N", planner.ASGChainPrefix("some-handle")+"11111111")
+							})
+
+							It("doesn't clean up iptables", func() {
+								Eventually(func() (int, error) {
+									resp, err := http.Get(fmt.Sprintf("http://%s:%d/force-orphaned-asgs-cleanup?container=some-handle", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort))
+									if err != nil {
+										return -1, err
+									}
+									return resp.StatusCode, nil
+								}).Should(Equal(http.StatusMethodNotAllowed))
+
+								Consistently(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-N asg-[a-zA-Z0-9]+`))
+							})
+						})
+					})
 				})
 
 				Context("when netout chain does not exist", func() {
@@ -428,6 +465,24 @@ var _ = Describe("VXLAN Policy Agent", func() {
 						Eventually(iptablesFilterRules, "4s", "1s").ShouldNot(MatchRegexp(`-N netout--some-handle`))
 						Consistently(iptablesFilterRules, "2s", "1s").ShouldNot(MatchRegexp(`-A netout--some-handle -j asg-\d+`))
 						Consistently(iptablesFilterRules, "2s", "1s").ShouldNot(MatchRegexp(`-A FORWARD -s \d+\.\d+\.\d+.\d+/\d+ -o eth0 -j netout--some-handle`))
+					})
+
+					Context("when there is an asg chain", func() {
+						BeforeEach(func() {
+							runIptablesCommand("-N", planner.ASGChainPrefix("some-handle")+"11111111")
+						})
+
+						It("forcing orphaned chains cleanup deletes the chain", func() {
+							Eventually(func() (int, error) {
+								resp, err := http.Get(fmt.Sprintf("http://%s:%d/force-orphaned-asgs-cleanup?container=some-handle", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort))
+								if err != nil {
+									return -1, err
+								}
+								return resp.StatusCode, nil
+							}).Should(Equal(http.StatusOK))
+
+							Eventually(iptablesFilterRules, "4s", "1s").ShouldNot(MatchRegexp(`-A asg-[a-zA-Z0-9]+`))
+						})
 					})
 				})
 			})
