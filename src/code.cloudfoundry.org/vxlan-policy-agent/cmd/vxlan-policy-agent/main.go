@@ -236,7 +236,7 @@ func main() {
 
 	forcePolicyPollCycleServerAddress := fmt.Sprintf("%s:%d", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort)
 
-	forceUpdateHandlers := map[string]http.Handler{
+	forceHandlers := map[string]http.Handler{
 		"/force-policy-poll-cycle": &handlers.ForcePolicyPollCycle{
 			PollCycleFunc: singlePollCycle.DoPolicyCycle,
 		},
@@ -244,9 +244,13 @@ func main() {
 			ASGUpdateFunc:    singlePollCycle.SyncASGsForContainer,
 			EnableASGSyncing: conf.EnableASGSyncing,
 		},
+		"/force-orphaned-asgs-cleanup": &handlers.ForceOrphanedASGsCleanup{
+			ASGCleanupFunc:   singlePollCycle.CleanupOrphanedASGsChains,
+			EnableASGSyncing: conf.EnableASGSyncing,
+		},
 	}
 
-	forcePolicyPollCycleServer := createForceUpdateServer(forcePolicyPollCycleServerAddress, forceUpdateHandlers)
+	forcePolicyPollCycleServer := createForceUpdateServer(forcePolicyPollCycleServerAddress, forceHandlers)
 
 	debugServerAddress := fmt.Sprintf("%s:%d", conf.DebugServerHost, conf.DebugServerPort)
 	debugServer := createCustomDebugServer(debugServerAddress, reconfigurableSink, iptablesLoggingState)

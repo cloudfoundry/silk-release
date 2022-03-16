@@ -686,6 +686,36 @@ var _ = Describe("Single Poll Cycle", func() {
 				Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(0))
 			})
 		})
+
+		Describe("CleanupOrphanedASGsChains", func() {
+			It("cleans up asg chains with no desired chains", func() {
+				err := p.CleanupOrphanedASGsChains("some-container-handle")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(1))
+				asgRegex, desiredChains := fakeEnforcer.CleanChainsMatchingArgsForCall(0)
+				Expect(asgRegex.String()).To(MatchRegexp("asg-[a-z0-9]{6}"))
+				Expect(desiredChains).To(BeEmpty())
+			})
+
+			It("sends the duration metric", func() {
+				err := p.CleanupOrphanedASGsChains("some-container-handle")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(metricsSender.SendDurationCallCount()).To(Equal(1))
+				metricName, _ := metricsSender.SendDurationArgsForCall(0)
+				Expect(metricName).To(Equal("asgIptablesOrphanedCleanupTime"))
+			})
+
+			Context("the enforcer returns an error", func() {
+				BeforeEach(func() {
+					fakeEnforcer.CleanChainsMatchingReturns([]enforcer.LiveChain{}, errors.New("zucchini"))
+				})
+
+				It("returns the error", func() {
+					err := p.CleanupOrphanedASGsChains("some-container-handle")
+					Expect(err).To(MatchError("clean-up-orphaned-asg-chains: zucchini"))
+				})
+			})
+		})
 	})
 })
 

@@ -229,7 +229,7 @@ func getLocalDNSServers(allDNSServers []string) ([]string, error) {
 }
 
 func cmdDel(args *skel.CmdArgs) error {
-	n, err := lib.LoadWrapperConfig(args.StdinData)
+	cfg, err := lib.LoadWrapperConfig(args.StdinData)
 	if err != nil {
 		return err
 	}
@@ -237,11 +237,11 @@ func cmdDel(args *skel.CmdArgs) error {
 	store := &datastore.Store{
 		Serializer: &serial.Serial{},
 		Locker: &filelock.Locker{
-			FileLocker: filelock.NewLocker(n.Datastore + "_lock"),
+			FileLocker: filelock.NewLocker(cfg.Datastore + "_lock"),
 			Mutex:      new(sync.Mutex),
 		},
-		DataFilePath:    n.Datastore,
-		VersionFilePath: n.Datastore + "_version",
+		DataFilePath:    cfg.Datastore,
+		VersionFilePath: cfg.Datastore + "_version",
 		CacheMutex:      new(sync.RWMutex),
 	}
 
@@ -250,12 +250,12 @@ func cmdDel(args *skel.CmdArgs) error {
 		fmt.Fprintf(os.Stderr, "store delete: %s", err)
 	}
 
-	pluginController, err := newPluginController(n)
+	pluginController, err := newPluginController(cfg)
 	if err != nil {
 		return err
 	}
 
-	if err := pluginController.DelegateDel(n.Delegate); err != nil {
+	if err := pluginController.DelegateDel(cfg.Delegate); err != nil {
 		fmt.Fprintf(os.Stderr, "delegate delete: %s", err)
 	}
 
@@ -264,7 +264,7 @@ func cmdDel(args *skel.CmdArgs) error {
 			MaxLength: 28,
 		},
 		IPTables:   pluginController.IPTables,
-		IngressTag: n.IngressTag,
+		IngressTag: cfg.IngressTag,
 	}
 
 	if err = netInProvider.Cleanup(args.ContainerID); err != nil {
@@ -276,10 +276,10 @@ func cmdDel(args *skel.CmdArgs) error {
 	}
 
 	var interfaceNames []string
-	if len(n.TemporaryUnderlayInterfaceNames) > 0 {
-		interfaceNames = n.TemporaryUnderlayInterfaceNames
+	if len(cfg.TemporaryUnderlayInterfaceNames) > 0 {
+		interfaceNames = cfg.TemporaryUnderlayInterfaceNames
 	} else {
-		interfaceNames, err = interfaceNameLookup.GetNamesFromIPs(n.UnderlayIPs)
+		interfaceNames, err = interfaceNameLookup.GetNamesFromIPs(cfg.UnderlayIPs)
 		if err != nil {
 			return fmt.Errorf("looking up interface names: %s", err) // not tested
 		}
@@ -289,9 +289,9 @@ func cmdDel(args *skel.CmdArgs) error {
 		MaxLength: 28,
 	}
 	outConn := netrules.OutConn{
-		Limit:   n.OutConn.Limit,
-		Logging: n.OutConn.Logging,
-		DryRun:  n.OutConn.DryRun,
+		Limit:   cfg.OutConn.Limit,
+		Logging: cfg.OutConn.Logging,
+		DryRun:  cfg.OutConn.DryRun,
 	}
 
 	netOutChain := &netrules.NetOutChain{
@@ -314,9 +314,19 @@ func cmdDel(args *skel.CmdArgs) error {
 		fmt.Fprintf(os.Stderr, "net out cleanup: %s", err)
 	}
 
-	err = pluginController.DelIPMasq(container.IP, n.NoMasqueradeCIDRRange, n.VTEPName)
+	err = pluginController.DelIPMasq(container.IP, cfg.NoMasqueradeCIDRRange, cfg.VTEPName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "removing IP masq: %s", err)
+	}
+
+	resp, err := http.DefaultClient.Get(fmt.Sprintf("http://%s/force-orphaned-asgs-cleanup?container=%s", cfg.PolicyAgentForcePollAddress, args.ContainerID))
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusMethodNotAllowed {
+		body, _ := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		return fmt.Errorf("asg cleanup returned %v with message: %s", resp.StatusCode, body)
 	}
 
 	return nil

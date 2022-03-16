@@ -4,23 +4,18 @@
 package planner
 
 import (
+	"encoding/json"
+	"fmt"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
+	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lib/rules"
 	"code.cloudfoundry.org/policy_client"
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
-
-	"fmt"
-	"strconv"
-
-	"encoding/json"
-	"sort"
-
-	"crypto/sha1" //for a unique identifier hash
-
-	"code.cloudfoundry.org/lager"
 )
 
 type containerPolicySet struct {
@@ -246,13 +241,11 @@ func (p *VxlanPolicyPlanner) GetASGRulesAndChains(specifiedContainers ...string)
 			continue
 		}
 
-		hashedHandle := hashHandled(container.Handle)
-
 		rulesWithChains = append(rulesWithChains, enforcer.RulesWithChain{
 			Chain: enforcer.Chain{
 				Table:              enforcer.FilterTable,
 				ParentChain:        parentChainName,
-				Prefix:             fmt.Sprintf("asg-%s", hashedHandle),
+				Prefix:             ASGChainPrefix(container.Handle),
 				ManagedChainsRegex: ASGManagedChainsRegex,
 				CleanUpParentChain: true,
 			},
@@ -261,14 +254,6 @@ func (p *VxlanPolicyPlanner) GetASGRulesAndChains(specifiedContainers ...string)
 	}
 
 	return rulesWithChains, nil
-}
-
-func hashHandled(handle string) string {
-	h := sha1.New()
-	h.Write([]byte(handle))
-	smallHash := h.Sum(nil)
-
-	return fmt.Sprintf("%x", smallHash[0:3]) //only need 6 digits so we use 3.
 }
 
 func reverseOrderIptablesRules(iptablesRules, defaultRules []rules.IPTablesRule) []rules.IPTablesRule {
