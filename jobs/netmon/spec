@@ -4,10 +4,16 @@ name: netmon
 templates:
   bpm.yml.erb: config/bpm.yml
   netmon.json.erb: config/netmon.json
+  start.erb: bin/start
 
 packages:
   - netmon
   - silk-ctl-utils
+
+consumes:
+- name: iptables
+  type: iptables
+  optional: true
 
 properties:
   metron_address:

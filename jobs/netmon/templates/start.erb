@@ -1,0 +1,5 @@
+#!/bin/bash
+
+ export PATH="<%= link("iptables").p("garden.iptables_bin_dir") %>:$PATH"
+
+ /var/vcap/packages/netmon/bin/netmon -config-file=/var/vcap/jobs/netmon/config/netmon.json

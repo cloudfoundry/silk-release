@@ -17,6 +17,18 @@ type Restorer struct {
 	restoreReturnsOnCall map[int]struct {
 		result1 error
 	}
+	RestoreWithFlagsStub        func(string, ...string) error
+	restoreWithFlagsMutex       sync.RWMutex
+	restoreWithFlagsArgsForCall []struct {
+		arg1 string
+		arg2 []string
+	}
+	restoreWithFlagsReturns struct {
+		result1 error
+	}
+	restoreWithFlagsReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -82,11 +94,75 @@ func (fake *Restorer) RestoreReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *Restorer) RestoreWithFlags(arg1 string, arg2 ...string) error {
+	fake.restoreWithFlagsMutex.Lock()
+	ret, specificReturn := fake.restoreWithFlagsReturnsOnCall[len(fake.restoreWithFlagsArgsForCall)]
+	fake.restoreWithFlagsArgsForCall = append(fake.restoreWithFlagsArgsForCall, struct {
+		arg1 string
+		arg2 []string
+	}{arg1, arg2})
+	stub := fake.RestoreWithFlagsStub
+	fakeReturns := fake.restoreWithFlagsReturns
+	fake.recordInvocation("RestoreWithFlags", []interface{}{arg1, arg2})
+	fake.restoreWithFlagsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *Restorer) RestoreWithFlagsCallCount() int {
+	fake.restoreWithFlagsMutex.RLock()
+	defer fake.restoreWithFlagsMutex.RUnlock()
+	return len(fake.restoreWithFlagsArgsForCall)
+}
+
+func (fake *Restorer) RestoreWithFlagsCalls(stub func(string, ...string) error) {
+	fake.restoreWithFlagsMutex.Lock()
+	defer fake.restoreWithFlagsMutex.Unlock()
+	fake.RestoreWithFlagsStub = stub
+}
+
+func (fake *Restorer) RestoreWithFlagsArgsForCall(i int) (string, []string) {
+	fake.restoreWithFlagsMutex.RLock()
+	defer fake.restoreWithFlagsMutex.RUnlock()
+	argsForCall := fake.restoreWithFlagsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *Restorer) RestoreWithFlagsReturns(result1 error) {
+	fake.restoreWithFlagsMutex.Lock()
+	defer fake.restoreWithFlagsMutex.Unlock()
+	fake.RestoreWithFlagsStub = nil
+	fake.restoreWithFlagsReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *Restorer) RestoreWithFlagsReturnsOnCall(i int, result1 error) {
+	fake.restoreWithFlagsMutex.Lock()
+	defer fake.restoreWithFlagsMutex.Unlock()
+	fake.RestoreWithFlagsStub = nil
+	if fake.restoreWithFlagsReturnsOnCall == nil {
+		fake.restoreWithFlagsReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.restoreWithFlagsReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *Restorer) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.restoreMutex.RLock()
 	defer fake.restoreMutex.RUnlock()
+	fake.restoreWithFlagsMutex.RLock()
+	defer fake.restoreWithFlagsMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

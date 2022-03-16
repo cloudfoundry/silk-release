@@ -1,0 +1,5 @@
+#!/bin/bash
+
+ export PATH="<%= link("iptables").p("garden.iptables_bin_dir") %>:$PATH"
+
+ /var/vcap/packages/iptables-logger/bin/iptables-logger -config-file=/var/vcap/jobs/iptables-logger/config/iptables-logger.json

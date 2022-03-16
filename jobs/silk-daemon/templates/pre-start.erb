@@ -1,6 +1,8 @@
 #!/bin/bash -eu
 
 <% unless p("disable") %>
+export PATH="<%= link("iptables").p("garden.iptables_bin_dir") %>:$PATH"
+
 # remove the old flannel vtep device if it exists
 (ip link del dev flannel.1 || true) 2> /dev/null
 

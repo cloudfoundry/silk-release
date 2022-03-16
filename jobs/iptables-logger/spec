@@ -4,9 +4,15 @@ name: iptables-logger
 templates:
   bpm.yml.erb: config/bpm.yml
   iptables-logger.json.erb: config/iptables-logger.json
+  start.erb: bin/start
 
 packages:
   - iptables-logger
+
+consumes:
+- name: iptables
+  type: iptables
+  optional: true
 
 properties:
   kernel_log_file:

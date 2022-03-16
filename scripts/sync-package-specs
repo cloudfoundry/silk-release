@@ -77,7 +77,9 @@ function sync_package_externalmods() {
 ## along with all of its dependencies
 
 sync_package vxlan-policy-agent \
-  -app code.cloudfoundry.org/vxlan-policy-agent/cmd/vxlan-policy-agent
+  -app code.cloudfoundry.org/vxlan-policy-agent/cmd/vxlan-policy-agent \
+  -app code.cloudfoundry.org/vxlan-policy-agent/cmd/pre-start
+
 
 sync_package netmon \
   -app code.cloudfoundry.org/netmon/cmd/netmon
