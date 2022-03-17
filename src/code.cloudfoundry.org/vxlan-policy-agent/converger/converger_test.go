@@ -675,13 +675,13 @@ var _ = Describe("Single Poll Cycle", func() {
 
 		Describe("SyncASGsForContainer", func() {
 			It("passes specified containers to the planner", func() {
-				err := p.SyncASGsForContainer("container-1", "container-2")
+				err := p.SyncASGsForContainers("container-1", "container-2")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(fakeASGPlanner.GetASGRulesAndChainsArgsForCall(0)).To(Equal([]string{"container-1", "container-2"}))
 			})
 
 			It("does not clean up orphans when syncing specific containers", func() {
-				err := p.SyncASGsForContainer("container-1", "container-2")
+				err := p.SyncASGsForContainers("container-1", "container-2")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(0))
 			})
@@ -695,14 +695,6 @@ var _ = Describe("Single Poll Cycle", func() {
 				asgRegex, desiredChains := fakeEnforcer.CleanChainsMatchingArgsForCall(0)
 				Expect(asgRegex.String()).To(MatchRegexp("asg-[a-z0-9]{6}"))
 				Expect(desiredChains).To(BeEmpty())
-			})
-
-			It("sends the duration metric", func() {
-				err := p.CleanupOrphanedASGsChains("some-container-handle")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(metricsSender.SendDurationCallCount()).To(Equal(1))
-				metricName, _ := metricsSender.SendDurationArgsForCall(0)
-				Expect(metricName).To(Equal("asgIptablesOrphanedCleanupTime"))
 			})
 
 			Context("the enforcer returns an error", func() {

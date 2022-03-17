@@ -59,7 +59,6 @@ const metricPollDuration = "totalPollTime"
 
 const metricASGEnforceDuration = "asgIptablesEnforceTime"
 const metricASGCleanupDuration = "asgIptablesCleanupTime"
-const metricASGOrphanCleanupDuration = "asgIptablesOrphanedCleanupTime"
 const metricASGPollDuration = "asgTotalPollTime"
 
 func (m *SinglePollCycle) DoPolicyCycle() error {
@@ -109,10 +108,10 @@ func (m *SinglePollCycle) DoPolicyCycle() error {
 }
 
 func (m *SinglePollCycle) DoASGCycle() error {
-	return m.SyncASGsForContainer() // syncs for all containers when empty
+	return m.SyncASGsForContainers() // syncs for all containers when arguments are empty
 }
 
-func (m *SinglePollCycle) SyncASGsForContainer(containers ...string) error {
+func (m *SinglePollCycle) SyncASGsForContainers(containers ...string) error {
 	m.asgMutex.Lock()
 
 	if m.asgRuleSets == nil {
@@ -165,8 +164,10 @@ func (m *SinglePollCycle) SyncASGsForContainer(containers ...string) error {
 		enforceDuration += time.Now().Sub(enforceStartTime)
 	}
 
+	pollingLoop := len(containers) == 0
+
 	var cleanupDuration time.Duration
-	if len(containers) == 0 {
+	if pollingLoop {
 		cleanupStart := time.Now()
 		err := m.cleanupASGsChains(planner.ASGManagedChainsRegex, desiredChains)
 		if err != nil {
@@ -176,13 +177,12 @@ func (m *SinglePollCycle) SyncASGsForContainer(containers ...string) error {
 	}
 	m.asgMutex.Unlock()
 
-	m.metricsSender.SendDuration(metricASGEnforceDuration, enforceDuration)
-
-	if cleanupDuration != 0 {
+	if pollingLoop {
+		m.metricsSender.SendDuration(metricASGEnforceDuration, enforceDuration)
 		m.metricsSender.SendDuration(metricASGCleanupDuration, cleanupDuration)
+		pollDuration := time.Now().Sub(pollStartTime)
+		m.metricsSender.SendDuration(metricASGPollDuration, pollDuration)
 	}
-	pollDuration := time.Now().Sub(pollStartTime)
-	m.metricsSender.SendDuration(metricASGPollDuration, pollDuration)
 
 	return errors
 }
@@ -191,17 +191,7 @@ func (m *SinglePollCycle) CleanupOrphanedASGsChains(containerHandle string) erro
 	m.asgMutex.Lock()
 	defer m.asgMutex.Unlock()
 
-	var cleanupDuration time.Duration
-	cleanupStart := time.Now()
-	var err error
-	err = m.cleanupASGsChains(planner.ASGChainPrefix(containerHandle), []enforcer.LiveChain{})
-	cleanupDuration = time.Now().Sub(cleanupStart)
-
-	if cleanupDuration != 0 {
-		m.metricsSender.SendDuration(metricASGOrphanCleanupDuration, cleanupDuration)
-	}
-
-	return err
+	return m.cleanupASGsChains(planner.ASGChainPrefix(containerHandle), []enforcer.LiveChain{})
 }
 
 func (m *SinglePollCycle) cleanupASGsChains(prefix string, desiredChains []enforcer.LiveChain) error {
