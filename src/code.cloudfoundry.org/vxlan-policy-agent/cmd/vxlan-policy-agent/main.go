@@ -241,7 +241,7 @@ func main() {
 			PollCycleFunc: singlePollCycle.DoPolicyCycle,
 		},
 		"/force-asgs-for-container": &handlers.ForceASGsForContainer{
-			ASGUpdateFunc:    singlePollCycle.SyncASGsForContainer,
+			ASGUpdateFunc:    singlePollCycle.SyncASGsForContainers,
 			EnableASGSyncing: conf.EnableASGSyncing,
 		},
 		"/force-orphaned-asgs-cleanup": &handlers.ForceOrphanedASGsCleanup{
