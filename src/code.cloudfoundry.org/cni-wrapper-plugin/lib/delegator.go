@@ -1,6 +1,8 @@
 package lib
 
 import (
+	"context"
+
 	"github.com/containernetworking/cni/pkg/invoke"
 	"github.com/containernetworking/cni/pkg/types"
 )
@@ -14,11 +16,11 @@ type Delegator interface {
 type delegator struct{}
 
 func (*delegator) DelegateAdd(delegatePlugin string, netconf []byte) (types.Result, error) {
-	return invoke.DelegateAdd(delegatePlugin, netconf)
+	return invoke.DelegateAdd(context.Background(), delegatePlugin, netconf, nil)
 }
 
 func (*delegator) DelegateDel(delegatePlugin string, netconf []byte) error {
-	return invoke.DelegateDel(delegatePlugin, netconf)
+	return invoke.DelegateDel(context.Background(), delegatePlugin, netconf, nil)
 }
 
 func NewDelegator() Delegator { return &delegator{} }
