@@ -12,7 +12,7 @@ replace github.com/vishvananda/netns => github.com/vishvananda/netns v0.0.0-2017
 
 replace github.com/containernetworking/plugins => github.com/containernetworking/plugins v0.6.1-0.20171122160932-92c634042c38
 
-replace github.com/containernetworking/cni => github.com/containernetworking/cni v0.6.0
+replace github.com/containernetworking/cni => github.com/containernetworking/cni v0.8.1
 
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.0.0
 
@@ -26,7 +26,7 @@ require (
 	code.cloudfoundry.org/runtimeschema v0.0.0-00010101000000-000000000000
 	code.cloudfoundry.org/silk v0.0.0-20211004235850-da152076940f
 	github.com/cloudfoundry/dropsonde v1.0.0
-	github.com/containernetworking/cni v0.6.0
+	github.com/containernetworking/cni v0.8.1
 	github.com/coreos/go-iptables v0.6.0
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/hashicorp/go-multierror v1.1.1
