@@ -14,7 +14,7 @@ replace github.com/containernetworking/plugins => github.com/containernetworking
 
 replace github.com/containernetworking/cni => github.com/containernetworking/cni v0.6.0
 
-replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.0.0
+replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
 require (
 	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20211111210832-d3a705b8ebff
