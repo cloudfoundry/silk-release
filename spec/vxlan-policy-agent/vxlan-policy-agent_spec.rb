@@ -58,6 +58,10 @@ module Bosh::Template::Test
 
       describe 'vxlan-policy-agent job' do
         let(:job) {release.job('vxlan-policy-agent')}
+        let(:spec) do
+          InstanceSpec.new(address: '1.2.3.4', id: 'some-guid', deployment: 'some-deployment', name: 'vxlan-policy-agent')
+        end
+
         describe 'config/client-config.json' do
           let(:template) {job.template('config/vxlan-policy-agent.json')}
 
@@ -100,8 +104,59 @@ module Bosh::Template::Test
                 'logging' => true,
                 'burst' => 1000,
                 'rate_per_sec' => 100,
+              },
+              'loggregator' => {
+                'loggregator_use_v2_api' => false,
               }
             })
+          end
+
+          context 'when loggregator.use_v2_api is true' do
+            let(:ca_cert_template) {job.template('config/certs/loggregator/ca.crt')}
+            let(:client_cert_template) {job.template('config/certs/loggregator/client.crt')}
+            let(:client_key_template) {job.template('config/certs/loggregator/client.key')}
+
+            before do
+              merged_manifest_properties['loggregator'] = {
+                'use_v2_api' => true,
+                'ca_cert' => 'some-ca-cert',
+                'cert' => 'some-client-cert',
+                'key' => 'some-client-key'
+              }
+            end
+
+            it 'renders the loggregator config as well' do
+              renderedConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links, spec: spec))
+              expect(renderedConfig['loggregator']).to eq({
+                'loggregator_use_v2_api' => true,
+                'loggregator_api_port' => 3458,
+                'loggregator_ca_path' => '/var/vcap/jobs/vxlan-policy-agent/config/certs/loggregator/ca.crt',
+                'loggregator_cert_path' => '/var/vcap/jobs/vxlan-policy-agent/config/certs/loggregator/client.crt',
+                'loggregator_key_path' => '/var/vcap/jobs/vxlan-policy-agent/config/certs/loggregator/client.key',
+                'loggregator_job_deployment' => 'some-deployment',
+                'loggregator_job_name' => 'vxlan-policy-agent',
+                'loggregator_job_index' => 'some-guid',
+                'loggregator_job_ip' => '1.2.3.4',
+                'loggregator_job_origin' => "vxlan-policy-agent",
+                'loggregator_source_id' => "vxlan-policy-agent",
+                'loggregator_instance_id' => 'some-guid'
+              })
+            end
+
+            it 'renders the ca cert' do
+              rendered_ca_cert = ca_cert_template.render(merged_manifest_properties)
+              expect(rendered_ca_cert).to eq("\nsome-ca-cert\n\n")
+            end
+
+            it 'renders the client cert' do
+              rendered_client_cert = client_cert_template.render(merged_manifest_properties)
+              expect(rendered_client_cert).to eq("\nsome-client-cert\n\n")
+            end
+
+            it 'renders the ca cert' do
+              rendered_client_key = client_key_template.render(merged_manifest_properties)
+              expect(rendered_client_key).to eq("\nsome-client-key\n\n")
+            end
           end
         end
       end
