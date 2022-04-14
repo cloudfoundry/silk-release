@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"code.cloudfoundry.org/executor"
 	"code.cloudfoundry.org/lib/rules"
 
 	"code.cloudfoundry.org/lager"
@@ -59,8 +60,9 @@ type LiveChain struct {
 }
 
 type RulesWithChain struct {
-	Chain Chain
-	Rules []rules.IPTablesRule
+	Chain     Chain
+	Rules     []rules.IPTablesRule
+	LogConfig executor.LogConfig
 }
 
 func (r *RulesWithChain) Equals(other RulesWithChain) bool {

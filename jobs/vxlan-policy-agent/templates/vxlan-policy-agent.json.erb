@@ -46,5 +46,21 @@
       'force_policy_poll_cycle_host' => '127.0.0.1',
     }
 
+  toRender[:loggregator]={}
+  toRender[:loggregator][:loggregator_use_v2_api] = p("loggregator.use_v2_api")
+  if p("loggregator.use_v2_api") == true
+    toRender[:loggregator][:loggregator_api_port] = p("loggregator.v2_api_port")
+    toRender[:loggregator][:loggregator_ca_path] = "/var/vcap/jobs/vxlan-policy-agent/config/certs/loggregator/ca.crt"
+    toRender[:loggregator][:loggregator_cert_path] = "/var/vcap/jobs/vxlan-policy-agent/config/certs/loggregator/client.crt"
+    toRender[:loggregator][:loggregator_key_path] = "/var/vcap/jobs/vxlan-policy-agent/config/certs/loggregator/client.key"
+    toRender[:loggregator][:loggregator_job_deployment] = spec.deployment
+    toRender[:loggregator][:loggregator_job_name] = spec.name
+    toRender[:loggregator][:loggregator_job_index] = spec.id
+    toRender[:loggregator][:loggregator_job_ip] = spec.address
+    toRender[:loggregator][:loggregator_job_origin] = "vxlan-policy-agent"
+    toRender[:loggregator][:loggregator_source_id] = "vxlan-policy-agent"
+    toRender[:loggregator][:loggregator_instance_id] = spec.id
+  end
+
     JSON.pretty_generate(toRender)
 %>

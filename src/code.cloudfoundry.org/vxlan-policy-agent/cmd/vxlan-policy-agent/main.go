@@ -13,6 +13,7 @@ import (
 
 	"code.cloudfoundry.org/cni-wrapper-plugin/adapter"
 	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
+	loggingclient "code.cloudfoundry.org/diego-logging-client"
 	"code.cloudfoundry.org/lib/common"
 	"code.cloudfoundry.org/lib/datastore"
 	"code.cloudfoundry.org/lib/interfacelookup"
@@ -30,6 +31,7 @@ import (
 	"code.cloudfoundry.org/cf-networking-helpers/mutualtls"
 	"code.cloudfoundry.org/debugserver"
 	"code.cloudfoundry.org/filelock"
+	"code.cloudfoundry.org/go-loggregator/v8/runtimeemitter"
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lager/lagerflags"
 	"github.com/cloudfoundry/dropsonde"
@@ -220,7 +222,17 @@ func main() {
 	uptimeSource := metrics.NewUptimeSource()
 	metricsEmitter := metrics.NewMetricsEmitter(logger, emitInterval, uptimeSource)
 
-	singlePollCycle := converger.NewSinglePollCycle([]converger.Planner{dynamicPlanner}, ruleEnforcer, metricsSender, logger)
+	metronClient, err := loggingclient.NewIngressClient(conf.LoggregatorConfig)
+	if err != nil {
+		log.Fatalf("%s: initializing ingress client: %s", logPrefix, err)
+	}
+
+	if conf.LoggregatorConfig.UseV2API {
+		emitter := runtimeemitter.NewV1(metronClient)
+		go emitter.Run()
+	}
+
+	singlePollCycle := converger.NewSinglePollCycle([]converger.Planner{dynamicPlanner}, ruleEnforcer, metricsSender, metronClient, logger)
 
 	policyPoller := &poller.Poller{
 		Logger:          logger,

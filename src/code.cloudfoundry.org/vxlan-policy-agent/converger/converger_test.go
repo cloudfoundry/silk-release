@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"regexp"
 
+	diegologgingclientfakes "code.cloudfoundry.org/diego-logging-client/testhelpers"
+	"code.cloudfoundry.org/executor"
 	"code.cloudfoundry.org/lib/rules"
 	"code.cloudfoundry.org/vxlan-policy-agent/converger"
 	"code.cloudfoundry.org/vxlan-policy-agent/converger/fakes"
@@ -28,6 +30,7 @@ var _ = Describe("Single Poll Cycle", func() {
 			fakeRemotePlanner    *fakes.Planner
 			fakeEnforcer         *fakes.RuleEnforcer
 			metricsSender        *fakes.MetricsSender
+			fakeMetronClient     *diegologgingclientfakes.FakeIngressClient
 			localRulesWithChain  enforcer.RulesWithChain
 			remoteRulesWithChain enforcer.RulesWithChain
 			policyRulesWithChain enforcer.RulesWithChain
@@ -39,6 +42,7 @@ var _ = Describe("Single Poll Cycle", func() {
 			fakeLocalPlanner = &fakes.Planner{}
 			fakeRemotePlanner = &fakes.Planner{}
 			fakeEnforcer = &fakes.RuleEnforcer{}
+			fakeMetronClient = &diegologgingclientfakes.FakeIngressClient{}
 			metricsSender = &fakes.MetricsSender{}
 			logger = lagertest.NewTestLogger("test")
 
@@ -46,6 +50,7 @@ var _ = Describe("Single Poll Cycle", func() {
 				[]converger.Planner{fakeLocalPlanner, fakeRemotePlanner, fakePolicyPlanner},
 				fakeEnforcer,
 				metricsSender,
+				fakeMetronClient,
 				logger,
 			)
 
@@ -245,6 +250,7 @@ var _ = Describe("Single Poll Cycle", func() {
 			p                 *converger.SinglePollCycle
 			fakeASGPlanner    *fakes.Planner
 			fakeEnforcer      *fakes.RuleEnforcer
+			fakeMetronClient  *diegologgingclientfakes.FakeIngressClient
 			metricsSender     *fakes.MetricsSender
 			ASGRulesWithChain []enforcer.RulesWithChain
 			logger            *lagertest.TestLogger
@@ -254,6 +260,7 @@ var _ = Describe("Single Poll Cycle", func() {
 			fakeASGPlanner = &fakes.Planner{}
 			fakeEnforcer = &fakes.RuleEnforcer{}
 			metricsSender = &fakes.MetricsSender{}
+			fakeMetronClient = &diegologgingclientfakes.FakeIngressClient{}
 			logger = lagertest.NewTestLogger("test")
 
 			fakeEnforcer.EnforceRulesAndChainStub = func(chain enforcer.RulesWithChain) (string, error) {
@@ -264,16 +271,23 @@ var _ = Describe("Single Poll Cycle", func() {
 				[]converger.Planner{fakeASGPlanner},
 				fakeEnforcer,
 				metricsSender,
+				fakeMetronClient,
 				logger,
 			)
 
 			ASGRulesWithChain = []enforcer.RulesWithChain{
 				{
-					Rules: []rules.IPTablesRule{[]string{"asg-rule2"}},
+					Rules: []rules.IPTablesRule{[]string{"asg-rule1"}},
 					Chain: enforcer.Chain{
 						Table:       "filter",
 						ParentChain: "netout-1",
 						Prefix:      "asg-1234",
+					},
+					LogConfig: executor.LogConfig{
+						Guid:       "some-app-guid-1",
+						Index:      1,
+						SourceName: "some-source-name",
+						Tags:       map[string]string{"some-tag-1": "some-value-1"},
 					},
 				}, {
 					Rules: []rules.IPTablesRule{[]string{"asg-rule2"}},
@@ -282,6 +296,12 @@ var _ = Describe("Single Poll Cycle", func() {
 						ParentChain: "netout-2",
 						Prefix:      "asg-2345",
 					},
+					LogConfig: executor.LogConfig{
+						Guid:       "some-app-guid-2",
+						Index:      2,
+						SourceName: "some-source-name",
+						Tags:       map[string]string{"some-tag-2": "some-value-2"},
+					},
 				},
 				{
 					Rules: []rules.IPTablesRule{[]string{"asg-rule3"}},
@@ -289,6 +309,12 @@ var _ = Describe("Single Poll Cycle", func() {
 						Table:       "filter",
 						ParentChain: "netout-3",
 						Prefix:      "asg-3456",
+					},
+					LogConfig: executor.LogConfig{
+						Guid:       "some-app-guid-3",
+						Index:      3,
+						SourceName: "some-source-name",
+						Tags:       map[string]string{"some-tag-3": "some-value-3"},
 					},
 				},
 			}
@@ -352,6 +378,12 @@ var _ = Describe("Single Poll Cycle", func() {
 
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(3))
 			})
+
+			It("does not send an app log", func() {
+				err := p.DoASGCycle()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeMetronClient.SendAppLogCallCount()).To(Equal(3))
+			})
 		})
 
 		Context("when a ruleset has changed since the last poll cycle", func() {
@@ -375,6 +407,32 @@ var _ = Describe("Single Poll Cycle", func() {
 				err := p.DoASGCycle()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(logger).To(gbytes.Say("poll-cycle.*updating iptables rules.*new rules.*new-rule.*num new rules.*1.*num old rules.*1.*old rules.*asg-rule"))
+			})
+
+			It("sends app logs", func() {
+				err := p.DoASGCycle()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeMetronClient.SendAppLogCallCount()).To(Equal(4))
+
+				msg, sourceName, tags := fakeMetronClient.SendAppLogArgsForCall(0)
+				Expect(msg).To(Equal("Security group rules were updated"))
+				Expect(sourceName).To(Equal("some-source-name"))
+				Expect(tags).To(Equal(map[string]string{"some-tag-1": "some-value-1", "source_id": "some-app-guid-1", "instance_id": "1"}))
+
+				msg, sourceName, tags = fakeMetronClient.SendAppLogArgsForCall(1)
+				Expect(msg).To(Equal("Security group rules were updated"))
+				Expect(sourceName).To(Equal("some-source-name"))
+				Expect(tags).To(Equal(map[string]string{"some-tag-2": "some-value-2", "source_id": "some-app-guid-2", "instance_id": "2"}))
+
+				msg, sourceName, tags = fakeMetronClient.SendAppLogArgsForCall(2)
+				Expect(msg).To(Equal("Security group rules were updated"))
+				Expect(sourceName).To(Equal("some-source-name"))
+				Expect(tags).To(Equal(map[string]string{"some-tag-3": "some-value-3", "source_id": "some-app-guid-3", "instance_id": "3"}))
+
+				msg, sourceName, tags = fakeMetronClient.SendAppLogArgsForCall(3)
+				Expect(msg).To(Equal("Security group rules were updated"))
+				Expect(sourceName).To(Equal("some-source-name"))
+				Expect(tags).To(Equal(map[string]string{"some-tag-1": "some-value-1", "source_id": "some-app-guid-1", "instance_id": "1"}))
 			})
 		})
 
@@ -601,6 +659,7 @@ var _ = Describe("Single Poll Cycle", func() {
 					[]converger.Planner{fakeASGPlanner, fakeOtherPlanner},
 					fakeEnforcer,
 					metricsSender,
+					fakeMetronClient,
 					logger,
 				)
 				otherRulesWithChain = []enforcer.RulesWithChain{
@@ -650,6 +709,7 @@ var _ = Describe("Single Poll Cycle", func() {
 						Name:  "other-mangle-rule-with-suffix",
 					}}))
 			})
+
 			Context("and a planner fails on GetASGRulesAndChains", func() {
 				BeforeEach(func() {
 					fakeASGPlanner.GetASGRulesAndChainsReturns(ASGRulesWithChain, fmt.Errorf("error on first planner"))

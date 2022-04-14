@@ -1,6 +1,9 @@
 # code.cloudfoundry.org/bbs v0.0.0-20210727125654-2ad50317f7ed
 ## explicit
 code.cloudfoundry.org/bbs/db/sqldb/helpers/monitor
+code.cloudfoundry.org/bbs/encryption
+code.cloudfoundry.org/bbs/format
+code.cloudfoundry.org/bbs/models
 # code.cloudfoundry.org/cf-networking-helpers v0.0.0-20211111210832-d3a705b8ebff
 ## explicit; go 1.16
 code.cloudfoundry.org/cf-networking-helpers/db
@@ -17,12 +20,28 @@ code.cloudfoundry.org/cf-networking-helpers/testsupport/ports
 # code.cloudfoundry.org/debugserver v0.0.0-20210608171006-d7658ce493f4
 ## explicit; go 1.16
 code.cloudfoundry.org/debugserver
+# code.cloudfoundry.org/diego-logging-client v0.0.0-20220314190632-277a9c460661
+## explicit; go 1.16
+code.cloudfoundry.org/diego-logging-client
+code.cloudfoundry.org/diego-logging-client/testhelpers
+# code.cloudfoundry.org/executor v0.0.0-20220401134035-4e7113938d00
+## explicit
+code.cloudfoundry.org/executor
 # code.cloudfoundry.org/filelock v0.0.0-20180314203404-13cd41364639
 ## explicit
 code.cloudfoundry.org/filelock
 # code.cloudfoundry.org/garden v0.0.0-20210608104724-fa3a10d59c82
 ## explicit; go 1.16
 code.cloudfoundry.org/garden
+# code.cloudfoundry.org/go-diodes v0.0.0-20190809170250-f77fb823c7ee
+## explicit
+code.cloudfoundry.org/go-diodes
+# code.cloudfoundry.org/go-loggregator/v8 v8.0.5
+## explicit; go 1.16
+code.cloudfoundry.org/go-loggregator/v8
+code.cloudfoundry.org/go-loggregator/v8/rfc5424
+code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2
+code.cloudfoundry.org/go-loggregator/v8/runtimeemitter
 # code.cloudfoundry.org/lager v2.0.0+incompatible => code.cloudfoundry.org/lager v1.1.1-0.20210513163233-569157d2803b
 ## explicit; go 1.16
 code.cloudfoundry.org/lager
@@ -33,6 +52,9 @@ code.cloudfoundry.org/lager/lagertest
 # code.cloudfoundry.org/policy_client v0.0.0-20220203234022-670e720134e3
 ## explicit; go 1.17
 code.cloudfoundry.org/policy_client
+# code.cloudfoundry.org/routing-info v0.0.0-20220215234142-7d023ecb0fad
+## explicit
+code.cloudfoundry.org/routing-info/internalroutes
 # code.cloudfoundry.org/runtimeschema v0.0.0-00010101000000-000000000000 => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 ## explicit
 code.cloudfoundry.org/runtimeschema/metric
@@ -60,9 +82,14 @@ code.cloudfoundry.org/silk/daemon/vtep
 code.cloudfoundry.org/silk/lib/adapter
 code.cloudfoundry.org/silk/lib/datastore
 code.cloudfoundry.org/silk/lib/serial
+# code.cloudfoundry.org/tlsconfig v0.0.0-20200131000646-bbe0f8da39b3
+## explicit; go 1.13
+code.cloudfoundry.org/tlsconfig
 # github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f
 ## explicit
 github.com/bmizerany/pat
+# github.com/cloudfoundry-incubator/bbs v0.0.0-20220325145300-b2855629fde1
+## explicit
 # github.com/cloudfoundry/dropsonde v1.0.0
 ## explicit
 github.com/cloudfoundry/dropsonde
@@ -115,9 +142,15 @@ github.com/go-sql-driver/mysql
 github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/protoc-gen-gogo/descriptor
+github.com/gogo/protobuf/sortkeys
 # github.com/golang/protobuf v1.5.2
 ## explicit; go 1.9
+github.com/golang/protobuf/jsonpb
 github.com/golang/protobuf/proto
+github.com/golang/protobuf/ptypes
+github.com/golang/protobuf/ptypes/any
+github.com/golang/protobuf/ptypes/duration
+github.com/golang/protobuf/ptypes/timestamp
 # github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 ## explicit; go 1.13
 github.com/google/shlex
@@ -206,6 +239,8 @@ github.com/pivotal-cf-experimental/gomegamatchers
 github.com/pivotal-cf-experimental/gomegamatchers/internal/deepequal
 github.com/pivotal-cf-experimental/gomegamatchers/internal/diff
 github.com/pivotal-cf-experimental/gomegamatchers/internal/prettyprint
+# github.com/pivotal-golang/lager v2.0.0+incompatible
+## explicit
 # github.com/rubenv/sql-migrate v0.0.0-20210614095031-55d5740dbbcc
 ## explicit; go 1.16
 github.com/rubenv/sql-migrate
@@ -233,11 +268,18 @@ github.com/vishvananda/netns
 # github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c
 ## explicit
 github.com/ziutek/utils/netaddr
-# golang.org/x/net v0.0.0-20210525063256-abc453219eb5
+# golang.org/x/net v0.0.0-20210610132358-84b48f89b13b
 ## explicit; go 1.17
+golang.org/x/net/context
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/html/charset
+golang.org/x/net/http/httpguts
+golang.org/x/net/http2
+golang.org/x/net/http2/hpack
+golang.org/x/net/idna
+golang.org/x/net/internal/timeseries
+golang.org/x/net/trace
 # golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e
 ## explicit; go 1.17
 golang.org/x/sys/internal/unsafeheader
@@ -261,15 +303,70 @@ golang.org/x/text/internal/tag
 golang.org/x/text/internal/utf8internal
 golang.org/x/text/language
 golang.org/x/text/runes
+golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
+golang.org/x/text/unicode/bidi
+golang.org/x/text/unicode/norm
+# google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
+## explicit; go 1.11
+google.golang.org/genproto/googleapis/rpc/status
+# google.golang.org/grpc v1.45.0
+## explicit; go 1.14
+google.golang.org/grpc
+google.golang.org/grpc/attributes
+google.golang.org/grpc/backoff
+google.golang.org/grpc/balancer
+google.golang.org/grpc/balancer/base
+google.golang.org/grpc/balancer/grpclb/state
+google.golang.org/grpc/balancer/roundrobin
+google.golang.org/grpc/binarylog/grpc_binarylog_v1
+google.golang.org/grpc/codes
+google.golang.org/grpc/connectivity
+google.golang.org/grpc/credentials
+google.golang.org/grpc/credentials/insecure
+google.golang.org/grpc/encoding
+google.golang.org/grpc/encoding/proto
+google.golang.org/grpc/grpclog
+google.golang.org/grpc/internal
+google.golang.org/grpc/internal/backoff
+google.golang.org/grpc/internal/balancerload
+google.golang.org/grpc/internal/binarylog
+google.golang.org/grpc/internal/buffer
+google.golang.org/grpc/internal/channelz
+google.golang.org/grpc/internal/credentials
+google.golang.org/grpc/internal/envconfig
+google.golang.org/grpc/internal/grpclog
+google.golang.org/grpc/internal/grpcrand
+google.golang.org/grpc/internal/grpcsync
+google.golang.org/grpc/internal/grpcutil
+google.golang.org/grpc/internal/metadata
+google.golang.org/grpc/internal/resolver
+google.golang.org/grpc/internal/resolver/dns
+google.golang.org/grpc/internal/resolver/passthrough
+google.golang.org/grpc/internal/resolver/unix
+google.golang.org/grpc/internal/serviceconfig
+google.golang.org/grpc/internal/status
+google.golang.org/grpc/internal/syscall
+google.golang.org/grpc/internal/transport
+google.golang.org/grpc/internal/transport/networktype
+google.golang.org/grpc/keepalive
+google.golang.org/grpc/metadata
+google.golang.org/grpc/peer
+google.golang.org/grpc/resolver
+google.golang.org/grpc/serviceconfig
+google.golang.org/grpc/stats
+google.golang.org/grpc/status
+google.golang.org/grpc/tap
 # google.golang.org/protobuf v1.26.0
 ## explicit; go 1.9
+google.golang.org/protobuf/encoding/protojson
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire
 google.golang.org/protobuf/internal/descfmt
 google.golang.org/protobuf/internal/descopts
 google.golang.org/protobuf/internal/detrand
 google.golang.org/protobuf/internal/encoding/defval
+google.golang.org/protobuf/internal/encoding/json
 google.golang.org/protobuf/internal/encoding/messageset
 google.golang.org/protobuf/internal/encoding/tag
 google.golang.org/protobuf/internal/encoding/text
@@ -291,6 +388,9 @@ google.golang.org/protobuf/reflect/protoregistry
 google.golang.org/protobuf/runtime/protoiface
 google.golang.org/protobuf/runtime/protoimpl
 google.golang.org/protobuf/types/descriptorpb
+google.golang.org/protobuf/types/known/anypb
+google.golang.org/protobuf/types/known/durationpb
+google.golang.org/protobuf/types/known/timestamppb
 # gopkg.in/fsnotify.v1 v1.4.7
 ## explicit
 gopkg.in/fsnotify.v1

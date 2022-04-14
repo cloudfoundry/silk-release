@@ -2,26 +2,28 @@ package planner
 
 import (
 	"crypto/sha1"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"time"
 
 	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
+	"code.cloudfoundry.org/executor"
+	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lib/datastore"
 	"code.cloudfoundry.org/lib/rules"
 	"code.cloudfoundry.org/policy_client"
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
-
-	"code.cloudfoundry.org/lager"
 )
 
 type container struct {
-	Handle  string
-	AppID   string
-	SpaceID string
-	Ports   string
-	IP      string
-	Purpose string
+	Handle    string
+	AppID     string
+	SpaceID   string
+	Ports     string
+	IP        string
+	Purpose   string
+	LogConfig executor.LogConfig
 }
 
 type VxlanPolicyPlanner struct {
@@ -120,13 +122,23 @@ func (p *VxlanPolicyPlanner) readFile(specifiedContainers ...string) ([]containe
 			purpose = ""
 		}
 
+		var logConfig executor.LogConfig
+		logConfigStr, ok := containerMeta.Metadata["log_config"].(string)
+		if ok {
+			err := json.Unmarshal([]byte(logConfigStr), &logConfig)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		allContainers = append(allContainers, container{
-			Handle:  containerMeta.Handle,
-			AppID:   policyGroupID,
-			SpaceID: spaceID,
-			Ports:   ports,
-			IP:      containerMeta.IP,
-			Purpose: purpose,
+			Handle:    containerMeta.Handle,
+			AppID:     policyGroupID,
+			SpaceID:   spaceID,
+			Ports:     ports,
+			IP:        containerMeta.IP,
+			Purpose:   purpose,
+			LogConfig: logConfig,
 		})
 	}
 	containerMetadataDuration := time.Now().Sub(containerMetadataStartTime)

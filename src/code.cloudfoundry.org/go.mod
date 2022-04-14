@@ -19,8 +19,11 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 require (
 	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20211111210832-d3a705b8ebff
 	code.cloudfoundry.org/debugserver v0.0.0-20210608171006-d7658ce493f4
+	code.cloudfoundry.org/diego-logging-client v0.0.0-20220314190632-277a9c460661
+	code.cloudfoundry.org/executor v0.0.0-20220401134035-4e7113938d00
 	code.cloudfoundry.org/filelock v0.0.0-20180314203404-13cd41364639
 	code.cloudfoundry.org/garden v0.0.0-20210608104724-fa3a10d59c82
+	code.cloudfoundry.org/go-loggregator/v8 v8.0.5
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	code.cloudfoundry.org/policy_client v0.0.0-20220203234022-670e720134e3
 	code.cloudfoundry.org/runtimeschema v0.0.0-00010101000000-000000000000
@@ -41,7 +44,11 @@ require (
 
 require (
 	code.cloudfoundry.org/bbs v0.0.0-20210727125654-2ad50317f7ed // indirect
+	code.cloudfoundry.org/go-diodes v0.0.0-20190809170250-f77fb823c7ee // indirect
+	code.cloudfoundry.org/routing-info v0.0.0-20220215234142-7d023ecb0fad // indirect
+	code.cloudfoundry.org/tlsconfig v0.0.0-20200131000646-bbe0f8da39b3 // indirect
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
+	github.com/cloudfoundry-incubator/bbs v0.0.0-20220325145300-b2855629fde1 // indirect
 	github.com/cloudfoundry/gosteno v0.0.0-20150423193413-0c8581caea35 // indirect
 	github.com/cloudfoundry/sonde-go v0.0.0-20200416163440-a42463ba266b // indirect
 	github.com/containernetworking/plugins v0.0.0-00010101000000-000000000000 // indirect
@@ -56,14 +63,17 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
+	github.com/pivotal-golang/lager v2.0.0+incompatible // indirect
 	github.com/rubenv/sql-migrate v0.0.0-20210614095031-55d5740dbbcc // indirect
 	github.com/square/certstrap v1.2.0 // indirect
 	github.com/tedsuo/rata v1.0.0 // indirect
 	github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f // indirect
 	github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c // indirect
-	golang.org/x/net v0.0.0-20210525063256-abc453219eb5 // indirect
+	golang.org/x/net v0.0.0-20210610132358-84b48f89b13b // indirect
 	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	golang.org/x/text v0.3.6 // indirect
+	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
+	google.golang.org/grpc v1.45.0 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/gorp.v1 v1.7.2 // indirect

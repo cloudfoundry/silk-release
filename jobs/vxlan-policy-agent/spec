@@ -6,6 +6,9 @@ templates:
   pre-start.erb: bin/pre-start
   post-start.erb: bin/post-start
   vxlan-policy-agent.json.erb: config/vxlan-policy-agent.json
+  loggregator_ca.crt.erb: config/certs/loggregator/ca.crt
+  loggregator_client.crt.erb: config/certs/loggregator/client.crt
+  loggregator_client.key.erb: config/certs/loggregator/client.key
   ca.crt.erb: config/certs/ca.crt
   client.crt.erb: config/certs/client.crt
   client.key.erb: config/certs/client.key
@@ -97,3 +100,16 @@ properties:
   disable_container_network_policy:
     description: "WARNING!!! Disables network policy enforcement. Setting this property to true allows all app containers to access any other app container with no restrictions."
     default: false
+
+  loggregator.use_v2_api:
+    description: "True to use local metron agent gRPC v2 API. False to use UDP v1 API."
+    default: false
+  loggregator.v2_api_port:
+    description: "Local metron agent gRPC port"
+    default: 3458
+  loggregator.ca_cert:
+    description: "CA Cert used to communicate with local metron agent over gRPC"
+  loggregator.cert:
+    description: "Cert used to communicate with local metron agent over gRPC"
+  loggregator.key:
+    description: "Key used to communicate with local metron agent over gRPC"

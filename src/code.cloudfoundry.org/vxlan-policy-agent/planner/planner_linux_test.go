@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
+	"code.cloudfoundry.org/executor"
 	"code.cloudfoundry.org/lib/datastore"
 	libfakes "code.cloudfoundry.org/lib/fakes"
 	"code.cloudfoundry.org/lib/rules"
@@ -1423,6 +1424,37 @@ var _ = Describe("Planner", func() {
 						Expect(receivedStagingContainerWorkload).To(Equal("staging"))
 					})
 				})
+
+				Describe("log config", func() {
+					Context("when container metadata does not contain log_config", func() {
+						It("returns empty log config", func() {
+							rulesWithChain, err := policyPlanner.GetASGRulesAndChains("container-id-2")
+							Expect(err).NotTo(HaveOccurred())
+							Expect(rulesWithChain).To(HaveLen(1))
+							Expect(rulesWithChain[0].LogConfig).To(Equal(executor.LogConfig{}))
+						})
+					})
+
+					Context("when container metadata contains log_config", func() {
+						BeforeEach(func() {
+							data["container-id-1"].Metadata["log_config"] = "{\"guid\":\"some-app-guid\",\"index\":0,\"source_name\":\"CELL\",\"tags\":{\"app_id\":\"some-app-guid\",\"app_name\":\"dora\"}}"
+							store.ReadAllReturns(data, nil)
+						})
+
+						It("parses the log config", func() {
+							rulesWithChain, err := policyPlanner.GetASGRulesAndChains("container-id-1")
+							Expect(err).NotTo(HaveOccurred())
+							Expect(rulesWithChain).To(HaveLen(1))
+							Expect(rulesWithChain[0].LogConfig.Guid).To(Equal("some-app-guid"))
+							Expect(rulesWithChain[0].LogConfig.Index).To(Equal(0))
+							Expect(rulesWithChain[0].LogConfig.SourceName).To(Equal("CELL"))
+							Expect(rulesWithChain[0].LogConfig.Tags).To(Equal(map[string]string{
+								"app_id":   "some-app-guid",
+								"app_name": "dora",
+							}))
+						})
+					})
+				})
 			})
 
 			It("appends default iptables rules to the list", func() {
@@ -1449,6 +1481,7 @@ var _ = Describe("Planner", func() {
 				Expect(netOutChain.DefaultRulesCallCount()).To(Equal(2))
 				Expect(netOutChain.IPTablesRulesCallCount()).To(Equal(2))
 			})
+
 		})
 
 		Context("when getting containers from datastore fails", func() {

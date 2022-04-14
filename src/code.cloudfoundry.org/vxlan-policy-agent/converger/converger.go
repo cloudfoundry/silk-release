@@ -3,15 +3,16 @@ package converger
 import (
 	"fmt"
 	"regexp"
+	"strconv"
+	"sync"
 	"time"
 
+	loggingclient "code.cloudfoundry.org/diego-logging-client"
+	"code.cloudfoundry.org/executor"
+	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
 	"code.cloudfoundry.org/vxlan-policy-agent/planner"
 	"github.com/hashicorp/go-multierror"
-
-	"sync"
-
-	"code.cloudfoundry.org/lager"
 )
 
 //go:generate counterfeiter -o fakes/planner.go --fake-name Planner . Planner
@@ -39,16 +40,18 @@ type SinglePollCycle struct {
 	policyRuleSets      map[enforcer.Chain]enforcer.RulesWithChain
 	asgRuleSets         map[enforcer.LiveChain]enforcer.RulesWithChain
 	containerToASGChain map[enforcer.LiveChain]string
+	metronClient        loggingclient.IngressClient
 	policyMutex         sync.Locker
 	asgMutex            sync.Locker
 }
 
-func NewSinglePollCycle(planners []Planner, re ruleEnforcer, ms metricsSender, logger lager.Logger) *SinglePollCycle {
+func NewSinglePollCycle(planners []Planner, re ruleEnforcer, ms metricsSender, metronClient loggingclient.IngressClient, logger lager.Logger) *SinglePollCycle {
 	return &SinglePollCycle{
 		planners:      planners,
 		enforcer:      re,
 		metricsSender: ms,
 		logger:        logger,
+		metronClient:  metronClient,
 		policyMutex:   new(sync.Mutex),
 		asgMutex:      new(sync.Mutex),
 	}
@@ -157,6 +160,7 @@ func (m *SinglePollCycle) SyncASGsForContainers(containers ...string) error {
 					// only overwrite the container/rule caches if we did not error here
 					m.containerToASGChain[chainKey] = chain
 					m.asgRuleSets[chainKey] = ruleset
+					m.sendAppLog(ruleset.LogConfig)
 				}
 			}
 			desiredChains = append(desiredChains, enforcer.LiveChain{Table: ruleset.Chain.Table, Name: m.containerToASGChain[chainKey]})
@@ -224,4 +228,22 @@ func (m *SinglePollCycle) CurrentlyAppliedChainNames() []string {
 		chains = append(chains, chain)
 	}
 	return chains
+}
+
+func (m *SinglePollCycle) sendAppLog(logConfig executor.LogConfig) {
+	if logConfig.Guid == "" {
+		return
+	}
+	tags := logConfig.Tags
+	if _, ok := tags["source_id"]; !ok {
+		tags["source_id"] = logConfig.Guid
+	}
+	sourceIndex := strconv.Itoa(logConfig.Index)
+	if _, ok := tags["instance_id"]; !ok {
+		tags["instance_id"] = sourceIndex
+	}
+	err := m.metronClient.SendAppLog("Security group rules were updated", logConfig.SourceName, tags)
+	if err != nil {
+		m.logger.Error("failed-sending-app-log", err, lager.Data{"log-config": logConfig})
+	}
 }

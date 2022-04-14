@@ -7,6 +7,7 @@ import (
 	"os"
 
 	cnilib "code.cloudfoundry.org/cni-wrapper-plugin/lib"
+	loggingclient "code.cloudfoundry.org/diego-logging-client"
 	validator "gopkg.in/validator.v2"
 )
 
@@ -39,6 +40,7 @@ type VxlanPolicyAgent struct {
 	IPTablesDeniedLogsPerSec      int                       `json:"iptables_denied_logs_per_sec"`
 	DenyNetworks                  cnilib.DenyNetworksConfig `json:"deny_networks"`
 	OutConn                       cnilib.OutConnConfig      `json:"outbound_connections"`
+	LoggregatorConfig             loggingclient.Config      `json:"loggregator"`
 }
 
 func (c *VxlanPolicyAgent) Validate() error {
