@@ -300,7 +300,6 @@ var _ = Describe("Single Poll Cycle", func() {
 						Guid:       "some-app-guid-2",
 						Index:      2,
 						SourceName: "some-source-name",
-						Tags:       map[string]string{"some-tag-2": "some-value-2"},
 					},
 				},
 				{
@@ -422,7 +421,7 @@ var _ = Describe("Single Poll Cycle", func() {
 				msg, sourceName, tags = fakeMetronClient.SendAppLogArgsForCall(1)
 				Expect(msg).To(Equal("Security group rules were updated"))
 				Expect(sourceName).To(Equal("some-source-name"))
-				Expect(tags).To(Equal(map[string]string{"some-tag-2": "some-value-2", "source_id": "some-app-guid-2", "instance_id": "2"}))
+				Expect(tags).To(Equal(map[string]string{"source_id": "some-app-guid-2", "instance_id": "2"}))
 
 				msg, sourceName, tags = fakeMetronClient.SendAppLogArgsForCall(2)
 				Expect(msg).To(Equal("Security group rules were updated"))

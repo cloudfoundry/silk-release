@@ -234,7 +234,10 @@ func (m *SinglePollCycle) sendAppLog(logConfig executor.LogConfig) {
 	if logConfig.Guid == "" {
 		return
 	}
-	tags := logConfig.Tags
+	tags := map[string]string{}
+	if logConfig.Tags != nil {
+		tags = logConfig.Tags
+	}
 	if _, ok := tags["source_id"]; !ok {
 		tags["source_id"] = logConfig.Guid
 	}
