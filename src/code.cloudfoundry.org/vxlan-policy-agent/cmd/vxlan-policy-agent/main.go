@@ -120,7 +120,7 @@ func main() {
 		policy_client.DefaultConfig,
 	)
 
-	_, _, err = policyClient.GetPolicies()
+	_, err = policyClient.GetPolicies()
 
 	if err != nil {
 		die(logger, "policy-client-get-policies", err)

@@ -15,12 +15,6 @@ type Policy struct {
 	Destination Destination `json:"destination"`
 }
 
-type EgressPolicy struct {
-	Source       *EgressSource      `json:"source"`
-	Destination  *EgressDestination `json:"destination"`
-	AppLifecycle string             `json:"app_lifecycle"`
-}
-
 type SecurityGroup struct {
 	Guid              string             `json:"guid"`
 	Name              string             `json:"name"`
@@ -29,19 +23,6 @@ type SecurityGroup struct {
 	RunningDefault    bool               `json:"running_default"`
 	StagingSpaceGuids []string           `json:"staging_space_guids"`
 	RunningSpaceGuids []string           `json:"running_space_guids"`
-}
-
-type EgressSource struct {
-	ID   string `json:"id"`
-	Type string `json:"type"`
-}
-
-type EgressDestination struct {
-	Protocol string    `json:"protocol"`
-	Ports    []Ports   `json:"ports"`
-	IPRanges []IPRange `json:"ips"`
-	ICMPType int       `json:"icmp_type"`
-	ICMPCode int       `json:"icmp_code"`
 }
 
 type IPRange struct {

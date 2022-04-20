@@ -11,7 +11,7 @@ import (
 
 //go:generate counterfeiter -o fakes/internal_policy_client.go --fake-name InternalPolicyClient . InternalPolicyClient
 type InternalPolicyClient interface {
-	GetPolicies() ([]*Policy, []*EgressPolicy, error)
+	GetPolicies() ([]*Policy, error)
 	GetSecurityGroupsForSpace(spaceGuids []string) ([]*SecurityGroup, error)
 }
 
@@ -45,31 +45,29 @@ func NewInternal(logger lager.Logger, httpClient json_client.HttpClient, baseURL
 	}
 }
 
-func (c *InternalClient) GetPolicies() ([]*Policy, []*EgressPolicy, error) {
+func (c *InternalClient) GetPolicies() ([]*Policy, error) {
 	var policies struct {
-		Policies       []*Policy       `json:"policies"`
-		EgressPolicies []*EgressPolicy `json:"egress_policies"`
+		Policies []*Policy `json:"policies"`
 	}
 	err := c.JsonClient.Do("GET", "/networking/v1/internal/policies", nil, &policies, "")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return policies.Policies, policies.EgressPolicies, nil
+	return policies.Policies, nil
 }
 
-func (c *InternalClient) GetPoliciesByID(ids ...string) ([]Policy, []EgressPolicy, error) {
+func (c *InternalClient) GetPoliciesByID(ids ...string) ([]Policy, error) {
 	var policies struct {
-		Policies       []Policy       `json:"policies"`
-		EgressPolicies []EgressPolicy `json:"egress_policies"`
+		Policies []Policy `json:"policies"`
 	}
 	if len(ids) == 0 {
-		return nil, nil, errors.New("ids cannot be empty")
+		return nil, errors.New("ids cannot be empty")
 	}
 	err := c.JsonClient.Do("GET", "/networking/v1/internal/policies?id="+strings.Join(ids, ","), nil, &policies, "")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return policies.Policies, policies.EgressPolicies, nil
+	return policies.Policies, nil
 }
 
 func (c *InternalClient) GetSecurityGroupsForSpace(spaceGuids ...string) ([]SecurityGroup, error) {

@@ -27,6 +27,10 @@ code.cloudfoundry.org/lager v1.1.1-0.20210513163233-569157d2803b h1:jgCg9ARoZ2ME
 code.cloudfoundry.org/lager v1.1.1-0.20210513163233-569157d2803b/go.mod h1:SF6BAZkl2+itWGVny2ILQCY9UNXIRwgi/m181VkHfrI=
 code.cloudfoundry.org/policy_client v0.0.0-20220203234022-670e720134e3 h1:qjjgXJEYFcd8FVQ367yji8jjGfIJg5sjRz4j7mzUy8g=
 code.cloudfoundry.org/policy_client v0.0.0-20220203234022-670e720134e3/go.mod h1:bzqpNvN9V1gJd0ny82Qnqxow5MFAnU97Sti/l4ORHWY=
+code.cloudfoundry.org/policy_client v0.0.0-20220420173332-5d4bff348a33 h1:JN7bKt1Bp0P/aw9xvQfbtdN04kx29zb4I1Zmyd8hi+U=
+code.cloudfoundry.org/policy_client v0.0.0-20220420173332-5d4bff348a33/go.mod h1:bzqpNvN9V1gJd0ny82Qnqxow5MFAnU97Sti/l4ORHWY=
+code.cloudfoundry.org/policy_client v0.0.0-20220420200808-7feb15de93f1 h1:BwWhTaj7V/cot+S3/IKd93SO1t3wQlB8kMLNlzBRu3I=
+code.cloudfoundry.org/policy_client v0.0.0-20220420200808-7feb15de93f1/go.mod h1:bzqpNvN9V1gJd0ny82Qnqxow5MFAnU97Sti/l4ORHWY=
 code.cloudfoundry.org/routing-info v0.0.0-20220215234142-7d023ecb0fad h1:FHI7/GgnWlgG97a0bEf+UezN0dJez2YoNTjkwOOImj8=
 code.cloudfoundry.org/routing-info v0.0.0-20220215234142-7d023ecb0fad/go.mod h1:ykLgqzJGV5PTkvxtfyOy8hcQy7wxPaoV5ZPyk74aqp8=
 code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6 h1:J08p1/LBnhv5BDDf0WLpHRyMJFCws3vd3fLCFL/iVnQ=

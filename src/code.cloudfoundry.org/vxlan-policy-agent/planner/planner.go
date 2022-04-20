@@ -47,7 +47,7 @@ type dstore interface {
 
 //go:generate counterfeiter -o fakes/policy_client.go --fake-name PolicyClient . policyClient
 type policyClient interface {
-	GetPoliciesByID(ids ...string) ([]policy_client.Policy, []policy_client.EgressPolicy, error)
+	GetPoliciesByID(ids ...string) ([]policy_client.Policy, error)
 	GetSecurityGroupsForSpace(spaceGuids ...string) ([]policy_client.SecurityGroup, error)
 	CreateOrGetTag(id, groupType string) (string, error)
 }

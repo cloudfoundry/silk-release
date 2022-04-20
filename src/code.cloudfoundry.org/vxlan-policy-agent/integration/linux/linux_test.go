@@ -209,14 +209,6 @@ var _ = Describe("VXLAN Policy Agent", func() {
 							return resp.StatusCode, nil
 						}).Should(Equal(http.StatusOK))
 
-						Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m tcp --dport 8080:8081 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.27.2.1-10.27.2.2 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 3/4 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 8 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.28.2.3-10.28.2.5 -j ACCEPT`))
 					})
 				})
 
@@ -243,16 +235,6 @@ var _ = Describe("VXLAN Policy Agent", func() {
 					Expect(iptablesFilterRules()).To(ContainSubstring(`-d 10.255.100.21/32 -p udp -m udp --dport 7000:8000 -m mark --mark 0xd -m comment --comment "src:yet-another-app-guid_dst:some-very-very-long-app-guid" -j ACCEPT`))
 				})
 
-				It("enforces egress policies", func() {
-					Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m tcp --dport 8080:8081 -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.27.1.3-10.27.1.4 -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 3/4 -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 8 -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.27.2.1-10.27.2.2 -j ACCEPT`))
-					Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.28.2.3-10.28.2.5 -j ACCEPT`))
-				})
-
 				Context("when the container is staging", func() {
 					BeforeEach(func() {
 						containerMetadata := `{
@@ -268,13 +250,6 @@ var _ = Describe("VXLAN Policy Agent", func() {
 						}
 					}`
 						Expect(ioutil.WriteFile(datastorePath, []byte(containerMetadata), os.ModePerm))
-					})
-
-					It("enforces the egress policies for staging", func() {
-						Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m tcp --dport 8080:8081 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p icmp -m iprange --dst-range 10.27.1.1-10.27.1.2 -m icmp --icmp-type 8 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(ContainSubstring(`-s 10.255.100.21/32 -o underlay1 -p tcp -m iprange --dst-range 1.1.1.1-2.9.9.9 -m tcp --dport 8080:8081 -j ACCEPT`))
 					})
 				})
 
@@ -370,7 +345,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 							runIptablesCommand("-N", "netout--some-handle--log")
 						})
 
-						It("enforces the egress policies for staging", func() {
+						It("enforces the ASG policies for staging", func() {
 							Eventually(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p tcp -m iprange --dst-range 10.0.11.0-10.0.11.255 -m tcp --dport 443 -g netout--some-handle--log`))
 							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p tcp -m iprange --dst-range 10.0.11.0-10.0.11.255 -m tcp --dport 80 -g netout--some-handle--log`))
 							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
@@ -670,54 +645,6 @@ func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 					{
 						"source": {"id":"yet-another-app-guid", "tag":"D"},
 						"destination": {"id": "some-very-very-long-app-guid", "tag":"A", "protocol":"udp", "ports":{"start":7000, "end":8000}}
-					}
-				],
-				"total_egress_policies": 7,
-				"egress_policies": [
-					{
-						"source": {"id": "some-space", "type": "space" },
-						"destination": {"ips": [{"start": "10.27.2.1", "end": "10.27.2.2"}], "protocol": "tcp"},
-						"app_lifecycle": "running"
-					},
-					{
-						"source": {"id": "some-very-very-long-app-guid" },
-						"destination": {"ips": [{"start": "10.27.1.1", "end": "10.27.1.2"}], "protocol": "icmp", "icmp_type": 3, "icmp_code": 4},
-						"app_lifecycle": "running"
-					},
-					{
-						"source": {"id": "some-very-very-long-app-guid" },
-						"destination": {"ips": [{"start": "1.1.1.1", "end": "2.9.9.9"}], "ports": [{"start": 8080, "end": 8081}], "protocol": "tcp"},
-						"app_lifecycle": "staging"
-					},
-					{
-						"source": {"id": "some-very-very-long-app-guid" },
-						"destination": {"ips": [{"start": "10.27.1.1", "end": "10.27.1.2"}], "protocol": "icmp", "icmp_type": -1, "icmp_code": -1},
-						"app_lifecycle": "all"
-					},
-					{
-						"source": {"id": "some-very-very-long-app-guid" },
-						"destination": {"ips": [{"start": "10.27.1.1", "end": "10.27.1.2"}], "protocol": "icmp", "icmp_type": 8, "icmp_code": -1},
-						"app_lifecycle": "all"
-					},
-					{
-						"source": {"id": "some-very-very-long-app-guid" },
-						"destination": {"ips": [{"start": "10.27.1.1", "end": "10.27.1.2"}], "ports": [{"start": 8080, "end": 8081}], "protocol": "tcp"},
-						"app_lifecycle": "all"
-					},
-					{
-						"source": {"id": "some-app-guid-no-ports" },
-						"destination": {"ips": [{"start": "10.27.1.3", "end": "10.27.1.4"}], "protocol": "tcp"},
-						"app_lifecycle": "all"
-					},
-					{
-						"source": {"id": "not-deployed-on-this-cell-why-did-you-query-for-this-id" },
-						"destination": {"ips": [{"start": "10.27.2.3", "end": "10.27.2.5"}], "protocol": "udp"},
-						"app_lifecycle": "all"
-					},
-					{
-						"source": {"id": "", "type": "default" },
-						"destination": {"ips": [{"start": "10.28.2.3", "end": "10.28.2.5"}], "protocol": "tcp"},
-						"app_lifecycle": "all"
 					}
 				]
 			}`))
