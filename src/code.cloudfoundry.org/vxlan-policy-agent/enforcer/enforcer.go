@@ -193,7 +193,6 @@ func (e *Enforcer) cleanupOldRules(logger lager.Logger, table, parentChain, mana
 	}
 
 	reManagedChain := regexp.MustCompile(managedChainsRegex + "([0-9]{10,16})")
-	reOtherRules := regexp.MustCompile(fmt.Sprintf(`-A\s+%s\s+(.*)`, parentChain))
 
 	for _, r := range rulesList {
 		matches := reManagedChain.FindStringSubmatch(r)
@@ -211,23 +210,16 @@ func (e *Enforcer) cleanupOldRules(logger lager.Logger, table, parentChain, mana
 					return err
 				}
 			}
-		} else {
-			if cleanupParentChain {
-				matches := reOtherRules.FindStringSubmatch(r)
-
-				if len(matches) > 1 {
-					logger.Debug("cleaning-up-parent-ruleset", lager.Data{"name": matches[0]})
-					rule, err := rules.NewIPTablesRuleFromIPTablesLine(matches[1])
-					if err != nil {
-						return fmt.Errorf("parsing parent chain rule: %s", err)
-					}
-					logger.Debug("removing-rule", lager.Data{"rule": rule})
-					err = e.iptables.Delete(table, parentChain, rule)
-					if err != nil {
-						return fmt.Errorf("clean up parent chain: %s", err)
-					}
-				}
-			}
+		}
+	}
+	if cleanupParentChain {
+		// Delete everything after the first rule in the parent chain. Rule 1 should be the jump to the new/desired asg-* chain.
+		// Everything else is either an original rule from before asg-syncing kicked in, or the previous asg-* chain jump rule
+		// Nothing should be modifying the netout-* chains, as the first rule will always end up being a jump to the asg-*
+		// chain after ~60s, and it ends in a blanket REJECT, so no other rules would be effective anyway.
+		err := e.iptables.DeleteAfterRuleNum(table, parentChain, 2)
+		if err != nil {
+			return fmt.Errorf("clean up parent chain: %s", err)
 		}
 	}
 
