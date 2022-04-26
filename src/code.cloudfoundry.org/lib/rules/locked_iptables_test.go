@@ -211,6 +211,84 @@ var _ = Describe("LockedIptables", func() {
 		})
 	})
 
+	Describe("DeleteAfterRuleNum", func() {
+		BeforeEach(func() {
+			ipt.ListReturns([]string{"-N some-chain", "-A some-chain rule-1", "-A some-chain rule-2", "-A some-chain rule-3"}, nil)
+		})
+		It("locks and passes the correct parameters to iptables", func() {
+			err := lockedIPT.DeleteAfterRuleNum("some-table", "some-chain", 2)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(lock.LockCallCount()).To(Equal(1))
+			Expect(lock.UnlockCallCount()).To(Equal(1))
+			Expect(ipt.DeleteCallCount()).To(Equal(2))
+			Expect(ipt.ListCallCount()).To(Equal(1))
+			table, chain := ipt.ListArgsForCall(0)
+			Expect(table).To(Equal("some-table"))
+			Expect(chain).To(Equal("some-chain"))
+			table, chain, ruleNum := ipt.DeleteArgsForCall(0)
+			Expect(table).To(Equal("some-table"))
+			Expect(chain).To(Equal("some-chain"))
+			Expect(ruleNum).To(Equal([]string{"2", "--wait"}))
+			table, chain, ruleNum = ipt.DeleteArgsForCall(1)
+			Expect(table).To(Equal("some-table"))
+			Expect(chain).To(Equal("some-chain"))
+			Expect(ruleNum).To(Equal([]string{"2", "--wait"}))
+
+		})
+		Context("when locking fails", func() {
+			BeforeEach(func() {
+				lock.LockReturns(errors.New("banana"))
+			})
+			It("returns an error", func() {
+				err := lockedIPT.DeleteAfterRuleNum("some-table", "some-chain", 2)
+				Expect(err).To(MatchError("lock: banana"))
+			})
+		})
+		Context("when iptables list fails and unlock succeeds", func() {
+			BeforeEach(func() {
+				ipt.ListReturns([]string{}, errors.New("banana"))
+			})
+			It("returns an error", func() {
+				err := lockedIPT.DeleteAfterRuleNum("some-table", "some-chain", 2)
+				Expect(err).To(MatchError("iptables call: banana and unlock: <nil>"))
+			})
+		})
+
+		Context("when iptables list fails and unlock fails", func() {
+			BeforeEach(func() {
+				lock.UnlockReturns(errors.New("banana"))
+				ipt.ListReturns([]string{}, errors.New("patato"))
+			})
+			It("returns an error", func() {
+				err := lockedIPT.DeleteAfterRuleNum("some-table", "some-chain", 2)
+				Expect(err).To(MatchError("iptables call: patato and unlock: banana"))
+			})
+		})
+
+		Context("when iptables delete fails and unlock succeeds", func() {
+			BeforeEach(func() {
+				ipt.DeleteReturns(errors.New("banana"))
+			})
+			It("returns an error", func() {
+				err := lockedIPT.DeleteAfterRuleNum("some-table", "some-chain", 2)
+				Expect(err).To(MatchError("iptables call: banana and unlock: <nil>"))
+			})
+		})
+
+		Context("when iptables delete fails and unlock fails", func() {
+			BeforeEach(func() {
+				lock.UnlockReturns(errors.New("banana"))
+				ipt.DeleteReturns(errors.New("patato"))
+			})
+			It("returns an error", func() {
+				err := lockedIPT.DeleteAfterRuleNum("some-table", "some-chain", 2)
+				Expect(err).To(MatchError("iptables call: patato and unlock: banana"))
+			})
+		})
+
+	})
+
 	Describe("Delete", func() {
 		It("locks and passes the correct parameters to the iptables library", func() {
 			err := lockedIPT.Delete("some-table", "some-chain", rule)
