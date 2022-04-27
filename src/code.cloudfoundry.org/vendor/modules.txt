@@ -49,7 +49,7 @@ code.cloudfoundry.org/lager/internal/truncate
 code.cloudfoundry.org/lager/lagerctx
 code.cloudfoundry.org/lager/lagerflags
 code.cloudfoundry.org/lager/lagertest
-# code.cloudfoundry.org/policy_client v0.0.0-20220203234022-670e720134e3
+# code.cloudfoundry.org/policy_client v0.0.0-20220427143037-36975d7cc48d
 ## explicit; go 1.17
 code.cloudfoundry.org/policy_client
 # code.cloudfoundry.org/routing-info v0.0.0-20220215234142-7d023ecb0fad

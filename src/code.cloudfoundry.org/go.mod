@@ -25,7 +25,7 @@ require (
 	code.cloudfoundry.org/garden v0.0.0-20210608104724-fa3a10d59c82
 	code.cloudfoundry.org/go-loggregator/v8 v8.0.5
 	code.cloudfoundry.org/lager v2.0.0+incompatible
-	code.cloudfoundry.org/policy_client v0.0.0-20220203234022-670e720134e3
+	code.cloudfoundry.org/policy_client v0.0.0-20220427143037-36975d7cc48d
 	code.cloudfoundry.org/runtimeschema v0.0.0-00010101000000-000000000000
 	code.cloudfoundry.org/silk v0.0.0-20211004235850-da152076940f
 	github.com/cloudfoundry/dropsonde v1.0.0
