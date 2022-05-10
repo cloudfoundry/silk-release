@@ -22,7 +22,6 @@ type containerPolicySet struct {
 	Source      sourceSlice
 	Destination destinationSlice
 	Ingress     ingressSlice
-	Egress      egressSlice
 }
 
 type source struct {
@@ -85,41 +84,6 @@ func (s destinationSlice) Less(i, j int) bool {
 }
 
 func (s destinationSlice) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-
-type egress struct {
-	SourceIP  string
-	Protocol  string
-	IpStart   string
-	IpEnd     string
-	IcmpType  int
-	IcmpCode  int
-	PortStart int
-	PortEnd   int
-}
-
-type egressSlice []egress
-
-func (s egressSlice) Len() int {
-	return len(s)
-}
-
-func (s egressSlice) Less(i, j int) bool {
-	a, err := json.Marshal(s[i])
-	if err != nil {
-		panic(err)
-	}
-
-	b, err := json.Marshal(s[j])
-	if err != nil {
-		panic(err)
-	}
-
-	return strings.Compare(string(a), string(b)) < 0
-}
-
-func (s egressSlice) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
@@ -288,10 +252,9 @@ func (p *VxlanPolicyPlanner) getContainerPolicies(allContainers []container) (co
 	guids := extractGUIDs(allContainers)
 
 	var policies []policy_client.Policy
-	var egressPolicies []policy_client.EgressPolicy
 	if len(guids) > 0 {
 		var err error
-		policies, egressPolicies, err = p.PolicyClient.GetPoliciesByID(guids...)
+		policies, err = p.PolicyClient.GetPoliciesByID(guids...)
 		if err != nil {
 			err = fmt.Errorf("failed to get policies: %s", err)
 			return containerPolicySet{}, err
@@ -341,33 +304,6 @@ func (p *VxlanPolicyPlanner) getContainerPolicies(allContainers []container) (co
 			}
 		}
 
-		for _, egressPolicy := range egressPolicies {
-			if (egressPolicy.Source.ID == container.AppID) ||
-				(egressPolicy.Source.ID == container.SpaceID && egressPolicy.Source.Type == "space") ||
-				egressPolicy.Source.Type == "default" {
-				if containerPurposeMatchesAppLifecycle(container.Purpose, egressPolicy.AppLifecycle) {
-					var startPort, endPort int
-
-					if len(egressPolicy.Destination.Ports) > 0 {
-						startPort = egressPolicy.Destination.Ports[0].Start
-						endPort = egressPolicy.Destination.Ports[0].End
-					}
-
-					containerPolicy := egress{
-						SourceIP:  container.IP,
-						Protocol:  egressPolicy.Destination.Protocol,
-						IpStart:   egressPolicy.Destination.IPRanges[0].Start,
-						IpEnd:     egressPolicy.Destination.IPRanges[0].End,
-						IcmpType:  egressPolicy.Destination.ICMPType,
-						IcmpCode:  egressPolicy.Destination.ICMPCode,
-						PortStart: startPort,
-						PortEnd:   endPort,
-					}
-					containerPolicySet.Egress = append(containerPolicySet.Egress, containerPolicy)
-				}
-			}
-		}
-
 		if p.EnableOverlayIngressRules {
 			if container.Ports != "" {
 				for _, port := range strings.Split(container.Ports, ",") {
@@ -388,7 +324,6 @@ func (p *VxlanPolicyPlanner) getContainerPolicies(allContainers []container) (co
 
 	sort.Sort(containerPolicySet.Source)
 	sort.Sort(containerPolicySet.Destination)
-	sort.Sort(containerPolicySet.Egress)
 	sort.Sort(containerPolicySet.Ingress)
 
 	return containerPolicySet, nil
@@ -424,21 +359,6 @@ func (p *VxlanPolicyPlanner) planIPTableRules(containerPolicySet containerPolicy
 			c2cDestination.SourceGUID,
 			c2cDestination.GUID,
 		))
-	}
-
-	for _, egressSource := range containerPolicySet.Egress {
-		for _, hostInterfaceName := range p.HostInterfaceNames {
-			ruleset = append(ruleset, rules.NewEgress(
-				hostInterfaceName,
-				egressSource.SourceIP,
-				egressSource.Protocol,
-				egressSource.IpStart,
-				egressSource.IpEnd,
-				egressSource.IcmpType,
-				egressSource.IcmpCode,
-				egressSource.PortStart,
-				egressSource.PortEnd))
-		}
 	}
 
 	for _, ingressSource := range containerPolicySet.Ingress {
