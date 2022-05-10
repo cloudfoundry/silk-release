@@ -366,36 +366,6 @@ func NewOverlayAccessMarkRule(tag string) IPTablesRule {
 	}
 }
 
-func NewEgress(interfaceName, ip, protocol, ipStart, ipEnd string, icmpType, icmpCode, portStart, portEnd int) IPTablesRule {
-	egressRule := IPTablesRule{
-		"-s", ip,
-		"-o", interfaceName,
-		"-p", protocol,
-		"-m", "iprange",
-		"--dst-range", fmt.Sprintf("%s-%s", ipStart, ipEnd),
-	}
-
-	if protocol == "icmp" {
-		if icmpType != -1 {
-			icmpType := strconv.Itoa(icmpType)
-			if icmpCode != -1 {
-				icmpType += "/" + strconv.Itoa(icmpCode)
-			}
-			egressRule = append(egressRule, "-m", "icmp", "--icmp-type", icmpType)
-		}
-	}
-
-	if (portStart != 0 && portEnd != 0) && (protocol == "tcp" || protocol == "udp") {
-		egressRule = append(egressRule,
-			"-m", protocol,
-			"--dport", fmt.Sprintf("%d:%d", portStart, portEnd))
-	}
-
-	egressRule = append(egressRule, "-j", "ACCEPT")
-
-	return egressRule
-}
-
 func trimAndPad(name string) string {
 	if len(name) > 28 {
 		name = name[:28]
