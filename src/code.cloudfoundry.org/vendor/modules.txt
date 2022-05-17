@@ -413,3 +413,4 @@ gopkg.in/yaml.v2
 # github.com/containernetworking/plugins => github.com/containernetworking/plugins v0.6.1-0.20171122160932-92c634042c38
 # github.com/containernetworking/cni => github.com/containernetworking/cni v0.6.0
 # github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
+# github.com/hashicorp/consul => github.com/hashicorp/consul v0.7.0
