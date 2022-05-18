@@ -35,3 +35,7 @@ properties:
   disable:
     description: "Disable this monit job.  It will not run. Required for backwards compatability"
     default: false
+
+  telemetry_enabled:
+    description: "Enables logging to a dedicated logfile that can be used for telemetry"
+    default: false
