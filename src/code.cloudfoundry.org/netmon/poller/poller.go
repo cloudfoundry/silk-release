@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
-	"code.cloudfoundry.org/runtimeschema/metric"
 	"code.cloudfoundry.org/lib/rules"
+	"code.cloudfoundry.org/runtimeschema/metric"
 )
 
 const netInterfaceCount = metric.Metric("NetInterfaceCount")
@@ -24,6 +24,7 @@ const overlayRxDropped = metric.Metric("OverlayRxDropped")
 
 type SystemMetrics struct {
 	Logger          lager.Logger
+	TelemetryLogger lager.Logger
 	PollInterval    time.Duration
 	InterfaceName   string
 	IPTablesAdapter rules.IPTablesAdapter
@@ -109,6 +110,14 @@ func (m *SystemMetrics) measure(logger lager.Logger) {
 		return
 	}
 	logger.Debug("metric-sent", lager.Data{"IPTablesRuleCount": nIpTablesRule})
+
+	if m.TelemetryLogger != nil {
+		m.TelemetryLogger.Info("count-iptables-rules", map[string]interface{}{
+			"telemetry-source":  "netmon",
+			"telemetry-time":    time.Now(),
+			"IPTablesRuleCount": nIpTablesRule,
+		})
+	}
 
 	nTxBytes, err := readStatsFile(m.InterfaceName, "tx_bytes")
 	if err != nil {

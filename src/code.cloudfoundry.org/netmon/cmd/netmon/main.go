@@ -44,7 +44,9 @@ func main() {
 		logPrefix = conf.LogPrefix
 	}
 
-	logger, sink := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), common.GetLagerConfig())
+	component := fmt.Sprintf("%s.%s", logPrefix, jobPrefix)
+
+	logger, sink := lagerflags.NewFromConfig(component, common.GetLagerConfig())
 	logger.Info("parsed-config", lager.Data{"config": conf})
 
 	logLevel, err := conf.ParseLogLevel()
@@ -92,6 +94,18 @@ func main() {
 		PollInterval:    pollInterval,
 		InterfaceName:   conf.InterfaceName,
 		IPTablesAdapter: lockedIPTables,
+	}
+
+	if conf.TelemetryEnabled {
+		telemetryLogFile, err := os.Create("/var/vcap/sys/log/netmon/telemetry.log")
+		if err != nil {
+			logger.Fatal("creating-telemetry-log", err)
+		}
+
+		telemetrySink := lager.NewWriterSink(telemetryLogFile, lager.INFO)
+		telemetryLogger := lager.NewLogger("netmon")
+		telemetryLogger.RegisterSink(telemetrySink)
+		systemMetrics.TelemetryLogger = telemetryLogger
 	}
 
 	members := grouper.Members{

@@ -19,6 +19,7 @@ type Netmon struct {
 	LogLevel         string `json:"log_level"`
 	LogPrefix        string `json:"log_prefix" validate:"nonzero"`
 	IPTablesLockFile string `json:"iptables_lock_file" validate:"nonzero"`
+	TelemetryEnabled bool   `json:"telemetry_enabled"`
 }
 
 func (n Netmon) ParseLogLevel() (lager.LogLevel, error) {

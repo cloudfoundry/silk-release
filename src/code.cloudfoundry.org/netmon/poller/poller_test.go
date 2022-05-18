@@ -60,6 +60,28 @@ var _ = Describe("Poller Run", func() {
 		iptablesLog := logger.Logs()[2]
 		Expect(iptablesLog.Data["IPTablesRuleCount"]).To(Equal(float64(4)))
 	})
+
+	Context("when a telemetry logger is configured", func() {
+		var (
+			telemetryLogger *lagertest.TestLogger
+		)
+
+		BeforeEach(func() {
+			telemetryLogger = lagertest.NewTestLogger("telemetry")
+			metrics = &poller.SystemMetrics{
+				Logger:          logger,
+				TelemetryLogger: telemetryLogger,
+				PollInterval:    pollInterval,
+				InterfaceName:   "meow",
+				IPTablesAdapter: iptables,
+			}
+		})
+
+		It("logs the number of iptables rules in the telemetry log", func() {
+			runTest(metrics, pollInterval)
+			Expect(telemetryLogger.LogMessages()).To(Equal([]string{"telemetry.count-iptables-rules"}))
+		})
+	})
 })
 
 func runTest(metrics *poller.SystemMetrics, pollInterval time.Duration) {

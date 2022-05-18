@@ -8,6 +8,7 @@
     "log_level" => p("log_level"),
     "log_prefix" => "cfnetworking",
     "iptables_lock_file" => "/var/vcap/data/garden-cni/iptables.lock",
+    "telemetry_enabled" => p("telemetry_enabled"),
   }
 
     JSON.pretty_generate(toRender)

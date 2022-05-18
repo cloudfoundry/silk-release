@@ -62,7 +62,8 @@ var _ = Describe("Config", func() {
 					"interface_name": "eth0",
 					"log_level": "debug",
 					"log_prefix": "cfnetworking",
-					"iptables_lock_file": "iptables-lock-file"
+					"iptables_lock_file": "iptables-lock-file",
+					"telemetry_enabled": true
 				}`)
 				c, err := config.New(file.Name())
 				Expect(err).NotTo(HaveOccurred())
@@ -72,6 +73,7 @@ var _ = Describe("Config", func() {
 				Expect(c.LogLevel).To(Equal("debug"))
 				Expect(c.LogPrefix).To(Equal("cfnetworking"))
 				Expect(c.IPTablesLockFile).To(Equal("iptables-lock-file"))
+				Expect(c.TelemetryEnabled).To(BeTrue())
 			})
 		})
 
@@ -94,6 +96,23 @@ var _ = Describe("Config", func() {
 			It("returns the error", func() {
 				_, err = config.New(file.Name())
 				Expect(err).To(MatchError(ContainSubstring("parsing config")))
+			})
+		})
+
+		Context("when `telemetry_enabled` is not set", func() {
+			It("defaults to false", func() {
+				file.WriteString(`{
+					"poll_interval": 1234,
+					"metron_address": "http://1.2.3.4:1234",
+					"interface_name": "eth0",
+					"log_level": "debug",
+					"log_prefix": "cfnetworking",
+					"iptables_lock_file": "iptables-lock-file"
+				}`)
+				c, err := config.New(file.Name())
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c.TelemetryEnabled).To(BeFalse())
+
 			})
 		})
 
