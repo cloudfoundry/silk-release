@@ -16,34 +16,29 @@ var _ = Describe("Poller Run", func() {
 	var (
 		iptables *libfakes.IPTablesAdapter
 		logger   *lagertest.TestLogger
+
+		metrics      *poller.SystemMetrics
+		pollInterval time.Duration
 	)
 
 	BeforeEach(func() {
 		iptables = &libfakes.IPTablesAdapter{}
 		logger = lagertest.NewTestLogger("test")
-		pollInterval := 1 * time.Second
+		pollInterval = 1 * time.Second
 
 		iptables.RuleCountReturnsOnCall(0, 2, nil)
 		iptables.RuleCountReturnsOnCall(1, 2, nil)
 
-		metrics := &poller.SystemMetrics{
+		metrics = &poller.SystemMetrics{
 			Logger:          logger,
 			PollInterval:    pollInterval,
 			InterfaceName:   "meow",
 			IPTablesAdapter: iptables,
 		}
-
-		doneCh := make(chan os.Signal)
-		readyCh := make(chan struct{})
-
-		go metrics.Run(doneCh, readyCh)
-
-		<-readyCh
-		<-time.After(pollInterval + 10*time.Millisecond)
-		doneCh <- os.Interrupt
 	})
 
 	It("should report measurements once within single interval", func() {
+		runTest(metrics, pollInterval)
 		Expect(logger.LogMessages()).To(Equal([]string{
 			"test.measure.measure-start",
 			"test.measure.metric-sent",
@@ -54,6 +49,7 @@ var _ = Describe("Poller Run", func() {
 	})
 
 	It("should use the iptables adapter when checking the rules", func() {
+		runTest(metrics, pollInterval)
 		Expect(iptables.RuleCountCallCount()).To(Equal(2))
 
 		table := iptables.RuleCountArgsForCall(0)
@@ -65,3 +61,14 @@ var _ = Describe("Poller Run", func() {
 		Expect(iptablesLog.Data["IPTablesRuleCount"]).To(Equal(float64(4)))
 	})
 })
+
+func runTest(metrics *poller.SystemMetrics, pollInterval time.Duration) {
+	doneCh := make(chan os.Signal)
+	readyCh := make(chan struct{})
+
+	go metrics.Run(doneCh, readyCh)
+
+	<-readyCh
+	<-time.After(pollInterval + 10*time.Millisecond)
+	doneCh <- os.Interrupt
+}
