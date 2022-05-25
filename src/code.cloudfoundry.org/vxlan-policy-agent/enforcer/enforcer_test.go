@@ -169,15 +169,17 @@ var _ = Describe("Enforcer", func() {
 				}, nil)
 			})
 
-			It("deletes other rules in parent chain after the current chain if parent chain cleanup requested", func() {
+			It("deletes other rules in parent chain after the current chain and keeps the reject rule if parent chain cleanup requested", func() {
 				_, err := ruleEnforcer.Enforce("some-table", "some-chain", "asg-001-", "asg-\\d\\d\\d-", true, []rules.IPTablesRule{fakeRule}...)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(iptables.DeleteAfterRuleNumCallCount()).To(Equal(1))
-				table, chain, ruleSpec := iptables.DeleteAfterRuleNumArgsForCall(0)
+				Expect(iptables.DeleteAfterRuleNumKeepRejectCallCount()).To(Equal(1))
+				table, chain, ruleSpec := iptables.DeleteAfterRuleNumKeepRejectArgsForCall(0)
 				Expect(table).To(Equal("some-table"))
 				Expect(chain).To(Equal("some-chain"))
 				Expect(ruleSpec).To(Equal(2))
+				Expect(iptables.BulkAppendCallCount()).To(Equal(1))
+
 				Expect(iptables.ClearChainCallCount()).To(Equal(1))
 				table, chain = iptables.ClearChainArgsForCall(0)
 				Expect(table).To(Equal("some-table"))
@@ -267,9 +269,11 @@ var _ = Describe("Enforcer", func() {
 				iptables.ListReturns(nil, errors.New("blueberry"))
 			})
 
-			It("it logs and returns a useful error", func() {
+			It("it logs and returns a cleanup error", func() {
 				_, err := ruleEnforcer.Enforce("some-table", "some-chain", "foo", "foo", false, []rules.IPTablesRule{fakeRule}...)
 				Expect(err).To(MatchError("cleaning up: listing forward rules: blueberry"))
+				_, isCleanupErr := err.(*enforcer.CleanupErr)
+				Expect(isCleanupErr).To(BeTrue())
 				Expect(logger).To(gbytes.Say("cleanup-rules.*blueberry"))
 			})
 		})
@@ -283,6 +287,8 @@ var _ = Describe("Enforcer", func() {
 			It("returns a useful error", func() {
 				_, err := ruleEnforcer.Enforce("some-table", "some-chain", "foo", "foo", false, []rules.IPTablesRule{fakeRule}...)
 				Expect(err).To(MatchError("cleaning up: remove reference to old chain: banana"))
+				_, isCleanupErr := err.(*enforcer.CleanupErr)
+				Expect(isCleanupErr).To(BeTrue())
 			})
 		})
 

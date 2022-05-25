@@ -155,12 +155,13 @@ func (m *SinglePollCycle) SyncASGsForContainers(containers ...string) error {
 				})
 				chain, err := m.enforcer.EnforceRulesAndChain(ruleset)
 				if err != nil {
+					if _, ok := err.(*enforcer.CleanupErr); ok {
+						m.updateRuleSet(chainKey, chain, ruleset)
+					}
+
 					errors = multierror.Append(errors, fmt.Errorf("enforce-asg: %s", err))
 				} else {
-					// only overwrite the container/rule caches if we did not error here
-					m.containerToASGChain[chainKey] = chain
-					m.asgRuleSets[chainKey] = ruleset
-					m.sendAppLog(ruleset.LogConfig)
+					m.updateRuleSet(chainKey, chain, ruleset)
 				}
 			}
 			desiredChains = append(desiredChains, enforcer.LiveChain{Table: ruleset.Chain.Table, Name: m.containerToASGChain[chainKey]})
@@ -196,6 +197,12 @@ func (m *SinglePollCycle) CleanupOrphanedASGsChains(containerHandle string) erro
 	defer m.asgMutex.Unlock()
 
 	return m.cleanupASGsChains(planner.ASGChainPrefix(containerHandle), []enforcer.LiveChain{})
+}
+
+func (m *SinglePollCycle) updateRuleSet(chainKey enforcer.LiveChain, chain string, ruleset enforcer.RulesWithChain) {
+	m.containerToASGChain[chainKey] = chain
+	m.asgRuleSets[chainKey] = ruleset
+	m.sendAppLog(ruleset.LogConfig)
 }
 
 func (m *SinglePollCycle) cleanupASGsChains(prefix string, desiredChains []enforcer.LiveChain) error {

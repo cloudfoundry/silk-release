@@ -65,6 +65,14 @@ type RulesWithChain struct {
 	LogConfig executor.LogConfig
 }
 
+type CleanupErr struct {
+	Err error
+}
+
+func (e *CleanupErr) Error() string {
+	return fmt.Sprintf("cleaning up: %s", e.Err)
+}
+
 func (r *RulesWithChain) Equals(other RulesWithChain) bool {
 	if r.Chain != other.Chain {
 		return false
@@ -180,7 +188,7 @@ func (e *Enforcer) Enforce(table, parentChain, chainPrefix, managedChainsRegex s
 	err = e.cleanupOldRules(logger, table, parentChain, managedChainsRegex, cleanupParentChain, newTime)
 	if err != nil {
 		logger.Error("cleanup-rules", err)
-		return "", fmt.Errorf("cleaning up: %s", err)
+		return "", &CleanupErr{err}
 	}
 
 	return chain, nil
@@ -217,7 +225,7 @@ func (e *Enforcer) cleanupOldRules(logger lager.Logger, table, parentChain, mana
 		// Everything else is either an original rule from before asg-syncing kicked in, or the previous asg-* chain jump rule
 		// Nothing should be modifying the netout-* chains, as the first rule will always end up being a jump to the asg-*
 		// chain after ~60s, and it ends in a blanket REJECT, so no other rules would be effective anyway.
-		err := e.iptables.DeleteAfterRuleNum(table, parentChain, 2)
+		err := e.iptables.DeleteAfterRuleNumKeepReject(table, parentChain, 2)
 		if err != nil {
 			return fmt.Errorf("clean up parent chain: %s", err)
 		}

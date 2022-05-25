@@ -27,6 +27,7 @@ type IPTablesAdapter interface {
 	Exists(table, chain string, rulespec IPTablesRule) (bool, error)
 	Delete(table, chain string, rulespec IPTablesRule) error
 	DeleteAfterRuleNum(table, chain string, ruleNum int) error
+	DeleteAfterRuleNumKeepReject(table, chain string, ruleNum int) error
 	List(table, chain string) ([]string, error)
 	ListChains(table string) ([]string, error)
 	NewChain(table, chain string) error
@@ -172,6 +173,33 @@ func (l *LockedIPTables) DeleteAfterRuleNum(table, chain string, ruleNum int) er
 		if err != nil {
 			return handleIPTablesError(err, l.Locker.Unlock())
 		}
+	}
+
+	return l.Locker.Unlock()
+}
+
+func (l *LockedIPTables) DeleteAfterRuleNumKeepReject(table, chain string, ruleNum int) error {
+	if err := l.Locker.Lock(); err != nil {
+		return fmt.Errorf("lock: %s", err)
+	}
+
+	rules, err := l.IPTables.List(table, chain)
+	if err != nil {
+		return handleIPTablesError(err, l.Locker.Unlock())
+	}
+
+	//iptables rule numbers are 1-indexed, but the list will include the create-chainline.
+	//so this takes the place of the '0' index of rules, and we don't need to offset anything
+	for range rules[ruleNum:] {
+		// rule numbers adjust after each deletion, so always delete the same number each time
+		err := l.IPTables.Delete(table, chain, fmt.Sprintf("%d", ruleNum), "--wait")
+		if err != nil {
+			return handleIPTablesError(err, l.Locker.Unlock())
+		}
+	}
+	err = l.IPTables.AppendUnique(table, chain, NewInputDefaultRejectRule()...)
+	if err != nil {
+		return handleIPTablesError(err, l.Locker.Unlock())
 	}
 
 	return l.Locker.Unlock()

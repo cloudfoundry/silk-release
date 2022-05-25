@@ -343,14 +343,14 @@ var _ = Describe("VXLAN Policy Agent", func() {
 						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -j REJECT --reject-with icmp-port-unreachable`))
 					})
 
-					It("cleans up the parent asg", func() {
+					It("cleans up the parent asg keeping the reject rule", func() {
 						Eventually(iptablesFilterRules, "4s", "1s").ShouldNot(MatchRegexp(`-A netout--some-handle -m state --state RELATED,ESTABLISHED -j ACCEPT`))
 						Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -p tcp -m state --state INVALID -j DROP`))
 						Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j asg-\d+`))
 						Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT`))
 						Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
 						Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
-						Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -j REJECT --reject-with icmp-port-unreachable`))
+						Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j REJECT --reject-with icmp-port-unreachable`))
 					})
 
 					Context("when the container is staging", func() {

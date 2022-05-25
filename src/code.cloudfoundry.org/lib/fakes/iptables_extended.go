@@ -84,6 +84,19 @@ type IPTablesAdapter struct {
 	deleteAfterRuleNumReturnsOnCall map[int]struct {
 		result1 error
 	}
+	DeleteAfterRuleNumKeepRejectStub        func(string, string, int) error
+	deleteAfterRuleNumKeepRejectMutex       sync.RWMutex
+	deleteAfterRuleNumKeepRejectArgsForCall []struct {
+		arg1 string
+		arg2 string
+		arg3 int
+	}
+	deleteAfterRuleNumKeepRejectReturns struct {
+		result1 error
+	}
+	deleteAfterRuleNumKeepRejectReturnsOnCall map[int]struct {
+		result1 error
+	}
 	DeleteChainStub        func(string, string) error
 	deleteChainMutex       sync.RWMutex
 	deleteChainArgsForCall []struct {
@@ -554,6 +567,69 @@ func (fake *IPTablesAdapter) DeleteAfterRuleNumReturnsOnCall(i int, result1 erro
 	}{result1}
 }
 
+func (fake *IPTablesAdapter) DeleteAfterRuleNumKeepReject(arg1 string, arg2 string, arg3 int) error {
+	fake.deleteAfterRuleNumKeepRejectMutex.Lock()
+	ret, specificReturn := fake.deleteAfterRuleNumKeepRejectReturnsOnCall[len(fake.deleteAfterRuleNumKeepRejectArgsForCall)]
+	fake.deleteAfterRuleNumKeepRejectArgsForCall = append(fake.deleteAfterRuleNumKeepRejectArgsForCall, struct {
+		arg1 string
+		arg2 string
+		arg3 int
+	}{arg1, arg2, arg3})
+	stub := fake.DeleteAfterRuleNumKeepRejectStub
+	fakeReturns := fake.deleteAfterRuleNumKeepRejectReturns
+	fake.recordInvocation("DeleteAfterRuleNumKeepReject", []interface{}{arg1, arg2, arg3})
+	fake.deleteAfterRuleNumKeepRejectMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *IPTablesAdapter) DeleteAfterRuleNumKeepRejectCallCount() int {
+	fake.deleteAfterRuleNumKeepRejectMutex.RLock()
+	defer fake.deleteAfterRuleNumKeepRejectMutex.RUnlock()
+	return len(fake.deleteAfterRuleNumKeepRejectArgsForCall)
+}
+
+func (fake *IPTablesAdapter) DeleteAfterRuleNumKeepRejectCalls(stub func(string, string, int) error) {
+	fake.deleteAfterRuleNumKeepRejectMutex.Lock()
+	defer fake.deleteAfterRuleNumKeepRejectMutex.Unlock()
+	fake.DeleteAfterRuleNumKeepRejectStub = stub
+}
+
+func (fake *IPTablesAdapter) DeleteAfterRuleNumKeepRejectArgsForCall(i int) (string, string, int) {
+	fake.deleteAfterRuleNumKeepRejectMutex.RLock()
+	defer fake.deleteAfterRuleNumKeepRejectMutex.RUnlock()
+	argsForCall := fake.deleteAfterRuleNumKeepRejectArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *IPTablesAdapter) DeleteAfterRuleNumKeepRejectReturns(result1 error) {
+	fake.deleteAfterRuleNumKeepRejectMutex.Lock()
+	defer fake.deleteAfterRuleNumKeepRejectMutex.Unlock()
+	fake.DeleteAfterRuleNumKeepRejectStub = nil
+	fake.deleteAfterRuleNumKeepRejectReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *IPTablesAdapter) DeleteAfterRuleNumKeepRejectReturnsOnCall(i int, result1 error) {
+	fake.deleteAfterRuleNumKeepRejectMutex.Lock()
+	defer fake.deleteAfterRuleNumKeepRejectMutex.Unlock()
+	fake.DeleteAfterRuleNumKeepRejectStub = nil
+	if fake.deleteAfterRuleNumKeepRejectReturnsOnCall == nil {
+		fake.deleteAfterRuleNumKeepRejectReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.deleteAfterRuleNumKeepRejectReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *IPTablesAdapter) DeleteChain(arg1 string, arg2 string) error {
 	fake.deleteChainMutex.Lock()
 	ret, specificReturn := fake.deleteChainReturnsOnCall[len(fake.deleteChainArgsForCall)]
@@ -1013,6 +1089,8 @@ func (fake *IPTablesAdapter) Invocations() map[string][][]interface{} {
 	defer fake.deleteMutex.RUnlock()
 	fake.deleteAfterRuleNumMutex.RLock()
 	defer fake.deleteAfterRuleNumMutex.RUnlock()
+	fake.deleteAfterRuleNumKeepRejectMutex.RLock()
+	defer fake.deleteAfterRuleNumKeepRejectMutex.RUnlock()
 	fake.deleteChainMutex.RLock()
 	defer fake.deleteChainMutex.RUnlock()
 	fake.existsMutex.RLock()
