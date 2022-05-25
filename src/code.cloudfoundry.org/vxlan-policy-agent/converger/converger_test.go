@@ -603,48 +603,118 @@ var _ = Describe("Single Poll Cycle", func() {
 				// to validate that we get multiple errors returned, and also that we desire both
 				// the old ASG chains from failed enforces, and new ASG chains from successful enforces
 				// when cleaning up orphaned chains
-				i := 0
-				fakeEnforcer.EnforceRulesAndChainStub = func(e enforcer.RulesWithChain) (string, error) {
-					var err error
-					if i > 0 {
-						err = fmt.Errorf("eggplant")
+			})
+
+			Context("when enforcer errors with clean up error", func() {
+				BeforeEach(func() {
+					i := 0
+					fakeEnforcer.EnforceRulesAndChainStub = func(e enforcer.RulesWithChain) (string, error) {
+						var err error
+						if i > 0 {
+							err = &enforcer.CleanupErr{Err: fmt.Errorf("zucchini")}
+						}
+						i++
+						return fmt.Sprintf("%s-with-new-suffix", e.Chain.Prefix), err
 					}
-					i++
-					return fmt.Sprintf("%s-with-new-suffix", e.Chain.Prefix), err
-				}
-			})
-
-			It("logs the error and returns", func() {
-				err := p.DoASGCycle()
-				multiErr, ok := err.(*multierror.Error)
-				Expect(ok).To(BeTrue())
-				errors := multiErr.WrappedErrors()
-				Expect(errors).To(HaveLen(2))
-				Expect(errors[0]).To(MatchError("enforce-asg: eggplant"))
-				Expect(errors[1]).To(MatchError("enforce-asg: eggplant"))
-
-				Expect(metricsSender.SendDurationCallCount()).To(Equal(6))
-			})
-
-			It("handles cleanup of orphaned chains properly", func() {
-				err := p.DoASGCycle()
-				Expect(err).To(HaveOccurred())
-				Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(2))
-				_, chains := fakeEnforcer.CleanChainsMatchingArgsForCall(1)
-				By("enforcing that the new chain for successful enforces is desired", func() {
-					Expect(chains[0]).To(Equal(enforcer.LiveChain{
-						Table: "filter",
-						Name:  "asg-1234-with-new-suffix",
-					}))
 				})
-				By("enforcing that the old chains for failed enforces are still desired", func() {
-					Expect(chains[1:]).To(Equal([]enforcer.LiveChain{{
-						Table: "filter",
-						Name:  "asg-2345-with-suffix",
-					}, {
-						Table: "filter",
-						Name:  "asg-3456-with-suffix",
-					}}))
+
+				It("logs and does not return errors", func() {
+					err := p.DoASGCycle()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(logger).To(gbytes.Say("failed-to-cleanup.*zucchini"))
+					Expect(metricsSender.SendDurationCallCount()).To(Equal(6))
+				})
+
+				It("does not try to update the rules again", func() {
+					err := p.DoASGCycle()
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(6))
+
+					err = p.DoASGCycle()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(6))
+				})
+
+				It("handles cleanup of orphaned chains properly", func() {
+					err := p.DoASGCycle()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(2))
+					_, chains := fakeEnforcer.CleanChainsMatchingArgsForCall(1)
+					By("enforcing that the new chain for successful enforces is desired", func() {
+						Expect(chains[0]).To(Equal(enforcer.LiveChain{
+							Table: "filter",
+							Name:  "asg-1234-with-new-suffix",
+						}))
+					})
+					By("enforcing that the new chains for failed enforces during clean up are still desired", func() {
+						Expect(chains[1:]).To(Equal([]enforcer.LiveChain{{
+							Table: "filter",
+							Name:  "asg-2345-with-new-suffix",
+						}, {
+							Table: "filter",
+							Name:  "asg-3456-with-new-suffix",
+						}}))
+					})
+				})
+			})
+
+			Context("when enforcer errors with non cleanup error", func() {
+				BeforeEach(func() {
+					i := 0
+					fakeEnforcer.EnforceRulesAndChainStub = func(e enforcer.RulesWithChain) (string, error) {
+						var err error
+						if i > 0 {
+							err = fmt.Errorf("eggplant")
+						}
+						i++
+						return fmt.Sprintf("%s-with-new-suffix", e.Chain.Prefix), err
+					}
+				})
+
+				It("returns errors", func() {
+					err := p.DoASGCycle()
+					multiErr, ok := err.(*multierror.Error)
+					Expect(ok).To(BeTrue())
+					errors := multiErr.WrappedErrors()
+					Expect(errors).To(HaveLen(2))
+					Expect(errors[0]).To(MatchError("enforce-asg: eggplant"))
+					Expect(errors[1]).To(MatchError("enforce-asg: eggplant"))
+
+					Expect(metricsSender.SendDurationCallCount()).To(Equal(6))
+				})
+
+				It("tries to update the rules again", func() {
+					err := p.DoASGCycle()
+					Expect(err).To(HaveOccurred())
+
+					Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(6))
+
+					err = p.DoASGCycle()
+					Expect(err).To(HaveOccurred())
+					Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(8))
+				})
+
+				It("handles cleanup of orphaned chains properly", func() {
+					err := p.DoASGCycle()
+					Expect(err).To(HaveOccurred())
+					Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(2))
+					_, chains := fakeEnforcer.CleanChainsMatchingArgsForCall(1)
+					By("enforcing that the new chain for successful enforces is desired", func() {
+						Expect(chains[0]).To(Equal(enforcer.LiveChain{
+							Table: "filter",
+							Name:  "asg-1234-with-new-suffix",
+						}))
+					})
+					By("enforcing that the old chains for failed enforces are still desired", func() {
+						Expect(chains[1:]).To(Equal([]enforcer.LiveChain{{
+							Table: "filter",
+							Name:  "asg-2345-with-suffix",
+						}, {
+							Table: "filter",
+							Name:  "asg-3456-with-suffix",
+						}}))
+					})
 				})
 			})
 		})

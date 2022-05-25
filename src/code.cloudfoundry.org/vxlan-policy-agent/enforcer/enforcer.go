@@ -65,6 +65,14 @@ type RulesWithChain struct {
 	LogConfig executor.LogConfig
 }
 
+type CleanupErr struct {
+	Err error
+}
+
+func (e *CleanupErr) Error() string {
+	return fmt.Sprintf("cleaning up: %s", e.Err)
+}
+
 func (r *RulesWithChain) Equals(other RulesWithChain) bool {
 	if r.Chain != other.Chain {
 		return false
@@ -180,7 +188,7 @@ func (e *Enforcer) Enforce(table, parentChain, chainPrefix, managedChainsRegex s
 	err = e.cleanupOldRules(logger, table, parentChain, managedChainsRegex, cleanupParentChain, newTime)
 	if err != nil {
 		logger.Error("cleanup-rules", err)
-		return "", fmt.Errorf("cleaning up: %s", err)
+		return "", &CleanupErr{err}
 	}
 
 	return chain, nil
