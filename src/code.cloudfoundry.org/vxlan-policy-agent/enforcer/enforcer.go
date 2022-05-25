@@ -225,7 +225,7 @@ func (e *Enforcer) cleanupOldRules(logger lager.Logger, table, parentChain, mana
 		// Everything else is either an original rule from before asg-syncing kicked in, or the previous asg-* chain jump rule
 		// Nothing should be modifying the netout-* chains, as the first rule will always end up being a jump to the asg-*
 		// chain after ~60s, and it ends in a blanket REJECT, so no other rules would be effective anyway.
-		err := e.iptables.DeleteAfterRuleNum(table, parentChain, 2)
+		err := e.iptables.DeleteAfterRuleNumKeepReject(table, parentChain, 2)
 		if err != nil {
 			return fmt.Errorf("clean up parent chain: %s", err)
 		}

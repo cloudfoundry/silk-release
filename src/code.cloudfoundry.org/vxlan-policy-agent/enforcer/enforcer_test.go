@@ -169,15 +169,17 @@ var _ = Describe("Enforcer", func() {
 				}, nil)
 			})
 
-			It("deletes other rules in parent chain after the current chain if parent chain cleanup requested", func() {
+			It("deletes other rules in parent chain after the current chain and keeps the reject rule if parent chain cleanup requested", func() {
 				_, err := ruleEnforcer.Enforce("some-table", "some-chain", "asg-001-", "asg-\\d\\d\\d-", true, []rules.IPTablesRule{fakeRule}...)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(iptables.DeleteAfterRuleNumCallCount()).To(Equal(1))
-				table, chain, ruleSpec := iptables.DeleteAfterRuleNumArgsForCall(0)
+				Expect(iptables.DeleteAfterRuleNumKeepRejectCallCount()).To(Equal(1))
+				table, chain, ruleSpec := iptables.DeleteAfterRuleNumKeepRejectArgsForCall(0)
 				Expect(table).To(Equal("some-table"))
 				Expect(chain).To(Equal("some-chain"))
 				Expect(ruleSpec).To(Equal(2))
+				Expect(iptables.BulkAppendCallCount()).To(Equal(1))
+
 				Expect(iptables.ClearChainCallCount()).To(Equal(1))
 				table, chain = iptables.ClearChainArgsForCall(0)
 				Expect(table).To(Equal("some-table"))
