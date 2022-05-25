@@ -156,11 +156,10 @@ func (m *SinglePollCycle) SyncASGsForContainers(containers ...string) error {
 				chain, err := m.enforcer.EnforceRulesAndChain(ruleset)
 				if err != nil {
 					if _, ok := err.(*enforcer.CleanupErr); ok {
-						m.logger.Error("failed-to-cleanup", err)
 						m.updateRuleSet(chainKey, chain, ruleset)
-					} else {
-						errors = multierror.Append(errors, fmt.Errorf("enforce-asg: %s", err))
 					}
+
+					errors = multierror.Append(errors, fmt.Errorf("enforce-asg: %s", err))
 				} else {
 					m.updateRuleSet(chainKey, chain, ruleset)
 				}

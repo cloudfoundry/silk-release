@@ -599,14 +599,13 @@ var _ = Describe("Single Poll Cycle", func() {
 					},
 				}
 				fakeASGPlanner.GetASGRulesAndChainsReturns(newFakeASGs, nil)
-				// have enforcerulesandchain return success for first call, and failures on the rest,
-				// to validate that we get multiple errors returned, and also that we desire both
-				// the old ASG chains from failed enforces, and new ASG chains from successful enforces
-				// when cleaning up orphaned chains
 			})
 
 			Context("when enforcer errors with clean up error", func() {
 				BeforeEach(func() {
+					// have enforcerulesandchain return success for first call, and cleanup errors for the rest,
+					// to validate that we get multiple errors returned, and also that we desire both
+					// new ASG chains from successful enforces and from clean up errors
 					i := 0
 					fakeEnforcer.EnforceRulesAndChainStub = func(e enforcer.RulesWithChain) (string, error) {
 						var err error
@@ -618,16 +617,21 @@ var _ = Describe("Single Poll Cycle", func() {
 					}
 				})
 
-				It("logs and does not return errors", func() {
+				It("returns errors", func() {
 					err := p.DoASGCycle()
-					Expect(err).NotTo(HaveOccurred())
-					Expect(logger).To(gbytes.Say("failed-to-cleanup.*zucchini"))
+					multiErr, ok := err.(*multierror.Error)
+					Expect(ok).To(BeTrue())
+					errors := multiErr.WrappedErrors()
+					Expect(errors).To(HaveLen(2))
+					Expect(errors[0]).To(MatchError("enforce-asg: cleaning up: zucchini"))
+					Expect(errors[1]).To(MatchError("enforce-asg: cleaning up: zucchini"))
+
 					Expect(metricsSender.SendDurationCallCount()).To(Equal(6))
 				})
 
 				It("does not try to update the rules again", func() {
 					err := p.DoASGCycle()
-					Expect(err).NotTo(HaveOccurred())
+					Expect(err).To(HaveOccurred())
 
 					Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(6))
 
@@ -638,7 +642,7 @@ var _ = Describe("Single Poll Cycle", func() {
 
 				It("handles cleanup of orphaned chains properly", func() {
 					err := p.DoASGCycle()
-					Expect(err).NotTo(HaveOccurred())
+					Expect(err).To(HaveOccurred())
 					Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(2))
 					_, chains := fakeEnforcer.CleanChainsMatchingArgsForCall(1)
 					By("enforcing that the new chain for successful enforces is desired", func() {
@@ -661,6 +665,10 @@ var _ = Describe("Single Poll Cycle", func() {
 
 			Context("when enforcer errors with non cleanup error", func() {
 				BeforeEach(func() {
+					// have enforcerulesandchain return success for first call, and failures on the rest,
+					// to validate that we get multiple errors returned, and also that we desire both
+					// the old ASG chains from failed enforces, and new ASG chains from successful enforces
+					// when cleaning up orphaned chains
 					i := 0
 					fakeEnforcer.EnforceRulesAndChainStub = func(e enforcer.RulesWithChain) (string, error) {
 						var err error
