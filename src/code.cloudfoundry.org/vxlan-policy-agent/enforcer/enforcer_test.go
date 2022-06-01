@@ -269,10 +269,11 @@ var _ = Describe("Enforcer", func() {
 				iptables.ListReturns(nil, errors.New("blueberry"))
 			})
 
-			It("it logs and returns a cleanup error", func() {
-				_, err := ruleEnforcer.Enforce("some-table", "some-chain", "foo", "foo", false, []rules.IPTablesRule{fakeRule}...)
+			It("it logs and returns a cleanup error in addition to the chain name", func() {
+				chainName, err := ruleEnforcer.Enforce("some-table", "some-chain", "foo", "foo", false, []rules.IPTablesRule{fakeRule}...)
 				Expect(err).To(MatchError("cleaning up: listing forward rules: blueberry"))
 				_, isCleanupErr := err.(*enforcer.CleanupErr)
+				Expect(chainName).To(MatchRegexp("^foo.*"))
 				Expect(isCleanupErr).To(BeTrue())
 				Expect(logger).To(gbytes.Say("cleanup-rules.*blueberry"))
 			})
@@ -284,10 +285,11 @@ var _ = Describe("Enforcer", func() {
 				iptables.ListReturns([]string{"-A some-chain -j foo0000000001"}, nil)
 			})
 
-			It("returns a useful error", func() {
-				_, err := ruleEnforcer.Enforce("some-table", "some-chain", "foo", "foo", false, []rules.IPTablesRule{fakeRule}...)
+			It("returns a CleanupErr in addition to the chain name", func() {
+				chainName, err := ruleEnforcer.Enforce("some-table", "some-chain", "foo", "foo", false, []rules.IPTablesRule{fakeRule}...)
 				Expect(err).To(MatchError("cleaning up: remove reference to old chain: banana"))
 				_, isCleanupErr := err.(*enforcer.CleanupErr)
+				Expect(chainName).To(MatchRegexp("^foo.*"))
 				Expect(isCleanupErr).To(BeTrue())
 			})
 		})

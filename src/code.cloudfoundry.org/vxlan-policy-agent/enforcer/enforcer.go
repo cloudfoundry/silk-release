@@ -188,7 +188,7 @@ func (e *Enforcer) Enforce(table, parentChain, chainPrefix, managedChainsRegex s
 	err = e.cleanupOldRules(logger, table, parentChain, managedChainsRegex, cleanupParentChain, newTime)
 	if err != nil {
 		logger.Error("cleanup-rules", err)
-		return "", &CleanupErr{err}
+		return chain, &CleanupErr{err}
 	}
 
 	return chain, nil
