@@ -149,6 +149,22 @@ module Bosh::Template::Test
         }.to raise_error('subnet_prefix_length must be a value between 1-30')
       end
 
+      it 'raises an error when the subnet_prefix_length larger than the network' do
+        merged_manifest_properties['subnet_prefix_length'] = 15
+        merged_manifest_properties['network'] = '10.255.0.0/16'
+        expect{
+          JSON.parse(template.render(merged_manifest_properties))
+        }.to raise_error('subnet_prefix_length \'15\' must be smaller than the network \'10.255.0.0/16\'')
+      end
+
+      it 'raises an error when the subnet_prefix_length is the same size as the network' do
+        merged_manifest_properties['subnet_prefix_length'] = 16
+        merged_manifest_properties['network'] = '10.255.0.0/16'
+        expect{
+          JSON.parse(template.render(merged_manifest_properties))
+        }.to raise_error('subnet_prefix_length \'16\' must be smaller than the network \'10.255.0.0/16\'')
+      end
+
       it 'raises an error when the driver (type) is unknown' do
         merged_manifest_properties['database']['type'] = 'bar'
         expect {

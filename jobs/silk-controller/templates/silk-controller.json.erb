@@ -49,6 +49,12 @@
     if size < 1 || size > 30
       raise 'subnet_prefix_length must be a value between 1-30'
     end
+
+    network = p('network')
+    if IPAddr.new(network).prefix >= size
+      raise "subnet_prefix_length '#{size}' must be smaller than the network '#{network.to_s}'"
+    end
+
     size
   end
 
