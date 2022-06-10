@@ -55,17 +55,17 @@ func (r *securityGroupRule) Ports() []PortRange {
 	for _, portRangeStr := range portRangeStrs {
 		ports := strings.Split(portRangeStr, "-")
 		if len(ports) == 1 {
-			port, err := strconv.Atoi(ports[0])
+			port, err := strconv.Atoi(strings.TrimSpace(ports[0]))
 			if err != nil {
 				continue
 			}
 			portRanges = append(portRanges, PortRange{Start: uint16(port), End: uint16(port)})
 		} else if len(ports) == 2 {
-			startPort, err := strconv.Atoi(ports[0])
+			startPort, err := strconv.Atoi(strings.TrimSpace(ports[0]))
 			if err != nil {
 				continue
 			}
-			endPort, err := strconv.Atoi(ports[1])
+			endPort, err := strconv.Atoi(strings.TrimSpace(ports[1]))
 			if err != nil {
 				continue
 			}
