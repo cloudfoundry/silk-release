@@ -165,5 +165,19 @@ var _ = Describe("SecurityGroupRule", func() {
 				netrules.PortRange{Start: 443, End: 443},
 			))
 		})
+		It("parses ports and ranges with spaces", func() {
+			securityGroupRule := policy_client.SecurityGroupRule{
+				Destination: "10.0.0.1",
+				Ports:       "1000 -2000, 8080, 3000 - 4000, 443 ",
+			}
+			rule, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rule.Ports()).To(ConsistOf(
+				netrules.PortRange{Start: 1000, End: 2000},
+				netrules.PortRange{Start: 8080, End: 8080},
+				netrules.PortRange{Start: 3000, End: 4000},
+				netrules.PortRange{Start: 443, End: 443},
+			))
+		})
 	})
 })
