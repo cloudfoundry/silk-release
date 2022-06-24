@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/netmon/config"
+	"code.cloudfoundry.org/netmon/network_stats_fetcher"
 	"code.cloudfoundry.org/netmon/poller"
 
 	"os/exec"
@@ -89,11 +90,14 @@ func main() {
 	}
 
 	dropsonde.Initialize(conf.MetronAddress, "netmon")
+
+	networkStatsFetcher := network_stats_fetcher.New(lockedIPTables, logger)
+
 	systemMetrics := &poller.SystemMetrics{
-		Logger:          logger,
-		PollInterval:    pollInterval,
-		InterfaceName:   conf.InterfaceName,
-		IPTablesAdapter: lockedIPTables,
+		Logger:              logger,
+		PollInterval:        pollInterval,
+		InterfaceName:       conf.InterfaceName,
+		NetworkStatsFetcher: networkStatsFetcher,
 	}
 
 	if conf.TelemetryEnabled {

@@ -1,12 +1,11 @@
 package poller_test
 
 import (
-	libfakes "code.cloudfoundry.org/lib/fakes"
-
 	"os"
 	"time"
 
 	"code.cloudfoundry.org/lager/lagertest"
+	"code.cloudfoundry.org/netmon/fakes"
 	"code.cloudfoundry.org/netmon/poller"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,26 +13,25 @@ import (
 
 var _ = Describe("Poller Run", func() {
 	var (
-		iptables *libfakes.IPTablesAdapter
-		logger   *lagertest.TestLogger
+		networkStatsFetcher *fakes.NetworkStatsFetcher
+		logger              *lagertest.TestLogger
 
 		metrics      *poller.SystemMetrics
 		pollInterval time.Duration
 	)
 
 	BeforeEach(func() {
-		iptables = &libfakes.IPTablesAdapter{}
+		networkStatsFetcher = &fakes.NetworkStatsFetcher{}
 		logger = lagertest.NewTestLogger("test")
 		pollInterval = 1 * time.Second
 
-		iptables.RuleCountReturnsOnCall(0, 2, nil)
-		iptables.RuleCountReturnsOnCall(1, 2, nil)
+		networkStatsFetcher.CountIPTablesRulesReturnsOnCall(0, 4, nil)
 
 		metrics = &poller.SystemMetrics{
-			Logger:          logger,
-			PollInterval:    pollInterval,
-			InterfaceName:   "meow",
-			IPTablesAdapter: iptables,
+			Logger:              logger,
+			PollInterval:        pollInterval,
+			InterfaceName:       "meow",
+			NetworkStatsFetcher: networkStatsFetcher,
 		}
 	})
 
@@ -48,14 +46,8 @@ var _ = Describe("Poller Run", func() {
 		}))
 	})
 
-	It("should use the iptables adapter when checking the rules", func() {
+	It("should use the network stats fetcher  when checking the rules", func() {
 		runTest(metrics, pollInterval)
-		Expect(iptables.RuleCountCallCount()).To(Equal(2))
-
-		table := iptables.RuleCountArgsForCall(0)
-		Expect(table).To(Equal("filter"))
-		table = iptables.RuleCountArgsForCall(1)
-		Expect(table).To(Equal("nat"))
 
 		iptablesLog := logger.Logs()[2]
 		Expect(iptablesLog.Data["IPTablesRuleCount"]).To(Equal(float64(4)))
@@ -69,11 +61,11 @@ var _ = Describe("Poller Run", func() {
 		BeforeEach(func() {
 			telemetryLogger = lagertest.NewTestLogger("telemetry")
 			metrics = &poller.SystemMetrics{
-				Logger:          logger,
-				TelemetryLogger: telemetryLogger,
-				PollInterval:    pollInterval,
-				InterfaceName:   "meow",
-				IPTablesAdapter: iptables,
+				Logger:              logger,
+				TelemetryLogger:     telemetryLogger,
+				PollInterval:        pollInterval,
+				InterfaceName:       "meow",
+				NetworkStatsFetcher: networkStatsFetcher,
 			}
 		})
 
