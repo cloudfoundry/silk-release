@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
-	"code.cloudfoundry.org/lib/rules"
+	"code.cloudfoundry.org/netmon/network_stats_fetcher"
 	"code.cloudfoundry.org/runtimeschema/metric"
 )
 
@@ -23,11 +23,11 @@ const overlayTxDropped = metric.Metric("OverlayTxDropped")
 const overlayRxDropped = metric.Metric("OverlayRxDropped")
 
 type SystemMetrics struct {
-	Logger          lager.Logger
-	TelemetryLogger lager.Logger
-	PollInterval    time.Duration
-	InterfaceName   string
-	IPTablesAdapter rules.IPTablesAdapter
+	Logger              lager.Logger
+	TelemetryLogger     lager.Logger
+	PollInterval        time.Duration
+	InterfaceName       string
+	NetworkStatsFetcher network_stats_fetcher.NetworkStatsFetcher
 }
 
 func (m *SystemMetrics) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
@@ -48,22 +48,6 @@ func countNetworkInterfaces() (int, error) {
 		return 0, err
 	}
 	return len(ifaces), nil
-}
-
-func countIPTablesRules(ipTablesAdapter rules.IPTablesAdapter, logger lager.Logger) (int, error) {
-	filterRules, err := ipTablesAdapter.RuleCount("filter")
-	if err != nil {
-		logger.Error("failed-getting-filter-rules", err)
-		return 0, err
-	}
-
-	natRules, err := ipTablesAdapter.RuleCount("nat")
-	if err != nil {
-		logger.Error("failed-getting-nat-rules", err)
-		return 0, err
-	}
-
-	return filterRules + natRules, nil
 }
 
 func readStatsFile(ifName, stat string) (int, error) {
@@ -98,7 +82,7 @@ func (m *SystemMetrics) measure(logger lager.Logger) {
 	}
 	logger.Debug("metric-sent", lager.Data{"NetInterfaceCount": nInterfaces})
 
-	nIpTablesRule, err := countIPTablesRules(m.IPTablesAdapter, logger)
+	nIpTablesRule, err := m.NetworkStatsFetcher.CountIPTablesRules()
 	if err != nil {
 		logger.Error("count-iptables-rules", err)
 		return
