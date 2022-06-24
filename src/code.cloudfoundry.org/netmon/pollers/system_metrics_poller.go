@@ -1,4 +1,4 @@
-package poller
+package pollers
 
 import (
 	"fmt"

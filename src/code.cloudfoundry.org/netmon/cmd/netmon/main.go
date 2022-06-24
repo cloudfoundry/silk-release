@@ -9,7 +9,7 @@ import (
 
 	"code.cloudfoundry.org/netmon/config"
 	"code.cloudfoundry.org/netmon/network_stats_fetcher"
-	"code.cloudfoundry.org/netmon/poller"
+	"code.cloudfoundry.org/netmon/pollers"
 
 	"os/exec"
 	"sync"
@@ -93,7 +93,7 @@ func main() {
 
 	networkStatsFetcher := network_stats_fetcher.New(lockedIPTables, logger)
 
-	systemMetrics := &poller.SystemMetrics{
+	systemMetrics := &pollers.SystemMetrics{
 		Logger:              logger,
 		PollInterval:        pollInterval,
 		InterfaceName:       conf.InterfaceName,
