@@ -1,4 +1,4 @@
-package poller_test
+package pollers_test
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 
 	"code.cloudfoundry.org/lager/lagertest"
 	"code.cloudfoundry.org/netmon/fakes"
-	"code.cloudfoundry.org/netmon/poller"
+	"code.cloudfoundry.org/netmon/pollers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -16,7 +16,7 @@ var _ = Describe("Poller Run", func() {
 		networkStatsFetcher *fakes.NetworkStatsFetcher
 		logger              *lagertest.TestLogger
 
-		metrics      *poller.SystemMetrics
+		metrics      *pollers.SystemMetrics
 		pollInterval time.Duration
 	)
 
@@ -27,7 +27,7 @@ var _ = Describe("Poller Run", func() {
 
 		networkStatsFetcher.CountIPTablesRulesReturnsOnCall(0, 4, nil)
 
-		metrics = &poller.SystemMetrics{
+		metrics = &pollers.SystemMetrics{
 			Logger:              logger,
 			PollInterval:        pollInterval,
 			InterfaceName:       "meow",
@@ -60,7 +60,7 @@ var _ = Describe("Poller Run", func() {
 
 		BeforeEach(func() {
 			telemetryLogger = lagertest.NewTestLogger("telemetry")
-			metrics = &poller.SystemMetrics{
+			metrics = &pollers.SystemMetrics{
 				Logger:              logger,
 				TelemetryLogger:     telemetryLogger,
 				PollInterval:        pollInterval,
@@ -76,7 +76,7 @@ var _ = Describe("Poller Run", func() {
 	})
 })
 
-func runTest(metrics *poller.SystemMetrics, pollInterval time.Duration) {
+func runTest(metrics *pollers.SystemMetrics, pollInterval time.Duration) {
 	doneCh := make(chan os.Signal)
 	readyCh := make(chan struct{})
 

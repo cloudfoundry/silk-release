@@ -1,4 +1,4 @@
-package poller_test
+package pollers_test
 
 import (
 	. "github.com/onsi/ginkgo"
