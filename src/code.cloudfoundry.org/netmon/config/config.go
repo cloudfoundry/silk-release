@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -13,13 +14,14 @@ import (
 )
 
 type Netmon struct {
-	PollInterval     int    `json:"poll_interval" validate:"min=1"`
-	MetronAddress    string `json:"metron_address" validate:"nonzero"`
-	InterfaceName    string `json:"interface_name" validate:"nonzero"`
-	LogLevel         string `json:"log_level"`
-	LogPrefix        string `json:"log_prefix" validate:"nonzero"`
-	IPTablesLockFile string `json:"iptables_lock_file" validate:"nonzero"`
-	TelemetryEnabled bool   `json:"telemetry_enabled"`
+	PollInterval      int    `json:"poll_interval" validate:"min=1"`
+	MetronAddress     string `json:"metron_address" validate:"nonzero"`
+	InterfaceName     string `json:"interface_name" validate:"nonzero"`
+	LogLevel          string `json:"log_level"`
+	LogPrefix         string `json:"log_prefix" validate:"nonzero"`
+	IPTablesLockFile  string `json:"iptables_lock_file" validate:"nonzero"`
+	TelemetryEnabled  bool   `json:"telemetry_enabled"`
+	TelemetryInterval int    `json:"telemetry_interval"`
 }
 
 func (n Netmon) ParseLogLevel() (lager.LogLevel, error) {
@@ -37,6 +39,9 @@ func (n Netmon) ParseLogLevel() (lager.LogLevel, error) {
 }
 
 func (c *Netmon) Validate() error {
+	if c.TelemetryEnabled && c.TelemetryInterval == 0 {
+		return errors.New("telemetry_interval must be set if telemetry_enabled is true")
+	}
 	return validator.Validate(c)
 }
 

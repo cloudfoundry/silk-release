@@ -114,10 +114,12 @@ func main() {
 		telemetryLogger := lager.NewLogger("netmon")
 		telemetryLogger.RegisterSink(telemetrySink)
 
+		telemetryPollInterval := time.Duration(conf.TelemetryInterval) * time.Second
+
 		telemetryPoller := &pollers.TelemetryMetrics{
 			Logger:              logger,
 			TelemetryLogger:     telemetryLogger,
-			PollInterval:        1 * time.Minute,
+			PollInterval:        telemetryPollInterval,
 			NetworkStatsFetcher: networkStatsFetcher,
 		}
 

@@ -11,5 +11,9 @@
     "telemetry_enabled" => p("telemetry_enabled"),
   }
 
+  if_p("telemetry_interval") do |interval|
+    toRender["telemetry_interval"] = interval
+  end
+
     JSON.pretty_generate(toRender)
 %>

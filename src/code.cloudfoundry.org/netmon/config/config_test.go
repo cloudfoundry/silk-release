@@ -63,7 +63,8 @@ var _ = Describe("Config", func() {
 					"log_level": "debug",
 					"log_prefix": "cfnetworking",
 					"iptables_lock_file": "iptables-lock-file",
-					"telemetry_enabled": true
+					"telemetry_enabled": true,
+					"telemetry_interval": 2345
 				}`)
 				c, err := config.New(file.Name())
 				Expect(err).NotTo(HaveOccurred())
@@ -74,6 +75,7 @@ var _ = Describe("Config", func() {
 				Expect(c.LogPrefix).To(Equal("cfnetworking"))
 				Expect(c.IPTablesLockFile).To(Equal("iptables-lock-file"))
 				Expect(c.TelemetryEnabled).To(BeTrue())
+				Expect(c.TelemetryInterval).To(Equal(2345))
 			})
 		})
 
@@ -112,7 +114,25 @@ var _ = Describe("Config", func() {
 				c, err := config.New(file.Name())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c.TelemetryEnabled).To(BeFalse())
+			})
+		})
 
+		Context("when `telemetry_interval` is not set but `telemetry_enabled` is true", func() {
+			It("returns an error", func() {
+				allData := map[string]interface{}{
+					"poll_interval":      1234,
+					"metron_address":     "http://1.2.3.4:1234",
+					"interface_name":     "eth0",
+					"log_level":          "debug",
+					"log_prefix":         "cfnetworking",
+					"iptables_lock_file": "some-lockfile",
+					"telemetry_enabled":  true,
+				}
+
+				Expect(json.NewEncoder(file).Encode(allData)).To(Succeed())
+
+				_, err = config.New(file.Name())
+				Expect(err).To(MatchError("invalid config: telemetry_interval must be set if telemetry_enabled is true"))
 			})
 		})
 
