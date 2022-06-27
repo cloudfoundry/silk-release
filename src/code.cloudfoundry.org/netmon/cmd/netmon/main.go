@@ -100,6 +100,10 @@ func main() {
 		NetworkStatsFetcher: networkStatsFetcher,
 	}
 
+	members := grouper.Members{
+		{"metric_poller", systemMetrics},
+	}
+
 	if conf.TelemetryEnabled {
 		telemetryLogFile, err := os.Create("/var/vcap/sys/log/netmon/telemetry.log")
 		if err != nil {
@@ -109,11 +113,15 @@ func main() {
 		telemetrySink := lager.NewWriterSink(telemetryLogFile, lager.INFO)
 		telemetryLogger := lager.NewLogger("netmon")
 		telemetryLogger.RegisterSink(telemetrySink)
-		systemMetrics.TelemetryLogger = telemetryLogger
-	}
 
-	members := grouper.Members{
-		{"metric_poller", systemMetrics},
+		telemetryPoller := &pollers.TelemetryMetrics{
+			Logger:              logger,
+			TelemetryLogger:     telemetryLogger,
+			PollInterval:        1 * time.Minute,
+			NetworkStatsFetcher: networkStatsFetcher,
+		}
+
+		members = append(members, grouper.Member{"telemetry_poller", telemetryPoller})
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
