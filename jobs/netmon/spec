@@ -39,3 +39,7 @@ properties:
   telemetry_enabled:
     description: "Enables logging to a dedicated logfile that can be used for telemetry"
     default: false
+
+  telemetry_interval:
+    description: "Interval in seconds between logging telemetry events"
+    default: 600
