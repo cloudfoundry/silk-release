@@ -24,7 +24,6 @@ const overlayRxDropped = metric.Metric("OverlayRxDropped")
 
 type SystemMetrics struct {
 	Logger              lager.Logger
-	TelemetryLogger     lager.Logger
 	PollInterval        time.Duration
 	InterfaceName       string
 	NetworkStatsFetcher network_stats_fetcher.NetworkStatsFetcher
@@ -94,14 +93,6 @@ func (m *SystemMetrics) measure(logger lager.Logger) {
 		return
 	}
 	logger.Debug("metric-sent", lager.Data{"IPTablesRuleCount": nIpTablesRule})
-
-	if m.TelemetryLogger != nil {
-		m.TelemetryLogger.Info("count-iptables-rules", map[string]interface{}{
-			"telemetry-source":  "netmon",
-			"telemetry-time":    time.Now(),
-			"IPTablesRuleCount": nIpTablesRule,
-		})
-	}
 
 	nTxBytes, err := readStatsFile(m.InterfaceName, "tx_bytes")
 	if err != nil {
