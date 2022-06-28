@@ -18,7 +18,7 @@ files:
   - code.cloudfoundry.org/lib/rules/*.go # gosub-main-module
   - code.cloudfoundry.org/netmon/cmd/netmon/*.go # gosub-main-module
   - code.cloudfoundry.org/netmon/config/*.go # gosub-main-module
-  - code.cloudfoundry.org/netmon/network_stats_fetcher/*.go # gosub-main-module
+  - code.cloudfoundry.org/netmon/network_stats/*.go # gosub-main-module
   - code.cloudfoundry.org/netmon/pollers/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/runtimeschema/metric/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/*.go # gosub-main-module

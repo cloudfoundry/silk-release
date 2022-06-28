@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
-	"code.cloudfoundry.org/netmon/network_stats_fetcher"
+	"code.cloudfoundry.org/netmon/network_stats"
 	"code.cloudfoundry.org/runtimeschema/metric"
 )
 
@@ -26,7 +26,7 @@ type SystemMetrics struct {
 	Logger              lager.Logger
 	PollInterval        time.Duration
 	InterfaceName       string
-	NetworkStatsFetcher network_stats_fetcher.NetworkStatsFetcher
+	NetworkStatsFetcher network_stats.Fetcher
 }
 
 func (m *SystemMetrics) Run(signals <-chan os.Signal, ready chan<- struct{}) error {

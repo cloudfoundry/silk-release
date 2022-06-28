@@ -5,14 +5,14 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
-	"code.cloudfoundry.org/netmon/network_stats_fetcher"
+	"code.cloudfoundry.org/netmon/network_stats"
 )
 
 type TelemetryMetrics struct {
 	Logger              lager.Logger
 	TelemetryLogger     lager.Logger
 	PollInterval        time.Duration
-	NetworkStatsFetcher network_stats_fetcher.NetworkStatsFetcher
+	NetworkStatsFetcher network_stats.Fetcher
 }
 
 func (m *TelemetryMetrics) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
