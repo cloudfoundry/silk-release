@@ -1,16 +1,16 @@
-package network_stats_fetcher_test
+package network_stats_test
 
 import (
 	"errors"
 
 	"code.cloudfoundry.org/lager/lagertest"
 	libfakes "code.cloudfoundry.org/lib/fakes"
-	"code.cloudfoundry.org/netmon/network_stats_fetcher"
+	network_stats "code.cloudfoundry.org/netmon/network_stats"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("NetworkStatsFetcher", func() {
+var _ = Describe("Fetcher", func() {
 	Describe("CountIPTablesRules", func() {
 		var (
 			iptables *libfakes.IPTablesAdapter
@@ -26,7 +26,7 @@ var _ = Describe("NetworkStatsFetcher", func() {
 		})
 
 		It("returns the combined number of filter rules and NAT rules", func() {
-			stats := network_stats_fetcher.New(iptables, logger)
+			stats := network_stats.NewFetcher(iptables, logger)
 
 			ruleCount, err := stats.CountIPTablesRules()
 			Expect(err).NotTo(HaveOccurred())
@@ -46,7 +46,7 @@ var _ = Describe("NetworkStatsFetcher", func() {
 			})
 
 			It("logs and returns an error", func() {
-				stats := network_stats_fetcher.New(iptables, logger)
+				stats := network_stats.NewFetcher(iptables, logger)
 
 				ruleCount, err := stats.CountIPTablesRules()
 				Expect(ruleCount).To(Equal(0))
@@ -65,7 +65,7 @@ var _ = Describe("NetworkStatsFetcher", func() {
 			})
 
 			It("logs and returns an error", func() {
-				stats := network_stats_fetcher.New(iptables, logger)
+				stats := network_stats.NewFetcher(iptables, logger)
 
 				ruleCount, err := stats.CountIPTablesRules()
 				Expect(ruleCount).To(Equal(0))

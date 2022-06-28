@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/netmon/config"
-	"code.cloudfoundry.org/netmon/network_stats_fetcher"
+	"code.cloudfoundry.org/netmon/network_stats"
 	"code.cloudfoundry.org/netmon/pollers"
 
 	"os/exec"
@@ -91,7 +91,7 @@ func main() {
 
 	dropsonde.Initialize(conf.MetronAddress, "netmon")
 
-	networkStatsFetcher := network_stats_fetcher.New(lockedIPTables, logger)
+	networkStatsFetcher := network_stats.NewFetcher(lockedIPTables, logger)
 
 	systemMetrics := &pollers.SystemMetrics{
 		Logger:              logger,

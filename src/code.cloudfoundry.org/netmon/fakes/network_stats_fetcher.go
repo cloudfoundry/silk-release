@@ -4,7 +4,7 @@ package fakes
 import (
 	"sync"
 
-	"code.cloudfoundry.org/netmon/network_stats_fetcher"
+	"code.cloudfoundry.org/netmon/network_stats"
 )
 
 type NetworkStatsFetcher struct {
@@ -104,4 +104,4 @@ func (fake *NetworkStatsFetcher) recordInvocation(key string, args []interface{}
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ network_stats_fetcher.NetworkStatsFetcher = new(NetworkStatsFetcher)
+var _ network_stats.Fetcher = new(NetworkStatsFetcher)
