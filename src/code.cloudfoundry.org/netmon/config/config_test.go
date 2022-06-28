@@ -132,7 +132,27 @@ var _ = Describe("Config", func() {
 				Expect(json.NewEncoder(file).Encode(allData)).To(Succeed())
 
 				_, err = config.New(file.Name())
-				Expect(err).To(MatchError("invalid config: telemetry_interval must be set if telemetry_enabled is true"))
+				Expect(err).To(MatchError("invalid config: telemetry_interval must be set to a positive, non-zero value if telemetry_enabled is true"))
+			})
+		})
+
+		Context("when `telemetry_interval` has a negative value but `telemetry_enabled` is true", func() {
+			It("returns an error", func() {
+				allData := map[string]interface{}{
+					"poll_interval":      1234,
+					"metron_address":     "http://1.2.3.4:1234",
+					"interface_name":     "eth0",
+					"log_level":          "debug",
+					"log_prefix":         "cfnetworking",
+					"iptables_lock_file": "some-lockfile",
+					"telemetry_enabled":  true,
+					"telemetry_interval": -1,
+				}
+
+				Expect(json.NewEncoder(file).Encode(allData)).To(Succeed())
+
+				_, err = config.New(file.Name())
+				Expect(err).To(MatchError("invalid config: telemetry_interval must be set to a positive, non-zero value if telemetry_enabled is true"))
 			})
 		})
 

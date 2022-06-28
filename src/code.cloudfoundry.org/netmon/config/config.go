@@ -39,8 +39,8 @@ func (n Netmon) ParseLogLevel() (lager.LogLevel, error) {
 }
 
 func (c *Netmon) Validate() error {
-	if c.TelemetryEnabled && c.TelemetryInterval == 0 {
-		return errors.New("telemetry_interval must be set if telemetry_enabled is true")
+	if c.TelemetryEnabled && c.TelemetryInterval <= 0 {
+		return errors.New("telemetry_interval must be set to a positive, non-zero value if telemetry_enabled is true")
 	}
 	return validator.Validate(c)
 }
