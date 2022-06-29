@@ -92,12 +92,14 @@ func main() {
 	dropsonde.Initialize(conf.MetronAddress, "netmon")
 
 	networkStatsFetcher := network_stats.NewFetcher(lockedIPTables, logger)
+	ruleCountAggregator := network_stats.NewIntAggregator()
 
 	systemMetrics := &pollers.SystemMetrics{
 		Logger:              logger,
 		PollInterval:        pollInterval,
 		InterfaceName:       conf.InterfaceName,
 		NetworkStatsFetcher: networkStatsFetcher,
+		RuleCountAggregator: ruleCountAggregator,
 	}
 
 	members := grouper.Members{
@@ -121,6 +123,7 @@ func main() {
 			TelemetryLogger:     telemetryLogger,
 			PollInterval:        telemetryPollInterval,
 			NetworkStatsFetcher: networkStatsFetcher,
+			RuleCountAggregator: ruleCountAggregator,
 		}
 
 		members = append(members, grouper.Member{"telemetry_poller", telemetryPoller})

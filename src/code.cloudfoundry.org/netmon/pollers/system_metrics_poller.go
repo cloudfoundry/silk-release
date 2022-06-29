@@ -27,6 +27,7 @@ type SystemMetrics struct {
 	PollInterval        time.Duration
 	InterfaceName       string
 	NetworkStatsFetcher network_stats.Fetcher
+	RuleCountAggregator *network_stats.IntAggregator
 }
 
 func (m *SystemMetrics) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
@@ -86,6 +87,8 @@ func (m *SystemMetrics) measure(logger lager.Logger) {
 		logger.Error("count-iptables-rules", err)
 		return
 	}
+
+	m.RuleCountAggregator.UpdateStats(nIpTablesRule)
 
 	if err := iptablesRuleCount.Send(nIpTablesRule); err != nil {
 		logger.Error("failed-to-send-metric", err, lager.Data{
