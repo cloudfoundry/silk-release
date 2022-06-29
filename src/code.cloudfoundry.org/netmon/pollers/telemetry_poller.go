@@ -13,6 +13,7 @@ type TelemetryMetrics struct {
 	TelemetryLogger     lager.Logger
 	PollInterval        time.Duration
 	NetworkStatsFetcher network_stats.Fetcher
+	RuleCountAggregator *network_stats.IntAggregator
 }
 
 func (m *TelemetryMetrics) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
@@ -35,8 +36,14 @@ func (m *TelemetryMetrics) measure(logger lager.Logger) {
 	}
 
 	m.TelemetryLogger.Info("count-iptables-rules", map[string]interface{}{
-		"telemetry-source":  "netmon",
-		"telemetry-time":    time.Now(),
-		"IPTablesRuleCount": nIpTablesRule,
+		"telemetry-source":          "netmon",
+		"telemetry-time":            time.Now(),
+		"IPTablesRuleCount":         nIpTablesRule,
+		"IPTablesRuleCountInterval": m.PollInterval.Seconds(),
+		"IPTablesRuleMaxiumum":      m.RuleCountAggregator.Maximum,
+		"IPTablesRuleAverage":       m.RuleCountAggregator.Average,
+		"IPTablesRuleMinimum":       m.RuleCountAggregator.Minimum,
 	})
+
+	m.RuleCountAggregator.Flush()
 }

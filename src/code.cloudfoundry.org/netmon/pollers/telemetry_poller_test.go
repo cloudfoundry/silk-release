@@ -6,6 +6,7 @@ import (
 
 	"code.cloudfoundry.org/lager/lagertest"
 	"code.cloudfoundry.org/netmon/fakes"
+	"code.cloudfoundry.org/netmon/network_stats"
 	"code.cloudfoundry.org/netmon/pollers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -18,6 +19,7 @@ var _ = Describe("Telemetry Poller", func() {
 		pollInterval        time.Duration
 		telemetryLogger     *lagertest.TestLogger
 		telemetryPoller     *pollers.TelemetryMetrics
+		ruleCountAggregator *network_stats.IntAggregator
 	)
 
 	BeforeEach(func() {
@@ -25,6 +27,7 @@ var _ = Describe("Telemetry Poller", func() {
 		telemetryLogger = lagertest.NewTestLogger("telemetry-test")
 		networkStatsFetcher = &fakes.NetworkStatsFetcher{}
 		pollInterval = 1 * time.Second
+		ruleCountAggregator = network_stats.NewIntAggregator()
 
 		networkStatsFetcher.CountIPTablesRulesReturnsOnCall(0, 2, nil)
 
@@ -33,18 +36,45 @@ var _ = Describe("Telemetry Poller", func() {
 			TelemetryLogger:     telemetryLogger,
 			PollInterval:        pollInterval,
 			NetworkStatsFetcher: networkStatsFetcher,
+			RuleCountAggregator: ruleCountAggregator,
 		}
+
+		networkStatsFetcher.CountIPTablesRulesReturnsOnCall(0, 2, nil)
+		ruleCountAggregator.UpdateStats(2)
+		ruleCountAggregator.UpdateStats(4)
+		ruleCountAggregator.UpdateStats(6)
 	})
 
 	It("should log telemetry metrics once within in a poll interval", func() {
-		networkStatsFetcher.CountIPTablesRulesReturnsOnCall(0, 2, nil)
-
 		runTest(telemetryPoller, pollInterval)
+
 		Expect(telemetryLogger.LogMessages()).To(Equal([]string{"telemetry-test.count-iptables-rules"}))
 		Expect(telemetryLogger.Logs()).To(HaveLen(1))
 		Expect(telemetryLogger.Logs()[0].Data["telemetry-source"]).To(Equal("netmon"))
 		Expect(telemetryLogger.Logs()[0].Data["telemetry-time"]).NotTo(BeEmpty())
 		Expect(telemetryLogger.Logs()[0].Data["IPTablesRuleCount"]).To(BeNumerically("==", 2))
+		Expect(telemetryLogger.Logs()[0].Data["IPTablesRuleCountInterval"]).To(BeNumerically("==", 1))
+		Expect(telemetryLogger.Logs()[0].Data["IPTablesRuleMaxiumum"]).To(BeNumerically("==", 6))
+		Expect(telemetryLogger.Logs()[0].Data["IPTablesRuleAverage"]).To(BeNumerically("==", 4))
+		Expect(telemetryLogger.Logs()[0].Data["IPTablesRuleMinimum"]).To(BeNumerically("==", 2))
+	})
+
+	It("flushes the stats aggregator", func() {
+		Expect(ruleCountAggregator.Average).To(Equal(4))
+		Expect(ruleCountAggregator.AverageRaw).To(Equal(4.0))
+		Expect(ruleCountAggregator.Maximum).To(Equal(6))
+		Expect(ruleCountAggregator.Minimum).To(Equal(2))
+		Expect(ruleCountAggregator.Total).To(Equal(12))
+		Expect(ruleCountAggregator.UpdateCount).To(Equal(3))
+
+		runTest(telemetryPoller, pollInterval)
+
+		Expect(ruleCountAggregator.Average).To(Equal(0))
+		Expect(ruleCountAggregator.AverageRaw).To(Equal(0.0))
+		Expect(ruleCountAggregator.Maximum).To(Equal(0))
+		Expect(ruleCountAggregator.Minimum).To(Equal(0))
+		Expect(ruleCountAggregator.Total).To(Equal(0))
+		Expect(ruleCountAggregator.UpdateCount).To(Equal(0))
 	})
 
 	Context("when fetching network stats fails", func() {
