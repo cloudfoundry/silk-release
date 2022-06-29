@@ -75,7 +75,7 @@ var _ = Describe("Aggregator", func() {
 					})
 				})
 
-				Context("when the current value is equal to the maximum value", func() {
+				Context("when the current value is greater than the maximum value", func() {
 					It("updates the maximum value", func() {
 						Expect(ipTablesAggregator.Maximum).To(Equal(4))
 						ipTablesAggregator.UpdateStats(6)
