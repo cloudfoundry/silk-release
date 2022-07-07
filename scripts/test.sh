@@ -40,6 +40,14 @@ for i in "${windows_packages[@]}"; do
   packages=(${packages[@]//*$i*})
 done
 
+install_ginkgo() {
+  if ! [ $(type -P "ginkgo") ]; then
+    go install -mod=mod github.com/onsi/ginkgo/ginkgo@v1
+    go get github.com/onsi/gomega/...
+  fi
+}
+install_ginkgo
+
 if [ "${1:-""}" = "" ]; then
   for dir in "${packages[@]}"; do
     pushd "$dir"
