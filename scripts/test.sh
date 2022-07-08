@@ -43,7 +43,6 @@ done
 install_ginkgo() {
   if ! [ $(type -P "ginkgo") ]; then
     go install -mod=mod github.com/onsi/ginkgo/ginkgo@v1
-    go get github.com/onsi/gomega/...
   fi
 }
 install_ginkgo
