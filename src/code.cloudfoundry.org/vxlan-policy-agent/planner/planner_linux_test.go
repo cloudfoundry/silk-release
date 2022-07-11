@@ -54,6 +54,8 @@ var _ = Describe("Planner", func() {
 				return []rules.IPTablesRule{{"rule-1"}, {"rule-2"}}, nil
 			} else if containerHandle == "container-id-2" {
 				return []rules.IPTablesRule{{"rule-3"}, {"rule-4"}}, nil
+			} else if containerHandle == "container-id-4" {
+				return []rules.IPTablesRule{{"rule-5"}, {"rule-6"}}, nil
 			}
 			return nil, errors.New("unknown-container-handle")
 		}
@@ -76,8 +78,8 @@ var _ = Describe("Planner", func() {
 			Metadata: map[string]interface{}{
 				"policy_group_id":    "some-other-app-guid",
 				"space_id":           "some-other-space-guid",
-				"ports":              " 8181 , 9090",
-				"container_workload": "staging",
+				"ports":              "8282 , 9292",
+				"container_workload": "task",
 			},
 		}
 		data["container-id-3"] = datastore.Container{
@@ -85,6 +87,16 @@ var _ = Describe("Planner", func() {
 			IP:     "10.255.1.4",
 		}
 
+		data["container-id-4"] = datastore.Container{
+			Handle: "container-id-4",
+			IP:     "10.255.1.5",
+			Metadata: map[string]interface{}{
+				"policy_group_id":    "some-staging-app-guid",
+				"space_id":           "some-staging-space-guid",
+				"ports":              "8484 , 9494",
+				"container_workload": "staging",
+			},
+		}
 		store.ReadAllReturns(data, nil)
 
 		policyServerResponse = []policy_client.Policy{
@@ -248,14 +260,14 @@ var _ = Describe("Planner", func() {
 						{
 							"-d", "10.255.1.3",
 							"-p", "tcp",
-							"-m", "tcp", "--dport", "9090",
+							"-m", "tcp", "--dport", "9292",
 							"-m", "mark", "--mark", "0x5476",
 							"--jump", "ACCEPT",
 						},
 						{
 							"-d", "10.255.1.3",
 							"-p", "tcp",
-							"-m", "tcp", "--dport", "8181",
+							"-m", "tcp", "--dport", "8282",
 							"-m", "mark", "--mark", "0x5476",
 							"--jump", "ACCEPT",
 						},
@@ -564,11 +576,11 @@ var _ = Describe("Planner", func() {
 					store.ReadAllReturns(data, nil)
 				})
 
-				It("assigns the rules correctly", func() {
+				It("DOES NOT assign the rules correctly", func() {
 					rulesWithChain, err := policyPlanner.GetPolicyRulesAndChain()
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(rulesWithChain.Rules).To(ConsistOf(
+					Expect(rulesWithChain.Rules).NotTo(ConsistOf(
 						rules.IPTablesRule{"--source", "10.255.1.2", "--jump", "MARK", "--set-xmark", "0xAA", "-m", "comment", "--comment", "src:some-app-guid"},
 						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "--dport", "8080:8080", "-m", "mark", "--mark", "0xAA", "--jump", "ACCEPT", "-m", "comment", "--comment", "src:some-app-guid_dst:some-app-guid"},
 						rules.IPTablesRule{"-d", "10.255.1.2", "-p", "tcp", "-m", "tcp", "--dport", "8080", "-m", "mark", "--mark", "0x5476", "--jump", "ACCEPT"},
@@ -624,14 +636,14 @@ var _ = Describe("Planner", func() {
 					{
 						"-d", "10.255.1.3",
 						"-p", "tcp",
-						"-m", "tcp", "--dport", "8181",
+						"-m", "tcp", "--dport", "8282",
 						"-m", "mark", "--mark", "0x5476",
 						"--jump", "ACCEPT",
 					},
 					{
 						"-d", "10.255.1.3",
 						"-p", "tcp",
-						"-m", "tcp", "--dport", "9090",
+						"-m", "tcp", "--dport", "9292",
 						"-m", "mark", "--mark", "0x5476",
 						"--jump", "ACCEPT",
 					},
@@ -846,12 +858,12 @@ var _ = Describe("Planner", func() {
 						},
 						{
 							Name:              "other-staging-security-group",
-							StagingSpaceGuids: []string{"some-other-space-guid"},
+							StagingSpaceGuids: []string{"some-staging-space-guid"},
 							Rules:             expectedStagingRules,
 						},
 						{
 							Name:              "other-running-security-group",
-							RunningSpaceGuids: []string{"some-other-space-guid"},
+							RunningSpaceGuids: []string{"some-staging-space-guid"},
 							Rules:             policy_client.SecurityGroupRules{{Protocol: "udp"}},
 						},
 					}
@@ -907,14 +919,14 @@ var _ = Describe("Planner", func() {
 					Expect(receivedRunningRules).To(Equal(expectedRules))
 					Expect(receivedRunningContainerWorkload).To(Equal("task"))
 
-					By("using staging rules for container with staging work load")
+					By("NOT using staging rules for container with staging work load")
 					expectedRules, err = netrules.NewRulesFromSecurityGroupRules(expectedStagingRules)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(receivedStagingRules).To(Equal(expectedRules))
-					Expect(receivedStagingContainerWorkload).To(Equal("staging"))
+					Expect(receivedStagingRules).NotTo(Equal(expectedRules))
+					Expect(receivedStagingContainerWorkload).NotTo(Equal("staging"))
 				})
 
-				Context("and there are also global security groups for staging and running", func() {
+				Context("and there are also global security groups for running and not staging", func() {
 					var (
 						expectedGlobalRunningRules policy_client.SecurityGroupRules
 						expectedGlobalStagingRules policy_client.SecurityGroupRules
@@ -989,11 +1001,11 @@ var _ = Describe("Planner", func() {
 						Expect(receivedRunningRules).To(Equal(expectedRules))
 						Expect(receivedRunningContainerWorkload).To(Equal("task"))
 
-						By("using staging rules for container with staging work load")
+						By("not using staging rules for container with staging work load")
 						expectedRules, err = netrules.NewRulesFromSecurityGroupRules(append(expectedGlobalStagingRules, expectedStagingRules...))
 						Expect(err).NotTo(HaveOccurred())
-						Expect(receivedStagingRules).To(Equal(expectedRules))
-						Expect(receivedStagingContainerWorkload).To(Equal("staging"))
+						Expect(receivedStagingRules).NotTo(Equal(expectedRules))
+						Expect(receivedStagingContainerWorkload).NotTo(Equal("staging"))
 					})
 				})
 

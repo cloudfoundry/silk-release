@@ -15,6 +15,7 @@ cd $(dirname $0)/..
 
 declare -a serial_packages=(
     "src/code.cloudfoundry.org/cni-wrapper-plugin/integration"
+    "src/code.cloudfoundry.org/cni-teardown/integration"
     "src/code.cloudfoundry.org/vxlan-policy-agent/integration/linux"
     "src/code.cloudfoundry.org/silk-daemon-shutdown/integration"
     "src/code.cloudfoundry.org/silk-daemon-bootstrap/integration"

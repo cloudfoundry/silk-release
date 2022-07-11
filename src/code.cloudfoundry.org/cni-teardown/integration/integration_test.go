@@ -10,7 +10,6 @@ import (
 
 	"code.cloudfoundry.org/cni-teardown/config"
 
-	"strings"
 	"time"
 
 	"code.cloudfoundry.org/silk/lib/adapter"
@@ -75,14 +74,6 @@ var _ = Describe("Teardown", func() {
 		)
 
 		BeforeEach(func() {
-			cmd := exec.Command("lsmod")
-			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-			Expect(err).ToNot(HaveOccurred())
-			session.Wait(5 * time.Second)
-			if !strings.Contains(string(session.Out.Contents()), "ifb") {
-				Skip("Docker for Mac does not contain IFB kernel module")
-			}
-
 			ifbName = fmt.Sprintf("i-some-ifb-%d", GinkgoParallelNode())
 			notSilkCreatedIFBName = fmt.Sprintf("other-ifb-%d", GinkgoParallelNode())
 			dummyName = fmt.Sprintf("ilololol-%d", GinkgoParallelNode())

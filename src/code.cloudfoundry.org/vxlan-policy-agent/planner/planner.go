@@ -122,6 +122,10 @@ func (p *VxlanPolicyPlanner) readFile(specifiedContainers ...string) ([]containe
 			purpose = ""
 		}
 
+		if purpose == "staging" {
+			continue
+		}
+
 		var logConfig executor.LogConfig
 		logConfigStr, ok := containerMeta.Metadata["log_config"].(string)
 		if ok {

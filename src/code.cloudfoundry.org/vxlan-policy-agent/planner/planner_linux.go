@@ -155,23 +155,13 @@ func (p *VxlanPolicyPlanner) GetASGRulesAndChains(specifiedContainers ...string)
 	}
 
 	rulesWithChains := []enforcer.RulesWithChain{}
-	stagingRulesForSpace := map[string][]policy_client.SecurityGroupRule{}
 	runningRulesForSpace := map[string][]policy_client.SecurityGroupRule{}
-	defaultStagingRules := []policy_client.SecurityGroupRule{}
 	defaultRunningRules := []policy_client.SecurityGroupRule{}
 	for _, securityGroup := range securityGroups {
-		if securityGroup.StagingDefault {
-			defaultStagingRules = append(defaultStagingRules, securityGroup.Rules...)
-		}
 		if securityGroup.RunningDefault {
 			defaultRunningRules = append(defaultRunningRules, securityGroup.Rules...)
 		}
 
-		for _, spaceGuid := range securityGroup.StagingSpaceGuids {
-			if !securityGroup.StagingDefault {
-				stagingRulesForSpace[spaceGuid] = append(stagingRulesForSpace[spaceGuid], securityGroup.Rules...)
-			}
-		}
 		for _, spaceGuid := range securityGroup.RunningSpaceGuids {
 			if !securityGroup.RunningDefault {
 				runningRulesForSpace[spaceGuid] = append(runningRulesForSpace[spaceGuid], securityGroup.Rules...)
@@ -186,9 +176,7 @@ func (p *VxlanPolicyPlanner) GetASGRulesAndChains(specifiedContainers ...string)
 
 		parentChainName := p.NetOutChain.Name(container.Handle)
 		var sgRules []policy_client.SecurityGroupRule
-		if container.Purpose == "staging" {
-			sgRules = append(defaultStagingRules, stagingRulesForSpace[container.SpaceID]...)
-		} else if container.Purpose == "app" || container.Purpose == "task" {
+		if container.Purpose == "app" || container.Purpose == "task" {
 			sgRules = append(defaultRunningRules, runningRulesForSpace[container.SpaceID]...)
 		}
 		ruleSpec, err := netrules.NewRulesFromSecurityGroupRules(sgRules)
@@ -371,12 +359,4 @@ func (p *VxlanPolicyPlanner) planIPTableRules(containerPolicySet containerPolicy
 	}
 
 	return ruleset
-}
-
-func containerPurposeMatchesAppLifecycle(containerPurpose, appLifecycle string) bool {
-	return appLifecycle == "all" ||
-		containerPurpose == "" ||
-		(appLifecycle == "running" && (containerPurpose == "task" || containerPurpose == "app")) ||
-		appLifecycle == "staging" && containerPurpose == "staging"
-
 }

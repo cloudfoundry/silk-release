@@ -371,11 +371,11 @@ var _ = Describe("VXLAN Policy Agent", func() {
 							runIptablesCommand("-N", "netout--some-handle--log")
 						})
 
-						It("enforces the ASG policies for staging", func() {
-							Eventually(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p tcp -m iprange --dst-range 10.0.11.0-10.0.11.255 -m tcp --dport 443 -g netout--some-handle--log`))
-							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p tcp -m iprange --dst-range 10.0.11.0-10.0.11.255 -m tcp --dport 80 -g netout--some-handle--log`))
-							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
-							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
+						It("does NOT enforce the ASG policies for staging", func() {
+							Eventually(iptablesFilterRules, "4s", "1s").ShouldNot(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p tcp -m iprange --dst-range 10.0.11.0-10.0.11.255 -m tcp --dport 443 -g netout--some-handle--log`))
+							Consistently(iptablesFilterRules, "2s", "1s").ShouldNot(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p tcp -m iprange --dst-range 10.0.11.0-10.0.11.255 -m tcp --dport 80 -g netout--some-handle--log`))
+							Consistently(iptablesFilterRules, "2s", "1s").ShouldNot(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
+							Consistently(iptablesFilterRules, "2s", "1s").ShouldNot(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
 						})
 					})
 
