@@ -66,7 +66,7 @@ code.cloudfoundry.org/routing-info/internalroutes
 # code.cloudfoundry.org/runtimeschema v0.0.0-00010101000000-000000000000 => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 ## explicit
 code.cloudfoundry.org/runtimeschema/metric
-# code.cloudfoundry.org/silk v0.0.0-20220719213234-ddaf73be01f4
+# code.cloudfoundry.org/silk v0.0.0-20220720154034-175351e73c3b
 ## explicit; go 1.16
 code.cloudfoundry.org/silk/client/config
 code.cloudfoundry.org/silk/cmd/silk-cni
@@ -170,6 +170,9 @@ github.com/golang/protobuf/ptypes/timestamp
 # github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 ## explicit; go 1.13
 github.com/google/shlex
+# github.com/google/uuid v1.3.0
+## explicit
+github.com/google/uuid
 # github.com/hashicorp/consul v1.12.0 => github.com/hashicorp/consul v0.7.0
 ## explicit
 # github.com/hashicorp/errwrap v1.0.0
