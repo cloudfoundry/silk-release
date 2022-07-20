@@ -6,10 +6,6 @@ replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimesche
 
 replace code.cloudfoundry.org/lager => code.cloudfoundry.org/lager v1.1.1-0.20210513163233-569157d2803b
 
-replace github.com/vishvananda/netlink => github.com/vishvananda/netlink v0.0.0-20180201184657-c27b7f7359fa
-
-replace github.com/vishvananda/netns => github.com/vishvananda/netns v0.0.0-20171111001504-be1fbeda1936
-
 replace github.com/containernetworking/plugins => github.com/containernetworking/plugins v0.6.1-0.20171122160932-92c634042c38
 
 replace github.com/containernetworking/cni => github.com/containernetworking/cni v0.6.0
