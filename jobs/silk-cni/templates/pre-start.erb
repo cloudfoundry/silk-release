@@ -4,3 +4,7 @@
 /var/vcap/packages/silk-cni/bin/cni-teardown \
   --config /var/vcap/jobs/silk-cni/config/teardown-config.json
 <% end %>
+
+<% if p("debug") %>
+  echo '`silk-cni` debugging is enabled. To disable it, remove this file!' > /var/vcap/jobs/silk-cni/config/enable_debug
+<% end %>

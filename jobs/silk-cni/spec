@@ -38,6 +38,10 @@ properties:
     description: "Pre-encapsulation MTU for containers.  If set, the network interface inside the container will have an MTU that is 50 bytes less than this value, in order to account for VXLAN encap overhead.  If zero, MTU will be automatically configured to account for the VXLAN encapsulation, but it may not account for additional network encapsulations, e.g. IPSec."
     default: 0
 
+  debug:
+    description: "Enable debugging for silk-cni"
+    default: false
+
   silk_daemon.listen_port:
     description: "Silk CNI plugin connects to the silk daemon on this port."
     default: 23954
