@@ -83,11 +83,11 @@ require (
 	github.com/rubenv/sql-migrate v0.0.0-20210614095031-55d5740dbbcc // indirect
 	github.com/square/certstrap v1.2.0 // indirect
 	github.com/tedsuo/rata v1.0.0 // indirect
-	github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f // indirect
+	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
 	github.com/vito/go-sse v1.0.0 // indirect
 	github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c // indirect
 	golang.org/x/net v0.0.0-20210610132358-84b48f89b13b // indirect
-	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
+	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
 	golang.org/x/text v0.3.6 // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	google.golang.org/grpc v1.45.0 // indirect
