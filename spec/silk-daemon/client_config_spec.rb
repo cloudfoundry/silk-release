@@ -28,7 +28,7 @@ module Bosh::Template::Test
           'vtep_port' => 6666,
           'log_prefix' => 'cfnetworking',
           'single_ip_only' => true,
-          'logging' => {'format' => {'timestamp' => 'rfc3339' }}
+          'logging' => {'format' => {'timestamp' => 'rfc3339'}, 'level' => 'error' }
         }
       end
 
@@ -68,6 +68,7 @@ module Bosh::Template::Test
               'metron_port' => 5678,
               'vtep_port' => 6666,
               'log_prefix' => 'cfnetworking',
+              'log_level' => 'error',
               'vxlan_interface_name' => '',
               'single_ip_only' => true
             })
