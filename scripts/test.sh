@@ -3,6 +3,8 @@
 set -eu
 set -o pipefail
 
+go version # so we see the version tested in CI
+
 # In the cf-networking-and-silk-pr.yml pipeline, we need to run db-unit tests for cf-networking, but
 # concourse doesn't have a way of conditionally adding jobs, so it will end up running db-unit tests
 # against silk, which doesn't do anything other than run unit tests again, so we skip it here.
