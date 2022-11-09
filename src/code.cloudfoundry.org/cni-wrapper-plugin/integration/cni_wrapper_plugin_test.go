@@ -133,7 +133,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 		policyAgentAddress = fmt.Sprintf("%s:%v", "127.0.0.1", ports.PickAPort())
 		policyAgentServer = mockPolicyAgentServer{
 			ReturnCode:                            200,
-			ASGReturnCode:                         200,
+			ASGReturnCode:                         405,
 			ASGReturnErrorMessage:                 "",
 			ReturnErrorMessage:                    "",
 			Address:                               policyAgentAddress,
@@ -467,6 +467,30 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(policyAgentServer.SyncASGEndpointContainerRequested).To(Equal("some-container-id-that-is-long"))
 			})
 		})
+
+		Context("when the policy agent asg updater returns 200 (Dynamic ASGs enabled)", func() {
+			It("does not add additional iptables rules to the netout-chain", func() {
+				policyAgentServer.ASGReturnCode = 200
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).ToNot(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+				Expect(policyAgentServer.SyncASGEndpointCallCount).To(Equal(1))
+				Expect(policyAgentServer.SyncASGEndpointContainerRequested).To(Equal("some-container-id-that-is-long"))
+				Expect(strings.Join(AllIPTablesRules("filter"), "\n")).ToNot(ContainSubstring("11.11.11.11-22.22.22.22"))
+			})
+		})
+		Context("when the policy agent asg updater returns 405 (Dynamic ASGs disabled)", func() {
+			It("adds additional iptables rules to the netout-chain", func() {
+				policyAgentServer.ASGReturnCode = 405
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).ToNot(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+				Expect(policyAgentServer.SyncASGEndpointCallCount).To(Equal(1))
+				Expect(policyAgentServer.SyncASGEndpointContainerRequested).To(Equal("some-container-id-that-is-long"))
+				Expect(strings.Join(AllIPTablesRules("filter"), "\n")).To(ContainSubstring("11.11.11.11-22.22.22.22"))
+			})
+		})
+
 		Context("when the policy agent asg updater returns an error", func() {
 			It("returns an error", func() {
 				policyAgentServer.ASGReturnCode = 500
