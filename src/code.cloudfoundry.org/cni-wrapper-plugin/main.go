@@ -191,15 +191,18 @@ func cmdAdd(args *skel.CmdArgs) error {
 		}
 	}
 
-	netOutRules := cfg.RuntimeConfig.NetOutRules
-	if err := netOutProvider.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules)); err != nil {
-		return fmt.Errorf("bulk insert: %s", err) // not tested
-	}
-
 	resp, err = http.DefaultClient.Get(fmt.Sprintf("http://%s/force-asgs-for-container?container=%s", cfg.PolicyAgentForcePollAddress, args.ContainerID))
 	if err != nil {
 		return err
 	}
+
+	if resp.StatusCode == http.StatusMethodNotAllowed {
+		netOutRules := cfg.RuntimeConfig.NetOutRules
+		if err := netOutProvider.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules)); err != nil {
+			return fmt.Errorf("bulk insert: %s", err) // not tested
+		}
+	}
+
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusMethodNotAllowed {
 		body, _ := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
