@@ -304,6 +304,8 @@ github.com/vishvananda/netns
 # github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c
 ## explicit
 github.com/ziutek/utils/netaddr
+# golang.org/x/crypto v0.1.0
+## explicit; go 1.17
 # golang.org/x/net v0.1.0
 ## explicit; go 1.17
 golang.org/x/net/context
