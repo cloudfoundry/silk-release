@@ -45,6 +45,7 @@ files:
   - code.cloudfoundry.org/vendor/github.com/containernetworking/cni/pkg/types/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/cni/pkg/types/020/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/cni/pkg/types/current/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/containernetworking/cni/pkg/utils/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/cni/pkg/version/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/plugins/pkg/ip/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/plugins/pkg/ns/*.go # gosub-main-module
