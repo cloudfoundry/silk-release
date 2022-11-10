@@ -150,6 +150,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Delegate: map[string]interface{}{
 				"type": "noop",
 				"some": "other data",
+				"name": "name",
 			},
 			Metadata: map[string]interface{}{
 				"key1": "value1",

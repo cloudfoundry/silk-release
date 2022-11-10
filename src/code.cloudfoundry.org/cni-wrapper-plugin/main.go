@@ -218,6 +218,10 @@ func cmdAdd(args *skel.CmdArgs) error {
 	return result030.Print()
 }
 
+func cmdCheck(args *skel.CmdArgs) error {
+	return fmt.Errorf("Meow this isn't implemented and shouldn't be called since we implement 0.3.1 of the CNI spec")
+}
+
 func getLocalDNSServers(allDNSServers []string) ([]string, error) {
 	var localDNSServers []string
 	for _, entry := range allDNSServers {
@@ -413,5 +417,5 @@ func newPluginController(config *lib.WrapperConfig) (*lib.PluginController, erro
 func main() {
 	supportedVersions := []string{"0.3.1"}
 
-	skel.PluginMain(cmdAdd, cmdDel, version.PluginSupports(supportedVersions...))
+	skel.PluginMain(cmdAdd, cmdCheck, cmdDel, version.PluginSupports(supportedVersions...), "CNI Plugin silk-cni-wrapper-plugin")
 }

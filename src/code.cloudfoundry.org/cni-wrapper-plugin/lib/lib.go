@@ -3,12 +3,12 @@ package lib
 import (
 	"encoding/json"
 	"fmt"
+
 	"code.cloudfoundry.org/lib/rules"
 
 	"code.cloudfoundry.org/garden"
 
 	"github.com/containernetworking/cni/pkg/types"
-	"github.com/containernetworking/cni/pkg/version"
 	"gopkg.in/validator.v2"
 )
 
@@ -95,7 +95,7 @@ func LoadWrapperConfig(bytes []byte) (*WrapperConfig, error) {
 	}
 
 	if _, ok := n.Delegate["cniVersion"]; !ok {
-		n.Delegate["cniVersion"] = version.Current()
+		n.Delegate["cniVersion"] = "0.3.1"
 	}
 
 	if n.OutConn.Burst <= 0 {
