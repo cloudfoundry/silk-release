@@ -13,7 +13,7 @@ if [[ -n "${DB:-""}" ]]; then
   exit 0
 fi
 
-cd $(dirname $0)/..
+cd "$(dirname "$0")/.."
 
 declare -a serial_packages=(
     "src/code.cloudfoundry.org/cni-wrapper-plugin/integration"
@@ -27,14 +27,12 @@ declare -a windows_packages=(
     )
 
 # get all git submodule paths | print only the path without the extra info | cut the "package root" for go | deduplicate
-declare -a git_modules=($(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | cut -d'/' -f1,2 | sort -u))
-
-declare -a packages=($(find src -type f -name "*_test.go" | xargs -L 1 -I{} dirname {} | sort -u))
+declare -a packages=("$(find src -type f -name "*_test.go" | xargs -L 1 -I{} dirname {} | sort -u)")
 
 
 # filter out serial_packages from packages
 for i in "${serial_packages[@]}"; do
-  packages=(${packages[@]//*$i*})
+  packages=("${packages[@]//*$i*}")
 done
 
 # filter out windows_packages from packages
@@ -43,7 +41,7 @@ for i in "${windows_packages[@]}"; do
 done
 
 install_ginkgo() {
-  if ! [ $(type -P "ginkgo") ]; then
+  if ! [ "$(type -P "ginkgo")" ]; then
     go install -mod=mod github.com/onsi/ginkgo/ginkgo@v1
   fi
 }
@@ -54,14 +52,14 @@ if [ "${1:-""}" = "" ]; then
     pushd "$dir"
       ginkgo -p --race -randomizeAllSpecs -randomizeSuites \
         -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
-        ${@:2}
+        "${@:2}"
     popd
   done
   for dir in "${serial_packages[@]}"; do
     pushd "$dir"
       ginkgo --race -randomizeAllSpecs -randomizeSuites -failFast \
         -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
-        ${@:2}
+        "${@:2}"
     popd
   done
 else
@@ -69,13 +67,15 @@ else
   dir="${dir#./}"
   for package in "${serial_packages[@]}"; do
     if [[ "${dir##$package}" != "${dir}" ]]; then
+      pushd "${dir}"
       ginkgo --race -randomizeAllSpecs -randomizeSuites -failFast \
         -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
-        "${@}"
+        .
       exit $?
     fi
   done
+  pushd "${dir}"
   ginkgo -p --race -randomizeAllSpecs -randomizeSuites -failFast -skipPackage windows \
     -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
-    "${@}"
+    .
 fi
