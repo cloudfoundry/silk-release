@@ -32,6 +32,7 @@ type OutConnConfig struct {
 }
 
 type WrapperConfig struct {
+	CNIVersion                      string                 `json:"cniVersion"`
 	Datastore                       string                 `json:"datastore"`
 	DatastoreFileOwner              string                 `json:"datastore_file_owner"`
 	DatastoreFileGroup              string                 `json:"datastore_file_group"`

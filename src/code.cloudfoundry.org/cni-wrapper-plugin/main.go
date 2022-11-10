@@ -44,12 +44,12 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return fmt.Errorf("delegate call: %s", err)
 	}
 
-	result030, err := current.NewResultFromResult(result)
+	resultActual, err := current.GetResult(result)
 	if err != nil {
 		return fmt.Errorf("converting result from delegate plugin: %s", err) // not tested
 	}
 
-	containerIP := result030.IPs[0].Address.IP
+	containerIP := resultActual.IPs[0].Address.IP
 	var containerWorkload string
 
 	// Add container metadata info
@@ -214,7 +214,12 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return fmt.Errorf("error setting up default ip masq rule: %s", err)
 	}
 
-	result030.DNS.Nameservers = cfg.DNSServers
+	resultActual.DNS.Nameservers = cfg.DNSServers
+
+	result030, err := resultActual.GetAsVersion(cfg.CNIVersion)
+	if err != nil {
+		return fmt.Errorf("converting to CNI version %s: %s", cfg.CNIVersion, err)
+	}
 	return result030.Print()
 }
 
