@@ -25,9 +25,9 @@ require (
 	code.cloudfoundry.org/lager v2.0.0+incompatible
 	code.cloudfoundry.org/policy_client v0.0.0-20220420200808-7feb15de93f1
 	code.cloudfoundry.org/runtimeschema v0.0.0-00010101000000-000000000000
-	code.cloudfoundry.org/silk v0.0.0-20221010154634-bbe4e5df1921
+	code.cloudfoundry.org/silk v0.0.0-20221116153740-97ffae1cdddd
 	github.com/cloudfoundry/dropsonde v1.0.0
-	github.com/containernetworking/cni v0.6.0
+	github.com/containernetworking/cni v0.8.1
 	github.com/coreos/go-iptables v0.6.0
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/hashicorp/go-multierror v1.1.1

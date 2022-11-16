@@ -41,8 +41,8 @@ code.cloudfoundry.org/routing-info v0.0.0-20220215234142-7d023ecb0fad h1:FHI7/Gg
 code.cloudfoundry.org/routing-info v0.0.0-20220215234142-7d023ecb0fad/go.mod h1:ykLgqzJGV5PTkvxtfyOy8hcQy7wxPaoV5ZPyk74aqp8=
 code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6 h1:J08p1/LBnhv5BDDf0WLpHRyMJFCws3vd3fLCFL/iVnQ=
 code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6/go.mod h1:QSfnsqiGUdV3OOxqHxQkmUZwycGJNWYdredPgeGuGf4=
-code.cloudfoundry.org/silk v0.0.0-20221010154634-bbe4e5df1921 h1:GTjUYW2LbOz0HmYBPv3DHdU/ssVdU2VtFfFnrQ8zsnI=
-code.cloudfoundry.org/silk v0.0.0-20221010154634-bbe4e5df1921/go.mod h1:gdTavb4DWL+mhHQMxV9JLvQmVEynLpuE0hyy8TyD5ek=
+code.cloudfoundry.org/silk v0.0.0-20221116153740-97ffae1cdddd h1:VkxkWDNIYzbyWhshL7h0OhNc78CM5NdQN66ENxZEO/I=
+code.cloudfoundry.org/silk v0.0.0-20221116153740-97ffae1cdddd/go.mod h1:f2uDbxtCQKqbRgxgey7prhPmwfBv7B8TjZT/d0HzMak=
 code.cloudfoundry.org/tlsconfig v0.0.0-20200131000646-bbe0f8da39b3 h1:2Qal+q+tw/DmDOoJBWwDCPE3lIJNj/1o7oMkkb2c5SI=
 code.cloudfoundry.org/tlsconfig v0.0.0-20200131000646-bbe0f8da39b3/go.mod h1:eTbFJpyXRGuFVyg5+oaj9B2eIbIc+0/kZjH8ftbtdew=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=
@@ -389,6 +389,7 @@ github.com/onsi/gomega v1.19.0/go.mod h1:LY+I3pBVzYsTBU1AnDwOSxaYi9WoWiqgwooUqq9
 github.com/onsi/gomega v1.20.1/go.mod h1:DtrZpjmvpn2mPm4YWQa0/ALMDj9v4YxLgojwPeREyVo=
 github.com/onsi/gomega v1.21.1/go.mod h1:iYAIXgPSaDHak0LCMA+AWBpIKBr8WZicMxnE8luStNc=
 github.com/onsi/gomega v1.22.1/go.mod h1:x6n7VNe4hw0vkyYUM4mjIXx3JbLiPaBPNgB7PRQ1tuM=
+github.com/onsi/gomega v1.23.0/go.mod h1:Z/NWtiqwBrwUt4/2loMmHL63EDLnYHmVbuBpDr2vQAg=
 github.com/onsi/gomega v1.24.0 h1:+0glovB9Jd6z3VR+ScSwQqXVTIfJcGA9UBM8yzQxhqg=
 github.com/onsi/gomega v1.24.0/go.mod h1:Z/NWtiqwBrwUt4/2loMmHL63EDLnYHmVbuBpDr2vQAg=
 github.com/opencontainers/go-digest v0.0.0-20180430190053-c9281466c8b2/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=
