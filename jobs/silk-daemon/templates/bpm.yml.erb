@@ -11,3 +11,8 @@ processes:
     - NET_ADMIN
     unsafe:
       privileged: true
+  - name: silk-daemon-healthchecker
+    executable: "/var/vcap/packages/silk-daemon/bin/healthchecker"
+    args:
+    - "-c"
+    - "/var/vcap/jobs/silk-daemon/config/healthchecker.yml"

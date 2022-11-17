@@ -1,0 +1,12 @@
+<%=
+config = {
+  'component_name' => 'silk-daemon-healthchecker',
+  'log_level' => p('logging.level'),
+  'healthcheck_endpoint' => {
+    'host' => '127.0.0.1',
+    'port' => p('listen_port'),
+  },
+}
+
+config.to_yaml
+%>

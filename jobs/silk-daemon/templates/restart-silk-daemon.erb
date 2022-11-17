@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+PIDFILE="/var/vcap/sys/run/silk-daemon/restart-silk-daemon.pid"
+
+# As this script might run longer than a monit cycle (10s) and thus might be
+# triggered several times, it must be ensured that it runs only once.
+[[ -s "$PIDFILE" ]] && exit
+
+function on_exit {
+    /var/vcap/bosh/bin/monit reload silk-daemon-healthchecker
+    rm -f $PIDFILE
+}
+
+trap on_exit EXIT
+
+echo "$BASHPID" > "$PIDFILE"
+
+LOGFILE="/var/vcap/sys/log/silk-daemon/restart-silk-daemon.log"
+echo "$(date) - pid: $BASHPID - Monit triggered restart" >> "$LOGFILE"
+
+/var/vcap/bosh/bin/monit restart silk-daemon
+sleep 1
+echo "$(date) - pid: $BASHPID - Waiting for silk-daemon to be restarted" >> "$LOGFILE"
+
+until /var/vcap/bosh/bin/monit summary | grep silk-daemon | grep -v healthchecker | grep running; do
+  sleep 1
+done
+
+echo "$(date) - pid: $BASHPID - silk-daemon was restarted" >> "$LOGFILE"

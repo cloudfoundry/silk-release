@@ -1,6 +1,6 @@
 module code.cloudfoundry.org
 
-go 1.17
+go 1.19
 
 replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 
@@ -15,7 +15,7 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 replace github.com/hashicorp/consul => github.com/hashicorp/consul v0.7.0
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20221109185658-f4620911c47e
+	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20221117171434-3d123025a8c3
 	code.cloudfoundry.org/debugserver v0.0.0-20210608171006-d7658ce493f4
 	code.cloudfoundry.org/diego-logging-client v0.0.0-20220314190632-277a9c460661
 	code.cloudfoundry.org/executor v0.0.0-20220401134035-4e7113938d00
@@ -33,7 +33,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hpcloud/tail v1.0.0
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.24.0
+	github.com/onsi/gomega v1.24.1
 	github.com/pivotal-cf-experimental/gomegamatchers v0.0.0-20180326192815-e36bfcc98c3a
 	github.com/tedsuo/ifrit v0.0.0-20191009134036-9a97d0632f00
 	github.com/vishvananda/netlink v1.1.0
@@ -83,8 +83,8 @@ require (
 	github.com/vito/go-sse v1.0.0 // indirect
 	github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c // indirect
 	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/net v0.1.0 // indirect
-	golang.org/x/sys v0.1.0 // indirect
+	golang.org/x/net v0.2.0 // indirect
+	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	google.golang.org/grpc v1.45.0 // indirect
