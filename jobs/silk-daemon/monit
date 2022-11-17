@@ -10,4 +10,12 @@ check process silk-daemon
      protocol HTTP
      with timeout 10 seconds for 6 cycles
      then restart
+
+check process silk-daemon-healthchecker
+  with pidfile /var/vcap/sys/run/bpm/silk-daemon/silk-daemon-healthchecker.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start silk-daemon -p silk-daemon-healthchecker"
+  stop program "/var/vcap/jobs/bpm/bin/bpm stop silk-daemon -p silk-daemon-healthchecker"
+  if 1 restarts within 1 cycles then exec "/var/vcap/jobs/silk-daemon/bin/restart-silk-daemon"
+  depends on silk-daemon
+  group vcap
 <% end %>
