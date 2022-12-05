@@ -16,3 +16,6 @@ processes:
     args:
     - "-c"
     - "/var/vcap/jobs/silk-daemon/config/healthchecker.yml"
+    additional_volumes:
+      - path: /var/vcap/data/silk-daemon/counters
+        writable: true

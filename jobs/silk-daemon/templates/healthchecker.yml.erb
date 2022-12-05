@@ -1,6 +1,7 @@
 <%=
 config = {
   'component_name' => 'silk-daemon-healthchecker',
+  'failure_counter_file' => p('healthchecker.failure_counter_file'),
   'log_level' => p('logging.level'),
   'healthcheck_endpoint' => {
     'host' => '127.0.0.1',
