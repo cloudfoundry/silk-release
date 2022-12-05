@@ -15,7 +15,7 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 replace github.com/hashicorp/consul => github.com/hashicorp/consul v0.7.0
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20221117171434-3d123025a8c3
+	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20221205130414-742bd12bf674
 	code.cloudfoundry.org/debugserver v0.0.0-20210608171006-d7658ce493f4
 	code.cloudfoundry.org/diego-logging-client v0.0.0-20220314190632-277a9c460661
 	code.cloudfoundry.org/executor v0.0.0-20220401134035-4e7113938d00
@@ -57,7 +57,7 @@ require (
 	github.com/cloudfoundry/sonde-go v0.0.0-20200416163440-a42463ba266b // indirect
 	github.com/containernetworking/plugins v0.0.0-00010101000000-000000000000 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
-	github.com/go-sql-driver/mysql v1.6.0 // indirect
+	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/go-test/deep v1.0.8 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect

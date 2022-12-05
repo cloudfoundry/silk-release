@@ -4,7 +4,7 @@ code.cloudfoundry.org/bbs/db/sqldb/helpers/monitor
 code.cloudfoundry.org/bbs/encryption
 code.cloudfoundry.org/bbs/format
 code.cloudfoundry.org/bbs/models
-# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20221117171434-3d123025a8c3
+# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20221205130414-742bd12bf674
 ## explicit; go 1.19
 code.cloudfoundry.org/cf-networking-helpers/db
 code.cloudfoundry.org/cf-networking-helpers/healthchecker/cmd/healthchecker
@@ -149,8 +149,8 @@ github.com/coreos/go-iptables/iptables
 # github.com/fsnotify/fsnotify v1.4.9
 ## explicit; go 1.13
 github.com/fsnotify/fsnotify
-# github.com/go-sql-driver/mysql v1.6.0
-## explicit; go 1.10
+# github.com/go-sql-driver/mysql v1.7.0
+## explicit; go 1.13
 github.com/go-sql-driver/mysql
 # github.com/go-test/deep v1.0.8
 ## explicit; go 1.16
