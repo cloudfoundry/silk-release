@@ -9,8 +9,6 @@ files:
   - code.cloudfoundry.org/go.sum
   - code.cloudfoundry.org/vendor/modules.txt
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/bbs/db/sqldb/helpers/monitor/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/healthchecker/config/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/healthchecker/watchdog/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/json_client/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/marshal/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/metrics/*.go # gosub-main-module
@@ -41,7 +39,6 @@ files:
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/lib/adapter/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/lib/datastore/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/lib/serial/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/healthchecker/cmd/healthchecker/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/emitter/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/envelope_sender/*.go # gosub-main-module
@@ -88,4 +85,3 @@ files:
   - code.cloudfoundry.org/vendor/golang.org/x/sys/windows/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sys/windows/*.s # gosub-main-module
   - code.cloudfoundry.org/vendor/gopkg.in/validator.v2/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/gopkg.in/yaml.v2/*.go # gosub-main-module

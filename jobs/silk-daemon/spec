@@ -15,11 +15,11 @@ templates:
   policy-agent-ca.crt.erb: config/certs/policy-agent/ca.crt
   policy-agent-client.crt.erb: config/certs/policy-agent/client.crt
   policy-agent-client.key.erb: config/certs/policy-agent/client.key
-  restart-silk-daemon.erb: bin/restart-silk-daemon
 
 packages:
   - silk-daemon
   - silk-ctl-utils
+  - healthchecker
 
 consumes:
 - name: cf_network

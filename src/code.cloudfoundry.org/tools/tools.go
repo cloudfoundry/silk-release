@@ -4,7 +4,6 @@
 package tools
 
 import (
-	_ "code.cloudfoundry.org/cf-networking-helpers/healthchecker/cmd/healthchecker"
 	_ "github.com/containernetworking/cni/plugins/test/noop"
 )
 

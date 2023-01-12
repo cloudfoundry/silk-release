@@ -16,7 +16,3 @@ go build -o "${BOSH_INSTALL_TARGET}/bin/silk-teardown" -ldflags="-extldflags=-Wl
 go build -o "${BOSH_INSTALL_TARGET}/bin/silk-daemon-shutdown" code.cloudfoundry.org/silk-daemon-shutdown
 go build -o "${BOSH_INSTALL_TARGET}/bin/silk-daemon-bootstrap" code.cloudfoundry.org/silk-daemon-bootstrap
 popd
-
-pushd src/code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/healthchecker/cmd/healthchecker
-  go build -o "${BOSH_INSTALL_TARGET}/bin/healthchecker" .
-popd

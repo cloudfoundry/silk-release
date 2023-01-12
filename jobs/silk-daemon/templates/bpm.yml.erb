@@ -12,10 +12,10 @@ processes:
     unsafe:
       privileged: true
   - name: silk-daemon-healthchecker
-    executable: "/var/vcap/packages/silk-daemon/bin/healthchecker"
+    executable: "/var/vcap/packages/healthchecker/bin/healthchecker"
     args:
     - "-c"
     - "/var/vcap/jobs/silk-daemon/config/healthchecker.yml"
     additional_volumes:
-      - path: /var/vcap/data/silk-daemon/counters
+      - path:  <%= File.dirname(p('healthchecker.failure_counter_file')) %>
         writable: true

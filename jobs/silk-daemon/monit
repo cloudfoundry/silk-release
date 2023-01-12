@@ -15,7 +15,7 @@ check process silk-daemon-healthchecker
   with pidfile /var/vcap/sys/run/bpm/silk-daemon/silk-daemon-healthchecker.pid
   start program "/var/vcap/jobs/bpm/bin/bpm start silk-daemon -p silk-daemon-healthchecker"
   stop program "/var/vcap/jobs/bpm/bin/bpm stop silk-daemon -p silk-daemon-healthchecker"
-  if 1 restarts within 1 cycles then exec "/var/vcap/jobs/silk-daemon/bin/restart-silk-daemon"
+  if 1 restarts within 1 cycles then exec "/var/vcap/packages/healthchecker/bin/restart-monit-job silk-daemon <%= p('healthchecker.failure_counter_file') %>"
   depends on silk-daemon
   group vcap
 <% end %>
