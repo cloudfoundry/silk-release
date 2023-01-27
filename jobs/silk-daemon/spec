@@ -2,24 +2,24 @@
 name: silk-daemon
 
 templates:
-  bootstrap-config.json.erb: config/bootstrap-config.json
-  bpm.yml.erb: config/bpm.yml
-  drain.erb: bin/drain
-  healthchecker.yml.erb: config/healthchecker.yml
-  pre-start.erb: bin/pre-start
-  post-start.erb: bin/post-start
-  ca.crt.erb: config/certs/ca.crt
-  client.crt.erb: config/certs/client.crt
-  client.key.erb: config/certs/client.key
-  client-config.json.erb: config/client-config.json
-  policy-agent-ca.crt.erb: config/certs/policy-agent/ca.crt
-  policy-agent-client.crt.erb: config/certs/policy-agent/client.crt
-  policy-agent-client.key.erb: config/certs/policy-agent/client.key
+  bootstrap-config.json.erb:    config/bootstrap-config.json
+  bpm.yml.erb:                  config/bpm.yml
+  drain.erb:                    bin/drain
+  healthchecker.yml.erb:        config/healthchecker.yml
+  pre-start.erb:                bin/pre-start
+  post-start.erb:               bin/post-start
+  ca.crt.erb:                   config/certs/ca.crt
+  client.crt.erb:               config/certs/client.crt
+  client.key.erb:               config/certs/client.key
+  client-config.json.erb:       config/client-config.json
+  policy-agent-ca.crt.erb:      config/certs/policy-agent/ca.crt
+  policy-agent-client.crt.erb:  config/certs/policy-agent/client.crt
+  policy-agent-client.key.erb:  config/certs/policy-agent/client.key
 
 packages:
   - silk-daemon
   - silk-ctl-utils
-  - healthchecker
+  - silk-healthchecker
 
 consumes:
 - name: cf_network

@@ -12,7 +12,7 @@ processes:
     unsafe:
       privileged: true
   - name: silk-daemon-healthchecker
-    executable: "/var/vcap/packages/healthchecker/bin/healthchecker"
+    executable: "/var/vcap/packages/silk-healthchecker/bin/healthchecker"
     args:
     - "-c"
     - "/var/vcap/jobs/silk-daemon/config/healthchecker.yml"
