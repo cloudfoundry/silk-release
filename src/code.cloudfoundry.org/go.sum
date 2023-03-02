@@ -38,8 +38,8 @@ code.cloudfoundry.org/routing-info v0.0.0-20220215234142-7d023ecb0fad h1:FHI7/Gg
 code.cloudfoundry.org/routing-info v0.0.0-20220215234142-7d023ecb0fad/go.mod h1:ykLgqzJGV5PTkvxtfyOy8hcQy7wxPaoV5ZPyk74aqp8=
 code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6 h1:J08p1/LBnhv5BDDf0WLpHRyMJFCws3vd3fLCFL/iVnQ=
 code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6/go.mod h1:QSfnsqiGUdV3OOxqHxQkmUZwycGJNWYdredPgeGuGf4=
-code.cloudfoundry.org/silk v0.0.0-20230209164209-f4308bd749a0 h1:LnG2UnWxY/GrZpO0sCoyntG8Sq3VJoX8wuaRkEFTmjs=
-code.cloudfoundry.org/silk v0.0.0-20230209164209-f4308bd749a0/go.mod h1:dYZ7wXoIl0ubxb1uguXEZjI9tf/XC0eQFl/SwzDkL8w=
+code.cloudfoundry.org/silk v0.0.0-20230302180659-dae4c798146c h1:Dm38Tbgy7iRs6pqLg2yhnpyUNw/VbD/4d3b1+m9Inkg=
+code.cloudfoundry.org/silk v0.0.0-20230302180659-dae4c798146c/go.mod h1:imJOU3tpq+XFGa2a2mP+953pSRJeJ9+e884dS5pCZQQ=
 code.cloudfoundry.org/tlsconfig v0.0.0-20200131000646-bbe0f8da39b3 h1:2Qal+q+tw/DmDOoJBWwDCPE3lIJNj/1o7oMkkb2c5SI=
 code.cloudfoundry.org/tlsconfig v0.0.0-20200131000646-bbe0f8da39b3/go.mod h1:eTbFJpyXRGuFVyg5+oaj9B2eIbIc+0/kZjH8ftbtdew=
 github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78/go.mod h1:LmzpDX56iTiv29bbRTIsUNlaFfuhWRQBWjQdVyAevI8=
