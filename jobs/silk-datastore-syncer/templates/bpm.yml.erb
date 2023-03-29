@@ -1,0 +1,14 @@
+---
+processes:
+  - name: silk-datastore-syncer
+    unsafe:
+      privileged: true
+    executable: "/var/vcap/jobs/silk-datastore-syncer/bin/start"
+    additional_volumes:
+    - path: /var/vcap/data/container-metadata
+      writable: true
+    - path: /var/vcap/data/garden
+      writable: true
+    capabilities:
+    - NET_RAW
+    - NET_ADMIN

@@ -1,0 +1,8 @@
+---
+name: silk-datastore-syncer
+
+dependencies:
+  - golang-1.19-linux
+
+files:
+  - code.cloudfoundry.org/**/*

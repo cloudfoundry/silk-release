@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+/var/vcap/packages/silk-datastore-syncer/bin/silk-datastore-syncer \
+  -n <%= p("sync_interval_in_seconds") %> \
+  -gardenNetwork <%= p("garden.network") %> \
+  -gardenAddr <%= p("garden.address") %> \
+  -silkFile /var/vcap/data/container-metadata/store.json \
+  -silkFileOwner vcap \
+  -silkFileGroup vcap \
+  -logLevel <%= p("log_level") %>

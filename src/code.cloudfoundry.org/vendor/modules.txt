@@ -37,6 +37,10 @@ code.cloudfoundry.org/filelock
 # code.cloudfoundry.org/garden v0.0.0-20210608104724-fa3a10d59c82
 ## explicit; go 1.16
 code.cloudfoundry.org/garden
+code.cloudfoundry.org/garden/client
+code.cloudfoundry.org/garden/client/connection
+code.cloudfoundry.org/garden/routes
+code.cloudfoundry.org/garden/transport
 # code.cloudfoundry.org/go-diodes v0.0.0-20190809170250-f77fb823c7ee
 ## explicit
 code.cloudfoundry.org/go-diodes
