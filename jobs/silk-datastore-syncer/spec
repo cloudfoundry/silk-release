@@ -1,0 +1,26 @@
+---
+name: silk-datastore-syncer
+
+templates:
+  bpm.yml.erb: config/bpm.yml
+  start.erb: bin/start
+
+packages:
+  - silk-datastore-syncer
+
+properties:
+  disable:
+    description: "Disable this monit job. It will not run. Required for backwards compatability."
+    default: false
+  sync_interval_in_seconds:
+    description: "Interval to check garden for new metadata."
+    default: 30
+  garden.address:
+    description: "Garden server listening address."
+    default: /var/vcap/data/garden/garden.sock
+  garden.network:
+    description: "Network type for the garden server connection (tcp or unix)."
+    default: unix
+  log_level:
+    description: "Logging level (debug, info, warn, error)."
+    default: info

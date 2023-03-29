@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -e
+set -u
+
+mkdir -p ${BOSH_INSTALL_TARGET}/src
+mv * ${BOSH_INSTALL_TARGET}/src
+mv ${BOSH_INSTALL_TARGET}/src .
+mkdir -p ${BOSH_INSTALL_TARGET}/bin
+
+source /var/vcap/packages/golang-*-linux/bosh/compile.env
+
+pushd src/code.cloudfoundry.org/silk-datastore-syncer
+go build -o "${BOSH_INSTALL_TARGET}/bin/silk-datastore-syncer" code.cloudfoundry.org/silk-datastore-syncer
+popd

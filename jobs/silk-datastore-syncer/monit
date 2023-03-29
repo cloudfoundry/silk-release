@@ -1,0 +1,7 @@
+<% unless p("disable") %>
+check process silk-datastore-syncer
+  with pidfile /var/vcap/sys/run/bpm/silk-datastore-syncer/silk-datastore-syncer.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start silk-datastore-syncer"
+  stop program "/var/vcap/jobs/bpm/bin/bpm stop silk-datastore-syncer"
+  group vcap
+<% end %>

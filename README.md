@@ -15,6 +15,7 @@ This release contains the following jobs:
 - `silk-controller`
 - `silk-daemon`
 - `silk-cni`
+- `silk-datastore-syncer`
 - `netmon`
 - `vxlan-policy-agent`
 - `iptables-logger`
