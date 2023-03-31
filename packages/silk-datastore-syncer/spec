@@ -5,4 +5,30 @@ dependencies:
   - golang-1.19-linux
 
 files:
-  - code.cloudfoundry.org/**/*
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/bbs/encryption/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/bbs/format/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/bbs/models/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/executor/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/filelock/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/garden/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/garden/client/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/garden/client/connection/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/garden/routes/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/garden/transport/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/internal/truncate/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/lagerflags/*.go # gosub-main-module
+  - code.cloudfoundry.org/lib/common/*.go # gosub-main-module
+  - code.cloudfoundry.org/lib/datastore/*.go # gosub-main-module
+  - code.cloudfoundry.org/lib/serial/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/routing-info/internalroutes/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk-datastore-syncer/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/bmizerany/pat/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/gogo/protobuf/gogoproto/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/gogo/protobuf/proto/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/gogo/protobuf/protoc-gen-gogo/descriptor/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/gogo/protobuf/sortkeys/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/tedsuo/rata/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/golang.org/x/sys/internal/unsafeheader/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/golang.org/x/sys/windows/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/golang.org/x/sys/windows/*.s # gosub-main-module
