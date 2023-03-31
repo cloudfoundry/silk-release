@@ -87,6 +87,9 @@ sync_package netmon \
 sync_package silk-controller \
   -app code.cloudfoundry.org/silk/cmd/silk-controller
 
+sync_package silk-datastore-syncer \
+  -app code.cloudfoundry.org/silk-datastore-syncer
+
 sync_package silk-daemon \
   -app code.cloudfoundry.org/silk/cmd/silk-daemon \
   -app code.cloudfoundry.org/silk/cmd/silk-teardown \
