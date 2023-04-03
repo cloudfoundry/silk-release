@@ -19,7 +19,7 @@ func TestIntegration(t *testing.T) {
 
 var _ = SynchronizedBeforeSuite(func() []byte {
 	fmt.Fprintf(GinkgoWriter, "building binary...")
-	binaryPath, err := gexec.Build("code.cloudfoundry.org/silk-datastore-syncer")
+	binaryPath, err := gexec.Build("code.cloudfoundry.org/silk-datastore-syncer", "-buildvcs=false")
 	fmt.Fprintf(GinkgoWriter, "done")
 	Expect(err).NotTo(HaveOccurred())
 	return []byte(binaryPath)
