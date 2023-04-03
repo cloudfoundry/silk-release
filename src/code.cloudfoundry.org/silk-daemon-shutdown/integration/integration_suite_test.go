@@ -29,7 +29,7 @@ func TestIntegration(t *testing.T) {
 var _ = SynchronizedBeforeSuite(func() []byte {
 	var err error
 	fmt.Fprintf(GinkgoWriter, "building binary...")
-	paths.TeardownBin, err = gexec.Build("code.cloudfoundry.org/silk-daemon-shutdown")
+	paths.TeardownBin, err = gexec.Build("code.cloudfoundry.org/silk-daemon-shutdown", "-buildvcs=false")
 	fmt.Fprintf(GinkgoWriter, "done")
 	Expect(err).NotTo(HaveOccurred())
 
