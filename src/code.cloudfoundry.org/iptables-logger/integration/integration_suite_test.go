@@ -27,7 +27,7 @@ func TestIntegration(t *testing.T) {
 var _ = SynchronizedBeforeSuite(func() []byte {
 	fmt.Fprintf(GinkgoWriter, "building binary...")
 	var err error
-	binaryPath, err = gexec.Build("code.cloudfoundry.org/iptables-logger/cmd/iptables-logger", "-race")
+	binaryPath, err = gexec.Build("code.cloudfoundry.org/iptables-logger/cmd/iptables-logger", "-race", "-buildvcs=false")
 	fmt.Fprintf(GinkgoWriter, "done")
 	Expect(err).NotTo(HaveOccurred())
 

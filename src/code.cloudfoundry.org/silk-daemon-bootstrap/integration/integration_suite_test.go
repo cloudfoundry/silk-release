@@ -59,7 +59,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Expect(err).NotTo(HaveOccurred())
 
 	fmt.Fprintf(GinkgoWriter, "building binary...")
-	paths.BoostrapBin, err = gexec.Build("code.cloudfoundry.org/silk-daemon-bootstrap")
+	paths.BoostrapBin, err = gexec.Build("code.cloudfoundry.org/silk-daemon-bootstrap", "-buildvcs=false")
 	fmt.Fprintf(GinkgoWriter, "done")
 	Expect(err).NotTo(HaveOccurred())
 

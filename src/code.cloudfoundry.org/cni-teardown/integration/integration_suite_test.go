@@ -32,7 +32,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	var err error
 
 	fmt.Fprintf(GinkgoWriter, "building binary...")
-	paths.TeardownBin, err = gexec.Build("code.cloudfoundry.org/cni-teardown")
+	paths.TeardownBin, err = gexec.Build("code.cloudfoundry.org/cni-teardown", "-buildvcs=false")
 	fmt.Fprintf(GinkgoWriter, "done")
 	Expect(err).NotTo(HaveOccurred())
 

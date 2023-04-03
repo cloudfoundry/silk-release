@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package linux_test
@@ -93,7 +94,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Expect(err).NotTo(HaveOccurred())
 
 	fmt.Fprintf(GinkgoWriter, "building binary...")
-	paths.VxlanPolicyAgentPath, err = gexec.Build("code.cloudfoundry.org/vxlan-policy-agent/cmd/vxlan-policy-agent", "-race")
+	paths.VxlanPolicyAgentPath, err = gexec.Build("code.cloudfoundry.org/vxlan-policy-agent/cmd/vxlan-policy-agent", "-race", "-buildvcs=false")
 	fmt.Fprintf(GinkgoWriter, "done")
 	Expect(err).NotTo(HaveOccurred())
 

@@ -35,7 +35,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Expect(os.Chown(noopBin, 65534, 65534)).To(Succeed())
 	noopDir, _ := filepath.Split(noopBin)
 
-	pathToPlugin, err := gexec.Build(packagePath)
+	pathToPlugin, err := gexec.Build(packagePath, "-buildvcs=false")
 	Expect(err).NotTo(HaveOccurred())
 	Expect(os.Chown(pathToPlugin, 65534, 65534)).To(Succeed())
 	wrapperDir, _ := filepath.Split(pathToPlugin)
