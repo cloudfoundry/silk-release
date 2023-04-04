@@ -3,12 +3,13 @@ package datastore
 import (
 	"fmt"
 	"io/ioutil"
-	"code.cloudfoundry.org/lib/serial"
 	"net"
 	"os"
 	"os/user"
 	"strconv"
 	"sync"
+
+	"code.cloudfoundry.org/lib/serial"
 )
 
 //go:generate counterfeiter -o ../fakes/locker.go --fake-name Locker . locker
@@ -54,7 +55,15 @@ func validate(handle, ip string) error {
 	return nil
 }
 
+func (c *Store) Update(handle, ip string, metadata map[string]interface{}) error {
+	return c.AddOrUpdate(handle, ip, metadata, true)
+}
+
 func (c *Store) Add(handle, ip string, metadata map[string]interface{}) error {
+	return c.AddOrUpdate(handle, ip, metadata, false)
+}
+
+func (c *Store) AddOrUpdate(handle, ip string, metadata map[string]interface{}, update bool) error {
 	if err := validate(handle, ip); err != nil {
 		return err
 	}
@@ -77,6 +86,10 @@ func (c *Store) Add(handle, ip string, metadata map[string]interface{}) error {
 		return fmt.Errorf("decoding file: %s", err)
 	}
 
+	_, ok := pool[handle]
+	if !ok && update {
+		return fmt.Errorf("entry does not exist")
+	}
 	pool[handle] = Container{
 		Handle:   handle,
 		IP:       ip,
