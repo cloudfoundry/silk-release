@@ -76,6 +76,8 @@ var _ = Describe("Datastore Lifecycle", func() {
 
 	AfterEach(func() {
 		os.Remove(dataFilePath)
+		os.Remove(versionFilePath)
+		os.Remove(lockFilePath)
 	})
 
 	Context("when empty", func() {

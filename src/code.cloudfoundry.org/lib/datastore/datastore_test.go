@@ -2,6 +2,7 @@ package datastore_test
 
 import (
 	"errors"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -172,6 +173,55 @@ var _ = Describe("Datastore", func() {
 			})
 		})
 
+	})
+
+	Context("when updating an entry to store", func() {
+		It("updates the entry", func() {
+			serializer.DecodeAllStub = func(_ io.ReadSeeker, a interface{}) error {
+				b := a.(*map[string]datastore.Container)
+				*b = map[string]datastore.Container{
+					handle: datastore.Container{
+						Handle:   handle,
+						IP:       ip,
+						Metadata: metadata,
+					},
+				}
+				return nil
+			}
+			metadata2 := map[string]interface{}{
+				"AppID":         "some-appid2",
+				"OrgID":         "some-orgid2",
+				"PolicyGroupID": "some-policygroupid2",
+				"SpaceID":       "some-spaceid2",
+				"randomKey":     "randomValue2",
+			}
+			err := store.Update(handle, ip, metadata2)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(locker.LockCallCount()).To(Equal(1))
+			Expect(locker.UnlockCallCount()).To(Equal(1))
+
+			Expect(serializer.DecodeAllCallCount()).To(Equal(1))
+			Expect(serializer.EncodeAndOverwriteCallCount()).To(Equal(1))
+
+			file, _ := serializer.DecodeAllArgsForCall(0)
+			Expect(file.(*os.File).Name()).To(Equal(dataFile.Name()))
+
+			_, actual := serializer.EncodeAndOverwriteArgsForCall(0)
+			expected := map[string]datastore.Container{
+				handle: datastore.Container{
+					Handle:   handle,
+					IP:       ip,
+					Metadata: metadata2,
+				},
+			}
+			Expect(actual).To(Equal(expected))
+		})
+
+		It("doesn't re-add things that don't exist", func() {
+			err := store.Update(handle, ip, metadata)
+			Expect(err).To(HaveOccurred())
+			Expect(serializer.EncodeAndOverwriteCallCount()).To(Equal(0))
+		})
 	})
 
 	Context("when deleting an entry from store", func() {

@@ -104,7 +104,7 @@ func main() {
 				continue
 			}
 			sc.Metadata["log_config"] = string(b)
-			err = store.Add(sc.Handle, sc.IP, sc.Metadata)
+			err = store.Update(sc.Handle, sc.IP, sc.Metadata)
 			if err != nil {
 				logger.Error("Error updating log config", err)
 			}
