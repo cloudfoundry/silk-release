@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/lib/rules"
 	"code.cloudfoundry.org/policy_client"
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"

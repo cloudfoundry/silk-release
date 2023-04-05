@@ -6,7 +6,7 @@ import (
 	"code.cloudfoundry.org/iptables-logger/parser"
 	"code.cloudfoundry.org/iptables-logger/repository"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 )
 
 //go:generate counterfeiter -o fakes/containerRepo.go --fake-name ContainerRepo . containerRepo

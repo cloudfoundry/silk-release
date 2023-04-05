@@ -14,8 +14,7 @@ import (
 
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport"
 
-	. "github.com/onsi/ginkgo"
-	ginkgoConfig "github.com/onsi/ginkgo/config"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/vishvananda/netlink"
@@ -107,7 +106,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 }, func(data []byte) {
 	Expect(json.Unmarshal(data, &paths)).To(Succeed())
 
-	rand.Seed(ginkgoConfig.GinkgoConfig.RandomSeed + int64(GinkgoParallelNode()))
+	suiteConfig, _ := GinkgoConfiguration()
+	rand.Seed(suiteConfig.RandomSeed + int64(GinkgoParallelProcess()))
 })
 
 var _ = SynchronizedAfterSuite(func() {}, func() {

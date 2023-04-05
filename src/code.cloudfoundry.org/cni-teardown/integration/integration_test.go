@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/silk/lib/adapter"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 )
@@ -36,15 +36,15 @@ var _ = Describe("Teardown", func() {
 		var err error
 
 		// /var/vcap/data/container-metadata
-		datastorePath, err = ioutil.TempDir(os.TempDir(), fmt.Sprintf("container-metadata-%d", GinkgoParallelNode()))
+		datastorePath, err = ioutil.TempDir(os.TempDir(), fmt.Sprintf("container-metadata-%d", GinkgoParallelProcess()))
 		Expect(err).NotTo(HaveOccurred())
 
 		// /var/vcap/data/host-local
-		delegateDataDirPath, err = ioutil.TempDir(os.TempDir(), fmt.Sprintf("host-local-%d", GinkgoParallelNode()))
+		delegateDataDirPath, err = ioutil.TempDir(os.TempDir(), fmt.Sprintf("host-local-%d", GinkgoParallelProcess()))
 		Expect(err).NotTo(HaveOccurred())
 
 		// /var/vcap/data/silk/store.json
-		delegateDatastorePath, err = ioutil.TempDir(os.TempDir(), fmt.Sprintf("silk-%d", GinkgoParallelNode()))
+		delegateDatastorePath, err = ioutil.TempDir(os.TempDir(), fmt.Sprintf("silk-%d", GinkgoParallelProcess()))
 		Expect(err).NotTo(HaveOccurred())
 
 		teardownConfig = &config.Config{
@@ -83,9 +83,9 @@ var _ = Describe("Teardown", func() {
 				Skip("Docker for Mac does not contain IFB kernel module")
 			}
 
-			ifbName = fmt.Sprintf("i-some-ifb-%d", GinkgoParallelNode())
-			notSilkCreatedIFBName = fmt.Sprintf("other-ifb-%d", GinkgoParallelNode())
-			dummyName = fmt.Sprintf("ilololol-%d", GinkgoParallelNode())
+			ifbName = fmt.Sprintf("i-some-ifb-%d", GinkgoParallelProcess())
+			notSilkCreatedIFBName = fmt.Sprintf("other-ifb-%d", GinkgoParallelProcess())
+			dummyName = fmt.Sprintf("ilololol-%d", GinkgoParallelProcess())
 
 			netlinkAdapter = &adapter.NetlinkAdapter{}
 

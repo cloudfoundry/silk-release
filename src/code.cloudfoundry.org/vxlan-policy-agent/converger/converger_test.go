@@ -13,10 +13,10 @@ import (
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
 	"code.cloudfoundry.org/vxlan-policy-agent/planner"
 
-	"code.cloudfoundry.org/lager/lagertest"
+	"code.cloudfoundry.org/lager/v3/lagertest"
 
 	"github.com/hashicorp/go-multierror"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 )

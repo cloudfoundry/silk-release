@@ -1,7 +1,7 @@
 package common
 
 import (
-	"code.cloudfoundry.org/lager/lagerflags"
+	"code.cloudfoundry.org/lager/v3/lagerflags"
 )
 
 func GetLagerConfig() lagerflags.LagerConfig {

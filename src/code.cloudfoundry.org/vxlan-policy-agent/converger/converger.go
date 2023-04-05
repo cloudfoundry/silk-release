@@ -9,7 +9,7 @@ import (
 
 	loggingclient "code.cloudfoundry.org/diego-logging-client"
 	"code.cloudfoundry.org/executor"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
 	"code.cloudfoundry.org/vxlan-policy-agent/planner"
 	"github.com/hashicorp/go-multierror"

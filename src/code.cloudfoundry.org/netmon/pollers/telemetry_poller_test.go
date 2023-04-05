@@ -4,11 +4,11 @@ import (
 	"errors"
 	"time"
 
-	"code.cloudfoundry.org/lager/lagertest"
+	"code.cloudfoundry.org/lager/v3/lagertest"
 	"code.cloudfoundry.org/netmon/fakes"
 	"code.cloudfoundry.org/netmon/network_stats"
 	"code.cloudfoundry.org/netmon/pollers"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

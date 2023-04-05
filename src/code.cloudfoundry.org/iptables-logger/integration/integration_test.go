@@ -4,9 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
-	"code.cloudfoundry.org/iptables-logger/config"
-	"code.cloudfoundry.org/lib/datastore"
-	"code.cloudfoundry.org/lib/serial"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,10 +11,14 @@ import (
 	"sync"
 	"time"
 
+	"code.cloudfoundry.org/iptables-logger/config"
+	"code.cloudfoundry.org/lib/datastore"
+	"code.cloudfoundry.org/lib/serial"
+
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics"
 	"code.cloudfoundry.org/filelock"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
@@ -137,7 +138,8 @@ var _ = Describe("Integration", func() {
 
 	BeforeEach(func() {
 		var err error
-		fakeMetron = metrics.NewFakeMetron()
+		suiteConfig, _ := GinkgoConfiguration()
+		fakeMetron = metrics.NewFakeMetron(suiteConfig.ParallelProcess)
 
 		kernelLogFile, err = ioutil.TempFile("", "")
 		Expect(err).ToNot(HaveOccurred())

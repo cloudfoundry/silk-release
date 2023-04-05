@@ -9,7 +9,7 @@ import (
 	"code.cloudfoundry.org/executor"
 	"code.cloudfoundry.org/lib/rules"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 )
 
 type Timestamper struct{}

@@ -10,8 +10,7 @@ import (
 
 	"code.cloudfoundry.org/lib/rules"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -29,7 +28,7 @@ var _ = Describe("NetOutChain", func() {
 			Converter:        converter,
 			DeniedLogsPerSec: 3,
 			Conn: netrules.OutConn{
-				Limit: false,
+				Limit:  false,
 				DryRun: false,
 			},
 		}
@@ -238,15 +237,15 @@ var _ = Describe("NetOutChain", func() {
 					BeforeEach(func() {
 						netOutChain.Conn.DryRun = true
 					})
-	
+
 					It("inserts the outbound connection rate limit rule", func() {
 						iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", "app", netrules.NewRulesFromGardenNetOutRules(netOutRules))
 						Expect(err).NotTo(HaveOccurred())
-	
+
 						Expect(chainNamer.PostfixCallCount()).To(Equal(2))
-	
+
 						By("specifying a jump condition to the respective logging chains")
-	
+
 						expectedRateLimitRule := rules.IPTablesRule{
 							"-p", "tcp",
 							"-m", "conntrack", "--ctstate", "NEW",
@@ -259,7 +258,7 @@ var _ = Describe("NetOutChain", func() {
 							{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
 							{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
 						}...)
-	
+
 						Expect(iptablesRules).To(Equal(expectedRules))
 					})
 				})
@@ -311,15 +310,15 @@ var _ = Describe("NetOutChain", func() {
 					BeforeEach(func() {
 						netOutChain.Conn.DryRun = true
 					})
-	
+
 					It("inserts the outbound connection rate limit rule", func() {
 						iptablesRules, err := netOutChain.IPTablesRules("some-container-handle", "app", netrules.NewRulesFromGardenNetOutRules(netOutRules))
 						Expect(err).NotTo(HaveOccurred())
-	
+
 						Expect(chainNamer.PostfixCallCount()).To(Equal(2))
-	
+
 						By("specifying a jump condition to the respective logging chains")
-	
+
 						expectedRateLimitRule := rules.IPTablesRule{
 							"-p", "tcp",
 							"-m", "conntrack", "--ctstate", "NEW",
@@ -332,7 +331,7 @@ var _ = Describe("NetOutChain", func() {
 							{"-p", "tcp", "-m", "state", "--state", "INVALID", "-j", "DROP"},
 							{"-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT"},
 						}...)
-	
+
 						Expect(iptablesRules).To(Equal(expectedRules))
 					})
 				})

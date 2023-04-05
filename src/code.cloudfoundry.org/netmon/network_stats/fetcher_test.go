@@ -3,10 +3,10 @@ package network_stats_test
 import (
 	"errors"
 
-	"code.cloudfoundry.org/lager/lagertest"
+	"code.cloudfoundry.org/lager/v3/lagertest"
 	libfakes "code.cloudfoundry.org/lib/fakes"
 	network_stats "code.cloudfoundry.org/netmon/network_stats"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

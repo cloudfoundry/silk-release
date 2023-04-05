@@ -1,7 +1,7 @@
 package network_stats
 
 import (
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/lib/rules"
 )
 
