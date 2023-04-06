@@ -7,7 +7,7 @@ import (
 	"code.cloudfoundry.org/lib/datastore"
 	"code.cloudfoundry.org/lib/fakes"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

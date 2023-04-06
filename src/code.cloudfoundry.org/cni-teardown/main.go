@@ -9,8 +9,8 @@ import (
 	"code.cloudfoundry.org/cni-teardown/config"
 	"code.cloudfoundry.org/lib/common"
 
-	"code.cloudfoundry.org/lager"
-	"code.cloudfoundry.org/lager/lagerflags"
+	"code.cloudfoundry.org/lager/v3"
+	"code.cloudfoundry.org/lager/v3/lagerflags"
 	"code.cloudfoundry.org/silk/lib/adapter"
 )
 

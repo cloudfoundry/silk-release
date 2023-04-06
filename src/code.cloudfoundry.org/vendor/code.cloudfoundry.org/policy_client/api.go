@@ -60,13 +60,13 @@ type Space struct {
 type SecurityGroupRules []SecurityGroupRule
 
 type SecurityGroupRule struct {
-	Protocol    string `json: "protocol"`
-	Destination string `json: "destination"`
-	Ports       string `json: "ports"`
-	Type        int    `json: "type"`
-	Code        int    `json: "code"`
-	Description string `json: "description"`
-	Log         bool   `json: "log"`
+	Protocol    string `json:"protocol"`
+	Destination string `json:"destination"`
+	Ports       string `json:"ports,omitempty"`
+	Type        int    `json:"type"`
+	Code        int    `json:"code"`
+	Description string `json:"description,omitempty"`
+	Log         bool   `json:"log"`
 }
 
 func (sgr *SecurityGroupRules) UnmarshalJSON(data []byte) error {

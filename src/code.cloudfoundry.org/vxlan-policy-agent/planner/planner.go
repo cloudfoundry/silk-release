@@ -9,7 +9,7 @@ import (
 
 	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
 	"code.cloudfoundry.org/executor"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/lib/datastore"
 	"code.cloudfoundry.org/lib/rules"
 	"code.cloudfoundry.org/policy_client"

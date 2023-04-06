@@ -3,7 +3,7 @@ package network_stats_test
 import (
 	networkStats "code.cloudfoundry.org/netmon/network_stats"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

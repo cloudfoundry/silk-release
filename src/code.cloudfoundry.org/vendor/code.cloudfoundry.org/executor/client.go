@@ -3,7 +3,7 @@ package executor
 import (
 	"io"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/routing-info/internalroutes"
 )
 
@@ -89,12 +89,14 @@ func NewRunRequest(guid string, runInfo *RunInfo, tags Tags) RunRequest {
 
 type UpdateRequest struct {
 	Guid           string
-	InternalRoutes internalroutes.InternalRoutes `json:"internal_routes"`
+	InternalRoutes internalroutes.InternalRoutes
+	MetricTags     map[string]string
 }
 
-func NewUpdateRequest(guid string, internalRoutes internalroutes.InternalRoutes) UpdateRequest {
+func NewUpdateRequest(guid string, internalRoutes internalroutes.InternalRoutes, metricTags map[string]string) UpdateRequest {
 	return UpdateRequest{
 		Guid:           guid,
 		InternalRoutes: internalRoutes,
+		MetricTags:     metricTags,
 	}
 }

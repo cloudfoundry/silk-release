@@ -5,7 +5,7 @@ import (
 	"code.cloudfoundry.org/iptables-logger/parser"
 	"os"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"github.com/hpcloud/tail"
 )
 

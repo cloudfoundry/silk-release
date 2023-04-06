@@ -14,8 +14,8 @@ import (
 	"code.cloudfoundry.org/cf-networking-helpers/mutualtls"
 	"code.cloudfoundry.org/debugserver"
 	"code.cloudfoundry.org/filelock"
-	"code.cloudfoundry.org/lager"
-	"code.cloudfoundry.org/lager/lagerflags"
+	"code.cloudfoundry.org/lager/v3"
+	"code.cloudfoundry.org/lager/v3/lagerflags"
 	"code.cloudfoundry.org/silk/client/config"
 	"code.cloudfoundry.org/silk/controller"
 	"code.cloudfoundry.org/silk/daemon"
@@ -208,10 +208,10 @@ func mainWithError() error {
 	uptimeSource := metrics.NewUptimeSource()
 	metricsEmitter := metrics.NewMetricsEmitter(logger, 30*time.Second, uptimeSource)
 	members := grouper.Members{
-		{"server", healthCheckServer},
-		{"vxlan-poller", vxlanPoller},
-		{"debug-server", debugserver.Runner(debugServerAddress, reconfigurableSink)},
-		{"metrics-emitter", metricsEmitter},
+		{Name: "server", Runner: healthCheckServer},
+		{Name: "vxlan-poller", Runner: vxlanPoller},
+		{Name: "debug-server", Runner: debugserver.Runner(debugServerAddress, reconfigurableSink)},
+		{Name: "metrics-emitter", Runner: metricsEmitter},
 	}
 	group := grouper.NewOrdered(os.Interrupt, members)
 	monitor := ifrit.Invoke(sigmon.New(group))

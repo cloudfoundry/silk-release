@@ -6,7 +6,7 @@ import (
 	"net"
 	"strings"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/lib/rules"
 
 	"code.cloudfoundry.org/garden"

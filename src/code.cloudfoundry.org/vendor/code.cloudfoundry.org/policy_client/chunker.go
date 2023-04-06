@@ -2,7 +2,7 @@ package policy_client
 
 const DefaultMaxPolicies = 100
 
-//go:generate counterfeiter -o ../fakes/chunker.go --fake-name Chunker . Chunker
+//go:generate counterfeiter -o ./fakes/chunker.go --fake-name Chunker . Chunker
 type Chunker interface {
 	Chunk(allPolicies []PolicyV0) [][]PolicyV0
 }

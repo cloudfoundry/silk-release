@@ -6,7 +6,7 @@ import (
 	main "code.cloudfoundry.org/vxlan-policy-agent/cmd/pre-start"
 
 	"code.cloudfoundry.org/lib/fakes"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

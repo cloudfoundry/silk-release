@@ -3,7 +3,7 @@ package parser_test
 import (
 	"code.cloudfoundry.org/iptables-logger/parser"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

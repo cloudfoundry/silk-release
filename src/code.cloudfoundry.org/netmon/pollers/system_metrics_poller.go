@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/netmon/network_stats"
 	"code.cloudfoundry.org/runtimeschema/metric"
 )

@@ -10,11 +10,11 @@ import (
 	"code.cloudfoundry.org/iptables-logger/runner"
 	"code.cloudfoundry.org/iptables-logger/runner/fakes"
 
-	"code.cloudfoundry.org/lager"
-	"code.cloudfoundry.org/lager/lagertest"
+	"code.cloudfoundry.org/lager/v3"
+	"code.cloudfoundry.org/lager/v3/lagertest"
 
 	"github.com/hpcloud/tail"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
 	"github.com/tedsuo/ifrit"

@@ -42,24 +42,17 @@ for i in "${windows_packages[@]}"; do
   packages=(${packages[@]//*$i*})
 done
 
-install_ginkgo() {
-  if ! [ $(type -P "ginkgo") ]; then
-    go install -mod=mod github.com/onsi/ginkgo/ginkgo@v1
-  fi
-}
-install_ginkgo
-
 if [ "${1:-""}" = "" ]; then
   for dir in "${packages[@]}"; do
     pushd "$dir"
-      ginkgo -p --race -randomizeAllSpecs -randomizeSuites \
+      go run github.com/onsi/ginkgo/v2/ginkgo -p --race --randomize-all --randomize-suites \
         -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
         ${@:2}
     popd
   done
   for dir in "${serial_packages[@]}"; do
     pushd "$dir"
-      ginkgo --race -randomizeAllSpecs -randomizeSuites -failFast \
+      go run github.com/onsi/ginkgo/v2/ginkgo --race --randomize-all --randomize-suites --fail-fast \
         -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
         ${@:2}
     popd
@@ -69,13 +62,13 @@ else
   dir="${dir#./}"
   for package in "${serial_packages[@]}"; do
     if [[ "${dir##$package}" != "${dir}" ]]; then
-      ginkgo --race -randomizeAllSpecs -randomizeSuites -failFast \
+      go run github.com/onsi/ginkgo/v2/ginkgo --race --randomize-all --randomize-suites --fail-fast \
         -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
         "${@}"
       exit $?
     fi
   done
-  ginkgo -p --race -randomizeAllSpecs -randomizeSuites -failFast -skipPackage windows \
+  go run github.com/onsi/ginkgo/v2/ginkgo -p --race --randomize-all --randomize-suites --fail-fast --skip-package windows \
     -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
     "${@}"
 fi

@@ -10,7 +10,7 @@ import (
 
 	"gopkg.in/validator.v2"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/v3"
 )
 
 type Netmon struct {

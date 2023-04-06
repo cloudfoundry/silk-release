@@ -16,8 +16,8 @@ import (
 	"code.cloudfoundry.org/cf-networking-helpers/middleware"
 	"code.cloudfoundry.org/cf-networking-helpers/mutualtls"
 	"code.cloudfoundry.org/debugserver"
-	"code.cloudfoundry.org/lager"
-	"code.cloudfoundry.org/lager/lagerflags"
+	"code.cloudfoundry.org/lager/v3"
+	"code.cloudfoundry.org/lager/v3/lagerflags"
 	"code.cloudfoundry.org/silk/controller/config"
 	"code.cloudfoundry.org/silk/controller/database"
 	"code.cloudfoundry.org/silk/controller/handlers"
@@ -97,7 +97,7 @@ func mainWithError() error {
 		DatabaseMigrator:              databaseHandler,
 		MaxMigrationAttempts:          5,
 		MigrationAttemptSleepDuration: time.Second,
-		Logger: logger,
+		Logger:                        logger,
 	}
 	if err = migrator.TryMigrations(); err != nil {
 		return fmt.Errorf("migrating database: %s", err)
@@ -207,10 +207,10 @@ func mainWithError() error {
 	metricSources = append(metricSources, metrics.NewDBMonitorSource(connectionPool, connectionPool.Monitor)...)
 	metricsEmitter := metrics.NewMetricsEmitter(logger, time.Duration(conf.MetricsEmitSeconds)*time.Second, metricSources...)
 	members := grouper.Members{
-		{"http_server", httpServer},
-		{"health-server", healthServer},
-		{"debug-server", debugserver.Runner(debugServerAddress, reconfigurableSink)},
-		{"metrics-emitter", metricsEmitter},
+		{Name: "http_server", Runner: httpServer},
+		{Name: "health-server", Runner: healthServer},
+		{Name: "debug-server", Runner: debugserver.Runner(debugServerAddress, reconfigurableSink)},
+		{Name: "metrics-emitter", Runner: metricsEmitter},
 	}
 
 	group := grouper.NewOrdered(os.Interrupt, members)
