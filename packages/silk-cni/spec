@@ -22,9 +22,9 @@ files:
   - code.cloudfoundry.org/cni-wrapper-plugin/netrules/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/filelock/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/garden/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/internal/truncate/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/lagerflags/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/v3/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/v3/internal/truncate/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/v3/lagerflags/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/common/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/datastore/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/interfacelookup/*.go # gosub-main-module
@@ -55,6 +55,8 @@ files:
   - code.cloudfoundry.org/vendor/github.com/google/uuid/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/hashicorp/errwrap/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/hashicorp/go-multierror/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/openzipkin/zipkin-go/idgenerator/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/openzipkin/zipkin-go/model/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/vishvananda/netlink/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/vishvananda/netlink/nl/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/vishvananda/netns/*.go # gosub-main-module
