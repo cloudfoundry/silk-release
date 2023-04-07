@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -30,7 +29,7 @@ func main() {
 	}
 	err = PreStart(ipTablesAdapter)
 	if err != nil {
-		fmt.Errorf("pre-start error: %s", err)
+		log.Fatalf("pre-start error: %s", err)
 	}
 }
 
