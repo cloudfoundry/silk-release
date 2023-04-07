@@ -17,9 +17,9 @@ files:
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/debugserver/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/filelock/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/garden/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/internal/truncate/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/lagerflags/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/v3/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/v3/internal/truncate/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/v3/lagerflags/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/common/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/datastore/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/rules/*.go # gosub-main-module
@@ -52,14 +52,9 @@ files:
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/metricbatcher/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/metrics/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/runtime_stats/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/github.com/cloudfoundry/gosteno/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/github.com/cloudfoundry/gosteno/syslog/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/sonde-go/events/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/coreos/go-iptables/iptables/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/go-sql-driver/mysql/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/github.com/gogo/protobuf/gogoproto/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/github.com/gogo/protobuf/proto/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/github.com/gogo/protobuf/protoc-gen-gogo/descriptor/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/google/shlex/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/hashicorp/errwrap/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/hashicorp/go-multierror/*.go # gosub-main-module
@@ -72,6 +67,8 @@ files:
   - code.cloudfoundry.org/vendor/github.com/mailru/easyjson/jlexer/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/mailru/easyjson/jwriter/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/nu7hatch/gouuid/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/openzipkin/zipkin-go/idgenerator/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/openzipkin/zipkin-go/model/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/tedsuo/ifrit/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/tedsuo/ifrit/grouper/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/tedsuo/ifrit/http_server/*.go # gosub-main-module
@@ -84,4 +81,29 @@ files:
   - code.cloudfoundry.org/vendor/golang.org/x/sys/unix/*.s # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sys/windows/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sys/windows/*.s # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/encoding/prototext/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/encoding/protowire/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/descfmt/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/descopts/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/detrand/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/encoding/defval/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/encoding/messageset/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/encoding/tag/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/encoding/text/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/errors/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/filedesc/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/filetype/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/flags/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/genid/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/impl/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/order/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/pragma/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/set/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/strs/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/version/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/proto/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/reflect/protoreflect/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/reflect/protoregistry/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/runtime/protoiface/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/runtime/protoimpl/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/gopkg.in/validator.v2/*.go # gosub-main-module

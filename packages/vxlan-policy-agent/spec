@@ -30,9 +30,9 @@ files:
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/go-loggregator/v8/rfc5424/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/go-loggregator/v8/runtimeemitter/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/internal/truncate/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/lagerflags/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/v3/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/v3/internal/truncate/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/v3/lagerflags/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/common/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/datastore/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/interfacelookup/*.go # gosub-main-module
@@ -62,8 +62,6 @@ files:
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/metricbatcher/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/metrics/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/runtime_stats/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/github.com/cloudfoundry/gosteno/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/github.com/cloudfoundry/gosteno/syslog/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/sonde-go/events/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/cni/pkg/invoke/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/cni/pkg/types/*.go # gosub-main-module
@@ -90,6 +88,8 @@ files:
   - code.cloudfoundry.org/vendor/github.com/mailru/easyjson/jlexer/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/mailru/easyjson/jwriter/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/nu7hatch/gouuid/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/openzipkin/zipkin-go/idgenerator/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/openzipkin/zipkin-go/model/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/tedsuo/ifrit/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/tedsuo/ifrit/grouper/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/tedsuo/ifrit/http_server/*.go # gosub-main-module
@@ -122,6 +122,7 @@ files:
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/balancer/grpclb/state/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/balancer/roundrobin/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/binarylog/grpc_binarylog_v1/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/grpc/channelz/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/codes/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/connectivity/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/credentials/*.go # gosub-main-module
@@ -131,6 +132,7 @@ files:
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/grpclog/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/backoff/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/balancer/gracefulswitch/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/balancerload/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/binarylog/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/buffer/*.go # gosub-main-module
@@ -142,6 +144,7 @@ files:
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/grpcsync/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/grpcutil/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/metadata/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/pretty/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/resolver/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/resolver/dns/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/resolver/passthrough/*.go # gosub-main-module
