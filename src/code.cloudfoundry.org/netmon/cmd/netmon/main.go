@@ -103,7 +103,7 @@ func main() {
 	}
 
 	members := grouper.Members{
-		{"metric_poller", systemMetrics},
+		{Name: "metric_poller", Runner: systemMetrics},
 	}
 
 	if conf.TelemetryEnabled {
@@ -126,7 +126,7 @@ func main() {
 			RuleCountAggregator: ruleCountAggregator,
 		}
 
-		members = append(members, grouper.Member{"telemetry_poller", telemetryPoller})
+		members = append(members, grouper.Member{Name: "telemetry_poller", Runner: telemetryPoller})
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))

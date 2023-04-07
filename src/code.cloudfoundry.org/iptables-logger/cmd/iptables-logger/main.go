@@ -134,8 +134,8 @@ func main() {
 	}
 
 	members := grouper.Members{
-		{"metrics_emitter", metricsEmitter},
-		{"iptables_runner", runner},
+		{Name: "metrics_emitter", Runner: metricsEmitter},
+		{Name: "iptables_runner", Runner: runner},
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))

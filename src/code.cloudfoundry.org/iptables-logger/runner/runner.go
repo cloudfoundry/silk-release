@@ -1,9 +1,10 @@
 package runner
 
 import (
+	"os"
+
 	"code.cloudfoundry.org/iptables-logger/merger"
 	"code.cloudfoundry.org/iptables-logger/parser"
-	"os"
 
 	"code.cloudfoundry.org/lager/v3"
 	"github.com/hpcloud/tail"
@@ -52,6 +53,4 @@ func (r *Runner) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
 			}
 		}
 	}
-
-	return nil
 }

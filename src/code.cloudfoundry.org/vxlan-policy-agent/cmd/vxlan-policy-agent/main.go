@@ -267,14 +267,14 @@ func main() {
 	debugServerAddress := fmt.Sprintf("%s:%d", conf.DebugServerHost, conf.DebugServerPort)
 	debugServer := createCustomDebugServer(debugServerAddress, reconfigurableSink, iptablesLoggingState)
 	members := grouper.Members{
-		{"metrics_emitter", metricsEmitter},
-		{"policy_poller", policyPoller},
-		{"debug-server", debugServer},
-		{"force-policy-poll-cycle-server", forcePolicyPollCycleServer},
+		{Name: "metrics_emitter", Runner: metricsEmitter},
+		{Name: "policy_poller", Runner: policyPoller},
+		{Name: "debug-server", Runner: debugServer},
+		{Name: "force-policy-poll-cycle-server", Runner: forcePolicyPollCycleServer},
 	}
 
 	if conf.EnableASGSyncing {
-		members = append(members, grouper.Member{"asg_poller", asgPoller})
+		members = append(members, grouper.Member{Name: "asg_poller", Runner: asgPoller})
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
