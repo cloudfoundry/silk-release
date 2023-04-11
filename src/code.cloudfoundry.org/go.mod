@@ -23,7 +23,7 @@ require (
 	code.cloudfoundry.org/lager/v3 v3.0.1
 	code.cloudfoundry.org/policy_client v0.0.0-20230405194717-ac8a054e5f69
 	code.cloudfoundry.org/runtimeschema v0.0.0-00010101000000-000000000000
-	code.cloudfoundry.org/silk v0.0.0-20230407231723-69a80e3296ea
+	code.cloudfoundry.org/silk v0.0.0-20230411163137-0fb826f35d10
 	github.com/cloudfoundry/dropsonde v1.0.1-0.20230324134055-c6dd7c5e990e
 	github.com/containernetworking/cni v0.8.1
 	github.com/coreos/go-iptables v0.6.0
