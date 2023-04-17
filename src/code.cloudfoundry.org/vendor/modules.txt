@@ -66,7 +66,7 @@ code.cloudfoundry.org/routing-info/internalroutes
 # code.cloudfoundry.org/runtimeschema v0.0.0-00010101000000-000000000000 => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 ## explicit
 code.cloudfoundry.org/runtimeschema/metric
-# code.cloudfoundry.org/silk v0.0.0-20230411163137-0fb826f35d10
+# code.cloudfoundry.org/silk v0.0.0-20230417155742-43c92adc5917
 ## explicit; go 1.20
 code.cloudfoundry.org/silk/client/config
 code.cloudfoundry.org/silk/cmd/silk-cni
@@ -204,7 +204,7 @@ github.com/jmoiron/sqlx/reflectx
 # github.com/josharian/intern v1.0.0
 ## explicit; go 1.5
 github.com/josharian/intern
-# github.com/lib/pq v1.10.7
+# github.com/lib/pq v1.10.8
 ## explicit; go 1.13
 github.com/lib/pq
 github.com/lib/pq/oid
