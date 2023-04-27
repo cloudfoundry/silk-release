@@ -4,11 +4,16 @@ set -e -u
 ROOT_DIR_PATH=$(cd $(dirname $0)/.. && pwd)
 cd $ROOT_DIR_PATH
 
-db=${DB:-"postgres"} # if not set, default to postgres
+# if DB not set, default to postgres because we usually use
+# postgres in our deployments
+db=${DB:-"postgres"}
 
-docker_image=cloudfoundry/tas-runtime-$db
-if [ $db = "none" ]; then
-  docker_image=cloudfoundry/tas-runtime-build
+if [ "$db" = "mysql" ]; then
+  docker_image=cloudfoundry/tas-runtime-mysql-5.7
+elif [ "$db" = "mysql8" ]; then
+  docker_image=cloudfoundry/tas-runtime-mysql-8.0
+else
+  docker_image=cloudfoundry/tas-runtime-postgres
 fi
 
 docker run \
