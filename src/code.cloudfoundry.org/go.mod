@@ -23,7 +23,7 @@ require (
 	code.cloudfoundry.org/lager/v3 v3.0.1
 	code.cloudfoundry.org/policy_client v0.0.0-20230405194717-ac8a054e5f69
 	code.cloudfoundry.org/runtimeschema v0.0.0-00010101000000-000000000000
-	code.cloudfoundry.org/silk v0.0.0-20230417155742-43c92adc5917
+	code.cloudfoundry.org/silk v0.0.0-20230501155801-93df9688c8de
 	github.com/cloudfoundry/dropsonde v1.0.1-0.20230324134055-c6dd7c5e990e
 	github.com/containernetworking/cni v0.8.1
 	github.com/coreos/go-iptables v0.6.0
@@ -63,7 +63,7 @@ require (
 	github.com/jackc/pgx v3.6.2+incompatible // indirect
 	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
-	github.com/lib/pq v1.10.8 // indirect
+	github.com/lib/pq v1.10.9 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/openzipkin/zipkin-go v0.4.1 // indirect
