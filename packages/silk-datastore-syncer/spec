@@ -5,6 +5,9 @@ dependencies:
   - golang-1.20-linux
 
 files:
+  - code.cloudfoundry.org/go.mod
+  - code.cloudfoundry.org/go.sum
+  - code.cloudfoundry.org/vendor/modules.txt
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/bbs/encryption/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/bbs/format/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/bbs/models/*.go # gosub-main-module
