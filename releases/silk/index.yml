@@ -143,4 +143,6 @@ builds:
     version: 2.38.0
   ff2c9777-595e-4df3-4621-009bfac4fa39:
     version: 3.0.0
+  ffe7bec8-b218-4603-760a-41277917a99a:
+    version: 3.25.1
 format-version: "2"
