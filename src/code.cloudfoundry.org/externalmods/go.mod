@@ -6,5 +6,5 @@ replace github.com/containernetworking/plugins => github.com/containernetworking
 
 require (
 	github.com/containernetworking/plugins v1.0.0
-	golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf // indirect
+	golang.org/x/sys v0.1.0 // indirect
 )
