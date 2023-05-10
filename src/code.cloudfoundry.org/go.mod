@@ -23,7 +23,7 @@ require (
 	code.cloudfoundry.org/lager/v3 v3.0.1
 	code.cloudfoundry.org/policy_client v0.0.0-20230405194717-ac8a054e5f69
 	code.cloudfoundry.org/runtimeschema v0.0.0-20230323223330-5366865eed76
-	code.cloudfoundry.org/silk v0.0.0-20230508155759-ca6518c29f9c
+	code.cloudfoundry.org/silk v0.0.0-20230510155738-1e43f1a26564
 	github.com/cloudfoundry/dropsonde v1.0.1-0.20230324134055-c6dd7c5e990e
 	github.com/containernetworking/cni v1.1.2
 	github.com/coreos/go-iptables v0.6.0
@@ -48,7 +48,7 @@ require (
 	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
 	github.com/cloudfoundry/sonde-go v0.0.0-20230412182205-eaf74d09b55a // indirect
-	github.com/containernetworking/plugins v0.0.0-00010101000000-000000000000 // indirect
+	github.com/containernetworking/plugins v1.3.0 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-sql-driver/mysql v1.7.1 // indirect

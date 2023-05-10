@@ -66,7 +66,7 @@ code.cloudfoundry.org/routing-info/internalroutes
 # code.cloudfoundry.org/runtimeschema v0.0.0-20230323223330-5366865eed76 => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 ## explicit
 code.cloudfoundry.org/runtimeschema/metric
-# code.cloudfoundry.org/silk v0.0.0-20230508155759-ca6518c29f9c
+# code.cloudfoundry.org/silk v0.0.0-20230510155738-1e43f1a26564
 ## explicit; go 1.20
 code.cloudfoundry.org/silk/client/config
 code.cloudfoundry.org/silk/cmd/silk-cni
@@ -128,7 +128,7 @@ github.com/containernetworking/cni/pkg/types/current
 github.com/containernetworking/cni/pkg/version
 github.com/containernetworking/cni/plugins/test/noop
 github.com/containernetworking/cni/plugins/test/noop/debug
-# github.com/containernetworking/plugins v0.0.0-00010101000000-000000000000 => github.com/containernetworking/plugins v0.6.1-0.20171122160932-92c634042c38
+# github.com/containernetworking/plugins v1.3.0 => github.com/containernetworking/plugins v0.6.1-0.20171122160932-92c634042c38
 ## explicit
 github.com/containernetworking/plugins/pkg/ip
 github.com/containernetworking/plugins/pkg/ns
