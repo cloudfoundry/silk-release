@@ -87,6 +87,5 @@ files:
   - code.cloudfoundry.org/externalmods/vendor/github.com/vishvananda/netlink/*.go # gosub-externalmods
   - code.cloudfoundry.org/externalmods/vendor/github.com/vishvananda/netlink/nl/*.go # gosub-externalmods
   - code.cloudfoundry.org/externalmods/vendor/github.com/vishvananda/netns/*.go # gosub-externalmods
-  - code.cloudfoundry.org/externalmods/vendor/golang.org/x/sys/internal/unsafeheader/*.go # gosub-externalmods
   - code.cloudfoundry.org/externalmods/vendor/golang.org/x/sys/unix/*.go # gosub-externalmods
   - code.cloudfoundry.org/externalmods/vendor/golang.org/x/sys/unix/*.s # gosub-externalmods
