@@ -1,3 +1,4 @@
+//go:build externalmods
 // +build externalmods
 
 package externalmods
