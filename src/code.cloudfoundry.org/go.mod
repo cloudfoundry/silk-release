@@ -23,14 +23,14 @@ require (
 	code.cloudfoundry.org/lager/v3 v3.0.1
 	code.cloudfoundry.org/policy_client v0.0.0-20230405194717-ac8a054e5f69
 	code.cloudfoundry.org/runtimeschema v0.0.0-20230323223330-5366865eed76
-	code.cloudfoundry.org/silk v0.0.0-20230510155738-1e43f1a26564
+	code.cloudfoundry.org/silk v0.0.0-20230515155739-886eb5a013ef
 	github.com/cloudfoundry/dropsonde v1.0.1-0.20230324134055-c6dd7c5e990e
 	github.com/containernetworking/cni v1.1.2
 	github.com/coreos/go-iptables v0.6.0
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hpcloud/tail v1.0.0
-	github.com/onsi/ginkgo/v2 v2.9.4
+	github.com/onsi/ginkgo/v2 v2.9.5
 	github.com/onsi/gomega v1.27.6
 	github.com/pivotal-cf-experimental/gomegamatchers v0.0.0-20180326192815-e36bfcc98c3a
 	github.com/tedsuo/ifrit v0.0.0-20230330192023-5cba443a66c4

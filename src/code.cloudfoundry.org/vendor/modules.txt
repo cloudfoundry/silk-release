@@ -66,7 +66,7 @@ code.cloudfoundry.org/routing-info/internalroutes
 # code.cloudfoundry.org/runtimeschema v0.0.0-20230323223330-5366865eed76 => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 ## explicit
 code.cloudfoundry.org/runtimeschema/metric
-# code.cloudfoundry.org/silk v0.0.0-20230510155738-1e43f1a26564
+# code.cloudfoundry.org/silk v0.0.0-20230515155739-886eb5a013ef
 ## explicit; go 1.20
 code.cloudfoundry.org/silk/client/config
 code.cloudfoundry.org/silk/cmd/silk-cni
@@ -209,7 +209,7 @@ github.com/lib/pq/scram
 # github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
 ## explicit
 github.com/nu7hatch/gouuid
-# github.com/onsi/ginkgo/v2 v2.9.4
+# github.com/onsi/ginkgo/v2 v2.9.5
 ## explicit; go 1.18
 github.com/onsi/ginkgo/v2
 github.com/onsi/ginkgo/v2/config
