@@ -1,12 +1,13 @@
 # github.com/alexflint/go-filemutex v0.0.0-20171022225611-72bdc8eae2ae
 ## explicit
 github.com/alexflint/go-filemutex
-# github.com/containernetworking/cni v0.7.0
+# github.com/containernetworking/cni v0.8.1
 ## explicit
 github.com/containernetworking/cni/pkg/skel
 github.com/containernetworking/cni/pkg/types
 github.com/containernetworking/cni/pkg/types/020
 github.com/containernetworking/cni/pkg/types/current
+github.com/containernetworking/cni/pkg/utils
 github.com/containernetworking/cni/pkg/version
 # github.com/containernetworking/plugins v1.0.0 => github.com/containernetworking/plugins v0.8.2-0.20190718211253-7ba2bcfeab48
 ## explicit; go 1.12

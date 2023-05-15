@@ -3,8 +3,9 @@ github.com/Microsoft/hcsshim v0.8.6/go.mod h1:Op3hHsoHPAvb6lceZHDtd9OkTew38wNoXn
 github.com/alexflint/go-filemutex v0.0.0-20171022225611-72bdc8eae2ae h1:AMzIhMUqU3jMrZiTuW0zkYeKlKDAFD+DG20IoO421/Y=
 github.com/alexflint/go-filemutex v0.0.0-20171022225611-72bdc8eae2ae/go.mod h1:CgnQgUtFrFz9mxFNtED3jI5tLDjKlOM+oUF/sTk6ps0=
 github.com/buger/jsonparser v0.0.0-20180808090653-f4dd9f5a6b44/go.mod h1:bbYlZJ7hK1yFx9hf58LP0zeX7UjIGs20ufpu3evjr+s=
-github.com/containernetworking/cni v0.7.0 h1:1Qy7EwdC08mx5wUB0DpjCuBrk6e/uXg9yI9TvAvgox8=
 github.com/containernetworking/cni v0.7.0/go.mod h1:LGwApLUm2FpoOfxTDEeq8T9ipbpZ61X79hmU3w8FmsY=
+github.com/containernetworking/cni v0.8.1 h1:7zpDnQ3T3s4ucOuJ/ZCLrYBxzkg0AELFfII3Epo9TmI=
+github.com/containernetworking/cni v0.8.1/go.mod h1:LGwApLUm2FpoOfxTDEeq8T9ipbpZ61X79hmU3w8FmsY=
 github.com/containernetworking/plugins v0.8.2-0.20190718211253-7ba2bcfeab48 h1:BnE/NDEmjRJjtZgAmPIVbSWlez4RmOI8iqMw8A0HRmw=
 github.com/containernetworking/plugins v0.8.2-0.20190718211253-7ba2bcfeab48/go.mod h1:AlmXjbiLJBqvZ4vxkWAqjx1CKHVEoQf0/Ugrvc6Cv70=
 github.com/coreos/go-iptables v0.4.1 h1:TyEMaK2xD/EcB0385QcvX/OvI2XI7s4SJEI2EhZFfEU=
