@@ -519,7 +519,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 
 			It("times out requests", func() {
 				session = startAgent(paths.VxlanPolicyAgentPath, configFilePath)
-				msg := "policy-client-get-policies.*context deadline exceeded \\(Client.Timeout exceeded while awaiting headers\\)"
+				msg := "policy-client-get-policies.*(i/o timeout|context deadline exceeded) \\(Client.Timeout exceeded while awaiting headers\\)"
 				Eventually(session.Out, "3s").Should(Say(msg))
 				session.Kill()
 			})
