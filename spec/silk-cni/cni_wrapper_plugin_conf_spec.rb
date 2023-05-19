@@ -83,7 +83,7 @@ module Bosh::Template::Test
               'staging' => ['3.3.3.3/32'],
             },
             'delegate' => {
-              'cniVersion' => '0.3.1',
+              'cniVersion' => '1.0.0',
               'name' => 'silk',
               'type' => 'silk-cni',
               'daemonPort' => 8080,
