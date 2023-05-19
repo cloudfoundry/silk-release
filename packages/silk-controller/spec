@@ -27,6 +27,7 @@ files:
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/controller/handlers/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/controller/leaser/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/controller/server_metrics/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/lib/hwaddr/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/bmizerany/pat/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/emitter/*.go # gosub-main-module
@@ -42,7 +43,6 @@ files:
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/metrics/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/runtime_stats/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/sonde-go/events/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/github.com/containernetworking/plugins/pkg/utils/hwaddr/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/go-gorp/gorp/v3/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/go-sql-driver/mysql/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/jmoiron/sqlx/*.go # gosub-main-module

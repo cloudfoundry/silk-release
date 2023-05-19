@@ -45,40 +45,6 @@ function sync_package() {
   )
 }
 
-function sync_package_externalmods() {
-  bosh_pkg=${1}
-
-  shift 1
-
-  (
-    set -e
-
-
-    cd src/code.cloudfoundry.org/externalmods
-
-    spec=../../../packages/${bosh_pkg}/spec
-
-    {
-      cat $spec | grep -v "# gosub-externalmods"
-
-      for package in $(gosub list "$@"); do
-        repo=$(echo ${2} | cut -f1-3 -d/)
-        if [ ! -d "${package/code.cloudfoundry.org\/externalmods/.}" ]; then
-          package="code.cloudfoundry.org/externalmods/vendor/${package}"
-        fi
-        echo ${package} | sed -e 's/\(.*\)/  - \1\/*.go # gosub-externalmods/g'
-        if ls ${package/code.cloudfoundry.org\/externalmods/.}/*.s >/dev/null 2>&1; then
-          echo ${package} | sed -e 's/\(.*\)/  - \1\/*.s # gosub-externalmods/g'
-        fi
-        if ls ${package/code.cloudfoundry.org\/externalmods/.}/*.h >/dev/null 2>&1; then
-          echo ${package} | sed -e 's/\(.*\)/  - \1\/*.h # gosub-externalmods/g'
-        fi
-      done
-    } > $spec.new
-
-    mv $spec.new $spec
-  )
-}
 
 ## Create a sync_package line for each BOSH package in this release
 ## add a -app line or -test line to include a particular app or test
@@ -107,9 +73,7 @@ sync_package silk-daemon \
 GOOS=linux sync_package silk-cni \
   -app code.cloudfoundry.org/silk/cmd/silk-cni \
   -app code.cloudfoundry.org/cni-wrapper-plugin \
-  -app code.cloudfoundry.org/cni-teardown
-
-GOOS=linux sync_package_externalmods silk-cni \
+  -app code.cloudfoundry.org/cni-teardown \
   -app github.com/containernetworking/plugins/plugins/ipam/host-local \
   -app github.com/containernetworking/plugins/plugins/meta/bandwidth
 
