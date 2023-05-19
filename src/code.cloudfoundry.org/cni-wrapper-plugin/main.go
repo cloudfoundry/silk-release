@@ -23,7 +23,7 @@ import (
 
 	"code.cloudfoundry.org/filelock"
 	"github.com/containernetworking/cni/pkg/skel"
-	"github.com/containernetworking/cni/pkg/types/current"
+	current "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/cni/pkg/version"
 	"github.com/coreos/go-iptables/iptables"
 )
@@ -44,12 +44,12 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return fmt.Errorf("delegate call: %s", err)
 	}
 
-	result030, err := current.NewResultFromResult(result)
+	resultActual, err := current.GetResult(result)
 	if err != nil {
 		return fmt.Errorf("converting result from delegate plugin: %s", err) // not tested
 	}
 
-	containerIP := result030.IPs[0].Address.IP
+	containerIP := resultActual.IPs[0].Address.IP
 	var containerWorkload string
 
 	// Add container metadata info
@@ -214,8 +214,17 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return fmt.Errorf("error setting up default ip masq rule: %s", err)
 	}
 
-	result030.DNS.Nameservers = cfg.DNSServers
-	return result030.Print()
+	resultActual.DNS.Nameservers = cfg.DNSServers
+
+	resultVersioned, err := resultActual.GetAsVersion(cfg.CNIVersion)
+	if err != nil {
+		return fmt.Errorf("converting to CNI version %s: %s", cfg.CNIVersion, err)
+	}
+	return resultVersioned.Print()
+}
+
+func cmdCheck(args *skel.CmdArgs) error {
+	return fmt.Errorf("Meow this isn't implemented yet")
 }
 
 func getLocalDNSServers(allDNSServers []string) ([]string, error) {
@@ -411,7 +420,7 @@ func newPluginController(config *lib.WrapperConfig) (*lib.PluginController, erro
 }
 
 func main() {
-	supportedVersions := []string{"0.3.1"}
+	supportedVersions := []string{"1.0.0"}
 
-	skel.PluginMain(cmdAdd, cmdDel, version.PluginSupports(supportedVersions...))
+	skel.PluginMain(cmdAdd, cmdCheck, cmdDel, version.PluginSupports(supportedVersions...), "CNI Plugin silk-cni-wrapper-plugin")
 }

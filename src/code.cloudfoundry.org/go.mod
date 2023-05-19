@@ -6,10 +6,8 @@ replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimesche
 
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
-replace github.com/hashicorp/consul => github.com/hashicorp/consul v0.7.0
-
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20230510133512-ebb4c931f5d5
+	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20230523192906-a0bc5865c476
 	code.cloudfoundry.org/debugserver v0.0.0-20230508035730-c4fc5f67e21e
 	code.cloudfoundry.org/diego-logging-client v0.0.0-20230515195705-efc368ee68d3
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
@@ -19,8 +17,8 @@ require (
 	code.cloudfoundry.org/lager/v3 v3.0.1
 	code.cloudfoundry.org/policy_client v0.0.0-20230405194717-ac8a054e5f69
 	code.cloudfoundry.org/runtimeschema v0.0.0-20230323223330-5366865eed76
-	code.cloudfoundry.org/silk v0.0.0-20230515155739-886eb5a013ef
-	github.com/cloudfoundry/dropsonde v1.0.1-0.20230324134055-c6dd7c5e990e
+	code.cloudfoundry.org/silk v0.0.0-20230524161708-dd9e52dfec48
+	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.1.2
 	github.com/containernetworking/plugins v1.3.0
 	github.com/coreos/go-iptables v0.6.0

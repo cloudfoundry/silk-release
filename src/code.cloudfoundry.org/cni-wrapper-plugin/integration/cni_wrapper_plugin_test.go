@@ -3,7 +3,9 @@ package main_test
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"math/rand"
 	"net"
 	"os"
 	"os/exec"
@@ -100,10 +102,10 @@ var _ = Describe("CniWrapperPlugin", func() {
 		// iptables 1.8+ takes longer to finish so the 1 second timeout is no longer sufficient
 		SetDefaultEventuallyTimeout(3 * time.Second)
 
-		underlayName1 = "underlay1"
+		underlayName1 = fmt.Sprintf("u-%x", rand.Int31())
 		underlayIpAddr1 = "169.254.169.253"
 
-		underlayName2 = "underlay2"
+		underlayName2 = fmt.Sprintf("u-%x", rand.Int31())
 		underlayIpAddr2 = "169.254.169.254"
 
 		createDummyInterface(underlayName1, underlayIpAddr1)
@@ -115,17 +117,19 @@ var _ = Describe("CniWrapperPlugin", func() {
 		debugFileName = debugFile.Name()
 
 		debug = &noop_debug.Debug{
-			ReportResult:         `{ "ips": [{ "version": "4", "interface": -1, "address": "1.2.3.4/32" }]}`,
-			ReportVersionSupport: []string{"0.3.1"},
+			ReportResult:         `{ "cniVersion": "1.0.0", "ips": [{ "interface": -1, "address": "1.2.3.4/32" }]}`,
+			ReportVersionSupport: []string{"1.0.0"},
 		}
 		Expect(debug.WriteDebug(debugFileName)).To(Succeed())
 
-		datastoreFile, err := ioutil.TempFile("", "datastore")
+		tmpDir, err := ioutil.TempDir("", "cni-wrapper-integration")
+		Expect(err).NotTo(HaveOccurred())
+		datastoreFile, err := ioutil.TempFile(tmpDir, "datastore")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(datastoreFile.Close()).To(Succeed())
 		datastorePath = datastoreFile.Name()
 
-		iptablesLockFile, err := ioutil.TempFile("", "iptables-lock")
+		iptablesLockFile, err := ioutil.TempFile(tmpDir, "iptables-lock")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(iptablesLockFile.Close()).To(Succeed())
 		iptablesLockFilePath = iptablesLockFile.Name()
@@ -145,11 +149,13 @@ var _ = Describe("CniWrapperPlugin", func() {
 		var code garden.ICMPCode = 0
 		inputStruct = InputStruct{
 			Name:       "cni-wrapper",
-			CNIVersion: "0.3.1",
+			CNIVersion: "1.0.0",
 			Type:       "wrapper",
 			Delegate: map[string]interface{}{
-				"type": "noop",
-				"some": "other data",
+				"type":       "noop",
+				"some":       "other data",
+				"name":       "name",
+				"cniVersion": "1.0.0",
 			},
 			Metadata: map[string]interface{}{
 				"key1": "value1",
@@ -161,8 +167,9 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Datastore:          datastorePath,
 				IPTablesLockFile:   iptablesLockFilePath,
 				Delegate: map[string]interface{}{
-					"type": "noop",
-					"some": "other data",
+					"type":       "noop",
+					"some":       "other data",
+					"cniVersion": "1.0.0",
 				},
 				InstanceAddress:               "10.244.2.3",
 				IPTablesASGLogging:            false,
@@ -354,7 +361,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
-			Expect(session.Out.Contents()).To(MatchJSON(`{ "cniVersion": "0.3.1", "ips": [{ "version": "4", "interface": -1, "address": "1.2.3.4/32" }], "dns":{} }`))
+			Expect(session.Out.Contents()).To(MatchJSON(`{ "cniVersion": "1.0.0", "ips": [{ "interface": -1, "address": "1.2.3.4/32" }], "dns":{} }`))
 		})
 
 		It("passes the correct stdin to the delegate plugin", func() {
@@ -367,9 +374,10 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Expect(debug.Command).To(Equal("ADD"))
 
 			Expect(debug.CmdArgs.StdinData).To(MatchJSON(`{
-						"cniVersion": "0.3.1",
+						"cniVersion": "1.0.0",
 						"type": "noop",
-						"some": "other data"
+						"some": "other data",
+						"name": "name"
 					}`))
 		})
 
@@ -377,7 +385,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
-			Expect(session.Out.Contents()).To(MatchJSON(`{ "cniVersion": "0.3.1", "ips": [{ "version": "4", "interface": -1, "address": "1.2.3.4/32" }], "dns":{} }`))
+			Expect(session.Out.Contents()).To(MatchJSON(`{ "cniVersion": "1.0.0", "ips": [{ "interface": -1, "address": "1.2.3.4/32" }], "dns":{} }`))
 			Expect(AllIPTablesRules("nat")).To(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.0.0/16 ! -o some-device -j MASQUERADE"))
 		})
 
@@ -543,8 +551,8 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 				By("returning all DNS servers")
 				Expect(session.Out.Contents()).To(MatchJSON(`{
-						"cniVersion": "0.3.1",
-						"ips": [{ "version": "4", "interface": -1, "address": "1.2.3.4/32" }],
+						"cniVersion": "1.0.0",
+						"ips": [{ "interface": -1, "address": "1.2.3.4/32" }],
 						"dns": {"nameservers": ["169.254.0.1", "8.8.4.4", "169.254.0.2"]}
 					}`))
 			})
@@ -588,7 +596,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 				var errData map[string]interface{}
 				Expect(json.Unmarshal(session.Out.Contents(), &errData)).To(Succeed())
-				Expect(errData["code"]).To(BeEquivalentTo(100))
+				Expect(errData["code"]).To(BeEquivalentTo(999))
 				Expect(errData["msg"]).To(ContainSubstring(`invalid DNS server "banana", must be valid IP address`))
 			})
 		})
@@ -749,7 +757,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 					Expect(err).NotTo(HaveOccurred())
 					Eventually(session).Should(gexec.Exit(1))
-					Expect(session.Out.Contents()).To(MatchJSON(`{ "code": 100, "msg": "adding netin rule: invalid ip: asdf" }`))
+					Expect(session.Out.Contents()).To(MatchJSON(`{ "code": 999, "msg": "adding netin rule: invalid ip: asdf" }`))
 				})
 			})
 		})
@@ -1063,7 +1071,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1))
 
-				Expect(session.Out.Contents()).To(MatchJSON(`{ "code": 100, "msg": "delegate call: banana" }`))
+				Expect(session.Out.Contents()).To(MatchJSON(`{ "code": 999, "msg": "delegate call: banana" }`))
 			})
 		})
 
@@ -1077,7 +1085,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1))
 
-				Expect(session.Out.Contents()).To(MatchJSON(`{ "code": 100, "msg": "store add: invalid handle" }`))
+				Expect(session.Out.Contents()).To(MatchJSON(`{ "code": 4, "msg": "required env variables [CNI_CONTAINERID] missing" }`))
 			})
 
 			It("does not leave any iptables rules behind", func() {
@@ -1100,7 +1108,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1))
 
-				Expect(session.Out.Contents()).To(MatchJSON(`{ "code": 100, "msg": "store add: decoding file: invalid character 'b' looking for beginning of value" }`))
+				Expect(session.Out.Contents()).To(MatchJSON(`{ "code": 999, "msg": "store add: decoding file: invalid character 'b' looking for beginning of value" }`))
 			})
 
 			It("does not leave any iptables rules behind", func() {
@@ -1128,9 +1136,10 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Expect(debug.Command).To(Equal("DEL"))
 
 			Expect(debug.CmdArgs.StdinData).To(MatchJSON(`{
-						"cniVersion": "0.3.1",
+						"cniVersion": "1.0.0",
 						"type": "noop",
-						"some": "other data"
+						"some": "other data",
+						"name": "name"
 					}`))
 		})
 
@@ -1203,7 +1212,10 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 		Context("when the datastore delete fails", func() {
 			BeforeEach(func() {
-				cmd.Env[1] = "CNI_CONTAINERID="
+				file, err := os.OpenFile(datastorePath, os.O_RDWR, 0600)
+				Expect(err).ToNot(HaveOccurred())
+				_, err = io.WriteString(file, "}{blarg")
+				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("wraps and logs the error, and returns the success status code (for idempotency)", func() {
@@ -1211,7 +1223,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(0))
 
-				Expect(session.Err.Contents()).To(ContainSubstring("store delete: invalid handle"))
+				Expect(string(session.Err.Contents())).To(ContainSubstring("store delete: decoding file: invalid character"))
 			})
 
 			It("still calls plugin delete (so that DEL is idempotent)", func() {
@@ -1224,9 +1236,10 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(debug.Command).To(Equal("DEL"))
 
 				Expect(debug.CmdArgs.StdinData).To(MatchJSON(`{
-							"cniVersion": "0.3.1",
 							"type": "noop",
-							"some": "other data"
+							"some": "other data",
+							"name": "name",
+							"cniVersion": "1.0.0"
 						}`))
 			})
 		})

@@ -3,12 +3,12 @@ package lib
 import (
 	"encoding/json"
 	"fmt"
+
 	"code.cloudfoundry.org/lib/rules"
 
 	"code.cloudfoundry.org/garden"
 
 	"github.com/containernetworking/cni/pkg/types"
-	"github.com/containernetworking/cni/pkg/version"
 	"gopkg.in/validator.v2"
 )
 
@@ -32,6 +32,7 @@ type OutConnConfig struct {
 }
 
 type WrapperConfig struct {
+	CNIVersion                      string                 `json:"cniVersion"`
 	Datastore                       string                 `json:"datastore"`
 	DatastoreFileOwner              string                 `json:"datastore_file_owner"`
 	DatastoreFileGroup              string                 `json:"datastore_file_group"`
@@ -95,7 +96,7 @@ func LoadWrapperConfig(bytes []byte) (*WrapperConfig, error) {
 	}
 
 	if _, ok := n.Delegate["cniVersion"]; !ok {
-		n.Delegate["cniVersion"] = version.Current()
+		n.Delegate["cniVersion"] = "1.0.0"
 	}
 
 	if n.OutConn.Burst <= 0 {

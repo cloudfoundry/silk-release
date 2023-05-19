@@ -61,7 +61,7 @@ var _ = Describe("LoadWrapperConfig", func() {
 			TemporaryUnderlayInterfaceNames: []string{"some-temporary-underlay-interface-name"},
 			IPTablesASGLogging:              true,
 			Delegate: map[string]interface{}{
-				"cniVersion": "0.3.1",
+				"cniVersion": "1.0.0",
 				"some":       "info",
 			},
 			IngressTag:                    "ffaa0000",
@@ -100,7 +100,7 @@ var _ = Describe("LoadWrapperConfig", func() {
 			It("should set the version", func() {
 				conf, err := lib.LoadWrapperConfig(input)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(conf.Delegate).To(HaveKeyWithValue("cniVersion", "0.3.1"))
+				Expect(conf.Delegate).To(HaveKeyWithValue("cniVersion", "1.0.0"))
 			})
 		})
 
