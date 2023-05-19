@@ -15,10 +15,10 @@ replace github.com/hashicorp/consul => github.com/hashicorp/consul v0.7.0
 require (
 	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20230510133512-ebb4c931f5d5
 	code.cloudfoundry.org/debugserver v0.0.0-20230508035730-c4fc5f67e21e
-	code.cloudfoundry.org/diego-logging-client v0.0.0-20230508200927-824f04190d59
+	code.cloudfoundry.org/diego-logging-client v0.0.0-20230515195705-efc368ee68d3
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 	code.cloudfoundry.org/filelock v0.0.0-20230410204127-470838d066c5
-	code.cloudfoundry.org/garden v0.0.0-20230509175005-ab96b4719f65
+	code.cloudfoundry.org/garden v0.0.0-20230516175132-234178722499
 	code.cloudfoundry.org/go-loggregator/v8 v8.0.5
 	code.cloudfoundry.org/lager/v3 v3.0.1
 	code.cloudfoundry.org/policy_client v0.0.0-20230405194717-ac8a054e5f69
@@ -31,15 +31,15 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hpcloud/tail v1.0.0
 	github.com/onsi/ginkgo/v2 v2.9.5
-	github.com/onsi/gomega v1.27.6
+	github.com/onsi/gomega v1.27.7
 	github.com/pivotal-cf-experimental/gomegamatchers v0.0.0-20180326192815-e36bfcc98c3a
-	github.com/tedsuo/ifrit v0.0.0-20230330192023-5cba443a66c4
+	github.com/tedsuo/ifrit v0.0.0-20230516164442-7862c310ad26
 	github.com/vishvananda/netlink v1.1.0
 	gopkg.in/validator.v2 v2.0.1
 )
 
 require (
-	code.cloudfoundry.org/bbs v0.0.0-20230419194333-54391379d38f // indirect
+	code.cloudfoundry.org/bbs v0.0.0-20230515223356-08ff19fb906a // indirect
 	code.cloudfoundry.org/clock v1.1.0 // indirect
 	code.cloudfoundry.org/go-diodes v0.0.0-20230508203442-8ce2048f62dc // indirect
 	code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 // indirect

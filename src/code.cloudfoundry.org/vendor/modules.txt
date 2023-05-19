@@ -1,4 +1,4 @@
-# code.cloudfoundry.org/bbs v0.0.0-20230419194333-54391379d38f
+# code.cloudfoundry.org/bbs v0.0.0-20230515223356-08ff19fb906a
 ## explicit
 code.cloudfoundry.org/bbs/encryption
 code.cloudfoundry.org/bbs/format
@@ -22,7 +22,7 @@ code.cloudfoundry.org/cf-networking-helpers/testsupport/ports
 # code.cloudfoundry.org/debugserver v0.0.0-20230508035730-c4fc5f67e21e
 ## explicit; go 1.19
 code.cloudfoundry.org/debugserver
-# code.cloudfoundry.org/diego-logging-client v0.0.0-20230508200927-824f04190d59
+# code.cloudfoundry.org/diego-logging-client v0.0.0-20230515195705-efc368ee68d3
 ## explicit; go 1.20
 code.cloudfoundry.org/diego-logging-client
 code.cloudfoundry.org/diego-logging-client/testhelpers
@@ -32,7 +32,7 @@ code.cloudfoundry.org/executor
 # code.cloudfoundry.org/filelock v0.0.0-20230410204127-470838d066c5
 ## explicit; go 1.20
 code.cloudfoundry.org/filelock
-# code.cloudfoundry.org/garden v0.0.0-20230509175005-ab96b4719f65
+# code.cloudfoundry.org/garden v0.0.0-20230516175132-234178722499
 ## explicit; go 1.20
 code.cloudfoundry.org/garden
 code.cloudfoundry.org/garden/client
@@ -231,7 +231,7 @@ github.com/onsi/ginkgo/v2/internal/parallel_support
 github.com/onsi/ginkgo/v2/internal/testingtproxy
 github.com/onsi/ginkgo/v2/reporters
 github.com/onsi/ginkgo/v2/types
-# github.com/onsi/gomega v1.27.6
+# github.com/onsi/gomega v1.27.7
 ## explicit; go 1.18
 github.com/onsi/gomega
 github.com/onsi/gomega/format
@@ -267,8 +267,8 @@ github.com/rubenv/sql-migrate/sqlparse
 ## explicit; go 1.18
 github.com/square/certstrap/depot
 github.com/square/certstrap/pkix
-# github.com/tedsuo/ifrit v0.0.0-20230330192023-5cba443a66c4
-## explicit
+# github.com/tedsuo/ifrit v0.0.0-20230516164442-7862c310ad26
+## explicit; go 1.16
 github.com/tedsuo/ifrit
 github.com/tedsuo/ifrit/grouper
 github.com/tedsuo/ifrit/http_server
