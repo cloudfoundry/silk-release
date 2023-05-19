@@ -1,12 +1,8 @@
 module code.cloudfoundry.org
 
-go 1.19
+go 1.20
 
 replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
-
-replace github.com/containernetworking/plugins => github.com/containernetworking/plugins v0.6.1-0.20171122160932-92c634042c38
-
-replace github.com/containernetworking/cni => github.com/containernetworking/cni v0.6.0
 
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
@@ -26,6 +22,7 @@ require (
 	code.cloudfoundry.org/silk v0.0.0-20230515155739-886eb5a013ef
 	github.com/cloudfoundry/dropsonde v1.0.1-0.20230324134055-c6dd7c5e990e
 	github.com/containernetworking/cni v1.1.2
+	github.com/containernetworking/plugins v1.3.0
 	github.com/coreos/go-iptables v0.6.0
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/hashicorp/go-multierror v1.1.1
@@ -34,7 +31,7 @@ require (
 	github.com/onsi/gomega v1.27.7
 	github.com/pivotal-cf-experimental/gomegamatchers v0.0.0-20180326192815-e36bfcc98c3a
 	github.com/tedsuo/ifrit v0.0.0-20230516164442-7862c310ad26
-	github.com/vishvananda/netlink v1.1.0
+	github.com/vishvananda/netlink v1.2.1-beta.2
 	gopkg.in/validator.v2 v2.0.1
 )
 
@@ -46,9 +43,9 @@ require (
 	code.cloudfoundry.org/routing-info v0.0.0-20230405185804-c6998d604bb2 // indirect
 	code.cloudfoundry.org/tlsconfig v0.0.0-20230320190829-8f91c367795b // indirect
 	filippo.io/edwards25519 v1.0.0 // indirect
+	github.com/alexflint/go-filemutex v1.2.0 // indirect
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
 	github.com/cloudfoundry/sonde-go v0.0.0-20230412182205-eaf74d09b55a // indirect
-	github.com/containernetworking/plugins v1.3.0 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-sql-driver/mysql v1.7.1 // indirect
@@ -67,12 +64,13 @@ require (
 	github.com/openzipkin/zipkin-go v0.4.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rubenv/sql-migrate v1.4.0 // indirect
+	github.com/safchain/ethtool v0.3.0 // indirect
 	github.com/square/certstrap v1.3.0 // indirect
 	github.com/tedsuo/rata v1.0.0 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
 	github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c // indirect
-	go.step.sm/crypto v0.28.0 // indirect
-	golang.org/x/crypto v0.7.0 // indirect
+	go.step.sm/crypto v0.30.0 // indirect
+	golang.org/x/crypto v0.9.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect

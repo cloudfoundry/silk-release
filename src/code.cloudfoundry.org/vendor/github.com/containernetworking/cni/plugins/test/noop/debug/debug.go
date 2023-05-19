@@ -31,11 +31,12 @@ type Debug struct {
 	ReportError          string
 	ReportStderr         string
 	ReportVersionSupport []string
+	ExitWithCode         int
 
 	// Command stores the CNI command that the plugin received
 	Command string
 
-	// CmdArgs stores the CNI Args and Env Vars that the plugin recieved
+	// CmdArgs stores the CNI Args and Env Vars that the plugin received
 	CmdArgs skel.CmdArgs
 }
 
