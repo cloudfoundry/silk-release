@@ -67,7 +67,8 @@
 
   toRender = {
     'name' => 'cni-wrapper',
-    'cniVersion' => '0.3.1',
+    'disableCheck' => true,
+    'cniVersion' => '1.0.0',
     'plugins' => [{
       'type' => 'cni-wrapper-plugin',
       'datastore' => '/var/vcap/data/container-metadata/store.json',
@@ -94,7 +95,7 @@
         'staging' => p('deny_networks.staging'),
       },
       'delegate' => {
-        'cniVersion' => '0.3.1',
+        'cniVersion' => '1.0.0',
         'name' => 'silk',
         'type' => 'silk-cni',
         'daemonPort' => p('silk_daemon.listen_port'),
