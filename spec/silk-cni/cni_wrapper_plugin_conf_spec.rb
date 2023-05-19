@@ -55,7 +55,8 @@ module Bosh::Template::Test
         clientConfig = JSON.parse(template.render(merged_manifest_properties, spec: spec, consumes: links))
         expect(clientConfig).to eq({
           'name' => 'cni-wrapper',
-          'cniVersion' => '0.3.1',
+          'cniVersion' => '1.0.0',
+          'disableCheck' => true,
           'plugins' => [{
             'type' => 'cni-wrapper-plugin',
             'datastore' => '/var/vcap/data/container-metadata/store.json',
