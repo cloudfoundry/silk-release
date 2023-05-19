@@ -31,21 +31,23 @@ import (
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
-	"github.com/containernetworking/cni/pkg/types/current"
+	current "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/cni/pkg/version"
 	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
 )
 
 type NetConf struct {
 	types.NetConf
-	DebugFile  string          `json:"debugFile"`
-	PrevResult *current.Result `json:"prevResult,omitempty"`
+	DebugFile string `json:"debugFile"`
 }
 
 func loadConf(bytes []byte) (*NetConf, error) {
 	n := &NetConf{}
 	if err := json.Unmarshal(bytes, n); err != nil {
-		return nil, fmt.Errorf("failed to load netconf: %v %q", err, string(bytes))
+		return nil, fmt.Errorf("failed to load netconf: %w %q", err, string(bytes))
+	}
+	if err := version.ParsePrevResult(&n.NetConf); err != nil {
+		return nil, err
 	}
 	return n, nil
 }
@@ -61,7 +63,7 @@ func parseExtraArgs(args string) (map[string]string, error) {
 	for _, item := range items {
 		kv := strings.Split(item, "=")
 		if len(kv) != 2 {
-			return nil, fmt.Errorf("CNI_ARGS invalid key/value pair: %s\n", kv)
+			return nil, fmt.Errorf("CNI_ARGS invalid key/value pair: %s", kv)
 		}
 		m[kv[0]] = kv[1]
 	}
@@ -95,7 +97,10 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 
 	if debugFilePath == "" {
 		fmt.Printf(`{}`)
-		os.Stderr.WriteString("CNI_ARGS or config empty, no debug behavior\n")
+		_, err = os.Stderr.WriteString("CNI_ARGS or config empty, no debug behavior\n")
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 
@@ -107,42 +112,58 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 	debug.CmdArgs = *args
 	debug.Command = command
 
-	if debug.ReportResult == "" {
-		debug.ReportResult = fmt.Sprintf(` { "result": %q }`, noop_debug.EmptyReportResultMessage)
-	}
-
 	err = debug.WriteDebug(debugFilePath)
 	if err != nil {
 		return err
 	}
 
-	os.Stderr.WriteString(debug.ReportStderr)
+	if debug.ReportStderr != "" {
+		if _, err = os.Stderr.WriteString(debug.ReportStderr); err != nil {
+			return err
+		}
+	}
 
 	if debug.ReportError != "" {
 		return errors.New(debug.ReportError)
 	} else if debug.ReportResult == "PASSTHROUGH" || debug.ReportResult == "INJECT-DNS" {
+		prevResult := netConf.PrevResult
 		if debug.ReportResult == "INJECT-DNS" {
 			newResult, err := current.NewResultFromResult(netConf.PrevResult)
 			if err != nil {
 				return err
 			}
 			newResult.DNS.Nameservers = []string{"1.2.3.4"}
-			netConf.PrevResult = newResult
+			prevResult = newResult
 		}
-		newResult, err := json.Marshal(netConf.PrevResult)
+
+		// Must print the prevResult as the CNIVersion of the config
+		newResult, err := prevResult.GetAsVersion(netConf.CNIVersion)
 		if err != nil {
-			return fmt.Errorf("failed to marshal new result: %v", err)
+			return fmt.Errorf("failed to convert result to config %q: %w", netConf.CNIVersion, err)
 		}
-		os.Stdout.WriteString(string(newResult))
-	} else {
-		os.Stdout.WriteString(debug.ReportResult)
+		resultBytes, err := json.Marshal(newResult)
+		if err != nil {
+			return fmt.Errorf("failed to marshal new result: %w", err)
+		}
+		_, err = os.Stdout.WriteString(string(resultBytes))
+		if err != nil {
+			return err
+		}
+	} else if debug.ReportResult != "" {
+		_, err = os.Stdout.WriteString(debug.ReportResult)
+		if err != nil {
+			return err
+		}
 	}
 
+	if debug.ExitWithCode > 0 {
+		os.Exit(debug.ExitWithCode)
+	}
 	return nil
 }
 
 func debugGetSupportedVersions(stdinData []byte) []string {
-	vers := []string{"0.-42.0", "0.1.0", "0.2.0", "0.3.0", "0.3.1"}
+	vers := []string{"0.-42.0", "0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0", "1.0.0"}
 	cniArgs := os.Getenv("CNI_ARGS")
 	if cniArgs == "" {
 		return vers
@@ -165,6 +186,10 @@ func debugGetSupportedVersions(stdinData []byte) []string {
 
 func cmdAdd(args *skel.CmdArgs) error {
 	return debugBehavior(args, "ADD")
+}
+
+func cmdCheck(args *skel.CmdArgs) error {
+	return debugBehavior(args, "CHECK")
 }
 
 func cmdDel(args *skel.CmdArgs) error {
@@ -202,5 +227,5 @@ func main() {
 	}
 
 	supportedVersions := debugGetSupportedVersions(stdinData)
-	skel.PluginMain(cmdAdd, cmdDel, version.PluginSupports(supportedVersions...))
+	skel.PluginMain(cmdAdd, cmdCheck, cmdDel, version.PluginSupports(supportedVersions...), "CNI noop plugin v0.7.0")
 }
