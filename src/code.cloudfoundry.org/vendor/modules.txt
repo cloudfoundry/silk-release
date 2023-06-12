@@ -66,7 +66,7 @@ code.cloudfoundry.org/routing-info/internalroutes
 # code.cloudfoundry.org/runtimeschema v0.0.0-20230323223330-5366865eed76 => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 ## explicit
 code.cloudfoundry.org/runtimeschema/metric
-# code.cloudfoundry.org/silk v0.0.0-20230609160528-2878ad1e56ad
+# code.cloudfoundry.org/silk v0.0.0-20230612154703-301ef1bc6038
 ## explicit; go 1.20
 code.cloudfoundry.org/silk/client/config
 code.cloudfoundry.org/silk/cmd/silk-cni
