@@ -624,8 +624,8 @@ code.cloudfoundry.org/routing-info v0.0.0-20230612154656-079a27345e39 h1:oNbebj4
 code.cloudfoundry.org/routing-info v0.0.0-20230612154656-079a27345e39/go.mod h1:ykLgqzJGV5PTkvxtfyOy8hcQy7wxPaoV5ZPyk74aqp8=
 code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6 h1:J08p1/LBnhv5BDDf0WLpHRyMJFCws3vd3fLCFL/iVnQ=
 code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6/go.mod h1:QSfnsqiGUdV3OOxqHxQkmUZwycGJNWYdredPgeGuGf4=
-code.cloudfoundry.org/silk v0.0.0-20230612154703-301ef1bc6038 h1:00+EGrGI7tslsRQDaQikmsWansjy4b6bcPNmNATfBKY=
-code.cloudfoundry.org/silk v0.0.0-20230612154703-301ef1bc6038/go.mod h1:enBVSlYzxBuErl2SfWLvOqdiwuU3Pgw0RYC5f9UzrOk=
+code.cloudfoundry.org/silk v0.0.0-20230616160526-3d09d053b0d4 h1:fh6lhN5rgv5r4Wrj8Dd8anjHwp2NQb2vq9ZVrtb1e8g=
+code.cloudfoundry.org/silk v0.0.0-20230616160526-3d09d053b0d4/go.mod h1:23uJIfaxWoi9s6eEY9Ey3wN0+d5sRCDsu+w9MHs+1A4=
 code.cloudfoundry.org/tlsconfig v0.0.0-20200131000646-bbe0f8da39b3/go.mod h1:eTbFJpyXRGuFVyg5+oaj9B2eIbIc+0/kZjH8ftbtdew=
 code.cloudfoundry.org/tlsconfig v0.0.0-20230612153104-23c0622de227 h1:QYyb6Ur0Ys6FciDB3+8zCW3eVk7AxAs2++Foa5DAdt0=
 code.cloudfoundry.org/tlsconfig v0.0.0-20230612153104-23c0622de227/go.mod h1:C8SxvGRSutmgzV2FxH8Zwqz2Q8HsaAITQRQFKhlDzPw=
