@@ -12,7 +12,7 @@ require (
 	code.cloudfoundry.org/diego-logging-client v0.0.0-20230612151813-119d7fd9c963
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 	code.cloudfoundry.org/filelock v0.0.0-20230612152934-de193be258e4
-	code.cloudfoundry.org/garden v0.0.0-20230613201438-2d96d24986f8
+	code.cloudfoundry.org/garden v0.0.0-20230620180307-c5e06332af84
 	code.cloudfoundry.org/go-loggregator/v8 v8.0.5
 	code.cloudfoundry.org/lager/v3 v3.0.2
 	code.cloudfoundry.org/policy_client v0.0.0-20230612154641-3ca0c384fc40
@@ -25,7 +25,7 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hpcloud/tail v1.0.0
-	github.com/onsi/ginkgo/v2 v2.10.0
+	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.8
 	github.com/pivotal-cf-experimental/gomegamatchers v0.0.0-20180326192815-e36bfcc98c3a
 	github.com/tedsuo/ifrit v0.0.0-20230516164442-7862c310ad26
@@ -34,16 +34,16 @@ require (
 )
 
 require (
-	code.cloudfoundry.org/bbs v0.0.0-20230613195751-0eae9414b1d5 // indirect
+	code.cloudfoundry.org/bbs v0.0.0-20230622133600-d258b06ce129 // indirect
 	code.cloudfoundry.org/clock v1.1.0 // indirect
-	code.cloudfoundry.org/go-diodes v0.0.0-20230606195509-9853201afab8 // indirect
+	code.cloudfoundry.org/go-diodes v0.0.0-20230620200700-00403ca60896 // indirect
 	code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 // indirect
 	code.cloudfoundry.org/routing-info v0.0.0-20230612154656-079a27345e39 // indirect
 	code.cloudfoundry.org/tlsconfig v0.0.0-20230612153104-23c0622de227 // indirect
 	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/alexflint/go-filemutex v1.2.0 // indirect
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
-	github.com/cloudfoundry/sonde-go v0.0.0-20230606195250-c7c0fdf1ccc4 // indirect
+	github.com/cloudfoundry/sonde-go v0.0.0-20230620185717-2140aa2e9669 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-sql-driver/mysql v1.7.1 // indirect
@@ -74,7 +74,7 @@ require (
 	golang.org/x/text v0.10.0 // indirect
 	golang.org/x/tools v0.10.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230530153820-e85fd2cbaebc // indirect
-	google.golang.org/grpc v1.56.0 // indirect
+	google.golang.org/grpc v1.56.1 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
