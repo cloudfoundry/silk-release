@@ -66,7 +66,7 @@ code.cloudfoundry.org/routing-info/internalroutes
 # code.cloudfoundry.org/runtimeschema v0.0.0-20230323223330-5366865eed76 => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 ## explicit
 code.cloudfoundry.org/runtimeschema/metric
-# code.cloudfoundry.org/silk v0.0.0-20230623160600-14f11bb532ef
+# code.cloudfoundry.org/silk v0.0.0-20230630161031-f6bd5cd0eba8
 ## explicit; go 1.20
 code.cloudfoundry.org/silk/client/config
 code.cloudfoundry.org/silk/cmd/silk-cni
@@ -273,8 +273,8 @@ github.com/pivotal-cf-experimental/gomegamatchers/internal/prettyprint
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
-# github.com/rubenv/sql-migrate v1.5.0
-## explicit; go 1.16
+# github.com/rubenv/sql-migrate v1.5.1
+## explicit; go 1.17
 github.com/rubenv/sql-migrate
 github.com/rubenv/sql-migrate/sqlparse
 # github.com/safchain/ethtool v0.3.0
