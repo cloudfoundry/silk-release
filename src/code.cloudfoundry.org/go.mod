@@ -12,7 +12,7 @@ require (
 	code.cloudfoundry.org/diego-logging-client v0.0.0-20230612151813-119d7fd9c963
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 	code.cloudfoundry.org/filelock v0.0.0-20230612152934-de193be258e4
-	code.cloudfoundry.org/garden v0.0.0-20230704175957-6902f659028e
+	code.cloudfoundry.org/garden v0.0.0-20230711180045-f80036ea0624
 	code.cloudfoundry.org/go-loggregator/v8 v8.0.5
 	code.cloudfoundry.org/lager/v3 v3.0.2
 	code.cloudfoundry.org/policy_client v0.0.0-20230612154641-3ca0c384fc40
@@ -43,7 +43,7 @@ require (
 	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/alexflint/go-filemutex v1.2.0 // indirect
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
-	github.com/cloudfoundry/sonde-go v0.0.0-20230620185717-2140aa2e9669 // indirect
+	github.com/cloudfoundry/sonde-go v0.0.0-20230710164515-a0a43d1dbbf8 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-sql-driver/mysql v1.7.1 // indirect
@@ -67,13 +67,13 @@ require (
 	github.com/tedsuo/rata v1.0.0 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
 	github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c // indirect
-	go.step.sm/crypto v0.32.2 // indirect
+	go.step.sm/crypto v0.32.3 // indirect
 	golang.org/x/crypto v0.11.0 // indirect
 	golang.org/x/net v0.12.0 // indirect
 	golang.org/x/sys v0.10.0 // indirect
 	golang.org/x/text v0.11.0 // indirect
 	golang.org/x/tools v0.11.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230706204954-ccb25ca9f130 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230711160842-782d3b101e98 // indirect
 	google.golang.org/grpc v1.56.2 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
