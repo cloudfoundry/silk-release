@@ -17,7 +17,7 @@ require (
 	code.cloudfoundry.org/lager/v3 v3.0.2
 	code.cloudfoundry.org/policy_client v0.0.0-20230612154641-3ca0c384fc40
 	code.cloudfoundry.org/runtimeschema v0.0.0-20230323223330-5366865eed76
-	code.cloudfoundry.org/silk v0.0.0-20230714161213-eaa588acfbb5
+	code.cloudfoundry.org/silk v0.0.0-20230721161015-219a382e8f7d
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.1.2
 	github.com/containernetworking/plugins v1.3.0
@@ -61,7 +61,7 @@ require (
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/openzipkin/zipkin-go v0.4.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/rubenv/sql-migrate v1.5.1 // indirect
+	github.com/rubenv/sql-migrate v1.5.2 // indirect
 	github.com/safchain/ethtool v0.3.0 // indirect
 	github.com/square/certstrap v1.3.0 // indirect
 	github.com/tedsuo/rata v1.0.0 // indirect
