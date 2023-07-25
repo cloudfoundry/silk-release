@@ -232,12 +232,19 @@ func main() {
 		go emitter.Run()
 	}
 
-	singlePollCycle := converger.NewSinglePollCycle([]converger.Planner{dynamicPlanner}, ruleEnforcer, metricsSender, metronClient, logger)
+	singlePollCycle := converger.NewSinglePollCycle(
+		[]converger.Planner{dynamicPlanner},
+		ruleEnforcer,
+		policyClient,
+		metricsSender,
+		metronClient,
+		logger,
+	)
 
 	policyPoller := &poller.Poller{
 		Logger:          logger,
 		PollInterval:    pollInterval,
-		SingleCycleFunc: singlePollCycle.DoPolicyCycle,
+		SingleCycleFunc: singlePollCycle.DoPolicyCycleWithLastUpdatedCheck,
 	}
 
 	asgPoller := &poller.Poller{
