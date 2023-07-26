@@ -15,6 +15,11 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
+//go:generate counterfeiter -o fakes/policy_client.go --fake-name PolicyClient . policyClient
+type policyClient interface {
+	GetPoliciesLastUpdated() (int, error)
+}
+
 //go:generate counterfeiter -o fakes/planner.go --fake-name Planner . Planner
 type Planner interface {
 	GetPolicyRulesAndChain() (enforcer.RulesWithChain, error)
@@ -36,6 +41,8 @@ type SinglePollCycle struct {
 	planners            []Planner
 	enforcer            ruleEnforcer
 	metricsSender       metricsSender
+	policyClient        policyClient
+	lastUpdated         int
 	logger              lager.Logger
 	policyRuleSets      map[enforcer.Chain]enforcer.RulesWithChain
 	asgRuleSets         map[enforcer.LiveChain]enforcer.RulesWithChain
@@ -45,11 +52,13 @@ type SinglePollCycle struct {
 	asgMutex            sync.Locker
 }
 
-func NewSinglePollCycle(planners []Planner, re ruleEnforcer, ms metricsSender, metronClient loggingclient.IngressClient, logger lager.Logger) *SinglePollCycle {
+func NewSinglePollCycle(planners []Planner, re ruleEnforcer, p policyClient, ms metricsSender, metronClient loggingclient.IngressClient, logger lager.Logger) *SinglePollCycle {
 	return &SinglePollCycle{
 		planners:      planners,
 		enforcer:      re,
+		policyClient:  p,
 		metricsSender: ms,
+		lastUpdated:   0,
 		logger:        logger,
 		metronClient:  metronClient,
 		policyMutex:   new(sync.Mutex),
@@ -63,6 +72,23 @@ const metricPollDuration = "totalPollTime"
 const metricASGEnforceDuration = "asgIptablesEnforceTime"
 const metricASGCleanupDuration = "asgIptablesCleanupTime"
 const metricASGPollDuration = "asgTotalPollTime"
+
+func (m *SinglePollCycle) DoPolicyCycleWithLastUpdatedCheck() error {
+	lastUpdated, err := m.policyClient.GetPoliciesLastUpdated()
+	if err != nil {
+		m.logger.Error("error-getting-policies-last-updated", err)
+		return m.DoPolicyCycle()
+	}
+	if m.lastUpdated == 0 || lastUpdated > m.lastUpdated {
+		m.logger.Debug("running-poll-cycle-for-updated-policies", lager.Data{"last-updated-remotely": lastUpdated, "last-updated-locally": m.lastUpdated})
+		m.lastUpdated = lastUpdated
+		return m.DoPolicyCycle()
+	}
+
+	m.logger.Debug("skipping-poll-cycle", lager.Data{"last-updated-remotely": lastUpdated, "last-updated-locally": m.lastUpdated})
+
+	return nil
+}
 
 func (m *SinglePollCycle) DoPolicyCycle() error {
 	m.policyMutex.Lock()
