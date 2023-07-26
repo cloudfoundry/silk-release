@@ -617,8 +617,8 @@ code.cloudfoundry.org/lager/v3 v3.0.2 h1:H0dcQY+814G1Ea0e5K/AMaMpcr+Pe5Iv+AALJEw
 code.cloudfoundry.org/lager/v3 v3.0.2/go.mod h1:zA6tOIWhr5uZUez+PGpdfBHDWQOfhOrr0cgKDagZPwk=
 code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 h1:tUpafuylA0aTl6sdQnf20OsO/ipCvdNSZlWOB1cHhz8=
 code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2/go.mod h1:AwHLRkdXtttLXNB8RHgLfErJ2kKafH62AR2OClhy6xI=
-code.cloudfoundry.org/policy_client v0.0.0-20230612154641-3ca0c384fc40 h1:DDpQwnqKg6iM4n6YfNK6T+oOPCvAu0rs0bJqXWjn0YM=
-code.cloudfoundry.org/policy_client v0.0.0-20230612154641-3ca0c384fc40/go.mod h1:LBkwULA6xoP3nUdO9jXBw3jKSYhPWBFxH6ThD0svjhw=
+code.cloudfoundry.org/policy_client v0.0.0-20230726190751-c4580e1b1f80 h1:ehaOybn2VLxw2/EZj/C8l9Vlrpzq8nMr6e9CljK5ahY=
+code.cloudfoundry.org/policy_client v0.0.0-20230726190751-c4580e1b1f80/go.mod h1:LBkwULA6xoP3nUdO9jXBw3jKSYhPWBFxH6ThD0svjhw=
 code.cloudfoundry.org/routing-info v0.0.0-20230612154656-079a27345e39 h1:oNbebj4AbVoBfFjtXBvCxCKtG4wHmP0vkCgQBUhMNLE=
 code.cloudfoundry.org/routing-info v0.0.0-20230612154656-079a27345e39/go.mod h1:ykLgqzJGV5PTkvxtfyOy8hcQy7wxPaoV5ZPyk74aqp8=
 code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6 h1:J08p1/LBnhv5BDDf0WLpHRyMJFCws3vd3fLCFL/iVnQ=
@@ -1681,8 +1681,8 @@ google.golang.org/grpc v1.52.3/go.mod h1:pu6fVzoFb+NBYNAvQL08ic+lvB2IojljRYuun5v
 google.golang.org/grpc v1.53.0/go.mod h1:OnIrk0ipVdj4N5d9IUoFUx72/VlD7+jUsHwZgwSMQpw=
 google.golang.org/grpc v1.54.0/go.mod h1:PUSEXI6iWghWaB6lXM4knEgpJNu2qUcKfDtNci3EC2g=
 google.golang.org/grpc v1.55.0/go.mod h1:iYEXKGkEBhg1PjZQvoYEVPTDkHo1/bjTnfwTeGONTY8=
-google.golang.org/grpc v1.56.2 h1:fVRFRnXvU+x6C4IlHZewvJOVHoOv1TUuQyoRsYnB4bI=
-google.golang.org/grpc v1.56.2/go.mod h1:I9bI3vqKfayGqPUAwGdOSu7kt6oIJLixfffKrpXqQ9s=
+google.golang.org/grpc v1.57.0 h1:kfzNeI/klCGD2YPMUlaGNT3pxvYfga7smW3Vth8Zsiw=
+google.golang.org/grpc v1.57.0/go.mod h1:Sd+9RMTACXwmub0zcNY2c4arhtrbBYD1AUHI/dt16Mo=
 google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0/go.mod h1:6Kw0yEErY5E/yWrBtf03jp27GLLJujG4z/JK95pnjjw=
 google.golang.org/grpc/examples v0.0.0-20230512210959-5dcfb37c0b43/go.mod h1:irORyHPQXotoshbRTZVFvPDcfTfFHL23efQeop+H45M=
 google.golang.org/protobuf v0.0.0-20200109180630-ec00e32a8dfd/go.mod h1:DFci5gLYBciE7Vtevhsrf46CRTquxDuWsQurQQe4oz8=

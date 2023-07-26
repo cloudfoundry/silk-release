@@ -15,7 +15,7 @@ require (
 	code.cloudfoundry.org/garden v0.0.0-20230725180150-130beaa138e8
 	code.cloudfoundry.org/go-loggregator/v8 v8.0.5
 	code.cloudfoundry.org/lager/v3 v3.0.2
-	code.cloudfoundry.org/policy_client v0.0.0-20230612154641-3ca0c384fc40
+	code.cloudfoundry.org/policy_client v0.0.0-20230726190751-c4580e1b1f80
 	code.cloudfoundry.org/runtimeschema v0.0.0-20230323223330-5366865eed76
 	code.cloudfoundry.org/silk v0.0.0-20230726192256-b9e32f4c1ddd
 	github.com/cloudfoundry/dropsonde v1.1.0
@@ -74,7 +74,7 @@ require (
 	golang.org/x/text v0.11.0 // indirect
 	golang.org/x/tools v0.11.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230726155614-23370e0ffb3e // indirect
-	google.golang.org/grpc v1.56.2 // indirect
+	google.golang.org/grpc v1.57.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
