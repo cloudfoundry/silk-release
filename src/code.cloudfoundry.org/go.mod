@@ -17,7 +17,7 @@ require (
 	code.cloudfoundry.org/lager/v3 v3.0.2
 	code.cloudfoundry.org/policy_client v0.0.0-20230726190751-c4580e1b1f80
 	code.cloudfoundry.org/runtimeschema v0.0.0-20230323223330-5366865eed76
-	code.cloudfoundry.org/silk v0.0.0-20230726192256-b9e32f4c1ddd
+	code.cloudfoundry.org/silk v0.0.0-20230728161150-8e48b8d1e681
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.1.2
 	github.com/containernetworking/plugins v1.3.0
