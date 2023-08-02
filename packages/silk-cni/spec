@@ -28,16 +28,16 @@ files:
   - code.cloudfoundry.org/lib/rules/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/serial/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/policy_client/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/cmd/silk-cni/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/cni/adapter/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/cni/config/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/cni/lib/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/cni/netinfo/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/daemon/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/lib/adapter/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/lib/datastore/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/lib/hwaddr/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/lib/serial/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/cmd/silk-cni/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/cni/adapter/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/cni/config/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/cni/lib/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/cni/netinfo/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/daemon/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/lib/adapter/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/lib/datastore/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/lib/hwaddr/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/lib/serial/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/alexflint/go-filemutex/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/cni/pkg/invoke/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/cni/pkg/skel/*.go # gosub-main-module

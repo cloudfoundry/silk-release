@@ -20,7 +20,8 @@ docker run \
    --rm \
    -it \
    --privileged \
-   -v $PWD:/silk \
-   -w /silk \
-   $docker_image \
-   /bin/bash "$@"
+   -v "${PWD}:/silk-release" \
+   -e "DB=${db}" \
+   -w /silk-release \
+   "${docker_image}" \
+   /bin/bash "${@}"

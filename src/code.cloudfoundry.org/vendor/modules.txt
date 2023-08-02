@@ -7,6 +7,7 @@ code.cloudfoundry.org/bbs/models
 ## explicit; go 1.20
 code.cloudfoundry.org/cf-networking-helpers/db
 code.cloudfoundry.org/cf-networking-helpers/db/monitor
+code.cloudfoundry.org/cf-networking-helpers/fakes
 code.cloudfoundry.org/cf-networking-helpers/httperror
 code.cloudfoundry.org/cf-networking-helpers/json_client
 code.cloudfoundry.org/cf-networking-helpers/marshal
@@ -66,31 +67,6 @@ code.cloudfoundry.org/routing-info/internalroutes
 # code.cloudfoundry.org/runtimeschema v0.0.0-20230323223330-5366865eed76 => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 ## explicit
 code.cloudfoundry.org/runtimeschema/metric
-# code.cloudfoundry.org/silk v0.0.0-20230728161150-8e48b8d1e681
-## explicit; go 1.20
-code.cloudfoundry.org/silk/client/config
-code.cloudfoundry.org/silk/cmd/silk-cni
-code.cloudfoundry.org/silk/cmd/silk-controller
-code.cloudfoundry.org/silk/cmd/silk-daemon
-code.cloudfoundry.org/silk/cmd/silk-teardown
-code.cloudfoundry.org/silk/cni/adapter
-code.cloudfoundry.org/silk/cni/config
-code.cloudfoundry.org/silk/cni/lib
-code.cloudfoundry.org/silk/cni/netinfo
-code.cloudfoundry.org/silk/controller
-code.cloudfoundry.org/silk/controller/config
-code.cloudfoundry.org/silk/controller/database
-code.cloudfoundry.org/silk/controller/handlers
-code.cloudfoundry.org/silk/controller/leaser
-code.cloudfoundry.org/silk/controller/server_metrics
-code.cloudfoundry.org/silk/daemon
-code.cloudfoundry.org/silk/daemon/planner
-code.cloudfoundry.org/silk/daemon/poller
-code.cloudfoundry.org/silk/daemon/vtep
-code.cloudfoundry.org/silk/lib/adapter
-code.cloudfoundry.org/silk/lib/datastore
-code.cloudfoundry.org/silk/lib/hwaddr
-code.cloudfoundry.org/silk/lib/serial
 # code.cloudfoundry.org/tlsconfig v0.0.0-20230612153104-23c0622de227
 ## explicit; go 1.19
 code.cloudfoundry.org/tlsconfig
@@ -140,6 +116,7 @@ github.com/containernetworking/cni/plugins/test/noop/debug
 ## explicit; go 1.20
 github.com/containernetworking/plugins/pkg/ip
 github.com/containernetworking/plugins/pkg/ns
+github.com/containernetworking/plugins/pkg/testutils
 github.com/containernetworking/plugins/pkg/utils
 github.com/containernetworking/plugins/pkg/utils/buildversion
 github.com/containernetworking/plugins/pkg/utils/sysctl
