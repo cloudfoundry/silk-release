@@ -1,74 +1,104 @@
 #!/bin/bash
 
-set -eu
-set -o pipefail
+specificied_package="${1}"
+
+set -e -u
 
 go version # so we see the version tested in CI
 
-# In the cf-networking-and-silk-pr.yml pipeline, we need to run db-unit tests for cf-networking, but
-# concourse doesn't have a way of conditionally adding jobs, so it will end up running db-unit tests
-# against silk, which doesn't do anything other than run unit tests again, so we skip it here.
-if [[ -n "${DB:-""}" ]]; then
-  echo "No DB specific silk tests have been defined. Skipping this step."
-  exit 0
-fi
+SCRIPT_PATH="$(cd "$(dirname "${0}")" && pwd)"
+. "${SCRIPT_PATH}/start-db-helper"
 
-cd $(dirname $0)/..
+cd "${SCRIPT_PATH}/.."
+
+DB="${DB:-"notset"}"
+
+## Setting to other than 1 node will break cni-wrapper-plugin/integration
+serial_nodes=1
 
 declare -a serial_packages=(
     "src/code.cloudfoundry.org/cni-wrapper-plugin/integration"
-    "src/code.cloudfoundry.org/vxlan-policy-agent/integration/linux"
-    "src/code.cloudfoundry.org/silk-daemon-shutdown/integration"
     "src/code.cloudfoundry.org/silk-daemon-bootstrap/integration"
+    "src/code.cloudfoundry.org/silk-daemon-shutdown/integration"
+    "src/code.cloudfoundry.org/silk/cni/integration"
+    "src/code.cloudfoundry.org/vxlan-policy-agent/integration/linux"
     )
 
 declare -a windows_packages=(
     "src/code.cloudfoundry.org/vxlan-policy-agent/integration/windows"
     )
 
-# get all git submodule paths | print only the path without the extra info | cut the "package root" for go | deduplicate
-declare -a git_modules=($(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | cut -d'/' -f1,2 | sort -u))
+declare -a ignored_packages
 
-declare -a packages=($(find src -type f -name "*_test.go" | xargs -L 1 -I{} dirname {} | sort -u))
+# gather ignored packages from exclude_packages
+for pkg in $(echo "${exclude_packages:-""}" | jq -r .[]); do
+  ignored_packages+=("${pkg}")
+done
 
+# gather more ignored packages because they are windows code
+for pkg in "${windows_packages[@]}"; do
+  ignored_packages+=("${pkg}")
+done
+
+containsElement() {
+  local e match="$1"
+  shift
+  for e; do [[ "$e" == "$match" ]] && return 0; done
+  return 1
+}
+
+test_package() {
+  local package=$1
+  if [ ! -d "${package}" ]; then
+    return 0
+  fi
+  shift
+  pushd "${package}" &>/dev/null
+  pwd
+  go run github.com/onsi/ginkgo/v2/ginkgo --race -randomize-all -randomize-suites -fail-fast \
+      -ldflags="extldflags=-WL,--allow-multiple-definition" \
+       "${@}";
+  rc=$?
+  popd &>/dev/null
+  return "${rc}"
+}
+
+bootDB "${DB}"
+
+declare -a packages
+if [[ -n "${include_only:-""}" ]]; then
+  mapfile -t packages < <(echo "${include_only}" | jq -r .[])
+else
+  mapfile -t packages < <(find src -type f -name '*_test.go' -print0 | xargs -0 -L1 -I{} dirname {} | sort -u)
+fi
 
 # filter out serial_packages from packages
 for i in "${serial_packages[@]}"; do
-  packages=(${packages[@]//*$i*})
+  packages=("${packages[@]//*$i*}")
 done
 
-# filter out windows_packages from packages
-for i in "${windows_packages[@]}"; do
-  packages=(${packages[@]//*$i*})
+# filter out explicitly ignored packages
+for i in "${ignored_packages[@]}"; do
+  packages=("${packages[@]//*$i*}")
+  serial_packages=("${serial_packages[@]//*$i*}")
 done
 
-if [ "${1:-""}" = "" ]; then
+if [[ -z "${specificied_package}" ]]; then
+  echo "testing packages: " "${packages[@]}"
   for dir in "${packages[@]}"; do
-    pushd "$dir"
-      go run github.com/onsi/ginkgo/v2/ginkgo -p --race --randomize-all --randomize-suites \
-        -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
-        ${@:2}
-    popd
+    test_package "${dir}" -p
   done
+  echo "testing serial packages: " "${serial_packages[@]}"
   for dir in "${serial_packages[@]}"; do
-    pushd "$dir"
-      go run github.com/onsi/ginkgo/v2/ginkgo --race --randomize-all --randomize-suites --fail-fast \
-        -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
-        ${@:2}
-    popd
+    test_package "${dir}" --nodes "${serial_nodes}"
   done
 else
-  dir="${@: -1}"
-  dir="${dir#./}"
-  for package in "${serial_packages[@]}"; do
-    if [[ "${dir##$package}" != "${dir}" ]]; then
-      go run github.com/onsi/ginkgo/v2/ginkgo --race --randomize-all --randomize-suites --fail-fast \
-        -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
-        "${@}"
-      exit $?
-    fi
-  done
-  go run github.com/onsi/ginkgo/v2/ginkgo -p --race --randomize-all --randomize-suites --fail-fast --skip-package windows \
-    -ldflags="-extldflags=-Wl,--allow-multiple-definition" \
-    "${@}"
+  specificied_package="${specificied_package#./}"
+  if containsElement "${specificied_package}" "${serial_packages[@]}"; then
+    echo "testing serial package ${specificied_package}"
+    test_package "${specificied_package}" --nodes "${serial_nodes}"
+  else
+    echo "testing package ${specificied_package}"
+    test_package "${specificied_package}" -p
+  fi
 fi

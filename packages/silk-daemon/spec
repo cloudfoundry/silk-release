@@ -28,17 +28,17 @@ files:
   - code.cloudfoundry.org/silk-daemon-bootstrap/*.go # gosub-main-module
   - code.cloudfoundry.org/silk-daemon-bootstrap/config/*.go # gosub-main-module
   - code.cloudfoundry.org/silk-daemon-shutdown/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/client/config/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/cmd/silk-daemon/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/cmd/silk-teardown/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/controller/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/daemon/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/daemon/planner/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/daemon/poller/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/daemon/vtep/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/lib/adapter/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/lib/datastore/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/silk/lib/serial/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/client/config/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/cmd/silk-daemon/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/cmd/silk-teardown/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/controller/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/daemon/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/daemon/planner/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/daemon/poller/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/daemon/vtep/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/lib/adapter/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/lib/datastore/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/lib/serial/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/emitter/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/envelope_sender/*.go # gosub-main-module
