@@ -2,10 +2,12 @@ package poller_test
 
 import (
 	"errors"
-	"code.cloudfoundry.org/lib/poller"
+
 	"os"
 	"sync/atomic"
 	"time"
+
+	"code.cloudfoundry.org/lib/poller"
 
 	"code.cloudfoundry.org/lager/v3/lagertest"
 	. "github.com/onsi/ginkgo/v2"

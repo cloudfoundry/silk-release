@@ -1,11 +1,11 @@
 package rotatablesink_test
 
 import (
+	"testing"
+
+	"code.cloudfoundry.org/lager/v3"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"testing"
-	"code.cloudfoundry.org/lager/v3"
 	"github.com/onsi/gomega/types"
 )
 
@@ -13,7 +13,6 @@ func TestRotatewatcher(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Rotatewatcher Suite")
 }
-
 
 var LogsWith = func(level lager.LogLevel, msg string) types.GomegaMatcher {
 	return And(

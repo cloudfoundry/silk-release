@@ -2,11 +2,13 @@ package rules_test
 
 import (
 	"fmt"
-	"code.cloudfoundry.org/lib/rules"
+
 	"os/exec"
 	"runtime"
 	"strings"
 	"sync"
+
+	"code.cloudfoundry.org/lib/rules"
 
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport"
 	"code.cloudfoundry.org/filelock"

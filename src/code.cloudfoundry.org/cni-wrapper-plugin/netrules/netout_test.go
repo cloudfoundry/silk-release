@@ -43,7 +43,7 @@ var _ = Describe("Netout", func() {
 			ContainerHandle:       "some-container-handle",
 			ContainerWorkload:     "app",
 			Conn: netrules.OutConn{
-				Limit: false,
+				Limit:  false,
 				DryRun: false,
 			},
 		}
