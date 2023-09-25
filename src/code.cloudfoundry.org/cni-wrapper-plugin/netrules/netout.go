@@ -155,7 +155,7 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 
 	args = append(args, logChain)
 
-	if ( m.Conn.Limit && m.Conn.Logging ) || m.Conn.DryRun {
+	if (m.Conn.Limit && m.Conn.Logging) || m.Conn.DryRun {
 		rateLimitLogChain, err := m.connRateLimitLogChain(forwardChainName)
 		if err != nil {
 			return []IpTablesFullChain{}, fmt.Errorf("getting chain name: %s", err)
@@ -230,11 +230,11 @@ func (m *NetOut) appendInputRules(
 
 func (m *NetOut) connRateLimitLogChain(forwardChainName string) (IpTablesFullChain, error) {
 	logRules := []rules.IPTablesRule{}
-	
+
 	if m.Conn.Logging || m.Conn.DryRun {
 		logRules = append(logRules, rules.NewNetOutConnRateLimitRejectLogRule(m.ContainerHandle, m.DeniedLogsPerSec))
 	}
-    
+
 	if !m.Conn.DryRun {
 		logRules = append(logRules, rules.NewNetOutDefaultRejectRule())
 	}

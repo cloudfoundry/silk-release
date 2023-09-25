@@ -83,12 +83,12 @@ func (c *ConfigCreator) Create(clientConf clientConfig.Config, lease controller.
 	}
 
 	return &Config{
-		VTEPName:            clientConf.VTEPName,
-		UnderlayInterface:   underlayInterface,
-		UnderlayIP:          underlayIP,
-		OverlayIP:           overlayIP,
-		OverlayHardwareAddr: overlayHardwareAddr,
-		VNI:                 clientConf.VNI,
+		VTEPName:                   clientConf.VTEPName,
+		UnderlayInterface:          underlayInterface,
+		UnderlayIP:                 underlayIP,
+		OverlayIP:                  overlayIP,
+		OverlayHardwareAddr:        overlayHardwareAddr,
+		VNI:                        clientConf.VNI,
 		OverlayNetworkPrefixLength: overlayNetworkPrefixLength,
 		VTEPPort:                   clientConf.VTEPPort,
 	}, nil

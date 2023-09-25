@@ -1,10 +1,13 @@
 package interfacelookup_test
 
 import (
-	"code.cloudfoundry.org/cni-wrapper-plugin/fakes"
 	"errors"
-	"code.cloudfoundry.org/lib/interfacelookup"
+
+	"code.cloudfoundry.org/cni-wrapper-plugin/fakes"
+
 	"net"
+
+	"code.cloudfoundry.org/lib/interfacelookup"
 
 	"github.com/vishvananda/netlink"
 
