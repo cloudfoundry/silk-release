@@ -2,6 +2,8 @@ package datastore_test
 
 import (
 	"errors"
+	"fmt"
+	"math/rand"
 	"os"
 
 	"code.cloudfoundry.org/filelock"
@@ -12,6 +14,18 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+const (
+	letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+)
+
+func randStringBytes(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
+}
 
 var _ = Describe("Datastore", func() {
 	var (
@@ -30,8 +44,8 @@ var _ = Describe("Datastore", func() {
 	)
 
 	BeforeEach(func() {
-		handle = "some-handle"
-		ip = "192.168.0.100"
+		handle = fmt.Sprintf("handle-%s-%d", randStringBytes(5), GinkgoParallelProcess())
+		ip = fmt.Sprintf("192.168.0.%d", 100+GinkgoParallelProcess())
 		filePath = "file"
 		locker = &libfakes.FileLocker{}
 		serializer = &libfakes.Serializer{}

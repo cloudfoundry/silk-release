@@ -2,7 +2,6 @@ package datastore_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/user"
 	"strconv"
@@ -37,8 +36,8 @@ var _ = Describe("Datastore Lifecycle", func() {
 	)
 
 	BeforeEach(func() {
-		handle = "some-handle"
-		ip = "192.168.0.100"
+		handle = fmt.Sprintf("handle-%s-%d", randStringBytes(5), GinkgoParallelProcess())
+		ip = fmt.Sprintf("192.168.0.%d", 100+GinkgoParallelProcess())
 		metadata = map[string]interface{}{
 			"AppID":         "some-appid",
 			"OrgID":         "some-orgid",
@@ -47,15 +46,18 @@ var _ = Describe("Datastore Lifecycle", func() {
 			"randomKey":     "randomValue",
 		}
 
-		lockFile, err := ioutil.TempFile("", "")
+		tmpDir, err := os.MkdirTemp("", "")
+		Expect(err).NotTo(HaveOccurred())
+
+		lockFile, err := os.CreateTemp(tmpDir, "lock-file-")
 		Expect(err).NotTo(HaveOccurred())
 		lockFilePath = lockFile.Name()
 
-		dataFile, err := ioutil.TempFile("", "")
+		dataFile, err := os.CreateTemp(tmpDir, "data-file-")
 		Expect(err).NotTo(HaveOccurred())
 		dataFilePath = dataFile.Name()
 
-		versionFile, err := ioutil.TempFile("", "")
+		versionFile, err := os.CreateTemp(tmpDir, "version-file-")
 		Expect(err).NotTo(HaveOccurred())
 		versionFilePath = versionFile.Name()
 

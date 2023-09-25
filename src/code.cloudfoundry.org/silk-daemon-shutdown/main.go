@@ -4,9 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"code.cloudfoundry.org/lib/datastore"
-	"code.cloudfoundry.org/lib/rules"
-	"code.cloudfoundry.org/lib/serial"
 	"log"
 	"net"
 	"net/http"
@@ -18,6 +15,10 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"code.cloudfoundry.org/lib/datastore"
+	"code.cloudfoundry.org/lib/rules"
+	"code.cloudfoundry.org/lib/serial"
 
 	"code.cloudfoundry.org/filelock"
 	"code.cloudfoundry.org/lager/v3"
