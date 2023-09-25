@@ -2,6 +2,7 @@ package datastore_test
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -30,8 +31,8 @@ var _ = Describe("Datastore", func() {
 	)
 
 	BeforeEach(func() {
-		handle = "some-handle"
-		ip = "192.168.0.100"
+		handle = fmt.Sprintf("handle-%s-%d", randStringBytes(5), GinkgoParallelProcess())
+		ip = fmt.Sprintf("192.168.0.%d", 100+GinkgoParallelProcess())
 		locker = &libfakes.Locker{}
 		serializer = &libfakes.Serializer{}
 		metadata = map[string]interface{}{
