@@ -24,6 +24,23 @@ For more information about what these jobs do, we recommend looking at the [silk
 repo](https://code.cloudfoundry.org/silk) and the [CF Networking Release
 repo](https://code.cloudfoundry.org/cf-networking-release).
 
+### <a name="running-tests"></a>Running Tests
+
+##### With Docker
+
+Running tests for this release requires a `DB` flavor. The following scripts with default to `mysql` DB. Set `DB` environment variable for alternate DBs e.g. <mysql-8.0(or mysql),mysql-5.7,postgres>
+
+- `./scripts/create-docker-container.bash`: This will create a docker container with appropriate mounts.
+- `./scripts/test-in-docker-locally.bash`: Create docker container and run all tests and setup in a single script.
+  - `./scripts/test-in-docker-locally.bash <package> <sub-package>`: For running tests under a specific package and/or sub-package: e.g. `./scripts/test-in-docker-locally.bash iptables-logger config`
+
+When inside docker container: 
+- `/repo/scripts/docker/test.bash`: This will run all tests in this release
+- `/repo/scripts/docker/test.bash iptables-logger`: This will only run `iptables-logger` tests
+- `/repo/scripts/docker/test.bash iptables-logger config`: This will only run `iptables-logger` sub-package tests for `config` package
+- `/repo/scripts/docker/tests-templates.bash`: This will run all of tests for bosh tempalates
+- `/repo/scripts/docker/lint.bash`: This will run all of linting defined for this repo.
+
 ## Getting Help
 
 For help or questions with this release or any of its submodules, you can reach
