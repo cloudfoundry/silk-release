@@ -100,6 +100,7 @@ var _ = Describe("Datastore syncer", func() {
 		fakeGarden.RouteToHandler("GET", "/containers", ghttp.RespondWithJSONEncoded(http.StatusOK, containers))
 		fakeGarden.RouteToHandler("GET", "/containers/test-non-exist/properties", ghttp.RespondWithJSONEncoded(http.StatusOK, properties))
 
+		Consistently(session, 3).ShouldNot(gexec.Exit())
 		Eventually(func() datastore.Container {
 			readContainers, err := store.ReadAll()
 			Expect(err).ToNot(HaveOccurred())
