@@ -84,7 +84,12 @@ func main() {
 			}
 			logger.Debug("Garden container", lager.Data{"log info": desiredLogConfig})
 
-			sc := storeContainers[c.Handle()]
+			sc, ok := storeContainers[c.Handle()]
+			if !ok {
+				logger.Info("skipping-container-not-found-in-networking-store", lager.Data{"garden_container_handle": c.Handle()})
+				continue
+			}
+
 			actualLogConfig, err := getSilkLogConfig(sc)
 			if err != nil {
 				logger.Error("error getting silk log config", err)
