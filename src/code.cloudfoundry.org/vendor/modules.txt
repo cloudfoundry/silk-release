@@ -20,7 +20,7 @@ code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics
 code.cloudfoundry.org/cf-networking-helpers/testsupport/ports
 # code.cloudfoundry.org/clock v1.1.0
 ## explicit; go 1.20
-# code.cloudfoundry.org/debugserver v0.0.0-20230612151301-d597b20f28ce
+# code.cloudfoundry.org/debugserver v0.0.0-20230929175251-e53a35122640
 ## explicit; go 1.19
 code.cloudfoundry.org/debugserver
 # code.cloudfoundry.org/diego-logging-client v0.0.0-20230823164527-31a09b08e0af
@@ -67,7 +67,7 @@ code.cloudfoundry.org/routing-info/internalroutes
 # code.cloudfoundry.org/runtimeschema v0.0.0-20230323223330-5366865eed76 => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 ## explicit
 code.cloudfoundry.org/runtimeschema/metric
-# code.cloudfoundry.org/tlsconfig v0.0.0-20230612153104-23c0622de227
+# code.cloudfoundry.org/tlsconfig v0.0.0-20230929201433-6cd2b78aba25
 ## explicit; go 1.19
 code.cloudfoundry.org/tlsconfig
 # filippo.io/edwards25519 v1.0.0
@@ -349,7 +349,7 @@ golang.org/x/text/unicode/norm
 ## explicit; go 1.18
 golang.org/x/tools/go/ast/inspector
 golang.org/x/tools/internal/typeparams
-# google.golang.org/genproto/googleapis/rpc v0.0.0-20230920204549-e6e6cdab5c13
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20231002182017-d307bd883b97
 ## explicit; go 1.19
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.58.2
