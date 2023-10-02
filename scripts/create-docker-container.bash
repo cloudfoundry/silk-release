@@ -36,12 +36,11 @@ fi
 echo $ARGS
 
 docker pull "${IMAGE}"
-
 docker run -it \
   --env "DB=${DB}" \
   --env "REPO_NAME=$REPO_NAME" \
   --env "REPO_PATH=/repo" \
-  --name "$REPO_NAME-docker-container-$(date +%s)" \
+  --name "$REPO_NAME-docker-container" \
   -v "${REPO_PATH}:/repo" \
   -v "${CI}:/ci" \
   --privileged \
