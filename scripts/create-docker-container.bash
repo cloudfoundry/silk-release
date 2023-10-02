@@ -37,11 +37,6 @@ echo $ARGS
 
 docker pull "${IMAGE}"
 
-# Remove existing containers
-if docker ps -a | grep "$REPO_NAME-docker-container"; then
-  docker ps -a | grep "$REPO_NAME-docker-container" | cut -d' ' -f1 | xargs -n1 docker rm -f
-fi
-
 docker run -it \
   --env "DB=${DB}" \
   --env "REPO_NAME=$REPO_NAME" \
