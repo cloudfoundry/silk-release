@@ -24,6 +24,20 @@ For more information about what these jobs do, we recommend looking at the [silk
 repo](https://code.cloudfoundry.org/silk) and the [CF Networking Release
 repo](https://code.cloudfoundry.org/cf-networking-release).
 
+### <a name="developer-workflow"></a> Developer Workflow
+
+- Clone [CI repository](https://github.com/cloudfoundry/wg-app-platform-runtime-ci) (next to where this code is cloned), and make sure latest
+is pulled by running `git pull`
+
+  ```bash
+  mkdir -p ~/workspace
+  cd ~/workspace
+  git clone https://github.com/cloudfoundry/wg-app-platform-runtime-ci.git
+  ```
+- [Git](https://git-scm.com/) - Distributed version control system
+- [Go](https://golang.org/doc/install#install) - The Go programming
+  language
+
 ### <a name="running-tests"></a>Running Tests
 
 ##### With Docker
