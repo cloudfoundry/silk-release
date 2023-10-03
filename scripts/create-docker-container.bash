@@ -39,6 +39,7 @@ fi
 
 docker pull "${IMAGE}"
 docker run -it \
+  --rm \
   --env "DB=${DB}" \
   --env "REPO_NAME=$REPO_NAME" \
   --env "REPO_PATH=/repo" \
