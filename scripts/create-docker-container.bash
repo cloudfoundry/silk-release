@@ -28,12 +28,14 @@ else
 fi
 
 if [[ -z "${*}" ]]; then
-  ARGS="-it"
+  CMD_ARGS="/bin/bash"
 else
-  ARGS="${*}"
+  CMD_ARGS="${*}"
 fi
 
-echo $ARGS
+if [[ -z ${DOCKER_ARGS+""} ]]; then
+  DOCKER_ARGS=""
+fi
 
 docker pull "${IMAGE}"
 docker run -it \
@@ -45,7 +47,7 @@ docker run -it \
   -v "${CI}:/ci" \
   --privileged \
   --cap-add ALL \
-  ${ARGS} \
+  ${DOCKER_ARGS} \
   "${IMAGE}" \
-  /bin/bash
+  ${CMD_ARGS}
   
