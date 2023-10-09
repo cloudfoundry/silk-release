@@ -43,7 +43,6 @@ files:
   - code.cloudfoundry.org/vendor/github.com/tedsuo/ifrit/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/tedsuo/ifrit/grouper/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/tedsuo/ifrit/sigmon/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/golang.org/x/sys/internal/unsafeheader/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sys/windows/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sys/windows/*.s # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/encoding/prototext/*.go # gosub-main-module

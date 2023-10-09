@@ -71,7 +71,6 @@ files:
   - code.cloudfoundry.org/vendor/github.com/vishvananda/netlink/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/vishvananda/netlink/nl/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/vishvananda/netns/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/golang.org/x/sys/internal/unsafeheader/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sys/unix/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sys/unix/*.s # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sys/windows/*.go # gosub-main-module

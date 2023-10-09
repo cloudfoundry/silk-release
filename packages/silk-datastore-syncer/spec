@@ -34,6 +34,5 @@ files:
   - code.cloudfoundry.org/vendor/github.com/openzipkin/zipkin-go/idgenerator/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/openzipkin/zipkin-go/model/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/tedsuo/rata/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/golang.org/x/sys/internal/unsafeheader/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sys/windows/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sys/windows/*.s # gosub-main-module
