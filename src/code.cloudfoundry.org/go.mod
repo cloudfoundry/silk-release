@@ -28,7 +28,7 @@ require (
 	github.com/hpcloud/tail v1.0.0
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.9
-	github.com/onsi/ginkgo/v2 v2.12.1
+	github.com/onsi/ginkgo/v2 v2.13.0
 	github.com/onsi/gomega v1.28.0
 	github.com/pivotal-cf-experimental/gomegamatchers v0.0.0-20180326192815-e36bfcc98c3a
 	github.com/rubenv/sql-migrate v1.5.2
@@ -66,13 +66,13 @@ require (
 	github.com/safchain/ethtool v0.3.0 // indirect
 	github.com/square/certstrap v1.3.0 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
-	go.step.sm/crypto v0.35.1 // indirect
+	go.step.sm/crypto v0.36.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/net v0.16.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/tools v0.14.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20231002182017-d307bd883b97 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20231009173412-8bfb1ae86b6c // indirect
 	google.golang.org/grpc v1.58.2 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
