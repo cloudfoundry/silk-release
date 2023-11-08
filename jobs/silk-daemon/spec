@@ -36,10 +36,6 @@ properties:
     description: "Host port used for receiving VXLAN packets"
     default: 4789
 
-  rep_listen_addr_admin:
-    description: "Admin endpoint on diego rep.  Silk daemon job drain waits for the rep to exit before tearing down the network.  See diego.rep.listen_addr_admin"
-    default: 127.0.0.1:1800
-
   partition_tolerance_hours:
     description: "When silk controller is unavailable, silk daemon will remain healthy and allow creation of new containers for this number of hours.  Should be no larger than cf_networking.subnet_lease_expiration_hours."
     default: 168
