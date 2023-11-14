@@ -77,7 +77,7 @@ var _ = Describe("NetOutChain", func() {
 			}
 
 			converter.BulkConvertReturns(genericRules)
-
+			converter.DeduplicateRulesReturns(genericRules)
 		})
 
 		It("prepends allow rules to the container's netout chain", func() {

@@ -19,6 +19,7 @@ const secondInMillis = 1000
 type ruleConverter interface {
 	Convert(Rule, string, bool) []rules.IPTablesRule
 	BulkConvert([]Rule, string, bool) []rules.IPTablesRule
+	DeduplicateRules([]rules.IPTablesRule) []rules.IPTablesRule
 }
 
 type OutConn struct {

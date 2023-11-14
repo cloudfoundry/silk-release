@@ -426,4 +426,62 @@ var _ = Describe("RuleConverter", func() {
 		})
 
 	})
+	Describe("DeduplicateRules", func() {
+		var unfiltered_rules []rules.IPTablesRule
+		Context("when there are duplicate iptables rules", func() {
+			BeforeEach(func() {
+				rule1 := rules.IPTablesRule{
+					"-m", "iprange", "-p", "tcp",
+					"--dst-range", "1.1.1.1-2.2.2.2",
+					"-m", "tcp", "--destination-port", "9000:9999",
+					"--jump", "ACCEPT",
+				}
+				rule2 := rules.IPTablesRule{
+					"-m", "iprange", "-p", "tcp",
+					"--dst-range", "1.1.1.1-2.2.2.2",
+					"-m", "tcp", "--destination-port", "9000:9999",
+					"--jump", "ACCEPT",
+				}
+				rule3 := rules.IPTablesRule{
+					"-m", "iprange", "-p", "tcp",
+					"--dst-range", "3.3.3.3-4.4.4.4",
+					"-m", "tcp", "--destination-port", "9000:9999",
+					"--jump", "ACCEPT",
+				}
+				rule4 := rules.IPTablesRule{
+					"-m", "iprange", "-p", "tcp",
+					"--dst-range", "1.1.1.1-2.2.2.2",
+					"-m", "tcp", "--destination-port", "9000:9999",
+					"--jump", "ACCEPT",
+				}
+				rule5 := rules.IPTablesRule{
+					"-m", "iprange", "-p", "tcp",
+					"--dst-range", "4.4.4.4-5.5.5.5",
+					"-m", "tcp", "--destination-port", "9000:9999",
+					"--jump", "ACCEPT",
+				}
+
+				unfiltered_rules = []rules.IPTablesRule{rule1, rule2, rule3, rule4, rule5}
+			})
+
+			It("removes the duplicate iptables rules", func() {
+				deduped_rules := converter.DeduplicateRules(unfiltered_rules)
+
+				Expect(deduped_rules).To(ConsistOf(
+					rules.IPTablesRule{"-m", "iprange", "-p", "tcp",
+						"--dst-range", "1.1.1.1-2.2.2.2",
+						"-m", "tcp", "--destination-port", "9000:9999",
+						"--jump", "ACCEPT"},
+					rules.IPTablesRule{"-m", "iprange", "-p", "tcp",
+						"--dst-range", "4.4.4.4-5.5.5.5",
+						"-m", "tcp", "--destination-port", "9000:9999",
+						"--jump", "ACCEPT"},
+					rules.IPTablesRule{"-m", "iprange", "-p", "tcp",
+						"--dst-range", "3.3.3.3-4.4.4.4",
+						"-m", "tcp", "--destination-port", "9000:9999",
+						"--jump", "ACCEPT"},
+				))
+			})
+		})
+	})
 })
