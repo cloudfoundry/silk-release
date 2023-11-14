@@ -62,6 +62,8 @@ func (c *NetOutChain) IPTablesRules(containerHandle string, containerWorkload st
 	}
 
 	iptablesRules := c.Converter.BulkConvert(ruleSpec, logChain, c.ASGLogging)
+	iptablesRules = c.Converter.DeduplicateRules(iptablesRules)
+
 	iptablesRules = append(iptablesRules, c.denyNetworksRules(containerWorkload)...)
 
 	if c.Conn.Limit || c.Conn.DryRun {

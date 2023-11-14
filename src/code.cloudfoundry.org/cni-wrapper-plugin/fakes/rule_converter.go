@@ -35,6 +35,17 @@ type RuleConverter struct {
 	convertReturnsOnCall map[int]struct {
 		result1 []rules.IPTablesRule
 	}
+	DeduplicateRulesStub        func([]rules.IPTablesRule) []rules.IPTablesRule
+	deduplicateRulesMutex       sync.RWMutex
+	deduplicateRulesArgsForCall []struct {
+		arg1 []rules.IPTablesRule
+	}
+	deduplicateRulesReturns struct {
+		result1 []rules.IPTablesRule
+	}
+	deduplicateRulesReturnsOnCall map[int]struct {
+		result1 []rules.IPTablesRule
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -170,6 +181,72 @@ func (fake *RuleConverter) ConvertReturnsOnCall(i int, result1 []rules.IPTablesR
 	}{result1}
 }
 
+func (fake *RuleConverter) DeduplicateRules(arg1 []rules.IPTablesRule) []rules.IPTablesRule {
+	var arg1Copy []rules.IPTablesRule
+	if arg1 != nil {
+		arg1Copy = make([]rules.IPTablesRule, len(arg1))
+		copy(arg1Copy, arg1)
+	}
+	fake.deduplicateRulesMutex.Lock()
+	ret, specificReturn := fake.deduplicateRulesReturnsOnCall[len(fake.deduplicateRulesArgsForCall)]
+	fake.deduplicateRulesArgsForCall = append(fake.deduplicateRulesArgsForCall, struct {
+		arg1 []rules.IPTablesRule
+	}{arg1Copy})
+	stub := fake.DeduplicateRulesStub
+	fakeReturns := fake.deduplicateRulesReturns
+	fake.recordInvocation("DeduplicateRules", []interface{}{arg1Copy})
+	fake.deduplicateRulesMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *RuleConverter) DeduplicateRulesCallCount() int {
+	fake.deduplicateRulesMutex.RLock()
+	defer fake.deduplicateRulesMutex.RUnlock()
+	return len(fake.deduplicateRulesArgsForCall)
+}
+
+func (fake *RuleConverter) DeduplicateRulesCalls(stub func([]rules.IPTablesRule) []rules.IPTablesRule) {
+	fake.deduplicateRulesMutex.Lock()
+	defer fake.deduplicateRulesMutex.Unlock()
+	fake.DeduplicateRulesStub = stub
+}
+
+func (fake *RuleConverter) DeduplicateRulesArgsForCall(i int) []rules.IPTablesRule {
+	fake.deduplicateRulesMutex.RLock()
+	defer fake.deduplicateRulesMutex.RUnlock()
+	argsForCall := fake.deduplicateRulesArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *RuleConverter) DeduplicateRulesReturns(result1 []rules.IPTablesRule) {
+	fake.deduplicateRulesMutex.Lock()
+	defer fake.deduplicateRulesMutex.Unlock()
+	fake.DeduplicateRulesStub = nil
+	fake.deduplicateRulesReturns = struct {
+		result1 []rules.IPTablesRule
+	}{result1}
+}
+
+func (fake *RuleConverter) DeduplicateRulesReturnsOnCall(i int, result1 []rules.IPTablesRule) {
+	fake.deduplicateRulesMutex.Lock()
+	defer fake.deduplicateRulesMutex.Unlock()
+	fake.DeduplicateRulesStub = nil
+	if fake.deduplicateRulesReturnsOnCall == nil {
+		fake.deduplicateRulesReturnsOnCall = make(map[int]struct {
+			result1 []rules.IPTablesRule
+		})
+	}
+	fake.deduplicateRulesReturnsOnCall[i] = struct {
+		result1 []rules.IPTablesRule
+	}{result1}
+}
+
 func (fake *RuleConverter) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -177,6 +254,8 @@ func (fake *RuleConverter) Invocations() map[string][][]interface{} {
 	defer fake.bulkConvertMutex.RUnlock()
 	fake.convertMutex.RLock()
 	defer fake.convertMutex.RUnlock()
+	fake.deduplicateRulesMutex.RLock()
+	defer fake.deduplicateRulesMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
