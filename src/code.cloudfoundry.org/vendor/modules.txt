@@ -1,9 +1,9 @@
-# code.cloudfoundry.org/bbs v0.0.0-20231109225950-9b797d8d38a5
+# code.cloudfoundry.org/bbs v0.0.0-20231114155431-709d9ebc290c
 ## explicit
 code.cloudfoundry.org/bbs/encryption
 code.cloudfoundry.org/bbs/format
 code.cloudfoundry.org/bbs/models
-# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20231101144711-e73005599075
+# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20231114144941-d3aabe53ed7b
 ## explicit; go 1.20
 code.cloudfoundry.org/cf-networking-helpers/db
 code.cloudfoundry.org/cf-networking-helpers/db/monitor
@@ -20,10 +20,10 @@ code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics
 code.cloudfoundry.org/cf-networking-helpers/testsupport/ports
 # code.cloudfoundry.org/clock v1.1.0
 ## explicit; go 1.20
-# code.cloudfoundry.org/debugserver v0.0.0-20231101144826-61d4b1f2e7b6
+# code.cloudfoundry.org/debugserver v0.0.0-20231114142234-a442cc402287
 ## explicit; go 1.19
 code.cloudfoundry.org/debugserver
-# code.cloudfoundry.org/diego-logging-client v0.0.0-20231101144625-b1a01cfc966d
+# code.cloudfoundry.org/diego-logging-client v0.0.0-20231114145421-43971a663fb5
 ## explicit; go 1.20
 code.cloudfoundry.org/diego-logging-client
 code.cloudfoundry.org/diego-logging-client/testhelpers
@@ -33,7 +33,7 @@ code.cloudfoundry.org/executor
 # code.cloudfoundry.org/filelock v0.0.0-20230612152934-de193be258e4
 ## explicit; go 1.20
 code.cloudfoundry.org/filelock
-# code.cloudfoundry.org/garden v0.0.0-20231107181549-21c262319eb4
+# code.cloudfoundry.org/garden v0.0.0-20231114181656-4c2a4ae2aad0
 ## explicit; go 1.20
 code.cloudfoundry.org/garden
 code.cloudfoundry.org/garden/client
@@ -280,7 +280,7 @@ github.com/vishvananda/netns
 # github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c
 ## explicit
 github.com/ziutek/utils/netaddr
-# go.step.sm/crypto v0.36.1
+# go.step.sm/crypto v0.37.0
 ## explicit; go 1.20
 go.step.sm/crypto/fingerprint
 go.step.sm/crypto/internal/bcrypt_pbkdf
@@ -347,7 +347,7 @@ golang.org/x/text/unicode/norm
 ## explicit; go 1.18
 golang.org/x/tools/go/ast/inspector
 golang.org/x/tools/internal/typeparams
-# google.golang.org/genproto/googleapis/rpc v0.0.0-20231106174013-bbf56f31fb17
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f
 ## explicit; go 1.19
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.59.0
