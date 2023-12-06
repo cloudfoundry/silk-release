@@ -7,4 +7,4 @@ set -o pipefail
 # Double-quoting array expansion here causes ginkgo to fail
 args=${@} 
 # run in serial
-go run github.com/onsi/ginkgo/v2/ginkgo $(echo $args | sed 's/-p //g') ./integration
+go run github.com/onsi/ginkgo/v2/ginkgo $args --nodes=1 ./integration

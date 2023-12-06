@@ -8,4 +8,4 @@ set -o pipefail
 args=${@} 
 go run github.com/onsi/ginkgo/v2/ginkgo  --skip-package integration $args
 # run in serial
-go run github.com/onsi/ginkgo/v2/ginkgo $(echo $args | sed 's/-p //g') ./integration
+go run github.com/onsi/ginkgo/v2/ginkgo $args --nodes=1 ./integration
