@@ -9,4 +9,4 @@ configure_db "${DB}"
 args=${@} 
 go run github.com/onsi/ginkgo/v2/ginkgo  --skip-package cni $args
 # run in serial
-go run github.com/onsi/ginkgo/v2/ginkgo $(echo $args | sed 's/-p //g') ./cni
+go run github.com/onsi/ginkgo/v2/ginkgo $args --nodes=1 ./cni
