@@ -108,6 +108,9 @@ func main() {
 				logger.Error("Garden container error marshalling container log config", err, lager.Data{"handle": sc.Handle})
 				continue
 			}
+			if sc.Metadata == nil {
+				sc.Metadata = make(map[string]interface{})
+			}
 			sc.Metadata["log_config"] = string(b)
 			err = store.Update(sc.Handle, sc.IP, sc.Metadata)
 			if err != nil {
