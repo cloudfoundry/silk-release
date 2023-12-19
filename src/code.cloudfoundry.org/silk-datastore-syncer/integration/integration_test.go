@@ -126,4 +126,26 @@ var _ = Describe("Datastore syncer", func() {
 		fakeGarden.RouteToHandler("GET", "/containers/test/properties", ghttp.RespondWithJSONEncoded(http.StatusNotFound, struct{}{}))
 		Consistently(session, 3).ShouldNot(gexec.Exit())
 	})
+	It("doesn't crash when container has no metadata", func() {
+		err := store.Add("test", "127.0.0.1", nil)
+		Expect(err).ToNot(HaveOccurred())
+		containers := struct {
+			Handles []string
+		}{
+			Handles: []string{"test"},
+		}
+		properties := map[string]string{"log_config": `{"guid":"test","index":0,"source_name":"test","tags":{"test":"value2"}}`}
+		fakeGarden.RouteToHandler("GET", "/containers", ghttp.RespondWithJSONEncoded(http.StatusOK, containers))
+		fakeGarden.RouteToHandler("GET", "/containers/test/properties", ghttp.RespondWithJSONEncoded(http.StatusOK, properties))
+
+		Eventually(func() datastore.Container {
+			readContainers, err := store.ReadAll()
+			Expect(err).ToNot(HaveOccurred())
+			return readContainers["test"]
+		}, 10).Should(Equal(datastore.Container{
+			Handle:   "test",
+			IP:       "127.0.0.1",
+			Metadata: map[string]interface{}{"log_config": `{"guid":"test","index":0,"source_name":"test","tags":{"test":"value2"}}`},
+		}))
+	})
 })
