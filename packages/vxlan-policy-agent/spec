@@ -186,6 +186,7 @@ files:
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/version/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/proto/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/reflect/protodesc/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/reflect/protodesc/*.binpb # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/reflect/protoreflect/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/reflect/protoregistry/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/runtime/protoiface/*.go # gosub-main-module
