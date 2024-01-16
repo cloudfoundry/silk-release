@@ -3,7 +3,7 @@
 code.cloudfoundry.org/bbs/encryption
 code.cloudfoundry.org/bbs/format
 code.cloudfoundry.org/bbs/models
-# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20231206170627-0692a8edc6e9
+# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240112142017-1c9a9308311a
 ## explicit; go 1.20
 code.cloudfoundry.org/cf-networking-helpers/db
 code.cloudfoundry.org/cf-networking-helpers/db/monitor
@@ -33,7 +33,7 @@ code.cloudfoundry.org/executor
 # code.cloudfoundry.org/filelock v0.0.0-20230612152934-de193be258e4
 ## explicit; go 1.20
 code.cloudfoundry.org/filelock
-# code.cloudfoundry.org/garden v0.0.0-20240102182338-a0cd1ff97764
+# code.cloudfoundry.org/garden v0.0.0-20240109143915-5f67362569bd
 ## explicit; go 1.20
 code.cloudfoundry.org/garden
 code.cloudfoundry.org/garden/client
@@ -64,7 +64,7 @@ code.cloudfoundry.org/policy_client
 # code.cloudfoundry.org/routing-info v0.0.0-20230911184850-3a6d4ccb3cfc
 ## explicit
 code.cloudfoundry.org/routing-info/internalroutes
-# code.cloudfoundry.org/runtimeschema v0.0.0-20230323223330-5366865eed76 => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
+# code.cloudfoundry.org/runtimeschema v0.0.0-20240111181315-c828d462f664 => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 ## explicit
 code.cloudfoundry.org/runtimeschema/metric
 # code.cloudfoundry.org/tlsconfig v0.0.0-20231017135636-f0e44068c22f
@@ -74,7 +74,7 @@ code.cloudfoundry.org/tlsconfig
 ## explicit; go 1.20
 filippo.io/edwards25519
 filippo.io/edwards25519/field
-# github.com/alexflint/go-filemutex v1.2.0
+# github.com/alexflint/go-filemutex v1.3.0
 ## explicit; go 1.13
 github.com/alexflint/go-filemutex
 # github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f
@@ -200,7 +200,7 @@ github.com/lib/pq/scram
 # github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
 ## explicit
 github.com/nu7hatch/gouuid
-# github.com/onsi/ginkgo/v2 v2.13.2
+# github.com/onsi/ginkgo/v2 v2.14.0
 ## explicit; go 1.18
 github.com/onsi/ginkgo/v2
 github.com/onsi/ginkgo/v2/config
@@ -250,7 +250,7 @@ github.com/pivotal-cf-experimental/gomegamatchers/internal/prettyprint
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
-# github.com/rubenv/sql-migrate v1.6.0
+# github.com/rubenv/sql-migrate v1.6.1
 ## explicit; go 1.21
 github.com/rubenv/sql-migrate
 github.com/rubenv/sql-migrate/sqlparse
@@ -280,7 +280,7 @@ github.com/vishvananda/netns
 # github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c
 ## explicit
 github.com/ziutek/utils/netaddr
-# go.step.sm/crypto v0.40.0
+# go.step.sm/crypto v0.41.0
 ## explicit; go 1.20
 go.step.sm/crypto/fingerprint
 go.step.sm/crypto/internal/bcrypt_pbkdf
@@ -343,7 +343,7 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# golang.org/x/tools v0.16.1
+# golang.org/x/tools v0.17.0
 ## explicit; go 1.18
 golang.org/x/tools/go/ast/inspector
 # google.golang.org/genproto/googleapis/rpc v0.0.0-20240108191215-35c7eff3a6b1
