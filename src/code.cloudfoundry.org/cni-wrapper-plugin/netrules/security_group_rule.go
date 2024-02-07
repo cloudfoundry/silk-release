@@ -18,11 +18,18 @@ type securityGroupRule struct {
 }
 
 func NewRuleFromSecurityGroupRule(sgRule policy_client.SecurityGroupRule) (Rule, error) {
-	ipRange, err := toIPRange(sgRule.Destination)
-	if err != nil {
-		return nil, err
+	networks := []IPRange{}
+
+	destinations := strings.Split(sgRule.Destination, ",")
+	for _, dest := range destinations {
+		ipRange, err := toIPRange(dest)
+		if err != nil {
+			return nil, err
+		}
+		networks = append(networks, ipRange)
 	}
-	return &securityGroupRule{rule: sgRule, networks: []IPRange{ipRange}}, nil
+
+	return &securityGroupRule{rule: sgRule, networks: networks}, nil
 }
 
 func NewRulesFromSecurityGroupRules(securityGroupRules []policy_client.SecurityGroupRule) ([]Rule, error) {
@@ -83,6 +90,7 @@ func (r *securityGroupRule) ICMPInfo() *ICMPInfo {
 }
 
 func toIPRange(dest string) (IPRange, error) {
+	dest = strings.TrimSpace(dest)
 	idx := strings.IndexAny(dest, "-/")
 
 	// Not a range or a CIDR

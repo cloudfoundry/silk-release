@@ -11,7 +11,7 @@ import (
 )
 
 var _ = Describe("SecurityGroupRule", func() {
-	Describe("Networks", func() {
+	Describe("Destinations", func() {
 		It("parses an ip address", func() {
 			securityGroupRule := policy_client.SecurityGroupRule{
 				Destination: "10.0.0.1",
@@ -64,6 +64,42 @@ var _ = Describe("SecurityGroupRule", func() {
 			_, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(Equal(netrules.ErrIPRangeConversionFailed))
+		})
+
+		Context("there are multiple destinations (in a comma-delimited list) defined in a single rule", func() {
+			It("parses two ip addresses", func() {
+				securityGroupRule := policy_client.SecurityGroupRule{
+					Destination: "10.0.0.1,192.168.0.1",
+				}
+				rule, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rule.Networks()).To(Equal([]netrules.IPRange{
+					{Start: net.IPv4(10, 0, 0, 1), End: net.IPv4(10, 0, 0, 1)},
+					{Start: net.IPv4(192, 168, 0, 1), End: net.IPv4(192, 168, 0, 1)},
+				}))
+			})
+
+			It("parses all three possible destinations together: address, cidr, and range", func() {
+				securityGroupRule := policy_client.SecurityGroupRule{
+					Destination: "1.1.1.1, 192.168.0.0/24, 10.0.0.1-10.0.1.10",
+				}
+				rule, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rule.Networks()).To(Equal([]netrules.IPRange{
+					{Start: net.IPv4(1, 1, 1, 1), End: net.IPv4(1, 1, 1, 1)},
+					{Start: net.IPv4(192, 168, 0, 0).To4(), End: net.IPv4(192, 168, 0, 255).To4()},
+					{Start: net.IPv4(10, 0, 0, 1), End: net.IPv4(10, 0, 1, 10)},
+				}))
+			})
+
+			It("raises an error when one of the destinations is invalid", func() {
+				securityGroupRule := policy_client.SecurityGroupRule{
+					Destination: "1.1.1.1, 192.168.0.0/24, 10.0.0.1-123",
+				}
+				_, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(Equal(netrules.ErrIPRangeConversionFailed))
+			})
 		})
 	})
 
