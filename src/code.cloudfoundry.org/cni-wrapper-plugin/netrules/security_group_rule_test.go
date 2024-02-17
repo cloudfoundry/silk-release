@@ -81,7 +81,7 @@ var _ = Describe("SecurityGroupRule", func() {
 
 			It("parses all three possible destinations together: address, cidr, and range", func() {
 				securityGroupRule := policy_client.SecurityGroupRule{
-					Destination: "1.1.1.1, 192.168.0.0/24, 10.0.0.1-10.0.1.10",
+					Destination: "1.1.1.1,192.168.0.0/24,10.0.0.1-10.0.1.10",
 				}
 				rule, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
 				Expect(err).NotTo(HaveOccurred())
@@ -94,7 +94,7 @@ var _ = Describe("SecurityGroupRule", func() {
 
 			It("raises an error when one of the destinations is invalid", func() {
 				securityGroupRule := policy_client.SecurityGroupRule{
-					Destination: "1.1.1.1, 192.168.0.0/24, 10.0.0.1-123",
+					Destination: "1.1.1.1,192.168.0.0/24,10.0.0.1-123",
 				}
 				_, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
 				Expect(err).To(HaveOccurred())

@@ -90,7 +90,6 @@ func (r *securityGroupRule) ICMPInfo() *ICMPInfo {
 }
 
 func toIPRange(dest string) (IPRange, error) {
-	dest = strings.TrimSpace(dest)
 	idx := strings.IndexAny(dest, "-/")
 
 	// Not a range or a CIDR
