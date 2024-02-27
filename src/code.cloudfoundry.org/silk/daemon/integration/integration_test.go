@@ -357,7 +357,7 @@ var _ = Describe("Daemon Integration", func() {
 			fakeServer.SetHandler("/leases/renew", handler)
 
 			By("checking that the lease renewal failure is logged")
-			Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`silk-daemon.poll-cycle.*renew lease: http status 500`)))
+			Eventually(session.Out, 2).Should(gbytes.Say(`silk-daemon.poll-cycle.*renew lease: http status 500`))
 
 		})
 
@@ -393,7 +393,7 @@ var _ = Describe("Daemon Integration", func() {
 			Eventually(fakeMetron.AllEvents, "5s").Should(ContainElement(hasMetricWithValue("numberLeases", 0)))
 
 			By("checking that no leases are logged")
-			Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`silk-daemon.converge-leases.*"leases":\[]`)))
+			Eventually(session.Out, 2).Should(gbytes.Say(`silk-daemon.converge-leases.*"leases":\[]`))
 		})
 
 		Context("when cells with overlay subnets are brought down", func() {
@@ -431,7 +431,7 @@ var _ = Describe("Daemon Integration", func() {
 				)
 
 				By("checking that updated leases are logged")
-				Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`level.*debug.*silk-daemon.converge-leases`)))
+				Eventually(session.Out, 2).Should(gbytes.Say(`level.*debug.*silk-daemon.converge-leases`))
 				Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`underlay_ip.*%s.*overlay_subnet.*`+overlaySubnet+`.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`, localIP)))
 				Eventually(session.Out, 2).ShouldNot(gbytes.Say(`underlay_ip.*172.17.0.5.*overlay_subnet.*` + remoteOverlaySubnet + `.*overlay_hardware_addr.*ee:ee:0a:ff:28:00`))
 

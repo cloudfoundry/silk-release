@@ -97,7 +97,7 @@ func mainWithError() error {
 		return err
 	}
 
-	logger.Debug(fmt.Sprintf("sending TERM signal to silk-daemon"))
+	logger.Debug("sending TERM signal to silk-daemon")
 	_ = syscall.Kill(pid, syscall.SIGTERM)
 
 	silkDaemonMaxAttempts := 5
