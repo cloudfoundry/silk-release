@@ -33,7 +33,7 @@ func (c *NetOutChain) Validate() error {
 				return fmt.Errorf("deny networks: %s", err)
 			}
 
-			denyNetworks[destinationIndex] = fmt.Sprintf("%s", validatedDestination)
+			denyNetworks[destinationIndex] = validatedDestination.String()
 		}
 	}
 
