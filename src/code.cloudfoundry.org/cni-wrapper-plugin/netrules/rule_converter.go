@@ -52,9 +52,7 @@ type RuleConverter struct {
 func (c *RuleConverter) BulkConvert(ruleSpec []Rule, logChainName string, globalLogging bool) []rules.IPTablesRule {
 	iptablesRules := []rules.IPTablesRule{}
 	for _, rule := range ruleSpec {
-		for _, t := range c.Convert(rule, logChainName, globalLogging) {
-			iptablesRules = append(iptablesRules, t)
-		}
+		iptablesRules = append(iptablesRules, c.Convert(rule, logChainName, globalLogging)...)
 	}
 	return iptablesRules
 }
