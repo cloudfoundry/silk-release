@@ -33,5 +33,5 @@ func (fed *gracefulDetector) IsFatal(err error) bool {
 	if isNonRetriable {
 		return true
 	}
-	return time.Now().Sub(fed.lastSuccessTime) >= fed.graceDuration
+	return time.Since(fed.lastSuccessTime) >= fed.graceDuration
 }

@@ -124,12 +124,12 @@ func (m *SinglePollCycle) DoPolicyCycle() error {
 			m.policyRuleSets[ruleSet.Chain] = ruleSet
 		}
 
-		enforceDuration += time.Now().Sub(enforceStartTime)
+		enforceDuration += time.Since(enforceStartTime)
 	}
 
 	m.policyMutex.Unlock()
 
-	pollDuration := time.Now().Sub(pollStartTime)
+	pollDuration := time.Since(pollStartTime)
 	m.metricsSender.SendDuration(metricEnforceDuration, enforceDuration)
 	m.metricsSender.SendDuration(metricPollDuration, pollDuration)
 
@@ -192,7 +192,7 @@ func (m *SinglePollCycle) SyncASGsForContainers(containers ...string) error {
 			}
 			desiredChains = append(desiredChains, enforcer.LiveChain{Table: ruleset.Chain.Table, Name: m.containerToASGChain[chainKey]})
 		}
-		enforceDuration += time.Now().Sub(enforceStartTime)
+		enforceDuration += time.Since(enforceStartTime)
 	}
 
 	pollingLoop := len(containers) == 0
@@ -204,14 +204,14 @@ func (m *SinglePollCycle) SyncASGsForContainers(containers ...string) error {
 		if err != nil {
 			errors = multierror.Append(errors, err)
 		}
-		cleanupDuration = time.Now().Sub(cleanupStart)
+		cleanupDuration = time.Since(cleanupStart)
 	}
 	m.asgMutex.Unlock()
 
 	if pollingLoop {
 		m.metricsSender.SendDuration(metricASGEnforceDuration, enforceDuration)
 		m.metricsSender.SendDuration(metricASGCleanupDuration, cleanupDuration)
-		pollDuration := time.Now().Sub(pollStartTime)
+		pollDuration := time.Since(pollStartTime)
 		m.metricsSender.SendDuration(metricASGPollDuration, pollDuration)
 	}
 
