@@ -14,7 +14,7 @@ import (
 
 type Timestamper struct{}
 
-func (_ Timestamper) CurrentTime() int64 {
+func (Timestamper) CurrentTime() int64 {
 	return time.Now().UnixNano() / int64(time.Microsecond)
 }
 
