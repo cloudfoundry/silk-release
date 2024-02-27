@@ -21,10 +21,10 @@ import (
 )
 
 const (
-	ClientTimeoutSeconds = 5 * time.Second
-	IngressChainName     = "istio-ingress"
-	jobPrefix            = "silk-daemon-bootstrap"
-	logPrefix            = "cfnetworking"
+	ClientTimeout    = 5 * time.Second
+	IngressChainName = "istio-ingress"
+	jobPrefix        = "silk-daemon-bootstrap"
+	logPrefix        = "cfnetworking"
 )
 
 func main() {
@@ -96,7 +96,7 @@ func createPolicyClient(bootstrapConfig *config.SilkDaemonBootstrap, logger lage
 		Transport: &http.Transport{
 			TLSClientConfig: clientTLSConfig,
 		},
-		Timeout: ClientTimeoutSeconds,
+		Timeout: ClientTimeout,
 	}
 
 	return policyClient.NewInternal(
