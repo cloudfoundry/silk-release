@@ -739,7 +739,6 @@ func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 		}
 
 		w.WriteHeader(http.StatusNotFound)
-		return
 	})
 	someServer := http_server.NewTLSServer(serverListenAddr, testHandler, tlsConfig)
 

@@ -691,5 +691,4 @@ func setLogLevel(level string, port int) {
 	curlCmd := exec.Command("curl", serverAddress, "-X", "POST", "-d", level)
 	Expect(curlCmd.Start()).To(Succeed())
 	Expect(curlCmd.Wait()).To(Succeed())
-	return
 }
