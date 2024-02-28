@@ -34,6 +34,7 @@ var _ = Describe("Config", func() {
 				%q
 			]
 		}`, datastorePath, dataDirPath)), os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	It("should parse it", func() {
