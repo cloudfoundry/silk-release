@@ -644,8 +644,8 @@ var _ = Describe("Silk CNI Integration", func() {
 
 func writeSubnetEnvFile(subnet, fullNetwork string) string {
 	tempFile, err := ioutil.TempFile("", "subnet.env")
-	defer tempFile.Close()
 	Expect(err).NotTo(HaveOccurred())
+	defer tempFile.Close()
 	_, err = fmt.Fprintf(tempFile, `
 FLANNEL_SUBNET=%s
 FLANNEL_NETWORK=%s
