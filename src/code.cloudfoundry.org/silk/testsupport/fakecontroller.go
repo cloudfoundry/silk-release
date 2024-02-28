@@ -3,7 +3,6 @@ package testsupport
 import (
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -50,7 +49,7 @@ func (f *FakeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if fakeHandler == nil {
 		w.WriteHeader(http.StatusTeapot)
-		w.Write([]byte(fmt.Sprintf(`{}`)))
+		w.Write([]byte(`{}`))
 		return
 	}
 
