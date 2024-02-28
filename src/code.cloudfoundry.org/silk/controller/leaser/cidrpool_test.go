@@ -1,10 +1,11 @@
 package leaser_test
 
 import (
+	"net"
+
 	"code.cloudfoundry.org/silk/controller/leaser"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"net"
 )
 
 var _ = Describe("CIDRPool", func() {
@@ -24,7 +25,7 @@ var _ = Describe("CIDRPool", func() {
 				_, overlayNetwork, _ := net.ParseCIDR(overlayCIDR)
 				cidrPool := leaser.NewCIDRPool(overlayCIDR, subnetMask)
 
-				for blockDividedCIDR, _ := range cidrPool.GetBlockPool() {
+				for blockDividedCIDR := range cidrPool.GetBlockPool() {
 					_, blockNetwork, _ := net.ParseCIDR(blockDividedCIDR)
 					Expect(overlayNetwork.Contains(blockNetwork.IP)).Should(BeTrue())
 				}
@@ -53,7 +54,7 @@ var _ = Describe("CIDRPool", func() {
 
 			cidrPool := leaser.NewCIDRPool(overlayCIDR, subnetMask)
 			_, expectedSingleIPNetwork, _ := net.ParseCIDR(firstSubnet)
-			for singleIPCIDR, _ := range cidrPool.GetSinglePool() {
+			for singleIPCIDR := range cidrPool.GetSinglePool() {
 				_, singleIPNetwork, _ := net.ParseCIDR(singleIPCIDR)
 				Expect(expectedSingleIPNetwork.Contains(singleIPNetwork.IP)).Should(BeTrue())
 			}

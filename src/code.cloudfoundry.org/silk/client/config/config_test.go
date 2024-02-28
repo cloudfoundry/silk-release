@@ -60,7 +60,7 @@ var _ = Describe("Config.LoadConfig", func() {
 	})
 
 	It("errors if a required field is not set", func() {
-		for fieldName, _ := range requiredFields {
+		for fieldName := range requiredFields {
 			cfg := cloneMap(requiredFields)
 			delete(cfg, fieldName)
 
