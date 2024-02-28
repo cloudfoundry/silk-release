@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -298,24 +297,6 @@ const (
 	ERROR = "error"
 	FATAL = "fatal"
 )
-
-func initLoggerSink(logger lager.Logger, level string) *lager.ReconfigurableSink {
-	var logLevel lager.LogLevel
-	switch strings.ToLower(level) {
-	case DEBUG:
-		logLevel = lager.DEBUG
-	case INFO:
-		logLevel = lager.INFO
-	case ERROR:
-		logLevel = lager.ERROR
-	case FATAL:
-		logLevel = lager.FATAL
-	default:
-		logLevel = lager.INFO
-	}
-	w := lager.NewWriterSink(os.Stdout, lager.DEBUG)
-	return lager.NewReconfigurableSink(w, logLevel)
-}
 
 func createCustomDebugServer(listenAddress string, sink *lager.ReconfigurableSink, iptablesLoggingState *planner.LoggingState) ifrit.Runner {
 	mux := debugserver.Handler(sink).(*http.ServeMux)

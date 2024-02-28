@@ -626,10 +626,6 @@ func iptablesFilterRules() string {
 	return runIptablesCommandOnTable("filter", "S")
 }
 
-func iptablesNATRules() string {
-	return runIptablesCommandOnTable("nat", "S")
-}
-
 func runIptablesCommandOnTable(table, flag string) string {
 	return runIptablesCommand("-w", "-t", table, "-"+flag)
 }
