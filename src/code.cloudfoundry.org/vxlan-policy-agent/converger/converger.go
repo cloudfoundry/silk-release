@@ -153,7 +153,6 @@ func (m *SinglePollCycle) SyncASGsForContainers(containers ...string) error {
 	pollStartTime := time.Now()
 	var enforceDuration time.Duration
 
-	var allRuleSets []enforcer.RulesWithChain
 	var desiredChains []enforcer.LiveChain
 
 	var errors error
@@ -167,7 +166,6 @@ func (m *SinglePollCycle) SyncASGsForContainers(containers ...string) error {
 
 		enforceStartTime := time.Now()
 
-		allRuleSets = append(allRuleSets, asgrulesets...)
 		for _, ruleset := range asgrulesets {
 			chainKey := enforcer.LiveChain{Table: ruleset.Chain.Table, Name: ruleset.Chain.ParentChain}
 			oldRuleSet := m.asgRuleSets[chainKey]
