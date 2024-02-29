@@ -807,12 +807,6 @@ func mustSucceedInContainer(binary string, args ...string) string {
 	return mustSucceed("ip", cmdArgs...)
 }
 
-func mustStartInFakeHost(binary string, args ...string) *gexec.Session {
-	cmdArgs := []string{"netns", "exec", fakeHostNSName, binary}
-	cmdArgs = append(cmdArgs, args...)
-	return mustStart("ip", cmdArgs...)
-}
-
 func mustSucceedInFakeHost(binary string, args ...string) string {
 	cmdArgs := []string{"netns", "exec", fakeHostNSName, binary}
 	cmdArgs = append(cmdArgs, args...)

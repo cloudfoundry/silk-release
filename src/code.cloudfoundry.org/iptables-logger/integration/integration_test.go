@@ -26,7 +26,6 @@ import (
 )
 
 var (
-	outputDir  string
 	outputFile string
 )
 

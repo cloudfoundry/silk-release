@@ -6,10 +6,10 @@ import (
 )
 
 type LeaseReleaser struct {
-	ReleaseSubnetLeaseStub        func(underlayIP string) error
+	ReleaseSubnetLeaseStub        func(string) error
 	releaseSubnetLeaseMutex       sync.RWMutex
 	releaseSubnetLeaseArgsForCall []struct {
-		underlayIP string
+		arg1 string
 	}
 	releaseSubnetLeaseReturns struct {
 		result1 error
@@ -21,21 +21,23 @@ type LeaseReleaser struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *LeaseReleaser) ReleaseSubnetLease(underlayIP string) error {
+func (fake *LeaseReleaser) ReleaseSubnetLease(arg1 string) error {
 	fake.releaseSubnetLeaseMutex.Lock()
 	ret, specificReturn := fake.releaseSubnetLeaseReturnsOnCall[len(fake.releaseSubnetLeaseArgsForCall)]
 	fake.releaseSubnetLeaseArgsForCall = append(fake.releaseSubnetLeaseArgsForCall, struct {
-		underlayIP string
-	}{underlayIP})
-	fake.recordInvocation("ReleaseSubnetLease", []interface{}{underlayIP})
+		arg1 string
+	}{arg1})
+	stub := fake.ReleaseSubnetLeaseStub
+	fakeReturns := fake.releaseSubnetLeaseReturns
+	fake.recordInvocation("ReleaseSubnetLease", []interface{}{arg1})
 	fake.releaseSubnetLeaseMutex.Unlock()
-	if fake.ReleaseSubnetLeaseStub != nil {
-		return fake.ReleaseSubnetLeaseStub(underlayIP)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.releaseSubnetLeaseReturns.result1
+	return fakeReturns.result1
 }
 
 func (fake *LeaseReleaser) ReleaseSubnetLeaseCallCount() int {
@@ -44,13 +46,22 @@ func (fake *LeaseReleaser) ReleaseSubnetLeaseCallCount() int {
 	return len(fake.releaseSubnetLeaseArgsForCall)
 }
 
+func (fake *LeaseReleaser) ReleaseSubnetLeaseCalls(stub func(string) error) {
+	fake.releaseSubnetLeaseMutex.Lock()
+	defer fake.releaseSubnetLeaseMutex.Unlock()
+	fake.ReleaseSubnetLeaseStub = stub
+}
+
 func (fake *LeaseReleaser) ReleaseSubnetLeaseArgsForCall(i int) string {
 	fake.releaseSubnetLeaseMutex.RLock()
 	defer fake.releaseSubnetLeaseMutex.RUnlock()
-	return fake.releaseSubnetLeaseArgsForCall[i].underlayIP
+	argsForCall := fake.releaseSubnetLeaseArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *LeaseReleaser) ReleaseSubnetLeaseReturns(result1 error) {
+	fake.releaseSubnetLeaseMutex.Lock()
+	defer fake.releaseSubnetLeaseMutex.Unlock()
 	fake.ReleaseSubnetLeaseStub = nil
 	fake.releaseSubnetLeaseReturns = struct {
 		result1 error
@@ -58,6 +69,8 @@ func (fake *LeaseReleaser) ReleaseSubnetLeaseReturns(result1 error) {
 }
 
 func (fake *LeaseReleaser) ReleaseSubnetLeaseReturnsOnCall(i int, result1 error) {
+	fake.releaseSubnetLeaseMutex.Lock()
+	defer fake.releaseSubnetLeaseMutex.Unlock()
 	fake.ReleaseSubnetLeaseStub = nil
 	if fake.releaseSubnetLeaseReturnsOnCall == nil {
 		fake.releaseSubnetLeaseReturnsOnCall = make(map[int]struct {

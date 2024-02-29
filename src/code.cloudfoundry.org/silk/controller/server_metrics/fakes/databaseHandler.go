@@ -10,8 +10,9 @@ import (
 type DatabaseHandler struct {
 	AllStub        func() ([]controller.Lease, error)
 	allMutex       sync.RWMutex
-	allArgsForCall []struct{}
-	allReturns     struct {
+	allArgsForCall []struct {
+	}
+	allReturns struct {
 		result1 []controller.Lease
 		result2 error
 	}
@@ -39,16 +40,19 @@ type DatabaseHandler struct {
 func (fake *DatabaseHandler) All() ([]controller.Lease, error) {
 	fake.allMutex.Lock()
 	ret, specificReturn := fake.allReturnsOnCall[len(fake.allArgsForCall)]
-	fake.allArgsForCall = append(fake.allArgsForCall, struct{}{})
+	fake.allArgsForCall = append(fake.allArgsForCall, struct {
+	}{})
+	stub := fake.AllStub
+	fakeReturns := fake.allReturns
 	fake.recordInvocation("All", []interface{}{})
 	fake.allMutex.Unlock()
-	if fake.AllStub != nil {
-		return fake.AllStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.allReturns.result1, fake.allReturns.result2
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *DatabaseHandler) AllCallCount() int {
@@ -57,7 +61,15 @@ func (fake *DatabaseHandler) AllCallCount() int {
 	return len(fake.allArgsForCall)
 }
 
+func (fake *DatabaseHandler) AllCalls(stub func() ([]controller.Lease, error)) {
+	fake.allMutex.Lock()
+	defer fake.allMutex.Unlock()
+	fake.AllStub = stub
+}
+
 func (fake *DatabaseHandler) AllReturns(result1 []controller.Lease, result2 error) {
+	fake.allMutex.Lock()
+	defer fake.allMutex.Unlock()
 	fake.AllStub = nil
 	fake.allReturns = struct {
 		result1 []controller.Lease
@@ -66,6 +78,8 @@ func (fake *DatabaseHandler) AllReturns(result1 []controller.Lease, result2 erro
 }
 
 func (fake *DatabaseHandler) AllReturnsOnCall(i int, result1 []controller.Lease, result2 error) {
+	fake.allMutex.Lock()
+	defer fake.allMutex.Unlock()
 	fake.AllStub = nil
 	if fake.allReturnsOnCall == nil {
 		fake.allReturnsOnCall = make(map[int]struct {
@@ -85,15 +99,17 @@ func (fake *DatabaseHandler) AllActive(arg1 int) ([]controller.Lease, error) {
 	fake.allActiveArgsForCall = append(fake.allActiveArgsForCall, struct {
 		arg1 int
 	}{arg1})
+	stub := fake.AllActiveStub
+	fakeReturns := fake.allActiveReturns
 	fake.recordInvocation("AllActive", []interface{}{arg1})
 	fake.allActiveMutex.Unlock()
-	if fake.AllActiveStub != nil {
-		return fake.AllActiveStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.allActiveReturns.result1, fake.allActiveReturns.result2
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *DatabaseHandler) AllActiveCallCount() int {
@@ -102,13 +118,22 @@ func (fake *DatabaseHandler) AllActiveCallCount() int {
 	return len(fake.allActiveArgsForCall)
 }
 
+func (fake *DatabaseHandler) AllActiveCalls(stub func(int) ([]controller.Lease, error)) {
+	fake.allActiveMutex.Lock()
+	defer fake.allActiveMutex.Unlock()
+	fake.AllActiveStub = stub
+}
+
 func (fake *DatabaseHandler) AllActiveArgsForCall(i int) int {
 	fake.allActiveMutex.RLock()
 	defer fake.allActiveMutex.RUnlock()
-	return fake.allActiveArgsForCall[i].arg1
+	argsForCall := fake.allActiveArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *DatabaseHandler) AllActiveReturns(result1 []controller.Lease, result2 error) {
+	fake.allActiveMutex.Lock()
+	defer fake.allActiveMutex.Unlock()
 	fake.AllActiveStub = nil
 	fake.allActiveReturns = struct {
 		result1 []controller.Lease
@@ -117,6 +142,8 @@ func (fake *DatabaseHandler) AllActiveReturns(result1 []controller.Lease, result
 }
 
 func (fake *DatabaseHandler) AllActiveReturnsOnCall(i int, result1 []controller.Lease, result2 error) {
+	fake.allActiveMutex.Lock()
+	defer fake.allActiveMutex.Unlock()
 	fake.AllActiveStub = nil
 	if fake.allActiveReturnsOnCall == nil {
 		fake.allActiveReturnsOnCall = make(map[int]struct {

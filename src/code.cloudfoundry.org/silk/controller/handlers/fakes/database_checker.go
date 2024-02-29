@@ -8,8 +8,9 @@ import (
 type DatabaseChecker struct {
 	CheckDatabaseStub        func() error
 	checkDatabaseMutex       sync.RWMutex
-	checkDatabaseArgsForCall []struct{}
-	checkDatabaseReturns     struct {
+	checkDatabaseArgsForCall []struct {
+	}
+	checkDatabaseReturns struct {
 		result1 error
 	}
 	checkDatabaseReturnsOnCall map[int]struct {
@@ -22,16 +23,19 @@ type DatabaseChecker struct {
 func (fake *DatabaseChecker) CheckDatabase() error {
 	fake.checkDatabaseMutex.Lock()
 	ret, specificReturn := fake.checkDatabaseReturnsOnCall[len(fake.checkDatabaseArgsForCall)]
-	fake.checkDatabaseArgsForCall = append(fake.checkDatabaseArgsForCall, struct{}{})
+	fake.checkDatabaseArgsForCall = append(fake.checkDatabaseArgsForCall, struct {
+	}{})
+	stub := fake.CheckDatabaseStub
+	fakeReturns := fake.checkDatabaseReturns
 	fake.recordInvocation("CheckDatabase", []interface{}{})
 	fake.checkDatabaseMutex.Unlock()
-	if fake.CheckDatabaseStub != nil {
-		return fake.CheckDatabaseStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.checkDatabaseReturns.result1
+	return fakeReturns.result1
 }
 
 func (fake *DatabaseChecker) CheckDatabaseCallCount() int {
@@ -40,7 +44,15 @@ func (fake *DatabaseChecker) CheckDatabaseCallCount() int {
 	return len(fake.checkDatabaseArgsForCall)
 }
 
+func (fake *DatabaseChecker) CheckDatabaseCalls(stub func() error) {
+	fake.checkDatabaseMutex.Lock()
+	defer fake.checkDatabaseMutex.Unlock()
+	fake.CheckDatabaseStub = stub
+}
+
 func (fake *DatabaseChecker) CheckDatabaseReturns(result1 error) {
+	fake.checkDatabaseMutex.Lock()
+	defer fake.checkDatabaseMutex.Unlock()
 	fake.CheckDatabaseStub = nil
 	fake.checkDatabaseReturns = struct {
 		result1 error
@@ -48,6 +60,8 @@ func (fake *DatabaseChecker) CheckDatabaseReturns(result1 error) {
 }
 
 func (fake *DatabaseChecker) CheckDatabaseReturnsOnCall(i int, result1 error) {
+	fake.checkDatabaseMutex.Lock()
+	defer fake.checkDatabaseMutex.Unlock()
 	fake.CheckDatabaseStub = nil
 	if fake.checkDatabaseReturnsOnCall == nil {
 		fake.checkDatabaseReturnsOnCall = make(map[int]struct {

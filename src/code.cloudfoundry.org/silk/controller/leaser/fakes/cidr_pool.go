@@ -54,15 +54,17 @@ func (fake *CIDRPool) GetAvailableBlock(arg1 []string) string {
 	fake.getAvailableBlockArgsForCall = append(fake.getAvailableBlockArgsForCall, struct {
 		arg1 []string
 	}{arg1Copy})
+	stub := fake.GetAvailableBlockStub
+	fakeReturns := fake.getAvailableBlockReturns
 	fake.recordInvocation("GetAvailableBlock", []interface{}{arg1Copy})
 	fake.getAvailableBlockMutex.Unlock()
-	if fake.GetAvailableBlockStub != nil {
-		return fake.GetAvailableBlockStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.getAvailableBlockReturns.result1
+	return fakeReturns.result1
 }
 
 func (fake *CIDRPool) GetAvailableBlockCallCount() int {
@@ -71,13 +73,22 @@ func (fake *CIDRPool) GetAvailableBlockCallCount() int {
 	return len(fake.getAvailableBlockArgsForCall)
 }
 
+func (fake *CIDRPool) GetAvailableBlockCalls(stub func([]string) string) {
+	fake.getAvailableBlockMutex.Lock()
+	defer fake.getAvailableBlockMutex.Unlock()
+	fake.GetAvailableBlockStub = stub
+}
+
 func (fake *CIDRPool) GetAvailableBlockArgsForCall(i int) []string {
 	fake.getAvailableBlockMutex.RLock()
 	defer fake.getAvailableBlockMutex.RUnlock()
-	return fake.getAvailableBlockArgsForCall[i].arg1
+	argsForCall := fake.getAvailableBlockArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *CIDRPool) GetAvailableBlockReturns(result1 string) {
+	fake.getAvailableBlockMutex.Lock()
+	defer fake.getAvailableBlockMutex.Unlock()
 	fake.GetAvailableBlockStub = nil
 	fake.getAvailableBlockReturns = struct {
 		result1 string
@@ -85,6 +96,8 @@ func (fake *CIDRPool) GetAvailableBlockReturns(result1 string) {
 }
 
 func (fake *CIDRPool) GetAvailableBlockReturnsOnCall(i int, result1 string) {
+	fake.getAvailableBlockMutex.Lock()
+	defer fake.getAvailableBlockMutex.Unlock()
 	fake.GetAvailableBlockStub = nil
 	if fake.getAvailableBlockReturnsOnCall == nil {
 		fake.getAvailableBlockReturnsOnCall = make(map[int]struct {
@@ -107,15 +120,17 @@ func (fake *CIDRPool) GetAvailableSingleIP(arg1 []string) string {
 	fake.getAvailableSingleIPArgsForCall = append(fake.getAvailableSingleIPArgsForCall, struct {
 		arg1 []string
 	}{arg1Copy})
+	stub := fake.GetAvailableSingleIPStub
+	fakeReturns := fake.getAvailableSingleIPReturns
 	fake.recordInvocation("GetAvailableSingleIP", []interface{}{arg1Copy})
 	fake.getAvailableSingleIPMutex.Unlock()
-	if fake.GetAvailableSingleIPStub != nil {
-		return fake.GetAvailableSingleIPStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.getAvailableSingleIPReturns.result1
+	return fakeReturns.result1
 }
 
 func (fake *CIDRPool) GetAvailableSingleIPCallCount() int {
@@ -124,13 +139,22 @@ func (fake *CIDRPool) GetAvailableSingleIPCallCount() int {
 	return len(fake.getAvailableSingleIPArgsForCall)
 }
 
+func (fake *CIDRPool) GetAvailableSingleIPCalls(stub func([]string) string) {
+	fake.getAvailableSingleIPMutex.Lock()
+	defer fake.getAvailableSingleIPMutex.Unlock()
+	fake.GetAvailableSingleIPStub = stub
+}
+
 func (fake *CIDRPool) GetAvailableSingleIPArgsForCall(i int) []string {
 	fake.getAvailableSingleIPMutex.RLock()
 	defer fake.getAvailableSingleIPMutex.RUnlock()
-	return fake.getAvailableSingleIPArgsForCall[i].arg1
+	argsForCall := fake.getAvailableSingleIPArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *CIDRPool) GetAvailableSingleIPReturns(result1 string) {
+	fake.getAvailableSingleIPMutex.Lock()
+	defer fake.getAvailableSingleIPMutex.Unlock()
 	fake.GetAvailableSingleIPStub = nil
 	fake.getAvailableSingleIPReturns = struct {
 		result1 string
@@ -138,6 +162,8 @@ func (fake *CIDRPool) GetAvailableSingleIPReturns(result1 string) {
 }
 
 func (fake *CIDRPool) GetAvailableSingleIPReturnsOnCall(i int, result1 string) {
+	fake.getAvailableSingleIPMutex.Lock()
+	defer fake.getAvailableSingleIPMutex.Unlock()
 	fake.GetAvailableSingleIPStub = nil
 	if fake.getAvailableSingleIPReturnsOnCall == nil {
 		fake.getAvailableSingleIPReturnsOnCall = make(map[int]struct {
@@ -155,15 +181,17 @@ func (fake *CIDRPool) IsMember(arg1 string) bool {
 	fake.isMemberArgsForCall = append(fake.isMemberArgsForCall, struct {
 		arg1 string
 	}{arg1})
+	stub := fake.IsMemberStub
+	fakeReturns := fake.isMemberReturns
 	fake.recordInvocation("IsMember", []interface{}{arg1})
 	fake.isMemberMutex.Unlock()
-	if fake.IsMemberStub != nil {
-		return fake.IsMemberStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.isMemberReturns.result1
+	return fakeReturns.result1
 }
 
 func (fake *CIDRPool) IsMemberCallCount() int {
@@ -172,13 +200,22 @@ func (fake *CIDRPool) IsMemberCallCount() int {
 	return len(fake.isMemberArgsForCall)
 }
 
+func (fake *CIDRPool) IsMemberCalls(stub func(string) bool) {
+	fake.isMemberMutex.Lock()
+	defer fake.isMemberMutex.Unlock()
+	fake.IsMemberStub = stub
+}
+
 func (fake *CIDRPool) IsMemberArgsForCall(i int) string {
 	fake.isMemberMutex.RLock()
 	defer fake.isMemberMutex.RUnlock()
-	return fake.isMemberArgsForCall[i].arg1
+	argsForCall := fake.isMemberArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *CIDRPool) IsMemberReturns(result1 bool) {
+	fake.isMemberMutex.Lock()
+	defer fake.isMemberMutex.Unlock()
 	fake.IsMemberStub = nil
 	fake.isMemberReturns = struct {
 		result1 bool
@@ -186,6 +223,8 @@ func (fake *CIDRPool) IsMemberReturns(result1 bool) {
 }
 
 func (fake *CIDRPool) IsMemberReturnsOnCall(i int, result1 bool) {
+	fake.isMemberMutex.Lock()
+	defer fake.isMemberMutex.Unlock()
 	fake.IsMemberStub = nil
 	if fake.isMemberReturnsOnCall == nil {
 		fake.isMemberReturnsOnCall = make(map[int]struct {

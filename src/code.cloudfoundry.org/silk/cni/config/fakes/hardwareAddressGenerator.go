@@ -7,10 +7,10 @@ import (
 )
 
 type HardwareAddressGenerator struct {
-	GenerateForContainerStub        func(containerIP net.IP) (net.HardwareAddr, error)
+	GenerateForContainerStub        func(net.IP) (net.HardwareAddr, error)
 	generateForContainerMutex       sync.RWMutex
 	generateForContainerArgsForCall []struct {
-		containerIP net.IP
+		arg1 net.IP
 	}
 	generateForContainerReturns struct {
 		result1 net.HardwareAddr
@@ -20,10 +20,10 @@ type HardwareAddressGenerator struct {
 		result1 net.HardwareAddr
 		result2 error
 	}
-	GenerateForHostStub        func(containerIP net.IP) (net.HardwareAddr, error)
+	GenerateForHostStub        func(net.IP) (net.HardwareAddr, error)
 	generateForHostMutex       sync.RWMutex
 	generateForHostArgsForCall []struct {
-		containerIP net.IP
+		arg1 net.IP
 	}
 	generateForHostReturns struct {
 		result1 net.HardwareAddr
@@ -37,21 +37,23 @@ type HardwareAddressGenerator struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *HardwareAddressGenerator) GenerateForContainer(containerIP net.IP) (net.HardwareAddr, error) {
+func (fake *HardwareAddressGenerator) GenerateForContainer(arg1 net.IP) (net.HardwareAddr, error) {
 	fake.generateForContainerMutex.Lock()
 	ret, specificReturn := fake.generateForContainerReturnsOnCall[len(fake.generateForContainerArgsForCall)]
 	fake.generateForContainerArgsForCall = append(fake.generateForContainerArgsForCall, struct {
-		containerIP net.IP
-	}{containerIP})
-	fake.recordInvocation("GenerateForContainer", []interface{}{containerIP})
+		arg1 net.IP
+	}{arg1})
+	stub := fake.GenerateForContainerStub
+	fakeReturns := fake.generateForContainerReturns
+	fake.recordInvocation("GenerateForContainer", []interface{}{arg1})
 	fake.generateForContainerMutex.Unlock()
-	if fake.GenerateForContainerStub != nil {
-		return fake.GenerateForContainerStub(containerIP)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.generateForContainerReturns.result1, fake.generateForContainerReturns.result2
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *HardwareAddressGenerator) GenerateForContainerCallCount() int {
@@ -60,13 +62,22 @@ func (fake *HardwareAddressGenerator) GenerateForContainerCallCount() int {
 	return len(fake.generateForContainerArgsForCall)
 }
 
+func (fake *HardwareAddressGenerator) GenerateForContainerCalls(stub func(net.IP) (net.HardwareAddr, error)) {
+	fake.generateForContainerMutex.Lock()
+	defer fake.generateForContainerMutex.Unlock()
+	fake.GenerateForContainerStub = stub
+}
+
 func (fake *HardwareAddressGenerator) GenerateForContainerArgsForCall(i int) net.IP {
 	fake.generateForContainerMutex.RLock()
 	defer fake.generateForContainerMutex.RUnlock()
-	return fake.generateForContainerArgsForCall[i].containerIP
+	argsForCall := fake.generateForContainerArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *HardwareAddressGenerator) GenerateForContainerReturns(result1 net.HardwareAddr, result2 error) {
+	fake.generateForContainerMutex.Lock()
+	defer fake.generateForContainerMutex.Unlock()
 	fake.GenerateForContainerStub = nil
 	fake.generateForContainerReturns = struct {
 		result1 net.HardwareAddr
@@ -75,6 +86,8 @@ func (fake *HardwareAddressGenerator) GenerateForContainerReturns(result1 net.Ha
 }
 
 func (fake *HardwareAddressGenerator) GenerateForContainerReturnsOnCall(i int, result1 net.HardwareAddr, result2 error) {
+	fake.generateForContainerMutex.Lock()
+	defer fake.generateForContainerMutex.Unlock()
 	fake.GenerateForContainerStub = nil
 	if fake.generateForContainerReturnsOnCall == nil {
 		fake.generateForContainerReturnsOnCall = make(map[int]struct {
@@ -88,21 +101,23 @@ func (fake *HardwareAddressGenerator) GenerateForContainerReturnsOnCall(i int, r
 	}{result1, result2}
 }
 
-func (fake *HardwareAddressGenerator) GenerateForHost(containerIP net.IP) (net.HardwareAddr, error) {
+func (fake *HardwareAddressGenerator) GenerateForHost(arg1 net.IP) (net.HardwareAddr, error) {
 	fake.generateForHostMutex.Lock()
 	ret, specificReturn := fake.generateForHostReturnsOnCall[len(fake.generateForHostArgsForCall)]
 	fake.generateForHostArgsForCall = append(fake.generateForHostArgsForCall, struct {
-		containerIP net.IP
-	}{containerIP})
-	fake.recordInvocation("GenerateForHost", []interface{}{containerIP})
+		arg1 net.IP
+	}{arg1})
+	stub := fake.GenerateForHostStub
+	fakeReturns := fake.generateForHostReturns
+	fake.recordInvocation("GenerateForHost", []interface{}{arg1})
 	fake.generateForHostMutex.Unlock()
-	if fake.GenerateForHostStub != nil {
-		return fake.GenerateForHostStub(containerIP)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.generateForHostReturns.result1, fake.generateForHostReturns.result2
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *HardwareAddressGenerator) GenerateForHostCallCount() int {
@@ -111,13 +126,22 @@ func (fake *HardwareAddressGenerator) GenerateForHostCallCount() int {
 	return len(fake.generateForHostArgsForCall)
 }
 
+func (fake *HardwareAddressGenerator) GenerateForHostCalls(stub func(net.IP) (net.HardwareAddr, error)) {
+	fake.generateForHostMutex.Lock()
+	defer fake.generateForHostMutex.Unlock()
+	fake.GenerateForHostStub = stub
+}
+
 func (fake *HardwareAddressGenerator) GenerateForHostArgsForCall(i int) net.IP {
 	fake.generateForHostMutex.RLock()
 	defer fake.generateForHostMutex.RUnlock()
-	return fake.generateForHostArgsForCall[i].containerIP
+	argsForCall := fake.generateForHostArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *HardwareAddressGenerator) GenerateForHostReturns(result1 net.HardwareAddr, result2 error) {
+	fake.generateForHostMutex.Lock()
+	defer fake.generateForHostMutex.Unlock()
 	fake.GenerateForHostStub = nil
 	fake.generateForHostReturns = struct {
 		result1 net.HardwareAddr
@@ -126,6 +150,8 @@ func (fake *HardwareAddressGenerator) GenerateForHostReturns(result1 net.Hardwar
 }
 
 func (fake *HardwareAddressGenerator) GenerateForHostReturnsOnCall(i int, result1 net.HardwareAddr, result2 error) {
+	fake.generateForHostMutex.Lock()
+	defer fake.generateForHostMutex.Unlock()
 	fake.GenerateForHostStub = nil
 	if fake.generateForHostReturnsOnCall == nil {
 		fake.generateForHostReturnsOnCall = make(map[int]struct {

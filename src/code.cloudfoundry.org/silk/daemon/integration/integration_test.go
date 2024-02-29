@@ -29,7 +29,6 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/types"
 	matchers "github.com/pivotal-cf-experimental/gomegamatchers"
-	"github.com/tedsuo/ifrit"
 	"github.com/vishvananda/netlink"
 )
 
@@ -676,14 +675,6 @@ func mustSucceed(binary string, args ...string) string {
 	Expect(err).NotTo(HaveOccurred())
 	Eventually(sess, "10s").Should(gexec.Exit(0))
 	return string(sess.Out.Contents())
-}
-
-func stopServer(server ifrit.Process) {
-	if server == nil {
-		return
-	}
-	server.Signal(os.Interrupt)
-	Eventually(server.Wait()).Should(Receive())
 }
 
 func setLogLevel(level string, port int) {

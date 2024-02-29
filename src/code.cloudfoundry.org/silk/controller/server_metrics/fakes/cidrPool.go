@@ -8,8 +8,9 @@ import (
 type CIDRPool struct {
 	BlockPoolSizeStub        func() int
 	blockPoolSizeMutex       sync.RWMutex
-	blockPoolSizeArgsForCall []struct{}
-	blockPoolSizeReturns     struct {
+	blockPoolSizeArgsForCall []struct {
+	}
+	blockPoolSizeReturns struct {
 		result1 int
 	}
 	blockPoolSizeReturnsOnCall map[int]struct {
@@ -22,16 +23,19 @@ type CIDRPool struct {
 func (fake *CIDRPool) BlockPoolSize() int {
 	fake.blockPoolSizeMutex.Lock()
 	ret, specificReturn := fake.blockPoolSizeReturnsOnCall[len(fake.blockPoolSizeArgsForCall)]
-	fake.blockPoolSizeArgsForCall = append(fake.blockPoolSizeArgsForCall, struct{}{})
+	fake.blockPoolSizeArgsForCall = append(fake.blockPoolSizeArgsForCall, struct {
+	}{})
+	stub := fake.BlockPoolSizeStub
+	fakeReturns := fake.blockPoolSizeReturns
 	fake.recordInvocation("BlockPoolSize", []interface{}{})
 	fake.blockPoolSizeMutex.Unlock()
-	if fake.BlockPoolSizeStub != nil {
-		return fake.BlockPoolSizeStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.blockPoolSizeReturns.result1
+	return fakeReturns.result1
 }
 
 func (fake *CIDRPool) BlockPoolSizeCallCount() int {
@@ -40,7 +44,15 @@ func (fake *CIDRPool) BlockPoolSizeCallCount() int {
 	return len(fake.blockPoolSizeArgsForCall)
 }
 
+func (fake *CIDRPool) BlockPoolSizeCalls(stub func() int) {
+	fake.blockPoolSizeMutex.Lock()
+	defer fake.blockPoolSizeMutex.Unlock()
+	fake.BlockPoolSizeStub = stub
+}
+
 func (fake *CIDRPool) BlockPoolSizeReturns(result1 int) {
+	fake.blockPoolSizeMutex.Lock()
+	defer fake.blockPoolSizeMutex.Unlock()
 	fake.BlockPoolSizeStub = nil
 	fake.blockPoolSizeReturns = struct {
 		result1 int
@@ -48,6 +60,8 @@ func (fake *CIDRPool) BlockPoolSizeReturns(result1 int) {
 }
 
 func (fake *CIDRPool) BlockPoolSizeReturnsOnCall(i int, result1 int) {
+	fake.blockPoolSizeMutex.Lock()
+	defer fake.blockPoolSizeMutex.Unlock()
 	fake.BlockPoolSizeStub = nil
 	if fake.blockPoolSizeReturnsOnCall == nil {
 		fake.blockPoolSizeReturnsOnCall = make(map[int]struct {

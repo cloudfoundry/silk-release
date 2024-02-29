@@ -6,11 +6,11 @@ import (
 )
 
 type SysctlAdapter struct {
-	SysctlStub        func(name string, params ...string) (string, error)
+	SysctlStub        func(string, ...string) (string, error)
 	sysctlMutex       sync.RWMutex
 	sysctlArgsForCall []struct {
-		name   string
-		params []string
+		arg1 string
+		arg2 []string
 	}
 	sysctlReturns struct {
 		result1 string
@@ -24,22 +24,24 @@ type SysctlAdapter struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *SysctlAdapter) Sysctl(name string, params ...string) (string, error) {
+func (fake *SysctlAdapter) Sysctl(arg1 string, arg2 ...string) (string, error) {
 	fake.sysctlMutex.Lock()
 	ret, specificReturn := fake.sysctlReturnsOnCall[len(fake.sysctlArgsForCall)]
 	fake.sysctlArgsForCall = append(fake.sysctlArgsForCall, struct {
-		name   string
-		params []string
-	}{name, params})
-	fake.recordInvocation("Sysctl", []interface{}{name, params})
+		arg1 string
+		arg2 []string
+	}{arg1, arg2})
+	stub := fake.SysctlStub
+	fakeReturns := fake.sysctlReturns
+	fake.recordInvocation("Sysctl", []interface{}{arg1, arg2})
 	fake.sysctlMutex.Unlock()
-	if fake.SysctlStub != nil {
-		return fake.SysctlStub(name, params...)
+	if stub != nil {
+		return stub(arg1, arg2...)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.sysctlReturns.result1, fake.sysctlReturns.result2
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *SysctlAdapter) SysctlCallCount() int {
@@ -48,13 +50,22 @@ func (fake *SysctlAdapter) SysctlCallCount() int {
 	return len(fake.sysctlArgsForCall)
 }
 
+func (fake *SysctlAdapter) SysctlCalls(stub func(string, ...string) (string, error)) {
+	fake.sysctlMutex.Lock()
+	defer fake.sysctlMutex.Unlock()
+	fake.SysctlStub = stub
+}
+
 func (fake *SysctlAdapter) SysctlArgsForCall(i int) (string, []string) {
 	fake.sysctlMutex.RLock()
 	defer fake.sysctlMutex.RUnlock()
-	return fake.sysctlArgsForCall[i].name, fake.sysctlArgsForCall[i].params
+	argsForCall := fake.sysctlArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *SysctlAdapter) SysctlReturns(result1 string, result2 error) {
+	fake.sysctlMutex.Lock()
+	defer fake.sysctlMutex.Unlock()
 	fake.SysctlStub = nil
 	fake.sysctlReturns = struct {
 		result1 string
@@ -63,6 +74,8 @@ func (fake *SysctlAdapter) SysctlReturns(result1 string, result2 error) {
 }
 
 func (fake *SysctlAdapter) SysctlReturnsOnCall(i int, result1 string, result2 error) {
+	fake.sysctlMutex.Lock()
+	defer fake.sysctlMutex.Unlock()
 	fake.SysctlStub = nil
 	if fake.sysctlReturnsOnCall == nil {
 		fake.sysctlReturnsOnCall = make(map[int]struct {

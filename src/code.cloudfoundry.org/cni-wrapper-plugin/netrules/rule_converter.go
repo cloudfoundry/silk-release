@@ -137,7 +137,3 @@ func (c *RuleConverter) log(component, message string, args ...interface{}) {
 		fmt.Fprintf(c.LogWriter, message, args...)
 	}
 }
-
-func udpOrTcp(protocol garden.Protocol) bool {
-	return protocol == garden.ProtocolTCP || protocol == garden.ProtocolUDP
-}

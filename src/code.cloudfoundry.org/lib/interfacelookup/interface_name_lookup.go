@@ -7,12 +7,6 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-//go:generate counterfeiter -o ../fakes/netlinklink.go --fake-name NetlinkLink . netlinkLink
-type netlinkLink interface {
-	Attrs() *netlink.LinkAttrs
-	Type() string
-}
-
 //go:generate counterfeiter -o ../fakes/netlinkadapter.go --fake-name NetlinkAdapter . netlinkAdapter
 type netlinkAdapter interface {
 	LinkList() ([]netlink.Link, error)

@@ -8,12 +8,12 @@ import (
 )
 
 type Common struct {
-	BasicSetupStub        func(deviceName string, local, peer config.DualAddress) error
+	BasicSetupStub        func(string, config.DualAddress, config.DualAddress) error
 	basicSetupMutex       sync.RWMutex
 	basicSetupArgsForCall []struct {
-		deviceName string
-		local      config.DualAddress
-		peer       config.DualAddress
+		arg1 string
+		arg2 config.DualAddress
+		arg3 config.DualAddress
 	}
 	basicSetupReturns struct {
 		result1 error
@@ -25,23 +25,25 @@ type Common struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *Common) BasicSetup(deviceName string, local config.DualAddress, peer config.DualAddress) error {
+func (fake *Common) BasicSetup(arg1 string, arg2 config.DualAddress, arg3 config.DualAddress) error {
 	fake.basicSetupMutex.Lock()
 	ret, specificReturn := fake.basicSetupReturnsOnCall[len(fake.basicSetupArgsForCall)]
 	fake.basicSetupArgsForCall = append(fake.basicSetupArgsForCall, struct {
-		deviceName string
-		local      config.DualAddress
-		peer       config.DualAddress
-	}{deviceName, local, peer})
-	fake.recordInvocation("BasicSetup", []interface{}{deviceName, local, peer})
+		arg1 string
+		arg2 config.DualAddress
+		arg3 config.DualAddress
+	}{arg1, arg2, arg3})
+	stub := fake.BasicSetupStub
+	fakeReturns := fake.basicSetupReturns
+	fake.recordInvocation("BasicSetup", []interface{}{arg1, arg2, arg3})
 	fake.basicSetupMutex.Unlock()
-	if fake.BasicSetupStub != nil {
-		return fake.BasicSetupStub(deviceName, local, peer)
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.basicSetupReturns.result1
+	return fakeReturns.result1
 }
 
 func (fake *Common) BasicSetupCallCount() int {
@@ -50,13 +52,22 @@ func (fake *Common) BasicSetupCallCount() int {
 	return len(fake.basicSetupArgsForCall)
 }
 
+func (fake *Common) BasicSetupCalls(stub func(string, config.DualAddress, config.DualAddress) error) {
+	fake.basicSetupMutex.Lock()
+	defer fake.basicSetupMutex.Unlock()
+	fake.BasicSetupStub = stub
+}
+
 func (fake *Common) BasicSetupArgsForCall(i int) (string, config.DualAddress, config.DualAddress) {
 	fake.basicSetupMutex.RLock()
 	defer fake.basicSetupMutex.RUnlock()
-	return fake.basicSetupArgsForCall[i].deviceName, fake.basicSetupArgsForCall[i].local, fake.basicSetupArgsForCall[i].peer
+	argsForCall := fake.basicSetupArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *Common) BasicSetupReturns(result1 error) {
+	fake.basicSetupMutex.Lock()
+	defer fake.basicSetupMutex.Unlock()
 	fake.BasicSetupStub = nil
 	fake.basicSetupReturns = struct {
 		result1 error
@@ -64,6 +75,8 @@ func (fake *Common) BasicSetupReturns(result1 error) {
 }
 
 func (fake *Common) BasicSetupReturnsOnCall(i int, result1 error) {
+	fake.basicSetupMutex.Lock()
+	defer fake.basicSetupMutex.Unlock()
 	fake.BasicSetupStub = nil
 	if fake.basicSetupReturnsOnCall == nil {
 		fake.basicSetupReturnsOnCall = make(map[int]struct {

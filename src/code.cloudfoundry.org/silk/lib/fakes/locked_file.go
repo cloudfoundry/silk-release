@@ -4,10 +4,20 @@ package fakes
 import (
 	"sync"
 
-	"code.cloudfoundry.org/silk/lib/serial"
+	"code.cloudfoundry.org/silk/lib/datastore"
 )
 
-type OverwriteableFile struct {
+type LockedFile struct {
+	CloseStub        func() error
+	closeMutex       sync.RWMutex
+	closeArgsForCall []struct {
+	}
+	closeReturns struct {
+		result1 error
+	}
+	closeReturnsOnCall map[int]struct {
+		result1 error
+	}
 	ReadStub        func([]byte) (int, error)
 	readMutex       sync.RWMutex
 	readArgsForCall []struct {
@@ -63,7 +73,60 @@ type OverwriteableFile struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *OverwriteableFile) Read(arg1 []byte) (int, error) {
+func (fake *LockedFile) Close() error {
+	fake.closeMutex.Lock()
+	ret, specificReturn := fake.closeReturnsOnCall[len(fake.closeArgsForCall)]
+	fake.closeArgsForCall = append(fake.closeArgsForCall, struct {
+	}{})
+	stub := fake.CloseStub
+	fakeReturns := fake.closeReturns
+	fake.recordInvocation("Close", []interface{}{})
+	fake.closeMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *LockedFile) CloseCallCount() int {
+	fake.closeMutex.RLock()
+	defer fake.closeMutex.RUnlock()
+	return len(fake.closeArgsForCall)
+}
+
+func (fake *LockedFile) CloseCalls(stub func() error) {
+	fake.closeMutex.Lock()
+	defer fake.closeMutex.Unlock()
+	fake.CloseStub = stub
+}
+
+func (fake *LockedFile) CloseReturns(result1 error) {
+	fake.closeMutex.Lock()
+	defer fake.closeMutex.Unlock()
+	fake.CloseStub = nil
+	fake.closeReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *LockedFile) CloseReturnsOnCall(i int, result1 error) {
+	fake.closeMutex.Lock()
+	defer fake.closeMutex.Unlock()
+	fake.CloseStub = nil
+	if fake.closeReturnsOnCall == nil {
+		fake.closeReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.closeReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *LockedFile) Read(arg1 []byte) (int, error) {
 	var arg1Copy []byte
 	if arg1 != nil {
 		arg1Copy = make([]byte, len(arg1))
@@ -87,26 +150,26 @@ func (fake *OverwriteableFile) Read(arg1 []byte) (int, error) {
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *OverwriteableFile) ReadCallCount() int {
+func (fake *LockedFile) ReadCallCount() int {
 	fake.readMutex.RLock()
 	defer fake.readMutex.RUnlock()
 	return len(fake.readArgsForCall)
 }
 
-func (fake *OverwriteableFile) ReadCalls(stub func([]byte) (int, error)) {
+func (fake *LockedFile) ReadCalls(stub func([]byte) (int, error)) {
 	fake.readMutex.Lock()
 	defer fake.readMutex.Unlock()
 	fake.ReadStub = stub
 }
 
-func (fake *OverwriteableFile) ReadArgsForCall(i int) []byte {
+func (fake *LockedFile) ReadArgsForCall(i int) []byte {
 	fake.readMutex.RLock()
 	defer fake.readMutex.RUnlock()
 	argsForCall := fake.readArgsForCall[i]
 	return argsForCall.arg1
 }
 
-func (fake *OverwriteableFile) ReadReturns(result1 int, result2 error) {
+func (fake *LockedFile) ReadReturns(result1 int, result2 error) {
 	fake.readMutex.Lock()
 	defer fake.readMutex.Unlock()
 	fake.ReadStub = nil
@@ -116,7 +179,7 @@ func (fake *OverwriteableFile) ReadReturns(result1 int, result2 error) {
 	}{result1, result2}
 }
 
-func (fake *OverwriteableFile) ReadReturnsOnCall(i int, result1 int, result2 error) {
+func (fake *LockedFile) ReadReturnsOnCall(i int, result1 int, result2 error) {
 	fake.readMutex.Lock()
 	defer fake.readMutex.Unlock()
 	fake.ReadStub = nil
@@ -132,7 +195,7 @@ func (fake *OverwriteableFile) ReadReturnsOnCall(i int, result1 int, result2 err
 	}{result1, result2}
 }
 
-func (fake *OverwriteableFile) Seek(arg1 int64, arg2 int) (int64, error) {
+func (fake *LockedFile) Seek(arg1 int64, arg2 int) (int64, error) {
 	fake.seekMutex.Lock()
 	ret, specificReturn := fake.seekReturnsOnCall[len(fake.seekArgsForCall)]
 	fake.seekArgsForCall = append(fake.seekArgsForCall, struct {
@@ -152,26 +215,26 @@ func (fake *OverwriteableFile) Seek(arg1 int64, arg2 int) (int64, error) {
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *OverwriteableFile) SeekCallCount() int {
+func (fake *LockedFile) SeekCallCount() int {
 	fake.seekMutex.RLock()
 	defer fake.seekMutex.RUnlock()
 	return len(fake.seekArgsForCall)
 }
 
-func (fake *OverwriteableFile) SeekCalls(stub func(int64, int) (int64, error)) {
+func (fake *LockedFile) SeekCalls(stub func(int64, int) (int64, error)) {
 	fake.seekMutex.Lock()
 	defer fake.seekMutex.Unlock()
 	fake.SeekStub = stub
 }
 
-func (fake *OverwriteableFile) SeekArgsForCall(i int) (int64, int) {
+func (fake *LockedFile) SeekArgsForCall(i int) (int64, int) {
 	fake.seekMutex.RLock()
 	defer fake.seekMutex.RUnlock()
 	argsForCall := fake.seekArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *OverwriteableFile) SeekReturns(result1 int64, result2 error) {
+func (fake *LockedFile) SeekReturns(result1 int64, result2 error) {
 	fake.seekMutex.Lock()
 	defer fake.seekMutex.Unlock()
 	fake.SeekStub = nil
@@ -181,7 +244,7 @@ func (fake *OverwriteableFile) SeekReturns(result1 int64, result2 error) {
 	}{result1, result2}
 }
 
-func (fake *OverwriteableFile) SeekReturnsOnCall(i int, result1 int64, result2 error) {
+func (fake *LockedFile) SeekReturnsOnCall(i int, result1 int64, result2 error) {
 	fake.seekMutex.Lock()
 	defer fake.seekMutex.Unlock()
 	fake.SeekStub = nil
@@ -197,7 +260,7 @@ func (fake *OverwriteableFile) SeekReturnsOnCall(i int, result1 int64, result2 e
 	}{result1, result2}
 }
 
-func (fake *OverwriteableFile) Truncate(arg1 int64) error {
+func (fake *LockedFile) Truncate(arg1 int64) error {
 	fake.truncateMutex.Lock()
 	ret, specificReturn := fake.truncateReturnsOnCall[len(fake.truncateArgsForCall)]
 	fake.truncateArgsForCall = append(fake.truncateArgsForCall, struct {
@@ -216,26 +279,26 @@ func (fake *OverwriteableFile) Truncate(arg1 int64) error {
 	return fakeReturns.result1
 }
 
-func (fake *OverwriteableFile) TruncateCallCount() int {
+func (fake *LockedFile) TruncateCallCount() int {
 	fake.truncateMutex.RLock()
 	defer fake.truncateMutex.RUnlock()
 	return len(fake.truncateArgsForCall)
 }
 
-func (fake *OverwriteableFile) TruncateCalls(stub func(int64) error) {
+func (fake *LockedFile) TruncateCalls(stub func(int64) error) {
 	fake.truncateMutex.Lock()
 	defer fake.truncateMutex.Unlock()
 	fake.TruncateStub = stub
 }
 
-func (fake *OverwriteableFile) TruncateArgsForCall(i int) int64 {
+func (fake *LockedFile) TruncateArgsForCall(i int) int64 {
 	fake.truncateMutex.RLock()
 	defer fake.truncateMutex.RUnlock()
 	argsForCall := fake.truncateArgsForCall[i]
 	return argsForCall.arg1
 }
 
-func (fake *OverwriteableFile) TruncateReturns(result1 error) {
+func (fake *LockedFile) TruncateReturns(result1 error) {
 	fake.truncateMutex.Lock()
 	defer fake.truncateMutex.Unlock()
 	fake.TruncateStub = nil
@@ -244,7 +307,7 @@ func (fake *OverwriteableFile) TruncateReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *OverwriteableFile) TruncateReturnsOnCall(i int, result1 error) {
+func (fake *LockedFile) TruncateReturnsOnCall(i int, result1 error) {
 	fake.truncateMutex.Lock()
 	defer fake.truncateMutex.Unlock()
 	fake.TruncateStub = nil
@@ -258,7 +321,7 @@ func (fake *OverwriteableFile) TruncateReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *OverwriteableFile) Write(arg1 []byte) (int, error) {
+func (fake *LockedFile) Write(arg1 []byte) (int, error) {
 	var arg1Copy []byte
 	if arg1 != nil {
 		arg1Copy = make([]byte, len(arg1))
@@ -282,26 +345,26 @@ func (fake *OverwriteableFile) Write(arg1 []byte) (int, error) {
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *OverwriteableFile) WriteCallCount() int {
+func (fake *LockedFile) WriteCallCount() int {
 	fake.writeMutex.RLock()
 	defer fake.writeMutex.RUnlock()
 	return len(fake.writeArgsForCall)
 }
 
-func (fake *OverwriteableFile) WriteCalls(stub func([]byte) (int, error)) {
+func (fake *LockedFile) WriteCalls(stub func([]byte) (int, error)) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = stub
 }
 
-func (fake *OverwriteableFile) WriteArgsForCall(i int) []byte {
+func (fake *LockedFile) WriteArgsForCall(i int) []byte {
 	fake.writeMutex.RLock()
 	defer fake.writeMutex.RUnlock()
 	argsForCall := fake.writeArgsForCall[i]
 	return argsForCall.arg1
 }
 
-func (fake *OverwriteableFile) WriteReturns(result1 int, result2 error) {
+func (fake *LockedFile) WriteReturns(result1 int, result2 error) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = nil
@@ -311,7 +374,7 @@ func (fake *OverwriteableFile) WriteReturns(result1 int, result2 error) {
 	}{result1, result2}
 }
 
-func (fake *OverwriteableFile) WriteReturnsOnCall(i int, result1 int, result2 error) {
+func (fake *LockedFile) WriteReturnsOnCall(i int, result1 int, result2 error) {
 	fake.writeMutex.Lock()
 	defer fake.writeMutex.Unlock()
 	fake.WriteStub = nil
@@ -327,9 +390,11 @@ func (fake *OverwriteableFile) WriteReturnsOnCall(i int, result1 int, result2 er
 	}{result1, result2}
 }
 
-func (fake *OverwriteableFile) Invocations() map[string][][]interface{} {
+func (fake *LockedFile) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.closeMutex.RLock()
+	defer fake.closeMutex.RUnlock()
 	fake.readMutex.RLock()
 	defer fake.readMutex.RUnlock()
 	fake.seekMutex.RLock()
@@ -345,7 +410,7 @@ func (fake *OverwriteableFile) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
-func (fake *OverwriteableFile) recordInvocation(key string, args []interface{}) {
+func (fake *LockedFile) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {
@@ -357,4 +422,4 @@ func (fake *OverwriteableFile) recordInvocation(key string, args []interface{}) 
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ serial.OverwriteableFile = new(OverwriteableFile)
+var _ datastore.LockedFile = new(LockedFile)

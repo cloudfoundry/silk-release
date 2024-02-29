@@ -10,59 +10,10 @@ import (
 )
 
 type LinkOperations struct {
-	DisableIPv6Stub        func(deviceName string) error
-	disableIPv6Mutex       sync.RWMutex
-	disableIPv6ArgsForCall []struct {
-		deviceName string
-	}
-	disableIPv6Returns struct {
-		result1 error
-	}
-	disableIPv6ReturnsOnCall map[int]struct {
-		result1 error
-	}
-	StaticNeighborNoARPStub        func(link netlink.Link, dstIP net.IP, mac net.HardwareAddr) error
-	staticNeighborNoARPMutex       sync.RWMutex
-	staticNeighborNoARPArgsForCall []struct {
-		link  netlink.Link
-		dstIP net.IP
-		mac   net.HardwareAddr
-	}
-	staticNeighborNoARPReturns struct {
-		result1 error
-	}
-	staticNeighborNoARPReturnsOnCall map[int]struct {
-		result1 error
-	}
-	SetPointToPointAddressStub        func(link netlink.Link, localIPAddr, peerIPAddr net.IP) error
-	setPointToPointAddressMutex       sync.RWMutex
-	setPointToPointAddressArgsForCall []struct {
-		link        netlink.Link
-		localIPAddr net.IP
-		peerIPAddr  net.IP
-	}
-	setPointToPointAddressReturns struct {
-		result1 error
-	}
-	setPointToPointAddressReturnsOnCall map[int]struct {
-		result1 error
-	}
-	RenameLinkStub        func(oldName, newName string) error
-	renameLinkMutex       sync.RWMutex
-	renameLinkArgsForCall []struct {
-		oldName string
-		newName string
-	}
-	renameLinkReturns struct {
-		result1 error
-	}
-	renameLinkReturnsOnCall map[int]struct {
-		result1 error
-	}
-	DeleteLinkByNameStub        func(deviceName string) error
+	DeleteLinkByNameStub        func(string) error
 	deleteLinkByNameMutex       sync.RWMutex
 	deleteLinkByNameArgsForCall []struct {
-		deviceName string
+		arg1 string
 	}
 	deleteLinkByNameReturns struct {
 		result1 error
@@ -70,31 +21,31 @@ type LinkOperations struct {
 	deleteLinkByNameReturnsOnCall map[int]struct {
 		result1 error
 	}
-	RouteAddAllStub        func(route []*types.Route, sourceIP net.IP) error
-	routeAddAllMutex       sync.RWMutex
-	routeAddAllArgsForCall []struct {
-		route    []*types.Route
-		sourceIP net.IP
+	DisableIPv6Stub        func(string) error
+	disableIPv6Mutex       sync.RWMutex
+	disableIPv6ArgsForCall []struct {
+		arg1 string
 	}
-	routeAddAllReturns struct {
+	disableIPv6Returns struct {
 		result1 error
 	}
-	routeAddAllReturnsOnCall map[int]struct {
+	disableIPv6ReturnsOnCall map[int]struct {
 		result1 error
 	}
 	EnableIPv4ForwardingStub        func() error
 	enableIPv4ForwardingMutex       sync.RWMutex
-	enableIPv4ForwardingArgsForCall []struct{}
-	enableIPv4ForwardingReturns     struct {
+	enableIPv4ForwardingArgsForCall []struct {
+	}
+	enableIPv4ForwardingReturns struct {
 		result1 error
 	}
 	enableIPv4ForwardingReturnsOnCall map[int]struct {
 		result1 error
 	}
-	EnableReversePathFilteringStub        func(deviceName string) error
+	EnableReversePathFilteringStub        func(string) error
 	enableReversePathFilteringMutex       sync.RWMutex
 	enableReversePathFilteringArgsForCall []struct {
-		deviceName string
+		arg1 string
 	}
 	enableReversePathFilteringReturns struct {
 		result1 error
@@ -102,222 +53,77 @@ type LinkOperations struct {
 	enableReversePathFilteringReturnsOnCall map[int]struct {
 		result1 error
 	}
+	RenameLinkStub        func(string, string) error
+	renameLinkMutex       sync.RWMutex
+	renameLinkArgsForCall []struct {
+		arg1 string
+		arg2 string
+	}
+	renameLinkReturns struct {
+		result1 error
+	}
+	renameLinkReturnsOnCall map[int]struct {
+		result1 error
+	}
+	RouteAddAllStub        func([]*types.Route, net.IP) error
+	routeAddAllMutex       sync.RWMutex
+	routeAddAllArgsForCall []struct {
+		arg1 []*types.Route
+		arg2 net.IP
+	}
+	routeAddAllReturns struct {
+		result1 error
+	}
+	routeAddAllReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetPointToPointAddressStub        func(netlink.Link, net.IP, net.IP) error
+	setPointToPointAddressMutex       sync.RWMutex
+	setPointToPointAddressArgsForCall []struct {
+		arg1 netlink.Link
+		arg2 net.IP
+		arg3 net.IP
+	}
+	setPointToPointAddressReturns struct {
+		result1 error
+	}
+	setPointToPointAddressReturnsOnCall map[int]struct {
+		result1 error
+	}
+	StaticNeighborNoARPStub        func(netlink.Link, net.IP, net.HardwareAddr) error
+	staticNeighborNoARPMutex       sync.RWMutex
+	staticNeighborNoARPArgsForCall []struct {
+		arg1 netlink.Link
+		arg2 net.IP
+		arg3 net.HardwareAddr
+	}
+	staticNeighborNoARPReturns struct {
+		result1 error
+	}
+	staticNeighborNoARPReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *LinkOperations) DisableIPv6(deviceName string) error {
-	fake.disableIPv6Mutex.Lock()
-	ret, specificReturn := fake.disableIPv6ReturnsOnCall[len(fake.disableIPv6ArgsForCall)]
-	fake.disableIPv6ArgsForCall = append(fake.disableIPv6ArgsForCall, struct {
-		deviceName string
-	}{deviceName})
-	fake.recordInvocation("DisableIPv6", []interface{}{deviceName})
-	fake.disableIPv6Mutex.Unlock()
-	if fake.DisableIPv6Stub != nil {
-		return fake.DisableIPv6Stub(deviceName)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.disableIPv6Returns.result1
-}
-
-func (fake *LinkOperations) DisableIPv6CallCount() int {
-	fake.disableIPv6Mutex.RLock()
-	defer fake.disableIPv6Mutex.RUnlock()
-	return len(fake.disableIPv6ArgsForCall)
-}
-
-func (fake *LinkOperations) DisableIPv6ArgsForCall(i int) string {
-	fake.disableIPv6Mutex.RLock()
-	defer fake.disableIPv6Mutex.RUnlock()
-	return fake.disableIPv6ArgsForCall[i].deviceName
-}
-
-func (fake *LinkOperations) DisableIPv6Returns(result1 error) {
-	fake.DisableIPv6Stub = nil
-	fake.disableIPv6Returns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *LinkOperations) DisableIPv6ReturnsOnCall(i int, result1 error) {
-	fake.DisableIPv6Stub = nil
-	if fake.disableIPv6ReturnsOnCall == nil {
-		fake.disableIPv6ReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.disableIPv6ReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *LinkOperations) StaticNeighborNoARP(link netlink.Link, dstIP net.IP, mac net.HardwareAddr) error {
-	fake.staticNeighborNoARPMutex.Lock()
-	ret, specificReturn := fake.staticNeighborNoARPReturnsOnCall[len(fake.staticNeighborNoARPArgsForCall)]
-	fake.staticNeighborNoARPArgsForCall = append(fake.staticNeighborNoARPArgsForCall, struct {
-		link  netlink.Link
-		dstIP net.IP
-		mac   net.HardwareAddr
-	}{link, dstIP, mac})
-	fake.recordInvocation("StaticNeighborNoARP", []interface{}{link, dstIP, mac})
-	fake.staticNeighborNoARPMutex.Unlock()
-	if fake.StaticNeighborNoARPStub != nil {
-		return fake.StaticNeighborNoARPStub(link, dstIP, mac)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.staticNeighborNoARPReturns.result1
-}
-
-func (fake *LinkOperations) StaticNeighborNoARPCallCount() int {
-	fake.staticNeighborNoARPMutex.RLock()
-	defer fake.staticNeighborNoARPMutex.RUnlock()
-	return len(fake.staticNeighborNoARPArgsForCall)
-}
-
-func (fake *LinkOperations) StaticNeighborNoARPArgsForCall(i int) (netlink.Link, net.IP, net.HardwareAddr) {
-	fake.staticNeighborNoARPMutex.RLock()
-	defer fake.staticNeighborNoARPMutex.RUnlock()
-	return fake.staticNeighborNoARPArgsForCall[i].link, fake.staticNeighborNoARPArgsForCall[i].dstIP, fake.staticNeighborNoARPArgsForCall[i].mac
-}
-
-func (fake *LinkOperations) StaticNeighborNoARPReturns(result1 error) {
-	fake.StaticNeighborNoARPStub = nil
-	fake.staticNeighborNoARPReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *LinkOperations) StaticNeighborNoARPReturnsOnCall(i int, result1 error) {
-	fake.StaticNeighborNoARPStub = nil
-	if fake.staticNeighborNoARPReturnsOnCall == nil {
-		fake.staticNeighborNoARPReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.staticNeighborNoARPReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *LinkOperations) SetPointToPointAddress(link netlink.Link, localIPAddr net.IP, peerIPAddr net.IP) error {
-	fake.setPointToPointAddressMutex.Lock()
-	ret, specificReturn := fake.setPointToPointAddressReturnsOnCall[len(fake.setPointToPointAddressArgsForCall)]
-	fake.setPointToPointAddressArgsForCall = append(fake.setPointToPointAddressArgsForCall, struct {
-		link        netlink.Link
-		localIPAddr net.IP
-		peerIPAddr  net.IP
-	}{link, localIPAddr, peerIPAddr})
-	fake.recordInvocation("SetPointToPointAddress", []interface{}{link, localIPAddr, peerIPAddr})
-	fake.setPointToPointAddressMutex.Unlock()
-	if fake.SetPointToPointAddressStub != nil {
-		return fake.SetPointToPointAddressStub(link, localIPAddr, peerIPAddr)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.setPointToPointAddressReturns.result1
-}
-
-func (fake *LinkOperations) SetPointToPointAddressCallCount() int {
-	fake.setPointToPointAddressMutex.RLock()
-	defer fake.setPointToPointAddressMutex.RUnlock()
-	return len(fake.setPointToPointAddressArgsForCall)
-}
-
-func (fake *LinkOperations) SetPointToPointAddressArgsForCall(i int) (netlink.Link, net.IP, net.IP) {
-	fake.setPointToPointAddressMutex.RLock()
-	defer fake.setPointToPointAddressMutex.RUnlock()
-	return fake.setPointToPointAddressArgsForCall[i].link, fake.setPointToPointAddressArgsForCall[i].localIPAddr, fake.setPointToPointAddressArgsForCall[i].peerIPAddr
-}
-
-func (fake *LinkOperations) SetPointToPointAddressReturns(result1 error) {
-	fake.SetPointToPointAddressStub = nil
-	fake.setPointToPointAddressReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *LinkOperations) SetPointToPointAddressReturnsOnCall(i int, result1 error) {
-	fake.SetPointToPointAddressStub = nil
-	if fake.setPointToPointAddressReturnsOnCall == nil {
-		fake.setPointToPointAddressReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.setPointToPointAddressReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *LinkOperations) RenameLink(oldName string, newName string) error {
-	fake.renameLinkMutex.Lock()
-	ret, specificReturn := fake.renameLinkReturnsOnCall[len(fake.renameLinkArgsForCall)]
-	fake.renameLinkArgsForCall = append(fake.renameLinkArgsForCall, struct {
-		oldName string
-		newName string
-	}{oldName, newName})
-	fake.recordInvocation("RenameLink", []interface{}{oldName, newName})
-	fake.renameLinkMutex.Unlock()
-	if fake.RenameLinkStub != nil {
-		return fake.RenameLinkStub(oldName, newName)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fake.renameLinkReturns.result1
-}
-
-func (fake *LinkOperations) RenameLinkCallCount() int {
-	fake.renameLinkMutex.RLock()
-	defer fake.renameLinkMutex.RUnlock()
-	return len(fake.renameLinkArgsForCall)
-}
-
-func (fake *LinkOperations) RenameLinkArgsForCall(i int) (string, string) {
-	fake.renameLinkMutex.RLock()
-	defer fake.renameLinkMutex.RUnlock()
-	return fake.renameLinkArgsForCall[i].oldName, fake.renameLinkArgsForCall[i].newName
-}
-
-func (fake *LinkOperations) RenameLinkReturns(result1 error) {
-	fake.RenameLinkStub = nil
-	fake.renameLinkReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *LinkOperations) RenameLinkReturnsOnCall(i int, result1 error) {
-	fake.RenameLinkStub = nil
-	if fake.renameLinkReturnsOnCall == nil {
-		fake.renameLinkReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.renameLinkReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *LinkOperations) DeleteLinkByName(deviceName string) error {
+func (fake *LinkOperations) DeleteLinkByName(arg1 string) error {
 	fake.deleteLinkByNameMutex.Lock()
 	ret, specificReturn := fake.deleteLinkByNameReturnsOnCall[len(fake.deleteLinkByNameArgsForCall)]
 	fake.deleteLinkByNameArgsForCall = append(fake.deleteLinkByNameArgsForCall, struct {
-		deviceName string
-	}{deviceName})
-	fake.recordInvocation("DeleteLinkByName", []interface{}{deviceName})
+		arg1 string
+	}{arg1})
+	stub := fake.DeleteLinkByNameStub
+	fakeReturns := fake.deleteLinkByNameReturns
+	fake.recordInvocation("DeleteLinkByName", []interface{}{arg1})
 	fake.deleteLinkByNameMutex.Unlock()
-	if fake.DeleteLinkByNameStub != nil {
-		return fake.DeleteLinkByNameStub(deviceName)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.deleteLinkByNameReturns.result1
+	return fakeReturns.result1
 }
 
 func (fake *LinkOperations) DeleteLinkByNameCallCount() int {
@@ -326,13 +132,22 @@ func (fake *LinkOperations) DeleteLinkByNameCallCount() int {
 	return len(fake.deleteLinkByNameArgsForCall)
 }
 
+func (fake *LinkOperations) DeleteLinkByNameCalls(stub func(string) error) {
+	fake.deleteLinkByNameMutex.Lock()
+	defer fake.deleteLinkByNameMutex.Unlock()
+	fake.DeleteLinkByNameStub = stub
+}
+
 func (fake *LinkOperations) DeleteLinkByNameArgsForCall(i int) string {
 	fake.deleteLinkByNameMutex.RLock()
 	defer fake.deleteLinkByNameMutex.RUnlock()
-	return fake.deleteLinkByNameArgsForCall[i].deviceName
+	argsForCall := fake.deleteLinkByNameArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *LinkOperations) DeleteLinkByNameReturns(result1 error) {
+	fake.deleteLinkByNameMutex.Lock()
+	defer fake.deleteLinkByNameMutex.Unlock()
 	fake.DeleteLinkByNameStub = nil
 	fake.deleteLinkByNameReturns = struct {
 		result1 error
@@ -340,6 +155,8 @@ func (fake *LinkOperations) DeleteLinkByNameReturns(result1 error) {
 }
 
 func (fake *LinkOperations) DeleteLinkByNameReturnsOnCall(i int, result1 error) {
+	fake.deleteLinkByNameMutex.Lock()
+	defer fake.deleteLinkByNameMutex.Unlock()
 	fake.DeleteLinkByNameStub = nil
 	if fake.deleteLinkByNameReturnsOnCall == nil {
 		fake.deleteLinkByNameReturnsOnCall = make(map[int]struct {
@@ -351,56 +168,63 @@ func (fake *LinkOperations) DeleteLinkByNameReturnsOnCall(i int, result1 error) 
 	}{result1}
 }
 
-func (fake *LinkOperations) RouteAddAll(route []*types.Route, sourceIP net.IP) error {
-	var routeCopy []*types.Route
-	if route != nil {
-		routeCopy = make([]*types.Route, len(route))
-		copy(routeCopy, route)
-	}
-	fake.routeAddAllMutex.Lock()
-	ret, specificReturn := fake.routeAddAllReturnsOnCall[len(fake.routeAddAllArgsForCall)]
-	fake.routeAddAllArgsForCall = append(fake.routeAddAllArgsForCall, struct {
-		route    []*types.Route
-		sourceIP net.IP
-	}{routeCopy, sourceIP})
-	fake.recordInvocation("RouteAddAll", []interface{}{routeCopy, sourceIP})
-	fake.routeAddAllMutex.Unlock()
-	if fake.RouteAddAllStub != nil {
-		return fake.RouteAddAllStub(route, sourceIP)
+func (fake *LinkOperations) DisableIPv6(arg1 string) error {
+	fake.disableIPv6Mutex.Lock()
+	ret, specificReturn := fake.disableIPv6ReturnsOnCall[len(fake.disableIPv6ArgsForCall)]
+	fake.disableIPv6ArgsForCall = append(fake.disableIPv6ArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.DisableIPv6Stub
+	fakeReturns := fake.disableIPv6Returns
+	fake.recordInvocation("DisableIPv6", []interface{}{arg1})
+	fake.disableIPv6Mutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.routeAddAllReturns.result1
+	return fakeReturns.result1
 }
 
-func (fake *LinkOperations) RouteAddAllCallCount() int {
-	fake.routeAddAllMutex.RLock()
-	defer fake.routeAddAllMutex.RUnlock()
-	return len(fake.routeAddAllArgsForCall)
+func (fake *LinkOperations) DisableIPv6CallCount() int {
+	fake.disableIPv6Mutex.RLock()
+	defer fake.disableIPv6Mutex.RUnlock()
+	return len(fake.disableIPv6ArgsForCall)
 }
 
-func (fake *LinkOperations) RouteAddAllArgsForCall(i int) ([]*types.Route, net.IP) {
-	fake.routeAddAllMutex.RLock()
-	defer fake.routeAddAllMutex.RUnlock()
-	return fake.routeAddAllArgsForCall[i].route, fake.routeAddAllArgsForCall[i].sourceIP
+func (fake *LinkOperations) DisableIPv6Calls(stub func(string) error) {
+	fake.disableIPv6Mutex.Lock()
+	defer fake.disableIPv6Mutex.Unlock()
+	fake.DisableIPv6Stub = stub
 }
 
-func (fake *LinkOperations) RouteAddAllReturns(result1 error) {
-	fake.RouteAddAllStub = nil
-	fake.routeAddAllReturns = struct {
+func (fake *LinkOperations) DisableIPv6ArgsForCall(i int) string {
+	fake.disableIPv6Mutex.RLock()
+	defer fake.disableIPv6Mutex.RUnlock()
+	argsForCall := fake.disableIPv6ArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *LinkOperations) DisableIPv6Returns(result1 error) {
+	fake.disableIPv6Mutex.Lock()
+	defer fake.disableIPv6Mutex.Unlock()
+	fake.DisableIPv6Stub = nil
+	fake.disableIPv6Returns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *LinkOperations) RouteAddAllReturnsOnCall(i int, result1 error) {
-	fake.RouteAddAllStub = nil
-	if fake.routeAddAllReturnsOnCall == nil {
-		fake.routeAddAllReturnsOnCall = make(map[int]struct {
+func (fake *LinkOperations) DisableIPv6ReturnsOnCall(i int, result1 error) {
+	fake.disableIPv6Mutex.Lock()
+	defer fake.disableIPv6Mutex.Unlock()
+	fake.DisableIPv6Stub = nil
+	if fake.disableIPv6ReturnsOnCall == nil {
+		fake.disableIPv6ReturnsOnCall = make(map[int]struct {
 			result1 error
 		})
 	}
-	fake.routeAddAllReturnsOnCall[i] = struct {
+	fake.disableIPv6ReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }
@@ -408,16 +232,19 @@ func (fake *LinkOperations) RouteAddAllReturnsOnCall(i int, result1 error) {
 func (fake *LinkOperations) EnableIPv4Forwarding() error {
 	fake.enableIPv4ForwardingMutex.Lock()
 	ret, specificReturn := fake.enableIPv4ForwardingReturnsOnCall[len(fake.enableIPv4ForwardingArgsForCall)]
-	fake.enableIPv4ForwardingArgsForCall = append(fake.enableIPv4ForwardingArgsForCall, struct{}{})
+	fake.enableIPv4ForwardingArgsForCall = append(fake.enableIPv4ForwardingArgsForCall, struct {
+	}{})
+	stub := fake.EnableIPv4ForwardingStub
+	fakeReturns := fake.enableIPv4ForwardingReturns
 	fake.recordInvocation("EnableIPv4Forwarding", []interface{}{})
 	fake.enableIPv4ForwardingMutex.Unlock()
-	if fake.EnableIPv4ForwardingStub != nil {
-		return fake.EnableIPv4ForwardingStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.enableIPv4ForwardingReturns.result1
+	return fakeReturns.result1
 }
 
 func (fake *LinkOperations) EnableIPv4ForwardingCallCount() int {
@@ -426,7 +253,15 @@ func (fake *LinkOperations) EnableIPv4ForwardingCallCount() int {
 	return len(fake.enableIPv4ForwardingArgsForCall)
 }
 
+func (fake *LinkOperations) EnableIPv4ForwardingCalls(stub func() error) {
+	fake.enableIPv4ForwardingMutex.Lock()
+	defer fake.enableIPv4ForwardingMutex.Unlock()
+	fake.EnableIPv4ForwardingStub = stub
+}
+
 func (fake *LinkOperations) EnableIPv4ForwardingReturns(result1 error) {
+	fake.enableIPv4ForwardingMutex.Lock()
+	defer fake.enableIPv4ForwardingMutex.Unlock()
 	fake.EnableIPv4ForwardingStub = nil
 	fake.enableIPv4ForwardingReturns = struct {
 		result1 error
@@ -434,6 +269,8 @@ func (fake *LinkOperations) EnableIPv4ForwardingReturns(result1 error) {
 }
 
 func (fake *LinkOperations) EnableIPv4ForwardingReturnsOnCall(i int, result1 error) {
+	fake.enableIPv4ForwardingMutex.Lock()
+	defer fake.enableIPv4ForwardingMutex.Unlock()
 	fake.EnableIPv4ForwardingStub = nil
 	if fake.enableIPv4ForwardingReturnsOnCall == nil {
 		fake.enableIPv4ForwardingReturnsOnCall = make(map[int]struct {
@@ -445,21 +282,23 @@ func (fake *LinkOperations) EnableIPv4ForwardingReturnsOnCall(i int, result1 err
 	}{result1}
 }
 
-func (fake *LinkOperations) EnableReversePathFiltering(deviceName string) error {
+func (fake *LinkOperations) EnableReversePathFiltering(arg1 string) error {
 	fake.enableReversePathFilteringMutex.Lock()
 	ret, specificReturn := fake.enableReversePathFilteringReturnsOnCall[len(fake.enableReversePathFilteringArgsForCall)]
 	fake.enableReversePathFilteringArgsForCall = append(fake.enableReversePathFilteringArgsForCall, struct {
-		deviceName string
-	}{deviceName})
-	fake.recordInvocation("EnableReversePathFiltering", []interface{}{deviceName})
+		arg1 string
+	}{arg1})
+	stub := fake.EnableReversePathFilteringStub
+	fakeReturns := fake.enableReversePathFilteringReturns
+	fake.recordInvocation("EnableReversePathFiltering", []interface{}{arg1})
 	fake.enableReversePathFilteringMutex.Unlock()
-	if fake.EnableReversePathFilteringStub != nil {
-		return fake.EnableReversePathFilteringStub(deviceName)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.enableReversePathFilteringReturns.result1
+	return fakeReturns.result1
 }
 
 func (fake *LinkOperations) EnableReversePathFilteringCallCount() int {
@@ -468,13 +307,22 @@ func (fake *LinkOperations) EnableReversePathFilteringCallCount() int {
 	return len(fake.enableReversePathFilteringArgsForCall)
 }
 
+func (fake *LinkOperations) EnableReversePathFilteringCalls(stub func(string) error) {
+	fake.enableReversePathFilteringMutex.Lock()
+	defer fake.enableReversePathFilteringMutex.Unlock()
+	fake.EnableReversePathFilteringStub = stub
+}
+
 func (fake *LinkOperations) EnableReversePathFilteringArgsForCall(i int) string {
 	fake.enableReversePathFilteringMutex.RLock()
 	defer fake.enableReversePathFilteringMutex.RUnlock()
-	return fake.enableReversePathFilteringArgsForCall[i].deviceName
+	argsForCall := fake.enableReversePathFilteringArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *LinkOperations) EnableReversePathFilteringReturns(result1 error) {
+	fake.enableReversePathFilteringMutex.Lock()
+	defer fake.enableReversePathFilteringMutex.Unlock()
 	fake.EnableReversePathFilteringStub = nil
 	fake.enableReversePathFilteringReturns = struct {
 		result1 error
@@ -482,6 +330,8 @@ func (fake *LinkOperations) EnableReversePathFilteringReturns(result1 error) {
 }
 
 func (fake *LinkOperations) EnableReversePathFilteringReturnsOnCall(i int, result1 error) {
+	fake.enableReversePathFilteringMutex.Lock()
+	defer fake.enableReversePathFilteringMutex.Unlock()
 	fake.EnableReversePathFilteringStub = nil
 	if fake.enableReversePathFilteringReturnsOnCall == nil {
 		fake.enableReversePathFilteringReturnsOnCall = make(map[int]struct {
@@ -493,25 +343,280 @@ func (fake *LinkOperations) EnableReversePathFilteringReturnsOnCall(i int, resul
 	}{result1}
 }
 
+func (fake *LinkOperations) RenameLink(arg1 string, arg2 string) error {
+	fake.renameLinkMutex.Lock()
+	ret, specificReturn := fake.renameLinkReturnsOnCall[len(fake.renameLinkArgsForCall)]
+	fake.renameLinkArgsForCall = append(fake.renameLinkArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	stub := fake.RenameLinkStub
+	fakeReturns := fake.renameLinkReturns
+	fake.recordInvocation("RenameLink", []interface{}{arg1, arg2})
+	fake.renameLinkMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *LinkOperations) RenameLinkCallCount() int {
+	fake.renameLinkMutex.RLock()
+	defer fake.renameLinkMutex.RUnlock()
+	return len(fake.renameLinkArgsForCall)
+}
+
+func (fake *LinkOperations) RenameLinkCalls(stub func(string, string) error) {
+	fake.renameLinkMutex.Lock()
+	defer fake.renameLinkMutex.Unlock()
+	fake.RenameLinkStub = stub
+}
+
+func (fake *LinkOperations) RenameLinkArgsForCall(i int) (string, string) {
+	fake.renameLinkMutex.RLock()
+	defer fake.renameLinkMutex.RUnlock()
+	argsForCall := fake.renameLinkArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *LinkOperations) RenameLinkReturns(result1 error) {
+	fake.renameLinkMutex.Lock()
+	defer fake.renameLinkMutex.Unlock()
+	fake.RenameLinkStub = nil
+	fake.renameLinkReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *LinkOperations) RenameLinkReturnsOnCall(i int, result1 error) {
+	fake.renameLinkMutex.Lock()
+	defer fake.renameLinkMutex.Unlock()
+	fake.RenameLinkStub = nil
+	if fake.renameLinkReturnsOnCall == nil {
+		fake.renameLinkReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.renameLinkReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *LinkOperations) RouteAddAll(arg1 []*types.Route, arg2 net.IP) error {
+	var arg1Copy []*types.Route
+	if arg1 != nil {
+		arg1Copy = make([]*types.Route, len(arg1))
+		copy(arg1Copy, arg1)
+	}
+	fake.routeAddAllMutex.Lock()
+	ret, specificReturn := fake.routeAddAllReturnsOnCall[len(fake.routeAddAllArgsForCall)]
+	fake.routeAddAllArgsForCall = append(fake.routeAddAllArgsForCall, struct {
+		arg1 []*types.Route
+		arg2 net.IP
+	}{arg1Copy, arg2})
+	stub := fake.RouteAddAllStub
+	fakeReturns := fake.routeAddAllReturns
+	fake.recordInvocation("RouteAddAll", []interface{}{arg1Copy, arg2})
+	fake.routeAddAllMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *LinkOperations) RouteAddAllCallCount() int {
+	fake.routeAddAllMutex.RLock()
+	defer fake.routeAddAllMutex.RUnlock()
+	return len(fake.routeAddAllArgsForCall)
+}
+
+func (fake *LinkOperations) RouteAddAllCalls(stub func([]*types.Route, net.IP) error) {
+	fake.routeAddAllMutex.Lock()
+	defer fake.routeAddAllMutex.Unlock()
+	fake.RouteAddAllStub = stub
+}
+
+func (fake *LinkOperations) RouteAddAllArgsForCall(i int) ([]*types.Route, net.IP) {
+	fake.routeAddAllMutex.RLock()
+	defer fake.routeAddAllMutex.RUnlock()
+	argsForCall := fake.routeAddAllArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *LinkOperations) RouteAddAllReturns(result1 error) {
+	fake.routeAddAllMutex.Lock()
+	defer fake.routeAddAllMutex.Unlock()
+	fake.RouteAddAllStub = nil
+	fake.routeAddAllReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *LinkOperations) RouteAddAllReturnsOnCall(i int, result1 error) {
+	fake.routeAddAllMutex.Lock()
+	defer fake.routeAddAllMutex.Unlock()
+	fake.RouteAddAllStub = nil
+	if fake.routeAddAllReturnsOnCall == nil {
+		fake.routeAddAllReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.routeAddAllReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *LinkOperations) SetPointToPointAddress(arg1 netlink.Link, arg2 net.IP, arg3 net.IP) error {
+	fake.setPointToPointAddressMutex.Lock()
+	ret, specificReturn := fake.setPointToPointAddressReturnsOnCall[len(fake.setPointToPointAddressArgsForCall)]
+	fake.setPointToPointAddressArgsForCall = append(fake.setPointToPointAddressArgsForCall, struct {
+		arg1 netlink.Link
+		arg2 net.IP
+		arg3 net.IP
+	}{arg1, arg2, arg3})
+	stub := fake.SetPointToPointAddressStub
+	fakeReturns := fake.setPointToPointAddressReturns
+	fake.recordInvocation("SetPointToPointAddress", []interface{}{arg1, arg2, arg3})
+	fake.setPointToPointAddressMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *LinkOperations) SetPointToPointAddressCallCount() int {
+	fake.setPointToPointAddressMutex.RLock()
+	defer fake.setPointToPointAddressMutex.RUnlock()
+	return len(fake.setPointToPointAddressArgsForCall)
+}
+
+func (fake *LinkOperations) SetPointToPointAddressCalls(stub func(netlink.Link, net.IP, net.IP) error) {
+	fake.setPointToPointAddressMutex.Lock()
+	defer fake.setPointToPointAddressMutex.Unlock()
+	fake.SetPointToPointAddressStub = stub
+}
+
+func (fake *LinkOperations) SetPointToPointAddressArgsForCall(i int) (netlink.Link, net.IP, net.IP) {
+	fake.setPointToPointAddressMutex.RLock()
+	defer fake.setPointToPointAddressMutex.RUnlock()
+	argsForCall := fake.setPointToPointAddressArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *LinkOperations) SetPointToPointAddressReturns(result1 error) {
+	fake.setPointToPointAddressMutex.Lock()
+	defer fake.setPointToPointAddressMutex.Unlock()
+	fake.SetPointToPointAddressStub = nil
+	fake.setPointToPointAddressReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *LinkOperations) SetPointToPointAddressReturnsOnCall(i int, result1 error) {
+	fake.setPointToPointAddressMutex.Lock()
+	defer fake.setPointToPointAddressMutex.Unlock()
+	fake.SetPointToPointAddressStub = nil
+	if fake.setPointToPointAddressReturnsOnCall == nil {
+		fake.setPointToPointAddressReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setPointToPointAddressReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *LinkOperations) StaticNeighborNoARP(arg1 netlink.Link, arg2 net.IP, arg3 net.HardwareAddr) error {
+	fake.staticNeighborNoARPMutex.Lock()
+	ret, specificReturn := fake.staticNeighborNoARPReturnsOnCall[len(fake.staticNeighborNoARPArgsForCall)]
+	fake.staticNeighborNoARPArgsForCall = append(fake.staticNeighborNoARPArgsForCall, struct {
+		arg1 netlink.Link
+		arg2 net.IP
+		arg3 net.HardwareAddr
+	}{arg1, arg2, arg3})
+	stub := fake.StaticNeighborNoARPStub
+	fakeReturns := fake.staticNeighborNoARPReturns
+	fake.recordInvocation("StaticNeighborNoARP", []interface{}{arg1, arg2, arg3})
+	fake.staticNeighborNoARPMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *LinkOperations) StaticNeighborNoARPCallCount() int {
+	fake.staticNeighborNoARPMutex.RLock()
+	defer fake.staticNeighborNoARPMutex.RUnlock()
+	return len(fake.staticNeighborNoARPArgsForCall)
+}
+
+func (fake *LinkOperations) StaticNeighborNoARPCalls(stub func(netlink.Link, net.IP, net.HardwareAddr) error) {
+	fake.staticNeighborNoARPMutex.Lock()
+	defer fake.staticNeighborNoARPMutex.Unlock()
+	fake.StaticNeighborNoARPStub = stub
+}
+
+func (fake *LinkOperations) StaticNeighborNoARPArgsForCall(i int) (netlink.Link, net.IP, net.HardwareAddr) {
+	fake.staticNeighborNoARPMutex.RLock()
+	defer fake.staticNeighborNoARPMutex.RUnlock()
+	argsForCall := fake.staticNeighborNoARPArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *LinkOperations) StaticNeighborNoARPReturns(result1 error) {
+	fake.staticNeighborNoARPMutex.Lock()
+	defer fake.staticNeighborNoARPMutex.Unlock()
+	fake.StaticNeighborNoARPStub = nil
+	fake.staticNeighborNoARPReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *LinkOperations) StaticNeighborNoARPReturnsOnCall(i int, result1 error) {
+	fake.staticNeighborNoARPMutex.Lock()
+	defer fake.staticNeighborNoARPMutex.Unlock()
+	fake.StaticNeighborNoARPStub = nil
+	if fake.staticNeighborNoARPReturnsOnCall == nil {
+		fake.staticNeighborNoARPReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.staticNeighborNoARPReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *LinkOperations) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.disableIPv6Mutex.RLock()
-	defer fake.disableIPv6Mutex.RUnlock()
-	fake.staticNeighborNoARPMutex.RLock()
-	defer fake.staticNeighborNoARPMutex.RUnlock()
-	fake.setPointToPointAddressMutex.RLock()
-	defer fake.setPointToPointAddressMutex.RUnlock()
-	fake.renameLinkMutex.RLock()
-	defer fake.renameLinkMutex.RUnlock()
 	fake.deleteLinkByNameMutex.RLock()
 	defer fake.deleteLinkByNameMutex.RUnlock()
-	fake.routeAddAllMutex.RLock()
-	defer fake.routeAddAllMutex.RUnlock()
+	fake.disableIPv6Mutex.RLock()
+	defer fake.disableIPv6Mutex.RUnlock()
 	fake.enableIPv4ForwardingMutex.RLock()
 	defer fake.enableIPv4ForwardingMutex.RUnlock()
 	fake.enableReversePathFilteringMutex.RLock()
 	defer fake.enableReversePathFilteringMutex.RUnlock()
+	fake.renameLinkMutex.RLock()
+	defer fake.renameLinkMutex.RUnlock()
+	fake.routeAddAllMutex.RLock()
+	defer fake.routeAddAllMutex.RUnlock()
+	fake.setPointToPointAddressMutex.RLock()
+	defer fake.setPointToPointAddressMutex.RUnlock()
+	fake.staticNeighborNoARPMutex.RLock()
+	defer fake.staticNeighborNoARPMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
