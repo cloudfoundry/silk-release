@@ -3,7 +3,6 @@ package integration_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"code.cloudfoundry.org/iptables-logger/config"
@@ -41,13 +40,13 @@ var _ = SynchronizedAfterSuite(func() {}, func() {
 })
 
 func WriteConfigFile(conf config.Config) string {
-	configFile, err := ioutil.TempFile("", "test-config")
+	configFile, err := os.CreateTemp("", "test-config")
 	Expect(err).NotTo(HaveOccurred())
 
 	configBytes, err := json.Marshal(conf)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = ioutil.WriteFile(configFile.Name(), configBytes, os.ModePerm)
+	err = os.WriteFile(configFile.Name(), configBytes, os.ModePerm)
 	Expect(err).NotTo(HaveOccurred())
 
 	return configFile.Name()

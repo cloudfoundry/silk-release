@@ -2,7 +2,6 @@ package pollers
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -51,7 +50,7 @@ func countNetworkInterfaces() (int, error) {
 }
 
 func readStatsFile(ifName, stat string) (int, error) {
-	txBytesData, err := ioutil.ReadFile(filepath.Join("/sys/class/net/", ifName, "/statistics/", stat))
+	txBytesData, err := os.ReadFile(filepath.Join("/sys/class/net/", ifName, "/statistics/", stat))
 	if err != nil {
 		return 0, fmt.Errorf("failed reading txbytes file: %s", err)
 	}

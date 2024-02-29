@@ -2,8 +2,9 @@
 package fakes
 
 import (
-	"code.cloudfoundry.org/policy_client"
 	"sync"
+
+	"code.cloudfoundry.org/policy_client"
 )
 
 type Chunker struct {

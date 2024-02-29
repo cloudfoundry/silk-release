@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/user"
 	"sync"
@@ -44,11 +43,11 @@ var _ = Describe("Datastore", func() {
 		}
 
 		var err error
-		dataFile, err = ioutil.TempFile(os.TempDir(), "dataFile")
+		dataFile, err = os.CreateTemp(os.TempDir(), "dataFile")
 		Expect(err).NotTo(HaveOccurred())
-		versionFile, err = ioutil.TempFile(os.TempDir(), "versionFile")
+		versionFile, err = os.CreateTemp(os.TempDir(), "versionFile")
 		Expect(err).NotTo(HaveOccurred())
-		lockedFile, err = ioutil.TempFile(os.TempDir(), "lockedFile")
+		lockedFile, err = os.CreateTemp(os.TempDir(), "lockedFile")
 		Expect(err).NotTo(HaveOccurred())
 
 		currentUser, err := user.Current()
@@ -98,14 +97,14 @@ var _ = Describe("Datastore", func() {
 			err := store.Add(handle, ip, metadata)
 			Expect(err).NotTo(HaveOccurred())
 
-			versionContents, err := ioutil.ReadFile(versionFile.Name())
+			versionContents, err := os.ReadFile(versionFile.Name())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(versionContents)).To(Equal("2"))
 
 			err = store.Add(handle, ip, metadata)
 			Expect(err).NotTo(HaveOccurred())
 
-			versionContents, err = ioutil.ReadFile(versionFile.Name())
+			versionContents, err = os.ReadFile(versionFile.Name())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(versionContents)).To(Equal("3"))
 		})
@@ -247,14 +246,14 @@ var _ = Describe("Datastore", func() {
 			_, err := store.Delete(handle)
 			Expect(err).NotTo(HaveOccurred())
 
-			versionContents, err := ioutil.ReadFile(versionFile.Name())
+			versionContents, err := os.ReadFile(versionFile.Name())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(versionContents)).To(Equal("2"))
 
 			_, err = store.Delete(handle)
 			Expect(err).NotTo(HaveOccurred())
 
-			versionContents, err = ioutil.ReadFile(versionFile.Name())
+			versionContents, err = os.ReadFile(versionFile.Name())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(versionContents)).To(Equal("3"))
 		})
@@ -358,7 +357,7 @@ var _ = Describe("Datastore", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(data).NotTo(BeNil())
 
-				err = ioutil.WriteFile(store.VersionFilePath, []byte("3"), os.ModePerm)
+				err = os.WriteFile(store.VersionFilePath, []byte("3"), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 
 				data, err = store.ReadAll()
@@ -427,7 +426,7 @@ var _ = Describe("Datastore", func() {
 
 		Context("when the version file has non-version contents", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(store.VersionFilePath, []byte("foo"), os.ModePerm)
+				err := os.WriteFile(store.VersionFilePath, []byte("foo"), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("wraps and returns the error", func() {

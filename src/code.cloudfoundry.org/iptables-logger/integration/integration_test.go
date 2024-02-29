@@ -3,7 +3,6 @@ package integration_test
 import (
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -140,13 +139,13 @@ var _ = Describe("Integration", func() {
 		suiteConfig, _ := GinkgoConfiguration()
 		fakeMetron = metrics.NewFakeMetron(suiteConfig.ParallelProcess)
 
-		kernelLogFile, err = ioutil.TempFile("", "")
+		kernelLogFile, err = os.CreateTemp("", "")
 		Expect(err).ToNot(HaveOccurred())
 
-		containerMetadataFile, err = ioutil.TempFile("", "")
+		containerMetadataFile, err = os.CreateTemp("", "")
 		Expect(err).ToNot(HaveOccurred())
 
-		outputDir, err := ioutil.TempDir("", "")
+		outputDir, err := os.MkdirTemp("", "")
 		Expect(err).ToNot(HaveOccurred())
 
 		outputFile = filepath.Join(outputDir, "iptables.log")
@@ -207,7 +206,7 @@ var _ = Describe("Integration", func() {
 		Eventually(outputFile).Should(BeAnExistingFile())
 
 		Eventually(func() string {
-			bytes, err := ioutil.ReadFile(outputFile)
+			bytes, err := os.ReadFile(outputFile)
 			Expect(err).NotTo(HaveOccurred())
 			return string(bytes)
 		}, "5s").ShouldNot(BeEmpty())
@@ -390,7 +389,7 @@ func ReadLines() []string {
 }
 
 func ReadOutput() string {
-	bytes, err := ioutil.ReadFile(outputFile)
+	bytes, err := os.ReadFile(outputFile)
 	Expect(err).NotTo(HaveOccurred())
 	if string(bytes) == "" {
 		return "{}"

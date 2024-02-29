@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 
-	"io/ioutil"
 	"testing"
 
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport"
@@ -38,7 +38,7 @@ func TestIntegration(t *testing.T) {
 
 var _ = SynchronizedBeforeSuite(func() []byte {
 	var err error
-	certDir, err = ioutil.TempDir("", "policy-server-certs")
+	certDir, err = os.MkdirTemp("", "policy-server-certs")
 	Expect(err).NotTo(HaveOccurred())
 
 	certWriter, err := testsupport.NewCertWriter(certDir)

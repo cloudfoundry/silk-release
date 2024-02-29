@@ -2,7 +2,6 @@ package datastore_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sync/atomic"
 
@@ -34,7 +33,7 @@ var _ = Describe("Datastore Lifecycle", func() {
 			"randomKey":     "randomValue",
 		}
 
-		file, err := ioutil.TempFile("", "")
+		file, err := os.CreateTemp("", "")
 		Expect(err).NotTo(HaveOccurred())
 		filepath = file.Name()
 

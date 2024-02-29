@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 )
 
 type Config struct {
@@ -11,7 +11,7 @@ type Config struct {
 }
 
 func LoadConfig(pathToConfig string) (*Config, error) {
-	contents, err := ioutil.ReadFile(pathToConfig)
+	contents, err := os.ReadFile(pathToConfig)
 	if err != nil {
 		return nil, fmt.Errorf("loading config: %s", err)
 	}

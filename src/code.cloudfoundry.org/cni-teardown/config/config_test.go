@@ -2,7 +2,6 @@ package config_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -25,10 +24,10 @@ var _ = Describe("Config", func() {
 		dataDirPath = "/data/dir/path"
 
 		var err error
-		tempDir, err = ioutil.TempDir("", "")
+		tempDir, err = os.MkdirTemp("", "")
 		Expect(err).NotTo(HaveOccurred())
 		configPath = filepath.Join(tempDir, "teardown-config.json")
-		err = ioutil.WriteFile(configPath, []byte(fmt.Sprintf(`{
+		err = os.WriteFile(configPath, []byte(fmt.Sprintf(`{
 			"paths_to_delete": [
 				%q,
 				%q
@@ -57,7 +56,7 @@ var _ = Describe("Config", func() {
 
 	Context("when the file contents are invalid json", func() {
 		It("returns an error", func() {
-			err := ioutil.WriteFile(configPath, []byte(`garbage`), os.ModePerm)
+			err := os.WriteFile(configPath, []byte(`garbage`), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 			_, err = config.LoadConfig(configPath)
 			Expect(err).To(MatchError(ContainSubstring("reading config: invalid character")))

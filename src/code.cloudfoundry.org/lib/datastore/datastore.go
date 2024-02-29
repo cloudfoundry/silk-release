@@ -2,7 +2,7 @@ package datastore
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"os"
 	"os/user"
@@ -253,7 +253,7 @@ func (c *Store) updateVersion() error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(c.VersionFilePath, []byte(strconv.Itoa(version+1)), os.ModePerm)
+	err = os.WriteFile(c.VersionFilePath, []byte(strconv.Itoa(version+1)), os.ModePerm)
 	if err != nil {
 		// not tested
 		return fmt.Errorf("write version file: %s", err)
@@ -270,7 +270,7 @@ func (c *Store) currentVersion() (int, error) {
 	}
 	defer versionFile.Close()
 
-	versionContents, err := ioutil.ReadAll(versionFile)
+	versionContents, err := io.ReadAll(versionFile)
 	if err != nil {
 		// not tested
 		return version, fmt.Errorf("open version file: %s", err)

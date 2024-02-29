@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -87,7 +86,7 @@ func mainWithError() error {
 		logger.Debug(fmt.Sprintf("reading %s, not empty after %d check attempts. Continuing", containerMetadataStore.DataFilePath, fileCheckMaxAttempts))
 	}
 
-	pidFileConents, err := ioutil.ReadFile(*silkDaemonPidPath)
+	pidFileConents, err := os.ReadFile(*silkDaemonPidPath)
 	if err != nil {
 		return err
 	}

@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -91,7 +91,7 @@ var _ = BeforeEach(func() {
 	serverListenPort = ports.PickAPort()
 	vtepPort = ports.PickAPort()
 	serverListenAddr = fmt.Sprintf("127.0.0.1:%d", serverListenPort)
-	datastoreDir, err := ioutil.TempDir("", "")
+	datastoreDir, err := os.MkdirTemp("", "")
 	Expect(err).NotTo(HaveOccurred())
 	datastorePath = filepath.Join(datastoreDir, "container-metadata.json")
 	daemonConf = config.Config{
@@ -256,7 +256,7 @@ var _ = Describe("Daemon Integration", func() {
 	Context("when single ip only is true", func() {
 		BeforeEach(func() {
 			fakeServer.SetHandlerFunc("/leases/acquire", func(w http.ResponseWriter, req *http.Request) {
-				contents, err := ioutil.ReadAll(req.Body)
+				contents, err := io.ReadAll(req.Body)
 				Expect(err).NotTo(HaveOccurred())
 
 				var acquireRequest controller.AcquireLeaseRequest
@@ -597,7 +597,7 @@ func doHealthCheckWithErr() error {
 	if err != nil {
 		return err
 	}
-	responseBytes, err := ioutil.ReadAll(resp.Body)
+	responseBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -619,13 +619,13 @@ func doHealthCheckWithErr() error {
 }
 
 func writeConfigFile(config config.Config) string {
-	configFile, err := ioutil.TempFile("", "test-config")
+	configFile, err := os.CreateTemp("", "test-config")
 	Expect(err).NotTo(HaveOccurred())
 
 	configBytes, err := json.Marshal(config)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = ioutil.WriteFile(configFile.Name(), configBytes, os.ModePerm)
+	err = os.WriteFile(configFile.Name(), configBytes, os.ModePerm)
 	Expect(err).NotTo(HaveOccurred())
 
 	return configFile.Name()

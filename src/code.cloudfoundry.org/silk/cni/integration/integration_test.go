@@ -3,7 +3,6 @@ package integration_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"math/rand"
 	"net"
@@ -67,7 +66,7 @@ var _ = BeforeEach(func() {
 	}
 	cniEnv["CNI_NETNS"] = containerNS.Path()
 
-	dataDir, err = ioutil.TempDir("", "cni-data-dir-")
+	dataDir, err = os.MkdirTemp("", "cni-data-dir-")
 	Expect(err).NotTo(HaveOccurred())
 
 	flannelSubnetBaseIP, flannelSubnetCIDR, _ := net.ParseCIDR("10.255.30.0/24")
@@ -82,7 +81,7 @@ var _ = BeforeEach(func() {
 
 	cniStdin = cniConfig(dataDir, datastorePath, daemonPort)
 
-	datastoreDir, err := ioutil.TempDir("", "metadata-dir-")
+	datastoreDir, err := os.MkdirTemp("", "metadata-dir-")
 	Expect(err).NotTo(HaveOccurred())
 	datastorePath = filepath.Join(datastoreDir, "container-metadata.json")
 })
@@ -503,7 +502,7 @@ var _ = Describe("Silk CNI Integration", func() {
 			Expect(result.IPs[0].Gateway.String()).To(Equal("169.254.0.1"))
 
 			By("checking that the ip is reserved for the correct container id")
-			bytes, err := ioutil.ReadFile(filepath.Join(dataDir, "ipam/my-silk-network/10.255.30.2"))
+			bytes, err := os.ReadFile(filepath.Join(dataDir, "ipam/my-silk-network/10.255.30.2"))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(bytes)).To(Equal(fmt.Sprintf("%s\r\neth0", containerID)))
 
@@ -522,7 +521,7 @@ var _ = Describe("Silk CNI Integration", func() {
 			Eventually(sess, cmdTimeout).Should(gexec.Exit(0))
 
 			By("checking that the container metadata is written")
-			containerMetadata, err := ioutil.ReadFile(datastorePath)
+			containerMetadata, err := os.ReadFile(datastorePath)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(string(containerMetadata)).To(MatchJSON(fmt.Sprintf(`{
@@ -539,7 +538,7 @@ var _ = Describe("Silk CNI Integration", func() {
 			Expect(sess.Out.Contents()).To(BeEmpty())
 
 			By("checking that the container metadata is deleted")
-			containerMetadata, err = ioutil.ReadFile(datastorePath)
+			containerMetadata, err = os.ReadFile(datastorePath)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(string(containerMetadata)).NotTo(ContainSubstring("169.254.0.1"))
@@ -643,7 +642,7 @@ var _ = Describe("Silk CNI Integration", func() {
 })
 
 func writeSubnetEnvFile(subnet, fullNetwork string) string {
-	tempFile, err := ioutil.TempFile("", "subnet.env")
+	tempFile, err := os.CreateTemp("", "subnet.env")
 	Expect(err).NotTo(HaveOccurred())
 	defer tempFile.Close()
 	_, err = fmt.Fprintf(tempFile, `

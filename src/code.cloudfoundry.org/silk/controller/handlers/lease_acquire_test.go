@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 
@@ -110,7 +110,7 @@ var _ = Describe("LeasesAcquire", func() {
 		var request *http.Request
 		BeforeEach(func() {
 			var err error
-			request, err = http.NewRequest("PUT", "/leases/acquire", ioutil.NopCloser(&testsupport.BadReader{}))
+			request, err = http.NewRequest("PUT", "/leases/acquire", io.NopCloser(&testsupport.BadReader{}))
 			Expect(err).NotTo(HaveOccurred())
 		})
 

@@ -3,7 +3,6 @@ package config_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"code.cloudfoundry.org/cf-networking-helpers/db"
@@ -56,7 +55,7 @@ var _ = Describe("Config.ReadFromFile", func() {
 	It("does not error on a valid config", func() {
 		cfg := cloneMap(requiredFields)
 
-		file, err := ioutil.TempFile(os.TempDir(), "config-")
+		file, err := os.CreateTemp(os.TempDir(), "config-")
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(json.NewEncoder(file).Encode(cfg)).To(Succeed())
@@ -71,7 +70,7 @@ var _ = Describe("Config.ReadFromFile", func() {
 
 			delete(cfg, missingFlag)
 
-			file, err := ioutil.TempFile(os.TempDir(), "config-")
+			file, err := os.CreateTemp(os.TempDir(), "config-")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(json.NewEncoder(file).Encode(cfg)).To(Succeed())
@@ -102,7 +101,7 @@ var _ = Describe("Config.ReadFromFile", func() {
 			cfg := cloneMap(requiredFields)
 			cfg[invalidField] = value
 
-			file, err := ioutil.TempFile(os.TempDir(), "config-")
+			file, err := os.CreateTemp(os.TempDir(), "config-")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(json.NewEncoder(file).Encode(cfg)).To(Succeed())

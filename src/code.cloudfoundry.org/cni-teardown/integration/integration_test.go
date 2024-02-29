@@ -3,7 +3,6 @@ package integration_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -36,15 +35,15 @@ var _ = Describe("Teardown", func() {
 		var err error
 
 		// /var/vcap/data/container-metadata
-		datastorePath, err = ioutil.TempDir(os.TempDir(), fmt.Sprintf("container-metadata-%d", GinkgoParallelProcess()))
+		datastorePath, err = os.MkdirTemp(os.TempDir(), fmt.Sprintf("container-metadata-%d", GinkgoParallelProcess()))
 		Expect(err).NotTo(HaveOccurred())
 
 		// /var/vcap/data/host-local
-		delegateDataDirPath, err = ioutil.TempDir(os.TempDir(), fmt.Sprintf("host-local-%d", GinkgoParallelProcess()))
+		delegateDataDirPath, err = os.MkdirTemp(os.TempDir(), fmt.Sprintf("host-local-%d", GinkgoParallelProcess()))
 		Expect(err).NotTo(HaveOccurred())
 
 		// /var/vcap/data/silk/store.json
-		delegateDatastorePath, err = ioutil.TempDir(os.TempDir(), fmt.Sprintf("silk-%d", GinkgoParallelProcess()))
+		delegateDatastorePath, err = os.MkdirTemp(os.TempDir(), fmt.Sprintf("silk-%d", GinkgoParallelProcess()))
 		Expect(err).NotTo(HaveOccurred())
 
 		teardownConfig = &config.Config{
@@ -208,7 +207,7 @@ var _ = Describe("Teardown", func() {
 
 	Context("when the config file exists but cannot be read", func() {
 		BeforeEach(func() {
-			err := ioutil.WriteFile(configFilePath, []byte("some-bad-data"), os.ModePerm)
+			err := os.WriteFile(configFilePath, []byte("some-bad-data"), os.ModePerm)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -286,13 +285,13 @@ func fileExists(path string) bool {
 }
 
 func writeConfigFile(teardownConfig config.Config) string {
-	configFile, err := ioutil.TempFile("", "test-config")
+	configFile, err := os.CreateTemp("", "test-config")
 	Expect(err).NotTo(HaveOccurred())
 
 	configBytes, err := json.Marshal(teardownConfig)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = ioutil.WriteFile(configFile.Name(), configBytes, os.ModePerm)
+	err = os.WriteFile(configFile.Name(), configBytes, os.ModePerm)
 	Expect(err).NotTo(HaveOccurred())
 
 	return configFile.Name()

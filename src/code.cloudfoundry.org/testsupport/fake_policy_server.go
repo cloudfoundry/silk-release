@@ -3,12 +3,13 @@ package testsupport
 import (
 	"crypto/tls"
 	"fmt"
+	"net/http"
+	"os"
+
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/http_server"
 	"github.com/tedsuo/ifrit/sigmon"
-	"net/http"
-	"os"
 )
 
 type FakePolicyServer struct {

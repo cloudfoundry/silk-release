@@ -4,8 +4,8 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"os/exec"
 	"path/filepath"
 
@@ -57,7 +57,7 @@ func StartAndWaitForServer(controllerBinaryPath string, conf config.Config, clie
 }
 
 func WriteConfigFile(conf config.Config) string {
-	configFile, err := ioutil.TempFile("", "config-")
+	configFile, err := os.CreateTemp("", "config-")
 	Expect(err).NotTo(HaveOccurred())
 	configFilePath := configFile.Name()
 	Expect(configFile.Close()).To(Succeed())
@@ -94,7 +94,7 @@ func makeClientTLSConfig(fixturesPath string) *tls.Config {
 	Expect(err).NotTo(HaveOccurred())
 
 	clientCAPath := filepath.Join(fixturesPath, "ca.crt")
-	clientCACert, err := ioutil.ReadFile(clientCAPath)
+	clientCACert, err := os.ReadFile(clientCAPath)
 	Expect(err).NotTo(HaveOccurred())
 
 	clientCertPool := x509.NewCertPool()

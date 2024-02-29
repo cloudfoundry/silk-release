@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"gopkg.in/validator.v2"
 )
@@ -34,7 +34,7 @@ type Config struct {
 
 func LoadConfig(filePath string) (Config, error) {
 	var cfg Config
-	contents, err := ioutil.ReadFile(filePath)
+	contents, err := os.ReadFile(filePath)
 	if err != nil {
 		return cfg, fmt.Errorf("reading file %s: %s", filePath, err)
 	}
