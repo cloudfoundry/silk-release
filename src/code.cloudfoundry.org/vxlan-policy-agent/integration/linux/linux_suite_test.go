@@ -6,7 +6,6 @@ package linux_test
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"os"
 
 	"code.cloudfoundry.org/vxlan-policy-agent/config"
@@ -104,9 +103,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	return data
 }, func(data []byte) {
 	Expect(json.Unmarshal(data, &paths)).To(Succeed())
-
-	suiteConfig, _ := GinkgoConfiguration()
-	rand.Seed(suiteConfig.RandomSeed + int64(GinkgoParallelProcess()))
 })
 
 var _ = SynchronizedAfterSuite(func() {}, func() {

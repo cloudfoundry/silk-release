@@ -3,7 +3,6 @@ package integration_test
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"os"
 
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport"
@@ -63,8 +62,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	return data
 }, func(data []byte) {
 	Expect(json.Unmarshal(data, &paths)).To(Succeed())
-
-	rand.Seed(GinkgoRandomSeed() + int64(GinkgoParallelProcess()))
 })
 
 var _ = SynchronizedAfterSuite(func() {}, func() {

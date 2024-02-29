@@ -1,8 +1,6 @@
 package integration_test
 
 import (
-	"math/rand"
-
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -36,7 +34,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	return []byte(controllerBinaryPath)
 }, func(data []byte) {
 	controllerBinaryPath = string(data)
-	rand.Seed(GinkgoRandomSeed() + int64(GinkgoParallelProcess()))
 })
 
 var _ = SynchronizedAfterSuite(func() {}, func() {

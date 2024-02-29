@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -56,7 +55,7 @@ var _ = BeforeEach(func() {
 	fakeHostNS, err = ns.GetNS(fmt.Sprintf("/var/run/netns/%s", fakeHostNSName))
 	Expect(err).NotTo(HaveOccurred())
 
-	containerID = fmt.Sprintf("test-%03d-%x", GinkgoParallelProcess(), rand.Int31())
+	containerID = fmt.Sprintf("test-%03d-%x", GinkgoParallelProcess(), randomGenerator.Int31())
 
 	By("setting up CNI config")
 	cniEnv = map[string]string{
@@ -572,7 +571,7 @@ var _ = Describe("Silk CNI Integration", func() {
 			By("exhausting all ips")
 			for i := 0; i < numIPAllocations-1; i++ {
 				cniEnv["CNI_NETNS"] = containerNSList[i].Path()
-				cniEnv["CNI_CONTAINERID"] = fmt.Sprintf("test-%03d-%x", GinkgoParallelProcess(), rand.Int31())
+				cniEnv["CNI_CONTAINERID"] = fmt.Sprintf("test-%03d-%x", GinkgoParallelProcess(), randomGenerator.Int31())
 				sess := startCommandInHost("ADD", cniStdin)
 				Eventually(sess, cmdTimeout).Should(gexec.Exit(0))
 
@@ -585,7 +584,7 @@ var _ = Describe("Silk CNI Integration", func() {
 			}
 
 			cniEnv["CNI_NETNS"] = containerNSList[numIPAllocations-1].Path()
-			cniEnv["CNI_CONTAINERID"] = fmt.Sprintf("test-%03d-%x", GinkgoParallelProcess(), rand.Int31())
+			cniEnv["CNI_CONTAINERID"] = fmt.Sprintf("test-%03d-%x", GinkgoParallelProcess(), randomGenerator.Int31())
 			sess := startCommandInHost("ADD", cniStdin)
 			Eventually(sess, cmdTimeout).Should(gexec.Exit(1))
 			Expect(sess.Out.Contents()).To(MatchJSON(`{
