@@ -45,7 +45,6 @@ func mainWithError() error {
 	containerMetadataFile := flag.String("containerMetadataFile", "", "path to container metadata file. This is used to ensure all containers have been drained before tearing down silk.")
 	fileCheckInterval := flag.Int("containerMetadataFileCheckInterval", 5, "interval (seconds) between checks to the metadata file")
 	fileCheckTimeout := flag.Int("containerMetadataFileCheckTimeout", 600, "timeout (seconds) when checking the metadata file")
-	fileCheckMaxAttempts := *fileCheckTimeout / *fileCheckInterval
 	silkDaemonUrl := flag.String("silkDaemonUrl", "", "path to silk daemon url")
 	silkDaemonTimeout := flag.Int("silkDaemonTimeout", 2, "timeout (seconds) between calls to silk daemon")
 	silkDaemonPidPath := flag.String("silkDaemonPidPath", "", "pid file of silk daemon")
@@ -54,6 +53,8 @@ func mainWithError() error {
 	iptablesLockFile := flag.String("iptablesLockFile", "", "path to iptablesLockFile")
 
 	flag.Parse()
+
+	fileCheckMaxAttempts := *fileCheckTimeout / *fileCheckInterval
 
 	lagerConfig := lagerflags.LagerConfig{
 		LogLevel:   lagerflags.DEBUG,
