@@ -36,6 +36,10 @@ properties:
     description: "Host port used for receiving VXLAN packets"
     default: 4789
 
+  container_metadata_file_check_timeout: 
+    description: "Timeout in seconds for checking the container metadata file during drain"
+    default: 600  
+  
   partition_tolerance_hours:
     description: "When silk controller is unavailable, silk daemon will remain healthy and allow creation of new containers for this number of hours.  Should be no larger than cf_networking.subnet_lease_expiration_hours."
     default: 168

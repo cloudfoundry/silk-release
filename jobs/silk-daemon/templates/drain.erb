@@ -10,6 +10,7 @@ LOGFILE="${LOG_DIR}"/drain.log
 SILK_DAEMON_HEALTH_CHECK_ADDRESS=localhost:<%= p("listen_port") %>
 LOG_FORMAT=<%= p("logging.format.timestamp") %>
 DATASTORE=/var/vcap/data/container-metadata/store.json
+CHECK_TIMEOUT=<%= p("container_metadata_file_check_timeout") %>
 export PIDFILE=/var/vcap/sys/run/bpm/silk-daemon/silk-daemon.pid
 
 mkdir -p "${LOG_DIR}"
@@ -27,6 +28,7 @@ run_teardown() {
 shutdown_silk_daemon() {
   /var/vcap/packages/silk-daemon/bin/silk-daemon-shutdown \
     --containerMetadataFile "${DATASTORE}" \
+    --containerMetadataFileCheckTimeout ${CHECK_TIMEOUT} \
     --silkDaemonUrl "http://${SILK_DAEMON_HEALTH_CHECK_ADDRESS}/ping" \
     --silkDaemonPidPath "${PIDFILE}" \
     --iptablesLockFile "/var/vcap/data/garden-cni/iptables.lock"
