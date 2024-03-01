@@ -1,10 +1,7 @@
 package leaser
 
 import (
-	cryptoRand "crypto/rand"
 	"fmt"
-	"math"
-	"math/big"
 	mathRand "math/rand"
 	"net"
 
@@ -22,8 +19,6 @@ func NewCIDRPool(subnetRange string, subnetMask int) *CIDRPool {
 		panic(err)
 	}
 	cidrMask, _ := ipCIDR.Mask.Size()
-
-	mathRand.Seed(getRandomSeed())
 
 	return &CIDRPool{
 		blockPool:  generateBlockPool(ipCIDR.IP, uint(cidrMask), uint(subnetMask)),
@@ -102,12 +97,4 @@ func generateSingleIPPool(ipStart net.IP, cidrMaskBlock uint) map[string]struct{
 		pool[singleCIDR] = struct{}{}
 	}
 	return pool
-}
-
-func getRandomSeed() int64 {
-	num, err := cryptoRand.Int(cryptoRand.Reader, big.NewInt(math.MaxInt64))
-	if err != nil {
-		panic("generating random seed: " + err.Error())
-	}
-	return num.Int64()
 }
