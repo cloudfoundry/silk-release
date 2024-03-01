@@ -104,6 +104,5 @@ func makeClientTLSConfig(fixturesPath string) *tls.Config {
 		Certificates: []tls.Certificate{cert},
 		RootCAs:      clientCertPool,
 	}
-	tlsConfig.BuildNameToCertificate()
 	return tlsConfig
 }
