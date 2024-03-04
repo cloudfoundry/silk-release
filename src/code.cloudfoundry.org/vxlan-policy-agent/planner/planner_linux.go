@@ -242,7 +242,7 @@ func (p *VxlanPolicyPlanner) getContainerSecurityGroups(allContainers []containe
 		return []policy_client.SecurityGroup{}, err
 	}
 
-	policyServerPollDuration := time.Now().Sub(policyServerStartRequestTime)
+	policyServerPollDuration := time.Since(policyServerStartRequestTime)
 	p.MetricsSender.SendDuration(metricPolicyServerASGPoll, policyServerPollDuration)
 	return securityGroups, nil
 }
@@ -271,7 +271,7 @@ func (p *VxlanPolicyPlanner) getContainerPolicies(allContainers []container) (co
 		}
 	}
 
-	policyServerPollDuration := time.Now().Sub(policyServerStartRequestTime)
+	policyServerPollDuration := time.Since(policyServerStartRequestTime)
 	p.MetricsSender.SendDuration(metricPolicyServerPoll, policyServerPollDuration)
 
 	visited := make(map[string]bool)
@@ -371,12 +371,4 @@ func (p *VxlanPolicyPlanner) planIPTableRules(containerPolicySet containerPolicy
 	}
 
 	return ruleset
-}
-
-func containerPurposeMatchesAppLifecycle(containerPurpose, appLifecycle string) bool {
-	return appLifecycle == "all" ||
-		containerPurpose == "" ||
-		(appLifecycle == "running" && (containerPurpose == "task" || containerPurpose == "app")) ||
-		appLifecycle == "staging" && containerPurpose == "staging"
-
 }

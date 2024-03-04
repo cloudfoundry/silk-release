@@ -2,7 +2,7 @@ package netinfo
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"regexp"
 	"strconv"
 
@@ -19,7 +19,7 @@ type Flannel struct {
 }
 
 func (f *Flannel) Get() (daemon.NetworkInfo, error) {
-	fileContents, err := ioutil.ReadFile(f.SubnetFilePath)
+	fileContents, err := os.ReadFile(f.SubnetFilePath)
 	if err != nil {
 		return daemon.NetworkInfo{}, err
 	}

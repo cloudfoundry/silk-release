@@ -1,7 +1,6 @@
 package netinfo_test
 
 import (
-	"io/ioutil"
 	"os"
 
 	"code.cloudfoundry.org/silk/cni/netinfo"
@@ -21,7 +20,7 @@ FLANNEL_SUBNET=10.255.19.1/24
 FLANNEL_MTU=1450
 FLANNEL_IPMASQ=false
 `
-		tempFile, err := ioutil.TempFile("", "subnet.env")
+		tempFile, err := os.CreateTemp("", "subnet.env")
 		Expect(err).NotTo(HaveOccurred())
 
 		_, err = tempFile.WriteString(contents)
@@ -58,7 +57,7 @@ FLANNEL_IPMASQ=false
 
 	Context("when the file is malformed", func() {
 		It("returns a helpful error", func() {
-			Expect(ioutil.WriteFile(filePath, []byte("boo"), 0600)).To(Succeed())
+			Expect(os.WriteFile(filePath, []byte("boo"), 0600)).To(Succeed())
 
 			_, err := flannelNetInfo.Get()
 			Expect(err).To(MatchError("unable to parse flannel subnet file"))
@@ -67,7 +66,7 @@ FLANNEL_IPMASQ=false
 
 	Context("when the file doesn't have a valid subnet entry", func() {
 		It("returns a helpful error", func() {
-			Expect(ioutil.WriteFile(filePath, []byte(`FLANNEL_NETWORK=10.255.0.0/16
+			Expect(os.WriteFile(filePath, []byte(`FLANNEL_NETWORK=10.255.0.0/16
 FLANNEL_SUBNET=banana
 FLANNEL_MTU=1450
 FLANNEL_IPMASQ=false
@@ -79,7 +78,7 @@ FLANNEL_IPMASQ=false
 
 	Context("when the file doesn't have a valid mtu entry", func() {
 		It("returns a helpful error", func() {
-			Expect(ioutil.WriteFile(filePath, []byte(`FLANNEL_NETWORK=10.255.0.0/16
+			Expect(os.WriteFile(filePath, []byte(`FLANNEL_NETWORK=10.255.0.0/16
 FLANNEL_SUBNET=10.255.19.1/24
 FLANNEL_MTU=banana
 FLANNEL_IPMASQ=false

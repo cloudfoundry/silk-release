@@ -26,12 +26,6 @@ type common interface {
 	BasicSetup(deviceName string, local, peer config.DualAddress) error
 }
 
-//go:generate counterfeiter -o fakes/namespaceAdapter.go --fake-name NamespaceAdapter . namespaceAdapter
-type namespaceAdapter interface {
-	GetNS(string) (ns.NetNS, error)
-	GetCurrentNS() (ns.NetNS, error)
-}
-
 //go:generate counterfeiter -o fakes/netlinkAdapter.go --fake-name NetlinkAdapter . netlinkAdapter
 type netlinkAdapter interface {
 	LinkByName(string) (netlink.Link, error)
@@ -52,6 +46,7 @@ type netlinkAdapter interface {
 	TickInUsec() float64
 }
 
+//lint:ignore U1000 - used by fakes
 //go:generate counterfeiter -o fakes/netNS.go --fake-name NetNS . netNS
 type netNS interface {
 	ns.NetNS
@@ -64,9 +59,4 @@ func NetNsDoStub(f func(h ns.NetNS) error) error {
 //go:generate counterfeiter -o fakes/sysctlAdapter.go --fake-name SysctlAdapter . sysctlAdapter
 type sysctlAdapter interface {
 	Sysctl(name string, params ...string) (string, error)
-}
-
-//go:generate counterfeiter -o fakes/deviceNameGenerator.go --fake-name DeviceNameGenerator . deviceNameGenerator
-type deviceNameGenerator interface {
-	GenerateForHostIFB(containerIP net.IP) (string, error)
 }

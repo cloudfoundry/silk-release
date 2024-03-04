@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 )
 
 type SilkDaemonBootstrap struct {
@@ -16,7 +16,7 @@ type SilkDaemonBootstrap struct {
 }
 
 func New(configFilePath string) (*SilkDaemonBootstrap, error) {
-	contents, err := ioutil.ReadFile(configFilePath)
+	contents, err := os.ReadFile(configFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("file does not exist: %s", err)
 	}

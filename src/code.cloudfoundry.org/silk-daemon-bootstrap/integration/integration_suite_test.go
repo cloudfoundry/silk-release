@@ -3,13 +3,12 @@ package integration_test
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 
-	"io/ioutil"
 	"testing"
 
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport"
@@ -38,7 +37,7 @@ func TestIntegration(t *testing.T) {
 
 var _ = SynchronizedBeforeSuite(func() []byte {
 	var err error
-	certDir, err = ioutil.TempDir("", "policy-server-certs")
+	certDir, err = os.MkdirTemp("", "policy-server-certs")
 	Expect(err).NotTo(HaveOccurred())
 
 	certWriter, err := testsupport.NewCertWriter(certDir)
@@ -68,9 +67,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	return data
 }, func(data []byte) {
 	Expect(json.Unmarshal(data, &paths)).To(Succeed())
-
-	suiteConfig, _ := GinkgoConfiguration()
-	rand.Seed(suiteConfig.RandomSeed + int64(GinkgoParallelProcess()))
 })
 
 var _ = SynchronizedAfterSuite(func() {}, func() {

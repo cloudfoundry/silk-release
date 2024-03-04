@@ -12,10 +12,8 @@ func (l *LoggingState) IsEnabled() bool {
 
 func (l *LoggingState) Enable() {
 	atomic.StoreInt32(&l.isEnabled, 1)
-	return
 }
 
 func (l *LoggingState) Disable() {
 	atomic.StoreInt32(&l.isEnabled, 0)
-	return
 }

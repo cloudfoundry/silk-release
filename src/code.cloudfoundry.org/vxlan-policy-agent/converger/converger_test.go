@@ -503,8 +503,7 @@ var _ = Describe("Single Poll Cycle", func() {
 		Context("when an ASG ruleset is present when there are no containers associated with it", func() {
 			BeforeEach(func() {
 				// create some fake ASG iptables
-				var orphanRulesWithChain []enforcer.RulesWithChain
-				orphanRulesWithChain = append(ASGRulesWithChain, enforcer.RulesWithChain{
+				orphanRulesWithChain := append(ASGRulesWithChain, enforcer.RulesWithChain{
 					Rules: []rules.IPTablesRule{[]string{"asg-rule"}},
 					Chain: enforcer.Chain{
 						Table:       "asg-table-orphan",

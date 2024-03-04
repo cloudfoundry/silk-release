@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"sync"
@@ -15,7 +16,6 @@ import (
 	"code.cloudfoundry.org/lib/rules"
 	"code.cloudfoundry.org/lib/serial"
 
-	"io/ioutil"
 	"net/http"
 
 	"os/user"
@@ -94,7 +94,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
 		return fmt.Errorf("vpa response code: %v with message: %s", resp.StatusCode, body)
 	}
@@ -204,7 +204,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusMethodNotAllowed {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
 		return fmt.Errorf("asg sync returned %v with message: %s", resp.StatusCode, body)
 	}
@@ -336,7 +336,7 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusMethodNotAllowed {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
 		return fmt.Errorf("asg cleanup returned %v with message: %s", resp.StatusCode, body)
 	}
@@ -345,7 +345,7 @@ func cmdDel(args *skel.CmdArgs) error {
 }
 
 func ensureIptablesFileOwnership(filePath, fileOwner, fileGroup string) error {
-	err := ioutil.WriteFile(filePath, make([]byte, 0), 0600)
+	err := os.WriteFile(filePath, make([]byte, 0), 0600)
 	if err != nil {
 		return err
 	}

@@ -11,8 +11,9 @@ import (
 type FileLocker struct {
 	OpenStub        func() (filelock.LockedFile, error)
 	openMutex       sync.RWMutex
-	openArgsForCall []struct{}
-	openReturns     struct {
+	openArgsForCall []struct {
+	}
+	openReturns struct {
 		result1 filelock.LockedFile
 		result2 error
 	}
@@ -27,16 +28,19 @@ type FileLocker struct {
 func (fake *FileLocker) Open() (filelock.LockedFile, error) {
 	fake.openMutex.Lock()
 	ret, specificReturn := fake.openReturnsOnCall[len(fake.openArgsForCall)]
-	fake.openArgsForCall = append(fake.openArgsForCall, struct{}{})
+	fake.openArgsForCall = append(fake.openArgsForCall, struct {
+	}{})
+	stub := fake.OpenStub
+	fakeReturns := fake.openReturns
 	fake.recordInvocation("Open", []interface{}{})
 	fake.openMutex.Unlock()
-	if fake.OpenStub != nil {
-		return fake.OpenStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.openReturns.result1, fake.openReturns.result2
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FileLocker) OpenCallCount() int {
@@ -45,7 +49,15 @@ func (fake *FileLocker) OpenCallCount() int {
 	return len(fake.openArgsForCall)
 }
 
+func (fake *FileLocker) OpenCalls(stub func() (filelock.LockedFile, error)) {
+	fake.openMutex.Lock()
+	defer fake.openMutex.Unlock()
+	fake.OpenStub = stub
+}
+
 func (fake *FileLocker) OpenReturns(result1 filelock.LockedFile, result2 error) {
+	fake.openMutex.Lock()
+	defer fake.openMutex.Unlock()
 	fake.OpenStub = nil
 	fake.openReturns = struct {
 		result1 filelock.LockedFile
@@ -54,6 +66,8 @@ func (fake *FileLocker) OpenReturns(result1 filelock.LockedFile, result2 error) 
 }
 
 func (fake *FileLocker) OpenReturnsOnCall(i int, result1 filelock.LockedFile, result2 error) {
+	fake.openMutex.Lock()
+	defer fake.openMutex.Unlock()
 	fake.OpenStub = nil
 	if fake.openReturnsOnCall == nil {
 		fake.openReturnsOnCall = make(map[int]struct {

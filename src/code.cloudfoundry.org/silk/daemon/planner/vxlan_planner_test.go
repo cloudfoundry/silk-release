@@ -127,6 +127,7 @@ var _ = Describe("VxlanPlanner", func() {
 			controllerClient.GetActiveLeasesReturns(leases, nil)
 
 			err = vxlanPlanner.DoCycle()
+			Expect(err).NotTo(HaveOccurred())
 			name, value, unit = metricSender.SendValueArgsForCall(1)
 			Expect(name).To(Equal("numberLeases"))
 			Expect(value).To(BeEquivalentTo(3))

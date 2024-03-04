@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 
@@ -78,7 +78,7 @@ var _ = Describe("RenewLease", func() {
 
 	Context("when there are errors reading the body bytes", func() {
 		BeforeEach(func() {
-			request.Body = ioutil.NopCloser(&testsupport.BadReader{})
+			request.Body = io.NopCloser(&testsupport.BadReader{})
 		})
 
 		It("logs the error and returns a 400", func() {

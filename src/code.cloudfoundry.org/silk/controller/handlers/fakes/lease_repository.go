@@ -10,8 +10,9 @@ import (
 type LeaseRepository struct {
 	RoutableLeasesStub        func() ([]controller.Lease, error)
 	routableLeasesMutex       sync.RWMutex
-	routableLeasesArgsForCall []struct{}
-	routableLeasesReturns     struct {
+	routableLeasesArgsForCall []struct {
+	}
+	routableLeasesReturns struct {
 		result1 []controller.Lease
 		result2 error
 	}
@@ -26,16 +27,19 @@ type LeaseRepository struct {
 func (fake *LeaseRepository) RoutableLeases() ([]controller.Lease, error) {
 	fake.routableLeasesMutex.Lock()
 	ret, specificReturn := fake.routableLeasesReturnsOnCall[len(fake.routableLeasesArgsForCall)]
-	fake.routableLeasesArgsForCall = append(fake.routableLeasesArgsForCall, struct{}{})
+	fake.routableLeasesArgsForCall = append(fake.routableLeasesArgsForCall, struct {
+	}{})
+	stub := fake.RoutableLeasesStub
+	fakeReturns := fake.routableLeasesReturns
 	fake.recordInvocation("RoutableLeases", []interface{}{})
 	fake.routableLeasesMutex.Unlock()
-	if fake.RoutableLeasesStub != nil {
-		return fake.RoutableLeasesStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.routableLeasesReturns.result1, fake.routableLeasesReturns.result2
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *LeaseRepository) RoutableLeasesCallCount() int {
@@ -44,7 +48,15 @@ func (fake *LeaseRepository) RoutableLeasesCallCount() int {
 	return len(fake.routableLeasesArgsForCall)
 }
 
+func (fake *LeaseRepository) RoutableLeasesCalls(stub func() ([]controller.Lease, error)) {
+	fake.routableLeasesMutex.Lock()
+	defer fake.routableLeasesMutex.Unlock()
+	fake.RoutableLeasesStub = stub
+}
+
 func (fake *LeaseRepository) RoutableLeasesReturns(result1 []controller.Lease, result2 error) {
+	fake.routableLeasesMutex.Lock()
+	defer fake.routableLeasesMutex.Unlock()
 	fake.RoutableLeasesStub = nil
 	fake.routableLeasesReturns = struct {
 		result1 []controller.Lease
@@ -53,6 +65,8 @@ func (fake *LeaseRepository) RoutableLeasesReturns(result1 []controller.Lease, r
 }
 
 func (fake *LeaseRepository) RoutableLeasesReturnsOnCall(i int, result1 []controller.Lease, result2 error) {
+	fake.routableLeasesMutex.Lock()
+	defer fake.routableLeasesMutex.Unlock()
 	fake.RoutableLeasesStub = nil
 	if fake.routableLeasesReturnsOnCall == nil {
 		fake.routableLeasesReturnsOnCall = make(map[int]struct {

@@ -8,8 +8,9 @@ import (
 type DatabaseMigrator struct {
 	MigrateStub        func() (int, error)
 	migrateMutex       sync.RWMutex
-	migrateArgsForCall []struct{}
-	migrateReturns     struct {
+	migrateArgsForCall []struct {
+	}
+	migrateReturns struct {
 		result1 int
 		result2 error
 	}
@@ -24,16 +25,19 @@ type DatabaseMigrator struct {
 func (fake *DatabaseMigrator) Migrate() (int, error) {
 	fake.migrateMutex.Lock()
 	ret, specificReturn := fake.migrateReturnsOnCall[len(fake.migrateArgsForCall)]
-	fake.migrateArgsForCall = append(fake.migrateArgsForCall, struct{}{})
+	fake.migrateArgsForCall = append(fake.migrateArgsForCall, struct {
+	}{})
+	stub := fake.MigrateStub
+	fakeReturns := fake.migrateReturns
 	fake.recordInvocation("Migrate", []interface{}{})
 	fake.migrateMutex.Unlock()
-	if fake.MigrateStub != nil {
-		return fake.MigrateStub()
+	if stub != nil {
+		return stub()
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.migrateReturns.result1, fake.migrateReturns.result2
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *DatabaseMigrator) MigrateCallCount() int {
@@ -42,7 +46,15 @@ func (fake *DatabaseMigrator) MigrateCallCount() int {
 	return len(fake.migrateArgsForCall)
 }
 
+func (fake *DatabaseMigrator) MigrateCalls(stub func() (int, error)) {
+	fake.migrateMutex.Lock()
+	defer fake.migrateMutex.Unlock()
+	fake.MigrateStub = stub
+}
+
 func (fake *DatabaseMigrator) MigrateReturns(result1 int, result2 error) {
+	fake.migrateMutex.Lock()
+	defer fake.migrateMutex.Unlock()
 	fake.MigrateStub = nil
 	fake.migrateReturns = struct {
 		result1 int
@@ -51,6 +63,8 @@ func (fake *DatabaseMigrator) MigrateReturns(result1 int, result2 error) {
 }
 
 func (fake *DatabaseMigrator) MigrateReturnsOnCall(i int, result1 int, result2 error) {
+	fake.migrateMutex.Lock()
+	defer fake.migrateMutex.Unlock()
 	fake.MigrateStub = nil
 	if fake.migrateReturnsOnCall == nil {
 		fake.migrateReturnsOnCall = make(map[int]struct {

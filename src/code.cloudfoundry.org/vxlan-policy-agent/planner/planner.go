@@ -141,7 +141,7 @@ func (p *VxlanPolicyPlanner) readFile(specifiedContainers ...string) ([]containe
 			LogConfig: logConfig,
 		})
 	}
-	containerMetadataDuration := time.Now().Sub(containerMetadataStartTime)
+	containerMetadataDuration := time.Since(containerMetadataStartTime)
 	p.Logger.Debug("got-containers", lager.Data{"containers": allContainers})
 	p.MetricsSender.SendDuration(metricContainerMetadata, containerMetadataDuration)
 

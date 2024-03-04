@@ -3,8 +3,7 @@ package testsupport
 import (
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"sync"
@@ -30,7 +29,7 @@ type FakeHandler struct {
 }
 
 func (f *FakeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	bodyBytes, err := ioutil.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -46,7 +45,7 @@ func (f *FakeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if fakeHandler == nil {
 		w.WriteHeader(http.StatusTeapot)
-		w.Write([]byte(fmt.Sprintf(`{}`)))
+		w.Write([]byte(`{}`))
 		return
 	}
 

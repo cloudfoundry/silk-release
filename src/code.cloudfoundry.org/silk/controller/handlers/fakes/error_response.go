@@ -5,18 +5,10 @@ import (
 	"net/http"
 	"sync"
 
-	"code.cloudfoundry.org/lager/v3"
+	lager "code.cloudfoundry.org/lager/v3"
 )
 
 type ErrorResponse struct {
-	InternalServerErrorStub        func(lager.Logger, http.ResponseWriter, error, string)
-	internalServerErrorMutex       sync.RWMutex
-	internalServerErrorArgsForCall []struct {
-		arg1 lager.Logger
-		arg2 http.ResponseWriter
-		arg3 error
-		arg4 string
-	}
 	BadRequestStub        func(lager.Logger, http.ResponseWriter, error, string)
 	badRequestMutex       sync.RWMutex
 	badRequestArgsForCall []struct {
@@ -33,35 +25,16 @@ type ErrorResponse struct {
 		arg3 error
 		arg4 string
 	}
-	invocations      map[string][][]interface{}
-	invocationsMutex sync.RWMutex
-}
-
-func (fake *ErrorResponse) InternalServerError(arg1 lager.Logger, arg2 http.ResponseWriter, arg3 error, arg4 string) {
-	fake.internalServerErrorMutex.Lock()
-	fake.internalServerErrorArgsForCall = append(fake.internalServerErrorArgsForCall, struct {
+	InternalServerErrorStub        func(lager.Logger, http.ResponseWriter, error, string)
+	internalServerErrorMutex       sync.RWMutex
+	internalServerErrorArgsForCall []struct {
 		arg1 lager.Logger
 		arg2 http.ResponseWriter
 		arg3 error
 		arg4 string
-	}{arg1, arg2, arg3, arg4})
-	fake.recordInvocation("InternalServerError", []interface{}{arg1, arg2, arg3, arg4})
-	fake.internalServerErrorMutex.Unlock()
-	if fake.InternalServerErrorStub != nil {
-		fake.InternalServerErrorStub(arg1, arg2, arg3, arg4)
 	}
-}
-
-func (fake *ErrorResponse) InternalServerErrorCallCount() int {
-	fake.internalServerErrorMutex.RLock()
-	defer fake.internalServerErrorMutex.RUnlock()
-	return len(fake.internalServerErrorArgsForCall)
-}
-
-func (fake *ErrorResponse) InternalServerErrorArgsForCall(i int) (lager.Logger, http.ResponseWriter, error, string) {
-	fake.internalServerErrorMutex.RLock()
-	defer fake.internalServerErrorMutex.RUnlock()
-	return fake.internalServerErrorArgsForCall[i].arg1, fake.internalServerErrorArgsForCall[i].arg2, fake.internalServerErrorArgsForCall[i].arg3, fake.internalServerErrorArgsForCall[i].arg4
+	invocations      map[string][][]interface{}
+	invocationsMutex sync.RWMutex
 }
 
 func (fake *ErrorResponse) BadRequest(arg1 lager.Logger, arg2 http.ResponseWriter, arg3 error, arg4 string) {
@@ -72,9 +45,10 @@ func (fake *ErrorResponse) BadRequest(arg1 lager.Logger, arg2 http.ResponseWrite
 		arg3 error
 		arg4 string
 	}{arg1, arg2, arg3, arg4})
+	stub := fake.BadRequestStub
 	fake.recordInvocation("BadRequest", []interface{}{arg1, arg2, arg3, arg4})
 	fake.badRequestMutex.Unlock()
-	if fake.BadRequestStub != nil {
+	if stub != nil {
 		fake.BadRequestStub(arg1, arg2, arg3, arg4)
 	}
 }
@@ -85,10 +59,17 @@ func (fake *ErrorResponse) BadRequestCallCount() int {
 	return len(fake.badRequestArgsForCall)
 }
 
+func (fake *ErrorResponse) BadRequestCalls(stub func(lager.Logger, http.ResponseWriter, error, string)) {
+	fake.badRequestMutex.Lock()
+	defer fake.badRequestMutex.Unlock()
+	fake.BadRequestStub = stub
+}
+
 func (fake *ErrorResponse) BadRequestArgsForCall(i int) (lager.Logger, http.ResponseWriter, error, string) {
 	fake.badRequestMutex.RLock()
 	defer fake.badRequestMutex.RUnlock()
-	return fake.badRequestArgsForCall[i].arg1, fake.badRequestArgsForCall[i].arg2, fake.badRequestArgsForCall[i].arg3, fake.badRequestArgsForCall[i].arg4
+	argsForCall := fake.badRequestArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
 func (fake *ErrorResponse) Conflict(arg1 lager.Logger, arg2 http.ResponseWriter, arg3 error, arg4 string) {
@@ -99,9 +80,10 @@ func (fake *ErrorResponse) Conflict(arg1 lager.Logger, arg2 http.ResponseWriter,
 		arg3 error
 		arg4 string
 	}{arg1, arg2, arg3, arg4})
+	stub := fake.ConflictStub
 	fake.recordInvocation("Conflict", []interface{}{arg1, arg2, arg3, arg4})
 	fake.conflictMutex.Unlock()
-	if fake.ConflictStub != nil {
+	if stub != nil {
 		fake.ConflictStub(arg1, arg2, arg3, arg4)
 	}
 }
@@ -112,21 +94,63 @@ func (fake *ErrorResponse) ConflictCallCount() int {
 	return len(fake.conflictArgsForCall)
 }
 
+func (fake *ErrorResponse) ConflictCalls(stub func(lager.Logger, http.ResponseWriter, error, string)) {
+	fake.conflictMutex.Lock()
+	defer fake.conflictMutex.Unlock()
+	fake.ConflictStub = stub
+}
+
 func (fake *ErrorResponse) ConflictArgsForCall(i int) (lager.Logger, http.ResponseWriter, error, string) {
 	fake.conflictMutex.RLock()
 	defer fake.conflictMutex.RUnlock()
-	return fake.conflictArgsForCall[i].arg1, fake.conflictArgsForCall[i].arg2, fake.conflictArgsForCall[i].arg3, fake.conflictArgsForCall[i].arg4
+	argsForCall := fake.conflictArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
+}
+
+func (fake *ErrorResponse) InternalServerError(arg1 lager.Logger, arg2 http.ResponseWriter, arg3 error, arg4 string) {
+	fake.internalServerErrorMutex.Lock()
+	fake.internalServerErrorArgsForCall = append(fake.internalServerErrorArgsForCall, struct {
+		arg1 lager.Logger
+		arg2 http.ResponseWriter
+		arg3 error
+		arg4 string
+	}{arg1, arg2, arg3, arg4})
+	stub := fake.InternalServerErrorStub
+	fake.recordInvocation("InternalServerError", []interface{}{arg1, arg2, arg3, arg4})
+	fake.internalServerErrorMutex.Unlock()
+	if stub != nil {
+		fake.InternalServerErrorStub(arg1, arg2, arg3, arg4)
+	}
+}
+
+func (fake *ErrorResponse) InternalServerErrorCallCount() int {
+	fake.internalServerErrorMutex.RLock()
+	defer fake.internalServerErrorMutex.RUnlock()
+	return len(fake.internalServerErrorArgsForCall)
+}
+
+func (fake *ErrorResponse) InternalServerErrorCalls(stub func(lager.Logger, http.ResponseWriter, error, string)) {
+	fake.internalServerErrorMutex.Lock()
+	defer fake.internalServerErrorMutex.Unlock()
+	fake.InternalServerErrorStub = stub
+}
+
+func (fake *ErrorResponse) InternalServerErrorArgsForCall(i int) (lager.Logger, http.ResponseWriter, error, string) {
+	fake.internalServerErrorMutex.RLock()
+	defer fake.internalServerErrorMutex.RUnlock()
+	argsForCall := fake.internalServerErrorArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
 func (fake *ErrorResponse) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.internalServerErrorMutex.RLock()
-	defer fake.internalServerErrorMutex.RUnlock()
 	fake.badRequestMutex.RLock()
 	defer fake.badRequestMutex.RUnlock()
 	fake.conflictMutex.RLock()
 	defer fake.conflictMutex.RUnlock()
+	fake.internalServerErrorMutex.RLock()
+	defer fake.internalServerErrorMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

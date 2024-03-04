@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,7 +32,7 @@ var _ = Describe("Rotatewatcher", func() {
 
 	BeforeEach(func() {
 		var err error
-		fileToWatch, err = ioutil.TempFile("", "")
+		fileToWatch, err = os.CreateTemp("", "")
 		Expect(err).NotTo(HaveOccurred())
 		fileToWatchName = fileToWatch.Name()
 
@@ -235,7 +234,7 @@ var _ = Describe("Rotatewatcher", func() {
 
 			writer.Write([]byte("hello world"))
 
-			contents, err := ioutil.ReadFile(fileToWatch.Name())
+			contents, err := os.ReadFile(fileToWatch.Name())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(contents)).To(Equal("hello world"))
 		})
@@ -343,7 +342,7 @@ func ReadLines(filename string) []string {
 }
 
 func ReadOutput(outputFile string) string {
-	bytes, err := ioutil.ReadFile(outputFile)
+	bytes, err := os.ReadFile(outputFile)
 	Expect(err).NotTo(HaveOccurred())
 	if string(bytes) == "" {
 		return "{}"

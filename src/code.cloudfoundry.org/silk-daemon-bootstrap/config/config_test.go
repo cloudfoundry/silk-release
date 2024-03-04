@@ -1,7 +1,6 @@
 package config_test
 
 import (
-	"io/ioutil"
 	"os"
 
 	"code.cloudfoundry.org/silk-daemon-bootstrap/config"
@@ -18,7 +17,7 @@ var _ = Describe("Config", func() {
 		)
 
 		BeforeEach(func() {
-			file, err = ioutil.TempFile(os.TempDir(), "config-")
+			file, err = os.CreateTemp(os.TempDir(), "config-")
 			Expect(err).NotTo(HaveOccurred())
 		})
 

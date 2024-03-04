@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"gopkg.in/validator.v2"
@@ -24,7 +23,7 @@ func New(path string) (*Config, error) {
 	if _, err := os.Stat(path); err != nil {
 		return nil, fmt.Errorf("file does not exist: %s", err)
 	}
-	jsonBytes, err := ioutil.ReadFile(path)
+	jsonBytes, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("reading config: %s", err)
 	}

@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"io/ioutil"
 	"os"
 
 	"code.cloudfoundry.org/silk/testsupport"
@@ -33,7 +32,7 @@ var _ = Describe("error cases", func() {
 
 	Context("when the contents of the config file cannot be unmarshaled", func() {
 		BeforeEach(func() {
-			Expect(ioutil.WriteFile(configFilePath, []byte("some-bad-contents"), os.ModePerm)).To(Succeed())
+			Expect(os.WriteFile(configFilePath, []byte("some-bad-contents"), os.ModePerm)).To(Succeed())
 		})
 
 		It("exits with non-zero status code", func() {

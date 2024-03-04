@@ -14,7 +14,7 @@ import (
 
 type Timestamper struct{}
 
-func (_ Timestamper) CurrentTime() int64 {
+func (Timestamper) CurrentTime() int64 {
 	return time.Now().UnixNano() / int64(time.Microsecond)
 }
 
@@ -87,7 +87,7 @@ func (r *RulesWithChain) Equals(other RulesWithChain) bool {
 		if len(rule) != len(otherRule) {
 			return false
 		}
-		for j, _ := range rule {
+		for j := range rule {
 			if rule[j] != otherRule[j] {
 				return false
 			}
@@ -276,7 +276,7 @@ func (e *Enforcer) deleteChain(logger lager.Logger, chain LiveChain) error {
 		return fmt.Errorf("delete old chain: %s", err)
 	}
 
-	for target, _ := range jumpTargets {
+	for target := range jumpTargets {
 		logger.Debug("deleting-target-chain", lager.Data{"table": chain.Table, "target-chain": target})
 		if err := e.iptables.DeleteChain(chain.Table, target); err != nil {
 			return fmt.Errorf("cleanup jump target %s: %s", target, err)

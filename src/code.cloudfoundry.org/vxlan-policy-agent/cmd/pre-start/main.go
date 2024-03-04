@@ -13,10 +13,10 @@ import (
 )
 
 const (
-	ClientTimeoutSeconds = 5 * time.Second
-	IngressChainName     = "istio-ingress"
-	jobPrefix            = "silk-daemon-bootstrap"
-	logPrefix            = "cfnetworking"
+	ClientTimeout    = 5 * time.Second
+	IngressChainName = "istio-ingress"
+	jobPrefix        = "silk-daemon-bootstrap"
+	logPrefix        = "cfnetworking"
 )
 
 func main() {

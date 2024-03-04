@@ -6,8 +6,6 @@ package linux_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"math/rand"
 	"os"
 
 	"code.cloudfoundry.org/vxlan-policy-agent/config"
@@ -76,7 +74,7 @@ func removeDummyInterface(interfaceName, ipAddress string) {
 
 var _ = SynchronizedBeforeSuite(func() []byte {
 	var err error
-	certDir, err = ioutil.TempDir("", "netman-certs")
+	certDir, err = os.MkdirTemp("", "netman-certs")
 	Expect(err).NotTo(HaveOccurred())
 
 	certWriter, err := testsupport.NewCertWriter(certDir)
@@ -105,9 +103,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	return data
 }, func(data []byte) {
 	Expect(json.Unmarshal(data, &paths)).To(Succeed())
-
-	suiteConfig, _ := GinkgoConfiguration()
-	rand.Seed(suiteConfig.RandomSeed + int64(GinkgoParallelProcess()))
 })
 
 var _ = SynchronizedAfterSuite(func() {}, func() {
@@ -118,13 +113,13 @@ var _ = SynchronizedAfterSuite(func() {}, func() {
 })
 
 func WriteConfigFile(Config config.VxlanPolicyAgent) string {
-	configFile, err := ioutil.TempFile("", "test-config")
+	configFile, err := os.CreateTemp("", "test-config")
 	Expect(err).NotTo(HaveOccurred())
 
 	configBytes, err := json.Marshal(Config)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = ioutil.WriteFile(configFile.Name(), configBytes, os.ModePerm)
+	err = os.WriteFile(configFile.Name(), configBytes, os.ModePerm)
 	Expect(err).NotTo(HaveOccurred())
 
 	return configFile.Name()

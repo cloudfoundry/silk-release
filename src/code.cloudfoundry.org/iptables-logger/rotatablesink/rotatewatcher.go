@@ -46,30 +46,28 @@ func NewRotatableSink(fileToWatch string, logLevel lager.LogLevel, fileWriterFac
 
 	go func() {
 		for {
-			select {
-			case <-time.After(1 * time.Second):
-				fileExists, err := destinationFileInfo.FileExists(fileToWatch)
+			time.Sleep(1 * time.Second)
+			fileExists, err := destinationFileInfo.FileExists(fileToWatch)
+			if err != nil {
+				componentLogger.Error("stat-file", fmt.Errorf("stat file: %s", err))
+				continue
+			}
+
+			if !fileExists {
+				err = rotatableSink.registerFileSink(fileToWatch)
 				if err != nil {
-					componentLogger.Error("stat-file", fmt.Errorf("stat file: %s", err))
+					componentLogger.Error("register-moved-file-sink", err)
+				}
+			} else {
+				fileToWatchStatInode, err := destinationFileInfo.FileInode(fileToWatch)
+				if err != nil {
+					componentLogger.Error("register-rotated-file-sink", err)
 					continue
 				}
-
-				if !fileExists {
+				if fileToWatchStatInode != rotatableSink.fileToWatchInode {
 					err = rotatableSink.registerFileSink(fileToWatch)
 					if err != nil {
-						componentLogger.Error("register-moved-file-sink", err)
-					}
-				} else {
-					fileToWatchStatInode, err := destinationFileInfo.FileInode(fileToWatch)
-					if err != nil {
 						componentLogger.Error("register-rotated-file-sink", err)
-						continue
-					}
-					if fileToWatchStatInode != rotatableSink.fileToWatchInode {
-						err = rotatableSink.registerFileSink(fileToWatch)
-						if err != nil {
-							componentLogger.Error("register-rotated-file-sink", err)
-						}
 					}
 				}
 			}

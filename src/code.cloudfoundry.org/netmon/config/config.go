@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -49,7 +48,7 @@ func New(path string) (*Netmon, error) {
 	if _, err := os.Stat(path); err != nil {
 		return nil, fmt.Errorf("file does not exist: %s", err)
 	}
-	jsonBytes, err := ioutil.ReadFile(path)
+	jsonBytes, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("reading config: %s", err) // not tested
 	}

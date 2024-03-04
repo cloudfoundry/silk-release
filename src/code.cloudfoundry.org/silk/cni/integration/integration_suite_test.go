@@ -20,8 +20,9 @@ func TestIntegration(t *testing.T) {
 }
 
 var (
-	paths  testPaths
-	hostNS ns.NetNS
+	paths           testPaths
+	hostNS          ns.NetNS
+	randomGenerator *rand.Rand
 )
 
 type testPaths struct {
@@ -57,7 +58,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 }, func(data []byte) {
 	Expect(json.Unmarshal(data, &paths)).To(Succeed())
 
-	rand.Seed(GinkgoRandomSeed() + int64(GinkgoParallelProcess()))
+	randomGenerator = rand.New(rand.NewSource(GinkgoRandomSeed() + int64(GinkgoParallelProcess())))
 })
 
 var _ = SynchronizedAfterSuite(func() {}, func() {

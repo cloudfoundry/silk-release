@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"code.cloudfoundry.org/cf-networking-helpers/db"
@@ -36,7 +35,7 @@ func (c *Config) WriteToFile(configFilePath string) error {
 	if err != nil {
 		return fmt.Errorf("marshal config: %s", err)
 	}
-	err = ioutil.WriteFile(configFilePath, bytes, os.FileMode(0600))
+	err = os.WriteFile(configFilePath, bytes, os.FileMode(0600))
 	if err != nil {
 		return fmt.Errorf("write config to %s: %s", configFilePath, err)
 	}
@@ -44,7 +43,7 @@ func (c *Config) WriteToFile(configFilePath string) error {
 }
 
 func ReadFromFile(configFilePath string) (*Config, error) {
-	bytes, err := ioutil.ReadFile(configFilePath)
+	bytes, err := os.ReadFile(configFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("read config: %s", err)
 	}

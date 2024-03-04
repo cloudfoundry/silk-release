@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net"
 	"os"
@@ -111,7 +110,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 		createDummyInterface(underlayName1, underlayIpAddr1)
 		createDummyInterface(underlayName2, underlayIpAddr2)
 
-		debugFile, err := ioutil.TempFile("", "cni_debug")
+		debugFile, err := os.CreateTemp("", "cni_debug")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(debugFile.Close()).To(Succeed())
 		debugFileName = debugFile.Name()
@@ -122,14 +121,14 @@ var _ = Describe("CniWrapperPlugin", func() {
 		}
 		Expect(debug.WriteDebug(debugFileName)).To(Succeed())
 
-		tmpDir, err := ioutil.TempDir("", "cni-wrapper-integration")
+		tmpDir, err := os.MkdirTemp("", "cni-wrapper-integration")
 		Expect(err).NotTo(HaveOccurred())
-		datastoreFile, err := ioutil.TempFile(tmpDir, "datastore")
+		datastoreFile, err := os.CreateTemp(tmpDir, "datastore")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(datastoreFile.Close()).To(Succeed())
 		datastorePath = datastoreFile.Name()
 
-		iptablesLockFile, err := ioutil.TempFile(tmpDir, "iptables-lock")
+		iptablesLockFile, err := os.CreateTemp(tmpDir, "iptables-lock")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(iptablesLockFile.Close()).To(Succeed())
 		iptablesLockFilePath = iptablesLockFile.Name()
@@ -316,7 +315,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Eventually(session).Should(gexec.Exit(0))
 
 			By("check that metadata is stored")
-			stateFileBytes, err := ioutil.ReadFile(datastorePath)
+			stateFileBytes, err := os.ReadFile(datastorePath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(stateFileBytes)).To(ContainSubstring("1.2.3.4"))
 			Expect(string(stateFileBytes)).To(ContainSubstring("value1"))
@@ -328,7 +327,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Eventually(session).Should(gexec.Exit(0))
 
 			By("check that metadata is has been removed")
-			stateFileBytes, err = ioutil.ReadFile(datastorePath)
+			stateFileBytes, err = os.ReadFile(datastorePath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(stateFileBytes)).NotTo(ContainSubstring("1.2.3.4"))
 			Expect(string(stateFileBytes)).NotTo(ContainSubstring("value1"))
@@ -1099,7 +1098,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 		Context("when the datastore add fails", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(datastorePath, []byte("banana"), os.ModePerm)
+				err := os.WriteFile(datastorePath, []byte("banana"), os.ModePerm)
 				Expect(err).NotTo(HaveOccurred())
 			})
 

@@ -3,8 +3,6 @@ package integration_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"math/rand"
 	"os"
 
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport"
@@ -38,7 +36,7 @@ func TestIntegration(t *testing.T) {
 
 var _ = SynchronizedBeforeSuite(func() []byte {
 	var err error
-	certDir, err = ioutil.TempDir("", "silk-certs")
+	certDir, err = os.MkdirTemp("", "silk-certs")
 	Expect(err).NotTo(HaveOccurred())
 
 	certWriter, err := testsupport.NewCertWriter(certDir)
@@ -65,8 +63,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	return data
 }, func(data []byte) {
 	Expect(json.Unmarshal(data, &paths)).To(Succeed())
-
-	rand.Seed(GinkgoRandomSeed() + int64(GinkgoParallelProcess()))
 })
 
 var _ = SynchronizedAfterSuite(func() {}, func() {

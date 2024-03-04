@@ -50,8 +50,6 @@ type SecurityGroupRule struct {
 	Log         bool             `json:"log"`
 }
 
-type intptr *int
-
 func netoutToASGRule(rule garden.NetOutRule) SecurityGroupRule {
 
 	sg := SecurityGroupRule{}

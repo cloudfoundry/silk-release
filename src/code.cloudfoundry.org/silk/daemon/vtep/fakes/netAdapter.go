@@ -7,17 +7,6 @@ import (
 )
 
 type NetAdapter struct {
-	InterfacesStub        func() ([]net.Interface, error)
-	interfacesMutex       sync.RWMutex
-	interfacesArgsForCall []struct{}
-	interfacesReturns     struct {
-		result1 []net.Interface
-		result2 error
-	}
-	interfacesReturnsOnCall map[int]struct {
-		result1 []net.Interface
-		result2 error
-	}
 	InterfaceAddrsStub        func(net.Interface) ([]net.Addr, error)
 	interfaceAddrsMutex       sync.RWMutex
 	interfaceAddrsArgsForCall []struct {
@@ -31,10 +20,10 @@ type NetAdapter struct {
 		result1 []net.Addr
 		result2 error
 	}
-	InterfaceByNameStub        func(name string) (*net.Interface, error)
+	InterfaceByNameStub        func(string) (*net.Interface, error)
 	interfaceByNameMutex       sync.RWMutex
 	interfaceByNameArgsForCall []struct {
-		name string
+		arg1 string
 	}
 	interfaceByNameReturns struct {
 		result1 *net.Interface
@@ -44,51 +33,20 @@ type NetAdapter struct {
 		result1 *net.Interface
 		result2 error
 	}
+	InterfacesStub        func() ([]net.Interface, error)
+	interfacesMutex       sync.RWMutex
+	interfacesArgsForCall []struct {
+	}
+	interfacesReturns struct {
+		result1 []net.Interface
+		result2 error
+	}
+	interfacesReturnsOnCall map[int]struct {
+		result1 []net.Interface
+		result2 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
-}
-
-func (fake *NetAdapter) Interfaces() ([]net.Interface, error) {
-	fake.interfacesMutex.Lock()
-	ret, specificReturn := fake.interfacesReturnsOnCall[len(fake.interfacesArgsForCall)]
-	fake.interfacesArgsForCall = append(fake.interfacesArgsForCall, struct{}{})
-	fake.recordInvocation("Interfaces", []interface{}{})
-	fake.interfacesMutex.Unlock()
-	if fake.InterfacesStub != nil {
-		return fake.InterfacesStub()
-	}
-	if specificReturn {
-		return ret.result1, ret.result2
-	}
-	return fake.interfacesReturns.result1, fake.interfacesReturns.result2
-}
-
-func (fake *NetAdapter) InterfacesCallCount() int {
-	fake.interfacesMutex.RLock()
-	defer fake.interfacesMutex.RUnlock()
-	return len(fake.interfacesArgsForCall)
-}
-
-func (fake *NetAdapter) InterfacesReturns(result1 []net.Interface, result2 error) {
-	fake.InterfacesStub = nil
-	fake.interfacesReturns = struct {
-		result1 []net.Interface
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *NetAdapter) InterfacesReturnsOnCall(i int, result1 []net.Interface, result2 error) {
-	fake.InterfacesStub = nil
-	if fake.interfacesReturnsOnCall == nil {
-		fake.interfacesReturnsOnCall = make(map[int]struct {
-			result1 []net.Interface
-			result2 error
-		})
-	}
-	fake.interfacesReturnsOnCall[i] = struct {
-		result1 []net.Interface
-		result2 error
-	}{result1, result2}
 }
 
 func (fake *NetAdapter) InterfaceAddrs(arg1 net.Interface) ([]net.Addr, error) {
@@ -97,15 +55,17 @@ func (fake *NetAdapter) InterfaceAddrs(arg1 net.Interface) ([]net.Addr, error) {
 	fake.interfaceAddrsArgsForCall = append(fake.interfaceAddrsArgsForCall, struct {
 		arg1 net.Interface
 	}{arg1})
+	stub := fake.InterfaceAddrsStub
+	fakeReturns := fake.interfaceAddrsReturns
 	fake.recordInvocation("InterfaceAddrs", []interface{}{arg1})
 	fake.interfaceAddrsMutex.Unlock()
-	if fake.InterfaceAddrsStub != nil {
-		return fake.InterfaceAddrsStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.interfaceAddrsReturns.result1, fake.interfaceAddrsReturns.result2
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *NetAdapter) InterfaceAddrsCallCount() int {
@@ -114,13 +74,22 @@ func (fake *NetAdapter) InterfaceAddrsCallCount() int {
 	return len(fake.interfaceAddrsArgsForCall)
 }
 
+func (fake *NetAdapter) InterfaceAddrsCalls(stub func(net.Interface) ([]net.Addr, error)) {
+	fake.interfaceAddrsMutex.Lock()
+	defer fake.interfaceAddrsMutex.Unlock()
+	fake.InterfaceAddrsStub = stub
+}
+
 func (fake *NetAdapter) InterfaceAddrsArgsForCall(i int) net.Interface {
 	fake.interfaceAddrsMutex.RLock()
 	defer fake.interfaceAddrsMutex.RUnlock()
-	return fake.interfaceAddrsArgsForCall[i].arg1
+	argsForCall := fake.interfaceAddrsArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *NetAdapter) InterfaceAddrsReturns(result1 []net.Addr, result2 error) {
+	fake.interfaceAddrsMutex.Lock()
+	defer fake.interfaceAddrsMutex.Unlock()
 	fake.InterfaceAddrsStub = nil
 	fake.interfaceAddrsReturns = struct {
 		result1 []net.Addr
@@ -129,6 +98,8 @@ func (fake *NetAdapter) InterfaceAddrsReturns(result1 []net.Addr, result2 error)
 }
 
 func (fake *NetAdapter) InterfaceAddrsReturnsOnCall(i int, result1 []net.Addr, result2 error) {
+	fake.interfaceAddrsMutex.Lock()
+	defer fake.interfaceAddrsMutex.Unlock()
 	fake.InterfaceAddrsStub = nil
 	if fake.interfaceAddrsReturnsOnCall == nil {
 		fake.interfaceAddrsReturnsOnCall = make(map[int]struct {
@@ -142,21 +113,23 @@ func (fake *NetAdapter) InterfaceAddrsReturnsOnCall(i int, result1 []net.Addr, r
 	}{result1, result2}
 }
 
-func (fake *NetAdapter) InterfaceByName(name string) (*net.Interface, error) {
+func (fake *NetAdapter) InterfaceByName(arg1 string) (*net.Interface, error) {
 	fake.interfaceByNameMutex.Lock()
 	ret, specificReturn := fake.interfaceByNameReturnsOnCall[len(fake.interfaceByNameArgsForCall)]
 	fake.interfaceByNameArgsForCall = append(fake.interfaceByNameArgsForCall, struct {
-		name string
-	}{name})
-	fake.recordInvocation("InterfaceByName", []interface{}{name})
+		arg1 string
+	}{arg1})
+	stub := fake.InterfaceByNameStub
+	fakeReturns := fake.interfaceByNameReturns
+	fake.recordInvocation("InterfaceByName", []interface{}{arg1})
 	fake.interfaceByNameMutex.Unlock()
-	if fake.InterfaceByNameStub != nil {
-		return fake.InterfaceByNameStub(name)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.interfaceByNameReturns.result1, fake.interfaceByNameReturns.result2
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *NetAdapter) InterfaceByNameCallCount() int {
@@ -165,13 +138,22 @@ func (fake *NetAdapter) InterfaceByNameCallCount() int {
 	return len(fake.interfaceByNameArgsForCall)
 }
 
+func (fake *NetAdapter) InterfaceByNameCalls(stub func(string) (*net.Interface, error)) {
+	fake.interfaceByNameMutex.Lock()
+	defer fake.interfaceByNameMutex.Unlock()
+	fake.InterfaceByNameStub = stub
+}
+
 func (fake *NetAdapter) InterfaceByNameArgsForCall(i int) string {
 	fake.interfaceByNameMutex.RLock()
 	defer fake.interfaceByNameMutex.RUnlock()
-	return fake.interfaceByNameArgsForCall[i].name
+	argsForCall := fake.interfaceByNameArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *NetAdapter) InterfaceByNameReturns(result1 *net.Interface, result2 error) {
+	fake.interfaceByNameMutex.Lock()
+	defer fake.interfaceByNameMutex.Unlock()
 	fake.InterfaceByNameStub = nil
 	fake.interfaceByNameReturns = struct {
 		result1 *net.Interface
@@ -180,6 +162,8 @@ func (fake *NetAdapter) InterfaceByNameReturns(result1 *net.Interface, result2 e
 }
 
 func (fake *NetAdapter) InterfaceByNameReturnsOnCall(i int, result1 *net.Interface, result2 error) {
+	fake.interfaceByNameMutex.Lock()
+	defer fake.interfaceByNameMutex.Unlock()
 	fake.InterfaceByNameStub = nil
 	if fake.interfaceByNameReturnsOnCall == nil {
 		fake.interfaceByNameReturnsOnCall = make(map[int]struct {
@@ -193,15 +177,71 @@ func (fake *NetAdapter) InterfaceByNameReturnsOnCall(i int, result1 *net.Interfa
 	}{result1, result2}
 }
 
+func (fake *NetAdapter) Interfaces() ([]net.Interface, error) {
+	fake.interfacesMutex.Lock()
+	ret, specificReturn := fake.interfacesReturnsOnCall[len(fake.interfacesArgsForCall)]
+	fake.interfacesArgsForCall = append(fake.interfacesArgsForCall, struct {
+	}{})
+	stub := fake.InterfacesStub
+	fakeReturns := fake.interfacesReturns
+	fake.recordInvocation("Interfaces", []interface{}{})
+	fake.interfacesMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *NetAdapter) InterfacesCallCount() int {
+	fake.interfacesMutex.RLock()
+	defer fake.interfacesMutex.RUnlock()
+	return len(fake.interfacesArgsForCall)
+}
+
+func (fake *NetAdapter) InterfacesCalls(stub func() ([]net.Interface, error)) {
+	fake.interfacesMutex.Lock()
+	defer fake.interfacesMutex.Unlock()
+	fake.InterfacesStub = stub
+}
+
+func (fake *NetAdapter) InterfacesReturns(result1 []net.Interface, result2 error) {
+	fake.interfacesMutex.Lock()
+	defer fake.interfacesMutex.Unlock()
+	fake.InterfacesStub = nil
+	fake.interfacesReturns = struct {
+		result1 []net.Interface
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *NetAdapter) InterfacesReturnsOnCall(i int, result1 []net.Interface, result2 error) {
+	fake.interfacesMutex.Lock()
+	defer fake.interfacesMutex.Unlock()
+	fake.InterfacesStub = nil
+	if fake.interfacesReturnsOnCall == nil {
+		fake.interfacesReturnsOnCall = make(map[int]struct {
+			result1 []net.Interface
+			result2 error
+		})
+	}
+	fake.interfacesReturnsOnCall[i] = struct {
+		result1 []net.Interface
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *NetAdapter) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.interfacesMutex.RLock()
-	defer fake.interfacesMutex.RUnlock()
 	fake.interfaceAddrsMutex.RLock()
 	defer fake.interfaceAddrsMutex.RUnlock()
 	fake.interfaceByNameMutex.RLock()
 	defer fake.interfaceByNameMutex.RUnlock()
+	fake.interfacesMutex.RLock()
+	defer fake.interfacesMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

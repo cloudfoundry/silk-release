@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -29,7 +29,6 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/types"
 	matchers "github.com/pivotal-cf-experimental/gomegamatchers"
-	"github.com/tedsuo/ifrit"
 	"github.com/vishvananda/netlink"
 )
 
@@ -92,7 +91,7 @@ var _ = BeforeEach(func() {
 	serverListenPort = ports.PickAPort()
 	vtepPort = ports.PickAPort()
 	serverListenAddr = fmt.Sprintf("127.0.0.1:%d", serverListenPort)
-	datastoreDir, err := ioutil.TempDir("", "")
+	datastoreDir, err := os.MkdirTemp("", "")
 	Expect(err).NotTo(HaveOccurred())
 	datastorePath = filepath.Join(datastoreDir, "container-metadata.json")
 	daemonConf = config.Config{
@@ -257,7 +256,7 @@ var _ = Describe("Daemon Integration", func() {
 	Context("when single ip only is true", func() {
 		BeforeEach(func() {
 			fakeServer.SetHandlerFunc("/leases/acquire", func(w http.ResponseWriter, req *http.Request) {
-				contents, err := ioutil.ReadAll(req.Body)
+				contents, err := io.ReadAll(req.Body)
 				Expect(err).NotTo(HaveOccurred())
 
 				var acquireRequest controller.AcquireLeaseRequest
@@ -357,7 +356,7 @@ var _ = Describe("Daemon Integration", func() {
 			fakeServer.SetHandler("/leases/renew", handler)
 
 			By("checking that the lease renewal failure is logged")
-			Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`silk-daemon.poll-cycle.*renew lease: http status 500`)))
+			Eventually(session.Out, 2).Should(gbytes.Say(`silk-daemon.poll-cycle.*renew lease: http status 500`))
 
 		})
 
@@ -393,7 +392,7 @@ var _ = Describe("Daemon Integration", func() {
 			Eventually(fakeMetron.AllEvents, "5s").Should(ContainElement(hasMetricWithValue("numberLeases", 0)))
 
 			By("checking that no leases are logged")
-			Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`silk-daemon.converge-leases.*"leases":\[]`)))
+			Eventually(session.Out, 2).Should(gbytes.Say(`silk-daemon.converge-leases.*"leases":\[]`))
 		})
 
 		Context("when cells with overlay subnets are brought down", func() {
@@ -431,7 +430,7 @@ var _ = Describe("Daemon Integration", func() {
 				)
 
 				By("checking that updated leases are logged")
-				Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`level.*debug.*silk-daemon.converge-leases`)))
+				Eventually(session.Out, 2).Should(gbytes.Say(`level.*debug.*silk-daemon.converge-leases`))
 				Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`underlay_ip.*%s.*overlay_subnet.*`+overlaySubnet+`.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`, localIP)))
 				Eventually(session.Out, 2).ShouldNot(gbytes.Say(`underlay_ip.*172.17.0.5.*overlay_subnet.*` + remoteOverlaySubnet + `.*overlay_hardware_addr.*ee:ee:0a:ff:28:00`))
 
@@ -598,7 +597,7 @@ func doHealthCheckWithErr() error {
 	if err != nil {
 		return err
 	}
-	responseBytes, err := ioutil.ReadAll(resp.Body)
+	responseBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -620,13 +619,13 @@ func doHealthCheckWithErr() error {
 }
 
 func writeConfigFile(config config.Config) string {
-	configFile, err := ioutil.TempFile("", "test-config")
+	configFile, err := os.CreateTemp("", "test-config")
 	Expect(err).NotTo(HaveOccurred())
 
 	configBytes, err := json.Marshal(config)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = ioutil.WriteFile(configFile.Name(), configBytes, os.ModePerm)
+	err = os.WriteFile(configFile.Name(), configBytes, os.ModePerm)
 	Expect(err).NotTo(HaveOccurred())
 
 	return configFile.Name()
@@ -678,18 +677,9 @@ func mustSucceed(binary string, args ...string) string {
 	return string(sess.Out.Contents())
 }
 
-func stopServer(server ifrit.Process) {
-	if server == nil {
-		return
-	}
-	server.Signal(os.Interrupt)
-	Eventually(server.Wait()).Should(Receive())
-}
-
 func setLogLevel(level string, port int) {
 	serverAddress := fmt.Sprintf("localhost:%d/log-level", port)
 	curlCmd := exec.Command("curl", serverAddress, "-X", "POST", "-d", level)
 	Expect(curlCmd.Start()).To(Succeed())
 	Expect(curlCmd.Wait()).To(Succeed())
-	return
 }

@@ -3,7 +3,6 @@ package config_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"code.cloudfoundry.org/silk/client/config"
@@ -50,7 +49,7 @@ var _ = Describe("Config.LoadConfig", func() {
 	It("does not error on a valid config", func() {
 		cfg := cloneMap(requiredFields)
 
-		file, err := ioutil.TempFile(os.TempDir(), "config-")
+		file, err := os.CreateTemp(os.TempDir(), "config-")
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(json.NewEncoder(file).Encode(cfg)).To(Succeed())
@@ -60,11 +59,11 @@ var _ = Describe("Config.LoadConfig", func() {
 	})
 
 	It("errors if a required field is not set", func() {
-		for fieldName, _ := range requiredFields {
+		for fieldName := range requiredFields {
 			cfg := cloneMap(requiredFields)
 			delete(cfg, fieldName)
 
-			file, err := ioutil.TempFile(os.TempDir(), "config-")
+			file, err := os.CreateTemp(os.TempDir(), "config-")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(json.NewEncoder(file).Encode(cfg)).To(Succeed())
@@ -81,7 +80,7 @@ var _ = Describe("Config.LoadConfig", func() {
 			cfg := cloneMap(requiredFields)
 			cfg["single_ip_only"] = true
 
-			file, err := ioutil.TempFile(os.TempDir(), "config-")
+			file, err := os.CreateTemp(os.TempDir(), "config-")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(json.NewEncoder(file).Encode(cfg)).To(Succeed())
@@ -97,7 +96,7 @@ var _ = Describe("Config.LoadConfig", func() {
 			cfg := cloneMap(requiredFields)
 			cfg["vxlan_interface_name"] = "something"
 
-			file, err := ioutil.TempFile(os.TempDir(), "config-")
+			file, err := os.CreateTemp(os.TempDir(), "config-")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(json.NewEncoder(file).Encode(cfg)).To(Succeed())

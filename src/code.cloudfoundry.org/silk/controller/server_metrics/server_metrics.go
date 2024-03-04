@@ -45,6 +45,9 @@ func NewStaleLeasesSource(lister databaseHandler, seconds int) metrics.MetricSou
 		Unit: "",
 		Getter: func() (float64, error) {
 			allLeases, err := lister.All()
+			if err != nil {
+				return 0.0, err
+			}
 			allActiveLeases, err := lister.AllActive(seconds)
 
 			return float64(len(allLeases) - len(allActiveLeases)), err

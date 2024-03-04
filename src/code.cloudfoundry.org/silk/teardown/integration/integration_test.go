@@ -3,7 +3,6 @@ package integration_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -43,7 +42,7 @@ var _ = BeforeEach(func() {
 	}
 
 	serverListenAddr = fmt.Sprintf("127.0.0.1:%d", 40000+GinkgoParallelProcess())
-	datastoreFile, _ := ioutil.TempFile("", "-datastore")
+	datastoreFile, _ := os.CreateTemp("", "-datastore")
 	datastoreFile.Close()
 	clientConf = config.Config{
 		UnderlayIP:                localIP,
@@ -112,13 +111,13 @@ func removeVTEP() {
 }
 
 func writeConfigFile(config config.Config) string {
-	configFile, err := ioutil.TempFile("", "test-config")
+	configFile, err := os.CreateTemp("", "test-config")
 	Expect(err).NotTo(HaveOccurred())
 
 	configBytes, err := json.Marshal(config)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = ioutil.WriteFile(configFile.Name(), configBytes, os.ModePerm)
+	err = os.WriteFile(configFile.Name(), configBytes, os.ModePerm)
 	Expect(err).NotTo(HaveOccurred())
 
 	return configFile.Name()

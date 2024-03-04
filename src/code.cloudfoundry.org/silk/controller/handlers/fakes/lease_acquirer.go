@@ -8,11 +8,11 @@ import (
 )
 
 type LeaseAcquirer struct {
-	AcquireSubnetLeaseStub        func(underlayIP string, singleOverlayIP bool) (*controller.Lease, error)
+	AcquireSubnetLeaseStub        func(string, bool) (*controller.Lease, error)
 	acquireSubnetLeaseMutex       sync.RWMutex
 	acquireSubnetLeaseArgsForCall []struct {
-		underlayIP      string
-		singleOverlayIP bool
+		arg1 string
+		arg2 bool
 	}
 	acquireSubnetLeaseReturns struct {
 		result1 *controller.Lease
@@ -26,22 +26,24 @@ type LeaseAcquirer struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *LeaseAcquirer) AcquireSubnetLease(underlayIP string, singleOverlayIP bool) (*controller.Lease, error) {
+func (fake *LeaseAcquirer) AcquireSubnetLease(arg1 string, arg2 bool) (*controller.Lease, error) {
 	fake.acquireSubnetLeaseMutex.Lock()
 	ret, specificReturn := fake.acquireSubnetLeaseReturnsOnCall[len(fake.acquireSubnetLeaseArgsForCall)]
 	fake.acquireSubnetLeaseArgsForCall = append(fake.acquireSubnetLeaseArgsForCall, struct {
-		underlayIP      string
-		singleOverlayIP bool
-	}{underlayIP, singleOverlayIP})
-	fake.recordInvocation("AcquireSubnetLease", []interface{}{underlayIP, singleOverlayIP})
+		arg1 string
+		arg2 bool
+	}{arg1, arg2})
+	stub := fake.AcquireSubnetLeaseStub
+	fakeReturns := fake.acquireSubnetLeaseReturns
+	fake.recordInvocation("AcquireSubnetLease", []interface{}{arg1, arg2})
 	fake.acquireSubnetLeaseMutex.Unlock()
-	if fake.AcquireSubnetLeaseStub != nil {
-		return fake.AcquireSubnetLeaseStub(underlayIP, singleOverlayIP)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.acquireSubnetLeaseReturns.result1, fake.acquireSubnetLeaseReturns.result2
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *LeaseAcquirer) AcquireSubnetLeaseCallCount() int {
@@ -50,13 +52,22 @@ func (fake *LeaseAcquirer) AcquireSubnetLeaseCallCount() int {
 	return len(fake.acquireSubnetLeaseArgsForCall)
 }
 
+func (fake *LeaseAcquirer) AcquireSubnetLeaseCalls(stub func(string, bool) (*controller.Lease, error)) {
+	fake.acquireSubnetLeaseMutex.Lock()
+	defer fake.acquireSubnetLeaseMutex.Unlock()
+	fake.AcquireSubnetLeaseStub = stub
+}
+
 func (fake *LeaseAcquirer) AcquireSubnetLeaseArgsForCall(i int) (string, bool) {
 	fake.acquireSubnetLeaseMutex.RLock()
 	defer fake.acquireSubnetLeaseMutex.RUnlock()
-	return fake.acquireSubnetLeaseArgsForCall[i].underlayIP, fake.acquireSubnetLeaseArgsForCall[i].singleOverlayIP
+	argsForCall := fake.acquireSubnetLeaseArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *LeaseAcquirer) AcquireSubnetLeaseReturns(result1 *controller.Lease, result2 error) {
+	fake.acquireSubnetLeaseMutex.Lock()
+	defer fake.acquireSubnetLeaseMutex.Unlock()
 	fake.AcquireSubnetLeaseStub = nil
 	fake.acquireSubnetLeaseReturns = struct {
 		result1 *controller.Lease
@@ -65,6 +76,8 @@ func (fake *LeaseAcquirer) AcquireSubnetLeaseReturns(result1 *controller.Lease, 
 }
 
 func (fake *LeaseAcquirer) AcquireSubnetLeaseReturnsOnCall(i int, result1 *controller.Lease, result2 error) {
+	fake.acquireSubnetLeaseMutex.Lock()
+	defer fake.acquireSubnetLeaseMutex.Unlock()
 	fake.AcquireSubnetLeaseStub = nil
 	if fake.acquireSubnetLeaseReturnsOnCall == nil {
 		fake.acquireSubnetLeaseReturnsOnCall = make(map[int]struct {

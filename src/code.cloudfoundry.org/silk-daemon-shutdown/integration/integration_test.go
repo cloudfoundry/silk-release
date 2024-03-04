@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os/exec"
 
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -58,21 +57,21 @@ var _ = Describe("Teardown", func() {
 
 	BeforeEach(func() {
 		var err error
-		tempPidFile, err = ioutil.TempFile(os.TempDir(), "pid")
+		tempPidFile, err = os.CreateTemp(os.TempDir(), "pid")
 		Expect(err).NotTo(HaveOccurred())
 		sleepCommand := exec.Command("sleep", "60")
 
 		fakeSilkDaemonSession, err = gexec.Start(sleepCommand, GinkgoWriter, GinkgoWriter)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(ioutil.WriteFile(tempPidFile.Name(), []byte(strconv.Itoa(sleepCommand.Process.Pid)+"\n"), 0777)).To(Succeed())
+		Expect(os.WriteFile(tempPidFile.Name(), []byte(strconv.Itoa(sleepCommand.Process.Pid)+"\n"), 0777)).To(Succeed())
 
 		// setup fake silk/store.json file
-		fakeContainerMetadataFile, err = ioutil.TempFile(os.TempDir(), "store.json")
+		fakeContainerMetadataFile, err = os.CreateTemp(os.TempDir(), "store.json")
 		Expect(err).NotTo(HaveOccurred())
 		// write fake app contents
 		fakeContainerMetadataFileContents := []byte(`{"some-app-guid": {"handle": "some-app-guid","ip": "1.2.3.4","metadata": null}}`)
-		Expect(ioutil.WriteFile(fakeContainerMetadataFile.Name(), fakeContainerMetadataFileContents, 0777)).To(Succeed())
+		Expect(os.WriteFile(fakeContainerMetadataFile.Name(), fakeContainerMetadataFileContents, 0777)).To(Succeed())
 
 	})
 
@@ -83,8 +82,8 @@ var _ = Describe("Teardown", func() {
 				// read a populated metadata file before emptying.
 				time.Sleep(2 * time.Second)
 				emptyfakeContainerMetadataFileContents := []byte(`{}`)
-				Expect(ioutil.WriteFile(fakeContainerMetadataFile.Name(), emptyfakeContainerMetadataFileContents, 0777)).To(Succeed())
-				Expect(ioutil.WriteFile(fmt.Sprintf("%s_version", fakeContainerMetadataFile.Name()), []byte("2"), 0777)).To(Succeed())
+				Expect(os.WriteFile(fakeContainerMetadataFile.Name(), emptyfakeContainerMetadataFileContents, 0777)).To(Succeed())
+				Expect(os.WriteFile(fmt.Sprintf("%s_version", fakeContainerMetadataFile.Name()), []byte("2"), 0777)).To(Succeed())
 			}()
 
 			fakeSilkDaemonServer.AppendHandlers(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
@@ -202,7 +201,7 @@ var _ = Describe("Teardown", func() {
 
 	Context("when silk daemon pid file does not contain a number", func() {
 		BeforeEach(func() {
-			Expect(ioutil.WriteFile(tempPidFile.Name(), []byte("not-a-number"), 0777)).To(Succeed())
+			Expect(os.WriteFile(tempPidFile.Name(), []byte("not-a-number"), 0777)).To(Succeed())
 		})
 
 		It("returns an error", func() {

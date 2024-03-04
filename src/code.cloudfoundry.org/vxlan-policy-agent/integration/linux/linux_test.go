@@ -7,7 +7,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -78,9 +78,9 @@ var _ = Describe("VXLAN Policy Agent", func() {
 				}
 			}
 		}`
-		containerMetadataFile, err := ioutil.TempFile("", "")
+		containerMetadataFile, err := os.CreateTemp("", "")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(ioutil.WriteFile(containerMetadataFile.Name(), []byte(containerMetadata), os.ModePerm))
+		Expect(os.WriteFile(containerMetadataFile.Name(), []byte(containerMetadata), os.ModePerm))
 		datastorePath = containerMetadataFile.Name()
 
 		conf = config.VxlanPolicyAgent{
@@ -141,7 +141,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 		defer resp.Body.Close()
 
 		Expect(resp.StatusCode).To(Equal(http.StatusOK))
-		Expect(ioutil.ReadAll(resp.Body)).To(MatchJSON(fmt.Sprintf(`{ "enabled": %t }`, enabled)))
+		Expect(io.ReadAll(resp.Body)).To(MatchJSON(fmt.Sprintf(`{ "enabled": %t }`, enabled)))
 	}
 
 	Describe("policy agent", func() {
@@ -250,7 +250,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 							}
 						}
 					}`
-						Expect(ioutil.WriteFile(datastorePath, []byte(containerMetadata), os.ModePerm))
+						Expect(os.WriteFile(datastorePath, []byte(containerMetadata), os.ModePerm))
 					})
 				})
 
@@ -367,7 +367,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 								}
 							}
 						}`
-							Expect(ioutil.WriteFile(datastorePath, []byte(containerMetadata), os.ModePerm))
+							Expect(os.WriteFile(datastorePath, []byte(containerMetadata), os.ModePerm))
 							runIptablesCommand("-N", "netout--some-handle--log")
 						})
 
@@ -626,10 +626,6 @@ func iptablesFilterRules() string {
 	return runIptablesCommandOnTable("filter", "S")
 }
 
-func iptablesNATRules() string {
-	return runIptablesCommandOnTable("nat", "S")
-}
-
 func runIptablesCommandOnTable(table, flag string) string {
 	return runIptablesCommand("-w", "-t", table, "-"+flag)
 }
@@ -739,7 +735,6 @@ func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 		}
 
 		w.WriteHeader(http.StatusNotFound)
-		return
 	})
 	someServer := http_server.NewTLSServer(serverListenAddr, testHandler, tlsConfig)
 

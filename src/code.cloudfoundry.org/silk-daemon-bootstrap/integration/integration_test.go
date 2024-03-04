@@ -2,7 +2,7 @@ package integration_test
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -154,7 +154,7 @@ var _ = Describe("Bootstrap", func() {
 })
 
 func runBootstrap(bootstrapConfig config.SilkDaemonBootstrap) *gexec.Session {
-	configFile, err := ioutil.TempFile("", "")
+	configFile, err := os.CreateTemp("", "")
 	Expect(err).NotTo(HaveOccurred())
 
 	contents, err := json.Marshal(&bootstrapConfig)

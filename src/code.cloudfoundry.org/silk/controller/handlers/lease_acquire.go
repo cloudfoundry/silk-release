@@ -3,7 +3,7 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"code.cloudfoundry.org/cf-networking-helpers/marshal"
@@ -26,7 +26,7 @@ type LeasesAcquire struct {
 func (l *LeasesAcquire) ServeHTTP(logger lager.Logger, w http.ResponseWriter, req *http.Request) {
 	logger = logger.Session("leases-acquire")
 
-	bodyBytes, err := ioutil.ReadAll(req.Body)
+	bodyBytes, err := io.ReadAll(req.Body)
 	if err != nil {
 		l.ErrorResponse.BadRequest(logger, w, err, fmt.Sprintf("read-body: %s", err.Error()))
 		return

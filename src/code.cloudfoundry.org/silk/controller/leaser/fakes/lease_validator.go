@@ -29,15 +29,17 @@ func (fake *LeaseValidator) Validate(arg1 controller.Lease) error {
 	fake.validateArgsForCall = append(fake.validateArgsForCall, struct {
 		arg1 controller.Lease
 	}{arg1})
+	stub := fake.ValidateStub
+	fakeReturns := fake.validateReturns
 	fake.recordInvocation("Validate", []interface{}{arg1})
 	fake.validateMutex.Unlock()
-	if fake.ValidateStub != nil {
-		return fake.ValidateStub(arg1)
+	if stub != nil {
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	return fake.validateReturns.result1
+	return fakeReturns.result1
 }
 
 func (fake *LeaseValidator) ValidateCallCount() int {
@@ -46,13 +48,22 @@ func (fake *LeaseValidator) ValidateCallCount() int {
 	return len(fake.validateArgsForCall)
 }
 
+func (fake *LeaseValidator) ValidateCalls(stub func(controller.Lease) error) {
+	fake.validateMutex.Lock()
+	defer fake.validateMutex.Unlock()
+	fake.ValidateStub = stub
+}
+
 func (fake *LeaseValidator) ValidateArgsForCall(i int) controller.Lease {
 	fake.validateMutex.RLock()
 	defer fake.validateMutex.RUnlock()
-	return fake.validateArgsForCall[i].arg1
+	argsForCall := fake.validateArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *LeaseValidator) ValidateReturns(result1 error) {
+	fake.validateMutex.Lock()
+	defer fake.validateMutex.Unlock()
 	fake.ValidateStub = nil
 	fake.validateReturns = struct {
 		result1 error
@@ -60,6 +71,8 @@ func (fake *LeaseValidator) ValidateReturns(result1 error) {
 }
 
 func (fake *LeaseValidator) ValidateReturnsOnCall(i int, result1 error) {
+	fake.validateMutex.Lock()
+	defer fake.validateMutex.Unlock()
 	fake.ValidateStub = nil
 	if fake.validateReturnsOnCall == nil {
 		fake.validateReturnsOnCall = make(map[int]struct {

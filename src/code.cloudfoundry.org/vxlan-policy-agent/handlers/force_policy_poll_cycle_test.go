@@ -2,7 +2,7 @@ package handlers_test
 
 import (
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 
@@ -44,6 +44,6 @@ var _ = Describe("Force Policy Poll Cycle Handler", func() {
 
 		handler.ServeHTTP(response, request)
 		Expect(response.Code).To(Equal(500))
-		Expect(ioutil.ReadAll(response.Body)).To(Equal([]byte("failed to force policy poll cycle: couldn't")))
+		Expect(io.ReadAll(response.Body)).To(Equal([]byte("failed to force policy poll cycle: couldn't")))
 	})
 })

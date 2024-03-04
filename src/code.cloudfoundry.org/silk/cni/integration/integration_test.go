@@ -3,9 +3,7 @@ package integration_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math"
-	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -57,7 +55,7 @@ var _ = BeforeEach(func() {
 	fakeHostNS, err = ns.GetNS(fmt.Sprintf("/var/run/netns/%s", fakeHostNSName))
 	Expect(err).NotTo(HaveOccurred())
 
-	containerID = fmt.Sprintf("test-%03d-%x", GinkgoParallelProcess(), rand.Int31())
+	containerID = fmt.Sprintf("test-%03d-%x", GinkgoParallelProcess(), randomGenerator.Int31())
 
 	By("setting up CNI config")
 	cniEnv = map[string]string{
@@ -67,7 +65,7 @@ var _ = BeforeEach(func() {
 	}
 	cniEnv["CNI_NETNS"] = containerNS.Path()
 
-	dataDir, err = ioutil.TempDir("", "cni-data-dir-")
+	dataDir, err = os.MkdirTemp("", "cni-data-dir-")
 	Expect(err).NotTo(HaveOccurred())
 
 	flannelSubnetBaseIP, flannelSubnetCIDR, _ := net.ParseCIDR("10.255.30.0/24")
@@ -82,7 +80,7 @@ var _ = BeforeEach(func() {
 
 	cniStdin = cniConfig(dataDir, datastorePath, daemonPort)
 
-	datastoreDir, err := ioutil.TempDir("", "metadata-dir-")
+	datastoreDir, err := os.MkdirTemp("", "metadata-dir-")
 	Expect(err).NotTo(HaveOccurred())
 	datastorePath = filepath.Join(datastoreDir, "container-metadata.json")
 })
@@ -503,7 +501,7 @@ var _ = Describe("Silk CNI Integration", func() {
 			Expect(result.IPs[0].Gateway.String()).To(Equal("169.254.0.1"))
 
 			By("checking that the ip is reserved for the correct container id")
-			bytes, err := ioutil.ReadFile(filepath.Join(dataDir, "ipam/my-silk-network/10.255.30.2"))
+			bytes, err := os.ReadFile(filepath.Join(dataDir, "ipam/my-silk-network/10.255.30.2"))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(bytes)).To(Equal(fmt.Sprintf("%s\r\neth0", containerID)))
 
@@ -522,7 +520,7 @@ var _ = Describe("Silk CNI Integration", func() {
 			Eventually(sess, cmdTimeout).Should(gexec.Exit(0))
 
 			By("checking that the container metadata is written")
-			containerMetadata, err := ioutil.ReadFile(datastorePath)
+			containerMetadata, err := os.ReadFile(datastorePath)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(string(containerMetadata)).To(MatchJSON(fmt.Sprintf(`{
@@ -539,7 +537,7 @@ var _ = Describe("Silk CNI Integration", func() {
 			Expect(sess.Out.Contents()).To(BeEmpty())
 
 			By("checking that the container metadata is deleted")
-			containerMetadata, err = ioutil.ReadFile(datastorePath)
+			containerMetadata, err = os.ReadFile(datastorePath)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(string(containerMetadata)).NotTo(ContainSubstring("169.254.0.1"))
@@ -573,7 +571,7 @@ var _ = Describe("Silk CNI Integration", func() {
 			By("exhausting all ips")
 			for i := 0; i < numIPAllocations-1; i++ {
 				cniEnv["CNI_NETNS"] = containerNSList[i].Path()
-				cniEnv["CNI_CONTAINERID"] = fmt.Sprintf("test-%03d-%x", GinkgoParallelProcess(), rand.Int31())
+				cniEnv["CNI_CONTAINERID"] = fmt.Sprintf("test-%03d-%x", GinkgoParallelProcess(), randomGenerator.Int31())
 				sess := startCommandInHost("ADD", cniStdin)
 				Eventually(sess, cmdTimeout).Should(gexec.Exit(0))
 
@@ -586,7 +584,7 @@ var _ = Describe("Silk CNI Integration", func() {
 			}
 
 			cniEnv["CNI_NETNS"] = containerNSList[numIPAllocations-1].Path()
-			cniEnv["CNI_CONTAINERID"] = fmt.Sprintf("test-%03d-%x", GinkgoParallelProcess(), rand.Int31())
+			cniEnv["CNI_CONTAINERID"] = fmt.Sprintf("test-%03d-%x", GinkgoParallelProcess(), randomGenerator.Int31())
 			sess := startCommandInHost("ADD", cniStdin)
 			Eventually(sess, cmdTimeout).Should(gexec.Exit(1))
 			Expect(sess.Out.Contents()).To(MatchJSON(`{
@@ -643,9 +641,9 @@ var _ = Describe("Silk CNI Integration", func() {
 })
 
 func writeSubnetEnvFile(subnet, fullNetwork string) string {
-	tempFile, err := ioutil.TempFile("", "subnet.env")
-	defer tempFile.Close()
+	tempFile, err := os.CreateTemp("", "subnet.env")
 	Expect(err).NotTo(HaveOccurred())
+	defer tempFile.Close()
 	_, err = fmt.Fprintf(tempFile, `
 FLANNEL_SUBNET=%s
 FLANNEL_NETWORK=%s
@@ -805,12 +803,6 @@ func mustSucceedInContainer(binary string, args ...string) string {
 	cmdArgs := []string{"netns", "exec", containerNSName, binary}
 	cmdArgs = append(cmdArgs, args...)
 	return mustSucceed("ip", cmdArgs...)
-}
-
-func mustStartInFakeHost(binary string, args ...string) *gexec.Session {
-	cmdArgs := []string{"netns", "exec", fakeHostNSName, binary}
-	cmdArgs = append(cmdArgs, args...)
-	return mustStart("ip", cmdArgs...)
 }
 
 func mustSucceedInFakeHost(binary string, args ...string) string {

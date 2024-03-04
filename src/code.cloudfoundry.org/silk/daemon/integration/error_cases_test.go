@@ -2,7 +2,6 @@ package integration_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -53,7 +52,7 @@ var _ = Describe("error cases", func() {
 
 	Context("when the contents of the config file cannot be unmarshaled", func() {
 		BeforeEach(func() {
-			Expect(ioutil.WriteFile(configFilePath, []byte("some-bad-contents"), os.ModePerm)).To(Succeed())
+			Expect(os.WriteFile(configFilePath, []byte("some-bad-contents"), os.ModePerm)).To(Succeed())
 		})
 
 		It("exits with status 1", func() {
@@ -172,7 +171,7 @@ var _ = Describe("error cases", func() {
 
 			Context("when containers are running", func() {
 				BeforeEach(func() {
-					err := ioutil.WriteFile(datastorePath, []byte(`{
+					err := os.WriteFile(datastorePath, []byte(`{
 	          "some-handle": {
 	              "handle": "some-handle",
 	              "ip": "192.168.0.100",
@@ -240,7 +239,7 @@ var _ = Describe("error cases", func() {
 
 		Context("when containers are running", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(datastorePath, []byte(`{
+				err := os.WriteFile(datastorePath, []byte(`{
 	          "some-handle": {
 	              "handle": "some-handle",
 	              "ip": "192.168.0.100",
