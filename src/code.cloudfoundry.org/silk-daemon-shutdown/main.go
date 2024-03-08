@@ -192,10 +192,6 @@ func checkIfServerUp(serverName string, url string) bool {
 				return true
 
 			}
-			if netErr.Temporary() {
-				logger.Debug("pinging server returned temporary error. trying again.")
-				return true
-			}
 		}
 	} else {
 		defer response.Body.Close()
