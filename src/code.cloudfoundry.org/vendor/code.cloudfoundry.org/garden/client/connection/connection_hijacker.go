@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -83,6 +82,7 @@ func (h *hijackable) Hijack(handler string, body io.Reader, params rata.Params, 
 		return nil, nil, err
 	}
 
+	//lint:ignore SA1019 - there isn't really a way to hijack http responses client-side aside from the deprecated httputil function
 	client := httputil.NewClientConn(conn, nil)
 
 	httpResp, err := client.Do(request)
@@ -93,7 +93,7 @@ func (h *hijackable) Hijack(handler string, body io.Reader, params rata.Params, 
 	if httpResp.StatusCode < 200 || httpResp.StatusCode > 299 {
 		defer httpResp.Body.Close()
 
-		errRespBytes, err := ioutil.ReadAll(httpResp.Body)
+		errRespBytes, err := io.ReadAll(httpResp.Body)
 		if err != nil {
 			return nil, nil, fmt.Errorf("Backend error: Exit status: %d, Body: %s, error reading response body: %s", httpResp.StatusCode, string(errRespBytes), err)
 		}
