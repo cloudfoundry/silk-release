@@ -28,6 +28,9 @@ files:
   - code.cloudfoundry.org/silk/controller/leaser/*.go # gosub-main-module
   - code.cloudfoundry.org/silk/controller/server_metrics/*.go # gosub-main-module
   - code.cloudfoundry.org/silk/lib/hwaddr/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/filippo.io/edwards25519/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/filippo.io/edwards25519/field/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/filippo.io/edwards25519/field/*.s # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/bmizerany/pat/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/cloudfoundry/dropsonde/emitter/*.go # gosub-main-module
@@ -66,6 +69,8 @@ files:
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/descfmt/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/descopts/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/detrand/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/editiondefaults/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/editiondefaults/*.binpb # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/encoding/defval/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/encoding/messageset/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/encoding/tag/*.go # gosub-main-module
