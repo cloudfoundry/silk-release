@@ -41,7 +41,7 @@ properties:
     default: false
 
   policy_server.hostname:
-    description: "Host name for the policy server.  E.g. the service advertised via Consul DNS.  Must match common name in the policy_server.server_cert"
+    description: "Host name for the policy server.  E.g. the service advertised via Bosh DNS.  Must match common name in the policy_server.server_cert"
     default: "policy-server.service.cf.internal"
 
   policy_server.internal_listen_port:
