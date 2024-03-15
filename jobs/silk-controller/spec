@@ -45,11 +45,11 @@ properties:
     default: 46455
 
   health_check_port:
-    description: "Health check port for silk controller. Used by the Consul DNS health check."
+    description: "Health check port for silk controller. Used by the Bosh DNS health check."
     default: 19683
 
   health_check_timeout_seconds:
-    description: "Health check timeout for Consul DNS."
+    description: "Health check timeout"
     default: 5
 
   listen_ip:
@@ -64,7 +64,7 @@ properties:
     description: "Trusted CA certificate that was used to sign the silk daemon client cert and key."
 
   server_cert:
-    description: "Server certificate for TLS. Must have common name that matches the Consul DNS name of the silk controller, eg silk-controller.service.cf.internal"
+    description: "Server certificate for TLS. Must have common name that matches the Bosh DNS name of the silk controller, eg silk-controller.service.cf.internal"
 
   server_key:
     description: "Server key for TLS."
