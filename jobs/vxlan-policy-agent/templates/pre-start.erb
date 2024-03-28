@@ -4,5 +4,5 @@
 export PATH="<%= link("iptables").p("garden.iptables_bin_dir") %>:$PATH"
 
 # Completely cleanup IPTables Filter and NAT tables
-/var/vcap/packages/vxlan-policy-agent/bin/pre-start -lock-file var/vcap/data/garden-cni/iptables.lock
+/var/vcap/packages/vxlan-policy-agent/bin/pre-start -lock-file /var/vcap/data/garden-cni/iptables.lock
 <% end %>
