@@ -1,9 +1,9 @@
-# code.cloudfoundry.org/bbs v0.0.0-20240401230014-ed87f495edc2
+# code.cloudfoundry.org/bbs v0.0.0-20240408163833-8758af90a126
 ## explicit
 code.cloudfoundry.org/bbs/encryption
 code.cloudfoundry.org/bbs/format
 code.cloudfoundry.org/bbs/models
-# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240401155437-efd180519f25
+# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240405145602-2db429f3abf0
 ## explicit; go 1.20
 code.cloudfoundry.org/cf-networking-helpers/db
 code.cloudfoundry.org/cf-networking-helpers/db/monitor
@@ -20,20 +20,20 @@ code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics
 code.cloudfoundry.org/cf-networking-helpers/testsupport/ports
 # code.cloudfoundry.org/clock v1.1.0
 ## explicit; go 1.20
-# code.cloudfoundry.org/debugserver v0.0.0-20240403132449-5d2c8205fccf
+# code.cloudfoundry.org/debugserver v0.0.0-20240405144453-34182e5de535
 ## explicit; go 1.19
 code.cloudfoundry.org/debugserver
-# code.cloudfoundry.org/diego-logging-client v0.0.0-20240403132506-4e6d96d497d1
+# code.cloudfoundry.org/diego-logging-client v0.0.0-20240405144442-1a4930ebf5b9
 ## explicit; go 1.21
 code.cloudfoundry.org/diego-logging-client
 code.cloudfoundry.org/diego-logging-client/testhelpers
 # code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 ## explicit
 code.cloudfoundry.org/executor
-# code.cloudfoundry.org/filelock v0.0.0-20240403142352-8a69c21cc3ba
+# code.cloudfoundry.org/filelock v0.0.0-20240409143021-86f5884ca555
 ## explicit; go 1.20
 code.cloudfoundry.org/filelock
-# code.cloudfoundry.org/garden v0.0.0-20240403131454-85714da173a0
+# code.cloudfoundry.org/garden v0.0.0-20240405184154-4b258b482c64
 ## explicit; go 1.20
 code.cloudfoundry.org/garden
 code.cloudfoundry.org/garden/client
@@ -58,16 +58,16 @@ code.cloudfoundry.org/lager/v3/lagerflags
 code.cloudfoundry.org/lager/v3/lagertest
 # code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2
 ## explicit
-# code.cloudfoundry.org/policy_client v0.0.0-20240401155427-8c21adbc5be9
+# code.cloudfoundry.org/policy_client v0.0.0-20240405145556-62555a1489bd
 ## explicit; go 1.20
 code.cloudfoundry.org/policy_client
-# code.cloudfoundry.org/routing-info v0.0.0-20230911184850-3a6d4ccb3cfc
+# code.cloudfoundry.org/routing-info v0.0.0-20240405184658-449674f046fa
 ## explicit
 code.cloudfoundry.org/routing-info/internalroutes
 # code.cloudfoundry.org/runtimeschema v0.0.0-20240111181315-c828d462f664 => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 ## explicit
 code.cloudfoundry.org/runtimeschema/metric
-# code.cloudfoundry.org/tlsconfig v0.0.0-20240403132441-f9f6ab7c839e
+# code.cloudfoundry.org/tlsconfig v0.0.0-20240405144453-942277399864
 ## explicit; go 1.19
 code.cloudfoundry.org/tlsconfig
 # filippo.io/edwards25519 v1.1.0
@@ -160,7 +160,7 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/pprof v0.0.0-20240402174815-29b9bb013b0f
+# github.com/google/pprof v0.0.0-20240409012703-83162a5b38cd
 ## explicit; go 1.19
 github.com/google/pprof/profile
 # github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
@@ -286,7 +286,7 @@ go.step.sm/crypto/keyutil
 go.step.sm/crypto/pemutil
 go.step.sm/crypto/randutil
 go.step.sm/crypto/x25519
-# golang.org/x/crypto v0.21.0
+# golang.org/x/crypto v0.22.0
 ## explicit; go 1.18
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
@@ -300,7 +300,7 @@ golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/scrypt
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/net v0.22.0
+# golang.org/x/net v0.24.0
 ## explicit; go 1.18
 golang.org/x/net/context
 golang.org/x/net/html
@@ -312,7 +312,7 @@ golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
-# golang.org/x/sys v0.18.0
+# golang.org/x/sys v0.19.0
 ## explicit; go 1.18
 golang.org/x/sys/cpu
 golang.org/x/sys/unix
@@ -339,14 +339,14 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# golang.org/x/tools v0.19.0
+# golang.org/x/tools v0.20.0
 ## explicit; go 1.19
 golang.org/x/tools/cover
 golang.org/x/tools/go/ast/inspector
 # google.golang.org/genproto/googleapis/rpc v0.0.0-20240401170217-c3f982113cda
 ## explicit; go 1.19
 google.golang.org/genproto/googleapis/rpc/status
-# google.golang.org/grpc v1.62.1
+# google.golang.org/grpc v1.63.2
 ## explicit; go 1.19
 google.golang.org/grpc
 google.golang.org/grpc/attributes
