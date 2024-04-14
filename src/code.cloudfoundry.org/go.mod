@@ -17,7 +17,7 @@ exclude code.cloudfoundry.org/executor v0.1442.0
 require (
 	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240410162902-c411d6661edb
 	code.cloudfoundry.org/debugserver v0.0.0-20240412143000-e1e6490a72a0
-	code.cloudfoundry.org/diego-logging-client v0.0.0-20240411162706-f5d202be5c6e
+	code.cloudfoundry.org/diego-logging-client v0.0.0-20240413162951-28a656464511
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 	code.cloudfoundry.org/filelock v0.0.0-20240409143021-86f5884ca555
 	code.cloudfoundry.org/garden v0.0.0-20240409184058-44b21cda626c
