@@ -40,6 +40,7 @@ files:
   - code.cloudfoundry.org/silk/lib/serial/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/alexflint/go-filemutex/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/cni/pkg/invoke/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/containernetworking/cni/pkg/ns/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/cni/pkg/skel/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/cni/pkg/types/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/cni/pkg/types/020/*.go # gosub-main-module
