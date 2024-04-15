@@ -23,9 +23,8 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
@@ -38,7 +37,8 @@ import (
 
 type NetConf struct {
 	types.NetConf
-	DebugFile string `json:"debugFile"`
+	DebugFile  string `json:"debugFile"`
+	CommandLog string `json:"commandLog"`
 }
 
 func loadConf(bytes []byte) (*NetConf, error) {
@@ -117,15 +117,33 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 		return err
 	}
 
+	if netConf.CommandLog != "" {
+		if err = noop_debug.WriteCommandLog(
+			netConf.CommandLog,
+			noop_debug.CmdLogEntry{
+				Command: command,
+				CmdArgs: *args,
+			}); err != nil {
+			return err
+		}
+	}
+
 	if debug.ReportStderr != "" {
 		if _, err = os.Stderr.WriteString(debug.ReportStderr); err != nil {
 			return err
 		}
 	}
-
-	if debug.ReportError != "" {
-		return errors.New(debug.ReportError)
-	} else if debug.ReportResult == "PASSTHROUGH" || debug.ReportResult == "INJECT-DNS" {
+	switch {
+	case debug.ReportError != "":
+		ec := debug.ReportErrorCode
+		if ec == 0 {
+			ec = types.ErrInternal
+		}
+		return &types.Error{
+			Msg:  debug.ReportError,
+			Code: ec,
+		}
+	case debug.ReportResult == "PASSTHROUGH" || debug.ReportResult == "INJECT-DNS":
 		prevResult := netConf.PrevResult
 		if debug.ReportResult == "INJECT-DNS" {
 			newResult, err := current.NewResultFromResult(netConf.PrevResult)
@@ -149,7 +167,7 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 		if err != nil {
 			return err
 		}
-	} else if debug.ReportResult != "" {
+	case debug.ReportResult != "":
 		_, err = os.Stdout.WriteString(debug.ReportResult)
 		if err != nil {
 			return err
@@ -163,7 +181,7 @@ func debugBehavior(args *skel.CmdArgs, command string) error {
 }
 
 func debugGetSupportedVersions(stdinData []byte) []string {
-	vers := []string{"0.-42.0", "0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0", "1.0.0"}
+	vers := []string{"0.-42.0", "0.1.0", "0.2.0", "0.3.0", "0.3.1", "0.4.0", "1.0.0", "1.1.0"}
 	cniArgs := os.Getenv("CNI_ARGS")
 	if cniArgs == "" {
 		return vers
@@ -196,9 +214,17 @@ func cmdDel(args *skel.CmdArgs) error {
 	return debugBehavior(args, "DEL")
 }
 
+func cmdGC(args *skel.CmdArgs) error {
+	return debugBehavior(args, "GC")
+}
+
+func cmdStatus(args *skel.CmdArgs) error {
+	return debugBehavior(args, "STATUS")
+}
+
 func saveStdin() ([]byte, error) {
 	// Read original stdin
-	stdinData, err := ioutil.ReadAll(os.Stdin)
+	stdinData, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		return nil, err
 	}
@@ -227,5 +253,11 @@ func main() {
 	}
 
 	supportedVersions := debugGetSupportedVersions(stdinData)
-	skel.PluginMain(cmdAdd, cmdCheck, cmdDel, version.PluginSupports(supportedVersions...), "CNI noop plugin v0.7.0")
+	skel.PluginMainFuncs(skel.CNIFuncs{
+		Add:    cmdAdd,
+		Check:  cmdCheck,
+		Del:    cmdDel,
+		GC:     cmdGC,
+		Status: cmdStatus,
+	}, version.PluginSupports(supportedVersions...), "CNI noop plugin v0.7.0")
 }

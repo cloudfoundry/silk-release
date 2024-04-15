@@ -98,9 +98,10 @@ github.com/cloudfoundry/dropsonde/runtime_stats
 # github.com/cloudfoundry/sonde-go v0.0.0-20240311165458-423aa0d4dfc8
 ## explicit; go 1.17
 github.com/cloudfoundry/sonde-go/events
-# github.com/containernetworking/cni v1.1.2
-## explicit; go 1.14
+# github.com/containernetworking/cni v1.2.0
+## explicit; go 1.21
 github.com/containernetworking/cni/pkg/invoke
+github.com/containernetworking/cni/pkg/ns
 github.com/containernetworking/cni/pkg/skel
 github.com/containernetworking/cni/pkg/types
 github.com/containernetworking/cni/pkg/types/020
@@ -160,7 +161,7 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/pprof v0.0.0-20240409012703-83162a5b38cd
+# github.com/google/pprof v0.0.0-20240415144954-be81aee2d733
 ## explicit; go 1.19
 github.com/google/pprof/profile
 # github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
@@ -343,7 +344,7 @@ golang.org/x/text/unicode/norm
 ## explicit; go 1.19
 golang.org/x/tools/cover
 golang.org/x/tools/go/ast/inspector
-# google.golang.org/genproto/googleapis/rpc v0.0.0-20240412170617-26222e5d3d56
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20240415151819-79826c84ba32
 ## explicit; go 1.19
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.63.2
