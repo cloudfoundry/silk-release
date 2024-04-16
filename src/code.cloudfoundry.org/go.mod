@@ -15,15 +15,15 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 exclude code.cloudfoundry.org/executor v0.1442.0
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240410162902-c411d6661edb
-	code.cloudfoundry.org/debugserver v0.0.0-20240412143000-e1e6490a72a0
-	code.cloudfoundry.org/diego-logging-client v0.0.0-20240413162951-28a656464511
+	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240415163311-a1954d4d52e2
+	code.cloudfoundry.org/debugserver v0.0.0-20240415163122-773208e977a2
+	code.cloudfoundry.org/diego-logging-client v0.0.0-20240415163141-ee22d61ddd03
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
-	code.cloudfoundry.org/filelock v0.0.0-20240409143021-86f5884ca555
-	code.cloudfoundry.org/garden v0.0.0-20240409184058-44b21cda626c
+	code.cloudfoundry.org/filelock v0.0.0-20240416143633-127f34fd06fe
+	code.cloudfoundry.org/garden v0.0.0-20240415184613-53195785dcbc
 	code.cloudfoundry.org/go-loggregator/v8 v8.0.5
 	code.cloudfoundry.org/lager/v3 v3.0.3
-	code.cloudfoundry.org/policy_client v0.0.0-20240411162908-9bae979b73e0
+	code.cloudfoundry.org/policy_client v0.0.0-20240415163259-80a5c9809dcb
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240111181315-c828d462f664
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.0
@@ -74,13 +74,13 @@ require (
 	github.com/safchain/ethtool v0.3.0 // indirect
 	github.com/square/certstrap v1.3.0 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
-	go.step.sm/crypto v0.44.3 // indirect
+	go.step.sm/crypto v0.44.5 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.20.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240415151819-79826c84ba32 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240415180920-8c6c420018be // indirect
 	google.golang.org/grpc v1.63.2 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
