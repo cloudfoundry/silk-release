@@ -15,15 +15,15 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 exclude code.cloudfoundry.org/executor v0.1442.0
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240415163311-a1954d4d52e2
-	code.cloudfoundry.org/debugserver v0.0.0-20240415163122-773208e977a2
-	code.cloudfoundry.org/diego-logging-client v0.0.0-20240415163141-ee22d61ddd03
+	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240416163356-5f67f0c726df
+	code.cloudfoundry.org/debugserver v0.0.0-20240416163159-6daef1b4c90c
+	code.cloudfoundry.org/diego-logging-client v0.0.0-20240416163159-4d65bf1c2d41
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
-	code.cloudfoundry.org/filelock v0.0.0-20240416143633-127f34fd06fe
-	code.cloudfoundry.org/garden v0.0.0-20240415184613-53195785dcbc
+	code.cloudfoundry.org/filelock v0.0.0-20240417143641-f04b449d93e8
+	code.cloudfoundry.org/garden v0.0.0-20240416184759-ae39d12cc541
 	code.cloudfoundry.org/go-loggregator/v8 v8.0.5
 	code.cloudfoundry.org/lager/v3 v3.0.3
-	code.cloudfoundry.org/policy_client v0.0.0-20240415163259-80a5c9809dcb
+	code.cloudfoundry.org/policy_client v0.0.0-20240416163349-1ba359711773
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240111181315-c828d462f664
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.0
@@ -53,7 +53,7 @@ require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20240325171903-fa19631aa7ba // indirect
 	code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 // indirect
 	code.cloudfoundry.org/routing-info v0.0.0-20240405184658-449674f046fa // indirect
-	code.cloudfoundry.org/tlsconfig v0.0.0-20240410162701-78a97c114f7f // indirect
+	code.cloudfoundry.org/tlsconfig v0.0.0-20240416163159-16b37d67cb91 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/alexflint/go-filemutex v1.3.0 // indirect
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
@@ -65,7 +65,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/pprof v0.0.0-20240415144954-be81aee2d733 // indirect
+	github.com/google/pprof v0.0.0-20240416155748-26353dc0451f // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jackc/pgx/v5 v5.5.5 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
@@ -74,7 +74,7 @@ require (
 	github.com/safchain/ethtool v0.3.0 // indirect
 	github.com/square/certstrap v1.3.0 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
-	go.step.sm/crypto v0.44.5 // indirect
+	go.step.sm/crypto v0.44.6 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect
