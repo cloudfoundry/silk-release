@@ -15,15 +15,15 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 exclude code.cloudfoundry.org/executor v0.1442.0
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240417163547-9006ca4bf09b
-	code.cloudfoundry.org/debugserver v0.0.0-20240416163159-6daef1b4c90c
-	code.cloudfoundry.org/diego-logging-client v0.0.0-20240417163320-3004e41c895c
+	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240418163641-9ea5446f592e
+	code.cloudfoundry.org/debugserver v0.0.0-20240418163436-96a22b512925
+	code.cloudfoundry.org/diego-logging-client v0.0.0-20240418163439-6bdf47b4db95
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
-	code.cloudfoundry.org/filelock v0.0.0-20240417143641-f04b449d93e8
-	code.cloudfoundry.org/garden v0.0.0-20240416184759-ae39d12cc541
+	code.cloudfoundry.org/filelock v0.0.0-20240419143859-3e7294896977
+	code.cloudfoundry.org/garden v0.0.0-20240418185000-86dc18318d57
 	code.cloudfoundry.org/go-loggregator/v8 v8.0.5
 	code.cloudfoundry.org/lager/v3 v3.0.3
-	code.cloudfoundry.org/policy_client v0.0.0-20240417163539-c0bec602f7ca
+	code.cloudfoundry.org/policy_client v0.0.0-20240418163631-53a4fb879ae4
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240111181315-c828d462f664
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.0
@@ -37,7 +37,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.9
 	github.com/onsi/ginkgo/v2 v2.17.1
-	github.com/onsi/gomega v1.32.0
+	github.com/onsi/gomega v1.33.0
 	github.com/pivotal-cf-experimental/gomegamatchers v0.0.0-20180326192815-e36bfcc98c3a
 	github.com/rubenv/sql-migrate v1.6.1
 	github.com/tedsuo/ifrit v0.0.0-20230516164442-7862c310ad26
@@ -48,7 +48,7 @@ require (
 )
 
 require (
-	code.cloudfoundry.org/bbs v0.0.0-20240408163833-8758af90a126 // indirect
+	code.cloudfoundry.org/bbs v0.0.0-20240418184526-a7ed0dccd9f7 // indirect
 	code.cloudfoundry.org/clock v1.1.0 // indirect
 	code.cloudfoundry.org/go-diodes v0.0.0-20240325171903-fa19631aa7ba // indirect
 	code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 // indirect
