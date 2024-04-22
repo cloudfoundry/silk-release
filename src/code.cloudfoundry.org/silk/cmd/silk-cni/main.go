@@ -120,7 +120,12 @@ func main() {
 		Store:  store,
 	}
 
-	skel.PluginMain(plugin.cmdAdd, plugin.cmdCheck, plugin.cmdDel, version.PluginSupports("1.0.0"), "CNI Plugin silk-cni")
+	funcs := skel.CNIFuncs{
+		Add:   plugin.cmdAdd,
+		Check: plugin.cmdCheck,
+		Del:   plugin.cmdDel,
+	}
+	skel.PluginMainFuncs(funcs, version.PluginSupports("1.0.0"), "CNI Plugin silk-cni")
 }
 
 type NetConf struct {
