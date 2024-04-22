@@ -135,8 +135,7 @@ var _ = Describe("Silk CNI Integration", func() {
 								"interface": 1
 						}
 				],
-				"routes": [{"dst": "0.0.0.0/0", "gw": "169.254.0.1"}],
-				"dns": {}
+				"routes": [{"dst": "0.0.0.0/0", "gw": "169.254.0.1"}]
 			}
 			`, inHost[0].Name, containerNS.Path())
 
@@ -477,7 +476,7 @@ var _ = Describe("Silk CNI Integration", func() {
 			sess := startCommandInHost("VERSION", "{}")
 			Eventually(sess, cmdTimeout).Should(gexec.Exit(0))
 			Expect(sess.Out.Contents()).To(MatchJSON(`{
-          "cniVersion": "1.0.0",
+          "cniVersion": "1.1.0",
           "supportedVersions": [ "1.0.0" ]
         }`))
 		})
@@ -630,8 +629,7 @@ var _ = Describe("Silk CNI Integration", func() {
 								"interface": 1
 						}
 				],
-				"routes": [{"dst": "0.0.0.0/0", "gw": "169.254.0.1"}],
-				"dns": {}
+				"routes": [{"dst": "0.0.0.0/0", "gw": "169.254.0.1"}]
 			}
 			`, inHost[0].Name, containerNS.Path())
 

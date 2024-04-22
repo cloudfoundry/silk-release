@@ -91,7 +91,7 @@ func StartServer(serverListenAddr string, tlsConfig *tls.Config) *FakeController
 	group := grouper.NewOrdered(os.Interrupt, members)
 	monitor := ifrit.Invoke(sigmon.New(group))
 
-	Eventually(monitor.Ready(), 30*time.Second).Should(BeClosed())
+	Eventually(monitor.Ready(), 60*time.Second).Should(BeClosed())
 	fakeServer.Process = monitor
 	return fakeServer
 }

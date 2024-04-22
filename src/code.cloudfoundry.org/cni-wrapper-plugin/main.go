@@ -422,5 +422,10 @@ func newPluginController(config *lib.WrapperConfig) (*lib.PluginController, erro
 func main() {
 	supportedVersions := []string{"1.0.0"}
 
-	skel.PluginMain(cmdAdd, cmdCheck, cmdDel, version.PluginSupports(supportedVersions...), "CNI Plugin silk-cni-wrapper-plugin")
+	cniFuncs := skel.CNIFuncs{
+		Add:   cmdAdd,
+		Del:   cmdDel,
+		Check: cmdCheck,
+	}
+	skel.PluginMainFuncs(cniFuncs, version.PluginSupports(supportedVersions...), "CNI Plugin silk-cni-wrapper-plugin")
 }

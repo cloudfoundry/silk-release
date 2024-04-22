@@ -57,7 +57,7 @@ var _ = Describe("Poller", func() {
 				Expect(atomic.LoadUint64(&cycleCount)).To(Equal(uint64(1)))
 
 				signals <- os.Interrupt
-				Eventually(retChan).Should(Receive(nil))
+				Eventually(retChan).Should(Receive(BeNil()))
 			})
 
 			It("calls the single cycle func after the poll interval", func() {
@@ -73,7 +73,7 @@ var _ = Describe("Poller", func() {
 				Consistently(retChan).ShouldNot(Receive())
 
 				signals <- os.Interrupt
-				Eventually(retChan).Should(Receive(nil))
+				Eventually(retChan).Should(Receive(BeNil()))
 			})
 
 		})
@@ -95,7 +95,7 @@ var _ = Describe("Poller", func() {
 				Consistently(retChan).ShouldNot(Receive())
 
 				signals <- os.Interrupt
-				Eventually(retChan).Should(Receive(nil))
+				Eventually(retChan).Should(Receive(BeNil()))
 			})
 		})
 

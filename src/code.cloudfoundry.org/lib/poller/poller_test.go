@@ -60,7 +60,7 @@ var _ = Describe("Poller", func() {
 			Consistently(retChan).ShouldNot(Receive())
 
 			signals <- os.Interrupt
-			Eventually(retChan).Should(Receive(nil))
+			Eventually(retChan).Should(Receive(BeNil()))
 		})
 
 		Context("when the cycle func errors", func() {
@@ -80,7 +80,7 @@ var _ = Describe("Poller", func() {
 				Consistently(retChan).ShouldNot(Receive())
 
 				signals <- os.Interrupt
-				Eventually(retChan).Should(Receive(nil))
+				Eventually(retChan).Should(Receive(BeNil()))
 			})
 		})
 	})

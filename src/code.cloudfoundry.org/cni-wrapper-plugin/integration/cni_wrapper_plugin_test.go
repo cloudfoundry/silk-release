@@ -360,7 +360,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
-			Expect(session.Out.Contents()).To(MatchJSON(`{ "cniVersion": "1.0.0", "ips": [{ "interface": -1, "address": "1.2.3.4/32" }], "dns":{} }`))
+			Expect(session.Out.Contents()).To(MatchJSON(`{ "cniVersion": "1.0.0", "ips": [{ "interface": -1, "address": "1.2.3.4/32" }] }`))
 		})
 
 		It("passes the correct stdin to the delegate plugin", func() {
@@ -384,7 +384,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
-			Expect(session.Out.Contents()).To(MatchJSON(`{ "cniVersion": "1.0.0", "ips": [{ "interface": -1, "address": "1.2.3.4/32" }], "dns":{} }`))
+			Expect(session.Out.Contents()).To(MatchJSON(`{ "cniVersion": "1.0.0", "ips": [{ "interface": -1, "address": "1.2.3.4/32" }] }`))
 			Expect(AllIPTablesRules("nat")).To(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.0.0/16 ! -o some-device -j MASQUERADE"))
 		})
 
