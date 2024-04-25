@@ -17,13 +17,13 @@ exclude code.cloudfoundry.org/executor v0.1442.0
 require (
 	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240423163950-4a72c2ffff1c
 	code.cloudfoundry.org/debugserver v0.0.0-20240423163805-e19b7d90601d
-	code.cloudfoundry.org/diego-logging-client v0.0.0-20240423163817-ee733556eb4c
+	code.cloudfoundry.org/diego-logging-client v0.0.0-20240424163855-a3b9ef721a02
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
-	code.cloudfoundry.org/filelock v0.0.0-20240423144233-5363aa2c0a9b
+	code.cloudfoundry.org/filelock v0.0.0-20240425144346-fda7b10ce1d4
 	code.cloudfoundry.org/garden v0.0.0-20240422185338-b6a7119e7b1e
 	code.cloudfoundry.org/go-loggregator/v8 v8.0.5
 	code.cloudfoundry.org/lager/v3 v3.0.3
-	code.cloudfoundry.org/policy_client v0.0.0-20240423163944-356f7c53eb8e
+	code.cloudfoundry.org/policy_client v0.0.0-20240424164046-d8bd085d2185
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240111181315-c828d462f664
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.0
@@ -65,7 +65,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/pprof v0.0.0-20240422182052-72c8669ad3e7 // indirect
+	github.com/google/pprof v0.0.0-20240424215950-a892ee059fd6 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jackc/pgx/v5 v5.5.5 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
