@@ -10,7 +10,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("error cases", func() {
+var _ = Describe("error cases", Serial, func() {
 	var configFilePath string
 
 	BeforeEach(func() {
