@@ -23,7 +23,7 @@ require (
 	code.cloudfoundry.org/garden v0.0.0-20240425185711-86bce9cbe65b
 	code.cloudfoundry.org/go-loggregator/v8 v8.0.5
 	code.cloudfoundry.org/lager/v3 v3.0.3
-	code.cloudfoundry.org/policy_client v0.0.0-20240425164248-c8775a5d18e4
+	code.cloudfoundry.org/policy_client v0.0.0-20240426164411-6af72f5b264e
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240111181315-c828d462f664
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.0
@@ -74,7 +74,7 @@ require (
 	github.com/safchain/ethtool v0.3.0 // indirect
 	github.com/square/certstrap v1.3.0 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
-	go.step.sm/crypto v0.44.7 // indirect
+	go.step.sm/crypto v0.44.8 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect
