@@ -15,15 +15,15 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 exclude code.cloudfoundry.org/executor v0.1442.0
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240427164457-eb632b6aa7d6
-	code.cloudfoundry.org/debugserver v0.0.0-20240425163856-a2926feff29c
-	code.cloudfoundry.org/diego-logging-client v0.0.0-20240425163859-d24244a490c1
+	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240428164631-7bc8684f41c6
+	code.cloudfoundry.org/debugserver v0.0.0-20240428164226-989147bfd604
+	code.cloudfoundry.org/diego-logging-client v0.0.0-20240428164231-9d48de651f5d
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 	code.cloudfoundry.org/filelock v0.0.0-20240428144643-f8a6b1def84d
-	code.cloudfoundry.org/garden v0.0.0-20240425185711-86bce9cbe65b
+	code.cloudfoundry.org/garden v0.0.0-20240428190028-f286c5f8858f
 	code.cloudfoundry.org/go-loggregator/v8 v8.0.5
 	code.cloudfoundry.org/lager/v3 v3.0.3
-	code.cloudfoundry.org/policy_client v0.0.0-20240426164411-6af72f5b264e
+	code.cloudfoundry.org/policy_client v0.0.0-20240428164626-27e4ce9d9336
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240111181315-c828d462f664
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.0
@@ -69,7 +69,7 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jackc/pgx/v5 v5.5.5 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
-	github.com/openzipkin/zipkin-go v0.4.2 // indirect
+	github.com/openzipkin/zipkin-go v0.4.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/safchain/ethtool v0.3.0 // indirect
 	github.com/square/certstrap v1.3.0 // indirect
