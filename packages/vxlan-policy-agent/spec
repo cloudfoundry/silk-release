@@ -166,6 +166,7 @@ files:
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/detrand/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/editiondefaults/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/editiondefaults/*.binpb # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/editionssupport/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/encoding/defval/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/encoding/json/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/encoding/messageset/*.go # gosub-main-module
