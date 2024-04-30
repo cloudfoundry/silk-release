@@ -2,6 +2,7 @@ package netrules
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -89,11 +90,27 @@ func (r *securityGroupRule) ICMPInfo() *ICMPInfo {
 	}
 }
 
+func dropLeadingZeros(ip string) (string, error) {
+	octets := strings.Split(ip, ".")
+	for i, octet := range octets {
+		octetInteger, err := strconv.Atoi(octet)
+		if err != nil {
+			return "", err
+		}
+		octets[i] = fmt.Sprintf("%d", octetInteger)
+	}
+	return strings.Join(octets, "."), nil
+}
+
 func toIPRange(dest string) (IPRange, error) {
 	idx := strings.IndexAny(dest, "-/")
 
 	// Not a range or a CIDR
 	if idx == -1 {
+		dest, err := dropLeadingZeros(dest)
+		if err != nil {
+			return IPRange{}, ErrIPRangeConversionFailed
+		}
 		ip := net.ParseIP(dest)
 		if ip == nil {
 			return IPRange{}, ErrIPRangeConversionFailed
@@ -104,6 +121,11 @@ func toIPRange(dest string) (IPRange, error) {
 
 	// We have a CIDR
 	if dest[idx] == '/' {
+		ipStr, err := dropLeadingZeros(dest[:idx])
+		dest = fmt.Sprintf("%s/%s", ipStr, dest[idx+1:])
+		if err != nil {
+			return IPRange{}, ErrIPRangeConversionFailed
+		}
 		_, ipNet, err := net.ParseCIDR(dest)
 		if err != nil {
 			return IPRange{}, ErrIPRangeConversionFailed
@@ -113,8 +135,16 @@ func toIPRange(dest string) (IPRange, error) {
 	}
 
 	// We have an IP range
-	firstIP := net.ParseIP(dest[:idx])
-	secondIP := net.ParseIP(dest[idx+1:])
+	firstIPStr, err := dropLeadingZeros(dest[:idx])
+	if err != nil {
+		return IPRange{}, ErrIPRangeConversionFailed
+	}
+	firstIP := net.ParseIP(firstIPStr)
+	secondIPStr, err := dropLeadingZeros(dest[idx+1:])
+	if err != nil {
+		return IPRange{}, ErrIPRangeConversionFailed
+	}
+	secondIP := net.ParseIP(secondIPStr)
 	if firstIP == nil || secondIP == nil {
 		return IPRange{}, ErrIPRangeConversionFailed
 	}
