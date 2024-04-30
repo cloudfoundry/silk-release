@@ -21,6 +21,15 @@ var _ = Describe("SecurityGroupRule", func() {
 			Expect(rule.Networks()).To(Equal([]netrules.IPRange{{Start: net.IPv4(10, 0, 0, 1), End: net.IPv4(10, 0, 0, 1)}}))
 		})
 
+		It("parses an ip address with leading zeros", func() {
+			securityGroupRule := policy_client.SecurityGroupRule{
+				Destination: "010.001.000.1",
+			}
+			rule, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rule.Networks()).To(Equal([]netrules.IPRange{{Start: net.IPv4(10, 1, 0, 1), End: net.IPv4(10, 1, 0, 1)}}))
+		})
+
 		It("parses a cidr", func() {
 			securityGroupRule := policy_client.SecurityGroupRule{
 				Destination: "10.0.0.0/24",
@@ -30,9 +39,27 @@ var _ = Describe("SecurityGroupRule", func() {
 			Expect(rule.Networks()).To(Equal([]netrules.IPRange{{Start: net.IPv4(10, 0, 0, 0).To4(), End: net.IPv4(10, 0, 0, 255).To4()}}))
 		})
 
+		It("parses a cidr with leading zeros", func() {
+			securityGroupRule := policy_client.SecurityGroupRule{
+				Destination: "010.001.000.0/24",
+			}
+			rule, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rule.Networks()).To(Equal([]netrules.IPRange{{Start: net.IPv4(10, 1, 0, 0).To4(), End: net.IPv4(10, 1, 0, 255).To4()}}))
+		})
+
 		It("parses an ip range", func() {
 			securityGroupRule := policy_client.SecurityGroupRule{
 				Destination: "10.0.0.1-10.0.1.10",
+			}
+			rule, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rule.Networks()).To(Equal([]netrules.IPRange{{Start: net.IPv4(10, 0, 0, 1), End: net.IPv4(10, 0, 1, 10)}}))
+		})
+
+		It("parses an ip range with leading zeros", func() {
+			securityGroupRule := policy_client.SecurityGroupRule{
+				Destination: "10.00.000.01-10.000.001.010",
 			}
 			rule, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
 			Expect(err).NotTo(HaveOccurred())
@@ -79,9 +106,33 @@ var _ = Describe("SecurityGroupRule", func() {
 				}))
 			})
 
+			It("parses two ip addresses with leading zeros", func() {
+				securityGroupRule := policy_client.SecurityGroupRule{
+					Destination: "10.0.00.01,192.168.000.001",
+				}
+				rule, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rule.Networks()).To(Equal([]netrules.IPRange{
+					{Start: net.IPv4(10, 0, 0, 1), End: net.IPv4(10, 0, 0, 1)},
+					{Start: net.IPv4(192, 168, 0, 1), End: net.IPv4(192, 168, 0, 1)},
+				}))
+			})
+
 			It("parses all three possible destinations together: address, cidr, and range", func() {
 				securityGroupRule := policy_client.SecurityGroupRule{
 					Destination: "1.1.1.1,192.168.0.0/24,10.0.0.1-10.0.1.10",
+				}
+				rule, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rule.Networks()).To(Equal([]netrules.IPRange{
+					{Start: net.IPv4(1, 1, 1, 1), End: net.IPv4(1, 1, 1, 1)},
+					{Start: net.IPv4(192, 168, 0, 0).To4(), End: net.IPv4(192, 168, 0, 255).To4()},
+					{Start: net.IPv4(10, 0, 0, 1), End: net.IPv4(10, 0, 1, 10)},
+				}))
+			})
+			It("parses all three possible destinations together: address, cidr, and range with leading zeros", func() {
+				securityGroupRule := policy_client.SecurityGroupRule{
+					Destination: "1.1.1.001,192.168.0000.0/24,10.0.0.1-10.000.01.010",
 				}
 				rule, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
 				Expect(err).NotTo(HaveOccurred())
