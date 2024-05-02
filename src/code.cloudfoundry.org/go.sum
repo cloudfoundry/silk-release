@@ -617,8 +617,8 @@ code.cloudfoundry.org/lager/v3 v3.0.3 h1:/UTmadZfIaKuT/whEinSxK1mzRfNu1uPfvjFfGq
 code.cloudfoundry.org/lager/v3 v3.0.3/go.mod h1:Zn5q1SrIuuHjEUE7xerMKt3ztunrJQCZETAo7rV0CH8=
 code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 h1:tUpafuylA0aTl6sdQnf20OsO/ipCvdNSZlWOB1cHhz8=
 code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2/go.mod h1:AwHLRkdXtttLXNB8RHgLfErJ2kKafH62AR2OClhy6xI=
-code.cloudfoundry.org/policy_client v0.0.0-20240430164914-71024d807001 h1:8cYvj1WXbg+06EW5Cwd9tM3WdF6c+tfPmLPMEcO25iU=
-code.cloudfoundry.org/policy_client v0.0.0-20240430164914-71024d807001/go.mod h1:ZqDHW+9Ucxzk2n3wtqDl4dqviTNdFScX1JT8cqbqPj8=
+code.cloudfoundry.org/policy_client v0.0.0-20240501165058-58d249ff65e1 h1:BFmLtvZ4cqypLHKwiBuQpJjRYSr9niVljqz1a/8TsT0=
+code.cloudfoundry.org/policy_client v0.0.0-20240501165058-58d249ff65e1/go.mod h1:Q5oT0SfmXNp18n4XMPHuV4qmwDuEpsGPs2JHyLID2CQ=
 code.cloudfoundry.org/routing-info v0.0.0-20240405184658-449674f046fa h1:2fBZ6Xc1r8UhlPnD+QozHj6r6zBBqYMmBNYG9cqzygs=
 code.cloudfoundry.org/routing-info v0.0.0-20240405184658-449674f046fa/go.mod h1:ykLgqzJGV5PTkvxtfyOy8hcQy7wxPaoV5ZPyk74aqp8=
 code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6 h1:J08p1/LBnhv5BDDf0WLpHRyMJFCws3vd3fLCFL/iVnQ=
