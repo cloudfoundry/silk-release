@@ -101,7 +101,6 @@ files:
   - code.cloudfoundry.org/vendor/golang.org/x/sys/unix/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sys/unix/*.s # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sys/windows/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/golang.org/x/sys/windows/*.s # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/text/secure/bidirule/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/text/transform/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/text/unicode/bidi/*.go # gosub-main-module
