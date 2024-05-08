@@ -16,6 +16,7 @@ files:
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/marshal/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/metrics/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/mutualtls/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/poller/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/runner/*.go # gosub-main-module
   - code.cloudfoundry.org/cni-wrapper-plugin/adapter/*.go # gosub-main-module
   - code.cloudfoundry.org/cni-wrapper-plugin/lib/*.go # gosub-main-module
@@ -36,7 +37,6 @@ files:
   - code.cloudfoundry.org/lib/common/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/datastore/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/interfacelookup/*.go # gosub-main-module
-  - code.cloudfoundry.org/lib/poller/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/rules/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/serial/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/policy_client/*.go # gosub-main-module

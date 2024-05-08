@@ -3,9 +3,9 @@ package planner
 import (
 	"fmt"
 
+	"code.cloudfoundry.org/cf-networking-helpers/poller"
 	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/silk/controller"
-	"code.cloudfoundry.org/silk/daemon"
 )
 
 //go:generate counterfeiter -o fakes/controller_client.go --fake-name ControllerClient . controllerClient
@@ -39,7 +39,7 @@ func (v *VXLANPlanner) DoCycle() error {
 	if err != nil {
 		v.MetricSender.IncrementCounter("renewFailure")
 		if v.ErrorDetector.IsFatal(err) {
-			return daemon.FatalError(fmt.Sprintf("renew lease: %s", err))
+			return poller.FatalError(fmt.Sprintf("renew lease: %s", err))
 		}
 		return fmt.Errorf("renew lease: %s", err)
 	}

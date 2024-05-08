@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager/v3"
-	"code.cloudfoundry.org/silk/daemon"
 )
 
 type Poller struct {
-	Logger       lager.Logger
-	PollInterval time.Duration
+	Logger                 lager.Logger
+	PollInterval           time.Duration
+	RunBeforeFirstInterval bool
 
 	SingleCycleFunc func() error
 }
@@ -19,8 +19,10 @@ type Poller struct {
 func (m *Poller) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
 	close(ready)
 
-	if err := m.runFunction(); err != nil {
-		return err
+	if m.RunBeforeFirstInterval {
+		if err := m.runFunction(); err != nil {
+			return err
+		}
 	}
 
 	for {
@@ -38,9 +40,15 @@ func (m *Poller) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
 func (m *Poller) runFunction() error {
 	if err := m.SingleCycleFunc(); err != nil {
 		m.Logger.Error("poll-cycle", err)
-		if _, ok := err.(daemon.FatalError); ok {
+		if _, ok := err.(FatalError); ok { // Move daemon.FataError into poller to eliminate dependency.
 			return fmt.Errorf("This cell must be restarted (run \"bosh restart <job>\"): %s", err)
 		}
 	}
 	return nil
+}
+
+type FatalError string
+
+func (n FatalError) Error() string {
+	return fmt.Sprintf("fatal: %s", string(n))
 }
