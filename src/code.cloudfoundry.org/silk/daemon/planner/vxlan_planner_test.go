@@ -3,10 +3,10 @@ package planner_test
 import (
 	"errors"
 
+	"code.cloudfoundry.org/cf-networking-helpers/poller"
 	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/lager/v3/lagertest"
 	"code.cloudfoundry.org/silk/controller"
-	"code.cloudfoundry.org/silk/daemon"
 	"code.cloudfoundry.org/silk/daemon/planner"
 	"code.cloudfoundry.org/silk/daemon/planner/fakes"
 
@@ -173,7 +173,7 @@ var _ = Describe("VxlanPlanner", func() {
 				It("returns the error as non-fatal and emits a failure metric", func() {
 					err := vxlanPlanner.DoCycle()
 					Expect(err).To(MatchError("renew lease: guava"))
-					_, ok := err.(daemon.FatalError)
+					_, ok := err.(poller.FatalError)
 					Expect(ok).NotTo(BeTrue())
 
 					Expect(errorDetector.IsFatalCallCount()).To(Equal(1))
@@ -193,7 +193,7 @@ var _ = Describe("VxlanPlanner", func() {
 				It("returns the error as a fatal error and emits a failure metric", func() {
 					err := vxlanPlanner.DoCycle()
 					Expect(err).To(MatchError("fatal: renew lease: guava"))
-					_, ok := err.(daemon.FatalError)
+					_, ok := err.(poller.FatalError)
 					Expect(ok).To(BeTrue())
 
 					Expect(errorDetector.IsFatalCallCount()).To(Equal(1))

@@ -13,6 +13,7 @@ files:
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/marshal/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/metrics/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/mutualtls/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/poller/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/cf-networking-helpers/runner/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/debugserver/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/filelock/*.go # gosub-main-module
@@ -34,7 +35,6 @@ files:
   - code.cloudfoundry.org/silk/controller/*.go # gosub-main-module
   - code.cloudfoundry.org/silk/daemon/*.go # gosub-main-module
   - code.cloudfoundry.org/silk/daemon/planner/*.go # gosub-main-module
-  - code.cloudfoundry.org/silk/daemon/poller/*.go # gosub-main-module
   - code.cloudfoundry.org/silk/daemon/vtep/*.go # gosub-main-module
   - code.cloudfoundry.org/silk/lib/adapter/*.go # gosub-main-module
   - code.cloudfoundry.org/silk/lib/datastore/*.go # gosub-main-module

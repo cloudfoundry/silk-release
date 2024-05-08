@@ -15,7 +15,7 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 exclude code.cloudfoundry.org/executor v0.1442.0
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240506165251-634bb41c4a81
+	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240507174452-9ffc46cf328c
 	code.cloudfoundry.org/debugserver v0.0.0-20240506165051-f868bd580e8d
 	code.cloudfoundry.org/diego-logging-client v0.0.0-20240506165100-9c1d40465aaf
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
@@ -65,7 +65,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/pprof v0.0.0-20240430035430-e4905b036c4e // indirect
+	github.com/google/pprof v0.0.0-20240507183855-6f11f98ebb1c // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jackc/pgx/v5 v5.5.5 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect

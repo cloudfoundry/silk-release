@@ -12,6 +12,7 @@ import (
 
 	"code.cloudfoundry.org/cf-networking-helpers/metrics"
 	"code.cloudfoundry.org/cf-networking-helpers/mutualtls"
+	"code.cloudfoundry.org/cf-networking-helpers/poller"
 	"code.cloudfoundry.org/debugserver"
 	"code.cloudfoundry.org/filelock"
 	"code.cloudfoundry.org/lager/v3"
@@ -20,7 +21,6 @@ import (
 	"code.cloudfoundry.org/silk/controller"
 	"code.cloudfoundry.org/silk/daemon"
 	"code.cloudfoundry.org/silk/daemon/planner"
-	"code.cloudfoundry.org/silk/daemon/poller"
 	"code.cloudfoundry.org/silk/daemon/vtep"
 	"code.cloudfoundry.org/silk/lib/adapter"
 	"code.cloudfoundry.org/silk/lib/datastore"
@@ -185,8 +185,9 @@ func mainWithError() error {
 	}
 
 	vxlanPoller := &poller.Poller{
-		Logger:       logger,
-		PollInterval: time.Duration(cfg.PollInterval) * time.Second,
+		Logger:                 logger,
+		PollInterval:           time.Duration(cfg.PollInterval) * time.Second,
+		RunBeforeFirstInterval: true,
 		SingleCycleFunc: (&planner.VXLANPlanner{
 			Logger:           logger,
 			ControllerClient: client,

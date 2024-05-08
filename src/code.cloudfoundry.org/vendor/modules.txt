@@ -3,7 +3,7 @@
 code.cloudfoundry.org/bbs/encryption
 code.cloudfoundry.org/bbs/format
 code.cloudfoundry.org/bbs/models
-# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240506165251-634bb41c4a81
+# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240507174452-9ffc46cf328c
 ## explicit; go 1.20
 code.cloudfoundry.org/cf-networking-helpers/db
 code.cloudfoundry.org/cf-networking-helpers/db/monitor
@@ -14,6 +14,7 @@ code.cloudfoundry.org/cf-networking-helpers/marshal
 code.cloudfoundry.org/cf-networking-helpers/metrics
 code.cloudfoundry.org/cf-networking-helpers/middleware
 code.cloudfoundry.org/cf-networking-helpers/mutualtls
+code.cloudfoundry.org/cf-networking-helpers/poller
 code.cloudfoundry.org/cf-networking-helpers/runner
 code.cloudfoundry.org/cf-networking-helpers/testsupport
 code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics
@@ -161,7 +162,7 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/pprof v0.0.0-20240430035430-e4905b036c4e
+# github.com/google/pprof v0.0.0-20240507183855-6f11f98ebb1c
 ## explicit; go 1.19
 github.com/google/pprof/profile
 # github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
