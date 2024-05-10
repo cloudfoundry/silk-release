@@ -3,7 +3,7 @@
 code.cloudfoundry.org/bbs/encryption
 code.cloudfoundry.org/bbs/format
 code.cloudfoundry.org/bbs/models
-# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240509123847-048ca17fcb32
+# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240509165509-a1161e06606e
 ## explicit; go 1.20
 code.cloudfoundry.org/cf-networking-helpers/db
 code.cloudfoundry.org/cf-networking-helpers/db/monitor
@@ -21,10 +21,10 @@ code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics
 code.cloudfoundry.org/cf-networking-helpers/testsupport/ports
 # code.cloudfoundry.org/clock v1.1.0
 ## explicit; go 1.20
-# code.cloudfoundry.org/debugserver v0.0.0-20240508165206-bfca98dd3bfa
+# code.cloudfoundry.org/debugserver v0.0.0-20240509165312-93e40ee13b6f
 ## explicit; go 1.19
 code.cloudfoundry.org/debugserver
-# code.cloudfoundry.org/diego-logging-client v0.0.0-20240508165207-efae71bac995
+# code.cloudfoundry.org/diego-logging-client v0.0.0-20240509165314-c5e78b386579
 ## explicit; go 1.21
 code.cloudfoundry.org/diego-logging-client
 code.cloudfoundry.org/diego-logging-client/testhelpers
@@ -34,7 +34,7 @@ code.cloudfoundry.org/executor
 # code.cloudfoundry.org/filelock v0.0.0-20240509145650-67a3677ef078
 ## explicit; go 1.20
 code.cloudfoundry.org/filelock
-# code.cloudfoundry.org/garden v0.0.0-20240508191051-20c24f475fba
+# code.cloudfoundry.org/garden v0.0.0-20240509191138-2c301b84985a
 ## explicit; go 1.20
 code.cloudfoundry.org/garden
 code.cloudfoundry.org/garden/client
@@ -59,7 +59,7 @@ code.cloudfoundry.org/lager/v3/lagerflags
 code.cloudfoundry.org/lager/v3/lagertest
 # code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2
 ## explicit
-# code.cloudfoundry.org/policy_client v0.0.0-20240508165359-aa0d0fb6b8ee
+# code.cloudfoundry.org/policy_client v0.0.0-20240509165507-d050174da5c5
 ## explicit; go 1.20
 code.cloudfoundry.org/policy_client
 # code.cloudfoundry.org/routing-info v0.0.0-20240405184658-449674f046fa
@@ -346,7 +346,7 @@ golang.org/x/text/unicode/norm
 ## explicit; go 1.19
 golang.org/x/tools/cover
 golang.org/x/tools/go/ast/inspector
-# google.golang.org/genproto/googleapis/rpc v0.0.0-20240506185236-b8a5c65736ae
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20240509183442-62759503f434
 ## explicit; go 1.19
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.63.2

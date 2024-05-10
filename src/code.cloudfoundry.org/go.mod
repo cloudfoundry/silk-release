@@ -15,15 +15,15 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 exclude code.cloudfoundry.org/executor v0.1442.0
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240509123847-048ca17fcb32
-	code.cloudfoundry.org/debugserver v0.0.0-20240508165206-bfca98dd3bfa
-	code.cloudfoundry.org/diego-logging-client v0.0.0-20240508165207-efae71bac995
+	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240509165509-a1161e06606e
+	code.cloudfoundry.org/debugserver v0.0.0-20240509165312-93e40ee13b6f
+	code.cloudfoundry.org/diego-logging-client v0.0.0-20240509165314-c5e78b386579
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 	code.cloudfoundry.org/filelock v0.0.0-20240509145650-67a3677ef078
-	code.cloudfoundry.org/garden v0.0.0-20240508191051-20c24f475fba
+	code.cloudfoundry.org/garden v0.0.0-20240509191138-2c301b84985a
 	code.cloudfoundry.org/go-loggregator/v8 v8.0.5
 	code.cloudfoundry.org/lager/v3 v3.0.3
-	code.cloudfoundry.org/policy_client v0.0.0-20240508165359-aa0d0fb6b8ee
+	code.cloudfoundry.org/policy_client v0.0.0-20240509165507-d050174da5c5
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240111181315-c828d462f664
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.0
@@ -80,7 +80,7 @@ require (
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
 	golang.org/x/tools v0.21.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240506185236-b8a5c65736ae // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240509183442-62759503f434 // indirect
 	google.golang.org/grpc v1.63.2 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
