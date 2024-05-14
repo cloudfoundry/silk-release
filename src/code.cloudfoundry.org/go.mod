@@ -17,7 +17,7 @@ exclude code.cloudfoundry.org/executor v0.1442.0
 require (
 	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240510183742-bcc81377ff61
 	code.cloudfoundry.org/debugserver v0.0.0-20240510172920-2e46c6dc69d9
-	code.cloudfoundry.org/diego-logging-client v0.0.0-20240511165422-be87f574ada6
+	code.cloudfoundry.org/diego-logging-client v0.0.0-20240513165807-cf64912690b6
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 	code.cloudfoundry.org/filelock v0.0.0-20240509145650-67a3677ef078
 	code.cloudfoundry.org/garden v0.0.0-20240509191138-2c301b84985a
@@ -80,7 +80,7 @@ require (
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.15.0 // indirect
 	golang.org/x/tools v0.21.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240509183442-62759503f434 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240513163218-0867130af1f8 // indirect
 	google.golang.org/grpc v1.63.2 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
