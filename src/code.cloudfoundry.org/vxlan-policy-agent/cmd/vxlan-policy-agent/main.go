@@ -30,7 +30,7 @@ import (
 	"code.cloudfoundry.org/cf-networking-helpers/mutualtls"
 	"code.cloudfoundry.org/debugserver"
 	"code.cloudfoundry.org/filelock"
-	"code.cloudfoundry.org/go-loggregator/v8/runtimeemitter"
+	"code.cloudfoundry.org/go-loggregator/v9/runtimeemitter"
 	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/lager/v3/lagerflags"
 	"github.com/cloudfoundry/dropsonde"
