@@ -27,10 +27,9 @@ files:
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/filelock/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/garden/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/go-diodes/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/go-loggregator/v8/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/go-loggregator/v8/rfc5424/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/go-loggregator/v8/runtimeemitter/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/go-loggregator/v9/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/go-loggregator/v9/runtimeemitter/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/v3/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/v3/internal/truncate/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/v3/lagerflags/*.go # gosub-main-module
@@ -76,8 +75,6 @@ files:
   - code.cloudfoundry.org/vendor/github.com/gogo/protobuf/proto/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/gogo/protobuf/protoc-gen-gogo/descriptor/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/gogo/protobuf/sortkeys/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/github.com/golang/protobuf/jsonpb/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/github.com/golang/protobuf/proto/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/google/shlex/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/hashicorp/errwrap/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/hashicorp/go-multierror/*.go # gosub-main-module
@@ -165,7 +162,6 @@ files:
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/detrand/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/editiondefaults/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/editiondefaults/*.binpb # gosub-main-module
-  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/editionssupport/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/encoding/defval/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/encoding/json/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/encoding/messageset/*.go # gosub-main-module
@@ -184,13 +180,10 @@ files:
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/version/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/proto/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/protoadapt/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/reflect/protodesc/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/reflect/protoreflect/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/reflect/protoregistry/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/runtime/protoiface/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/runtime/protoimpl/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/types/descriptorpb/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/types/gofeaturespb/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/types/known/anypb/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/types/known/durationpb/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/types/known/timestamppb/*.go # gosub-main-module

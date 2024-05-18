@@ -17,11 +17,11 @@ exclude code.cloudfoundry.org/executor v0.1442.0
 require (
 	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240516170300-a39b7f6cd8b1
 	code.cloudfoundry.org/debugserver v0.0.0-20240510172920-2e46c6dc69d9
-	code.cloudfoundry.org/diego-logging-client v0.0.0-20240517170314-c798dbdab9ae
+	code.cloudfoundry.org/diego-logging-client v0.0.0-20240521203831-441b09bb0703
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 	code.cloudfoundry.org/filelock v0.0.0-20240515185159-918e226e852d
 	code.cloudfoundry.org/garden v0.0.0-20240509191138-2c301b84985a
-	code.cloudfoundry.org/go-loggregator/v8 v8.0.5
+	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.0.3
 	code.cloudfoundry.org/policy_client v0.0.0-20240517170309-4a8bbfd85c13
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
@@ -63,7 +63,6 @@ require (
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-test/deep v1.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/pprof v0.0.0-20240509144519-723abb6459b7 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
