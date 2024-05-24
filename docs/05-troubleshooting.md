@@ -1,3 +1,19 @@
+---
+title: Troubleshooting
+expires_at: never
+tags: [silk-release]
+---
+
+<!-- vim-markdown-toc GFM -->
+
+* [Troubleshooting](#troubleshooting)
+    * [Enabling Debug Logging](#enabling-debug-logging)
+    * [Enabling IPTables Logging for Container to Container Traffic](#enabling-iptables-logging-for-container-to-container-traffic)
+    * [Enabling IPTables Logging for ASG Traffic](#enabling-iptables-logging-for-asg-traffic)
+    * [Metrics](#metrics)
+    * [Diagnosing and Recovering from Subnet Overlap](#diagnosing-and-recovering-from-subnet-overlap)
+
+<!-- vim-markdown-toc -->
 # Troubleshooting
 
 ### Enabling Debug Logging

@@ -1,3 +1,26 @@
+---
+title: Traffic logging
+expires_at: never
+tags: [silk-release]
+---
+
+<!-- vim-markdown-toc GFM -->
+
+* [Traffic logging](#traffic-logging)
+  * [Enabling kernel logging](#enabling-kernel-logging)
+  * [Enabling augmented logging](#enabling-augmented-logging)
+  * [Forwarding logs to an external syslog server](#forwarding-logs-to-an-external-syslog-server)
+  * [Log Volume and Performance](#log-volume-and-performance)
+  * [Rate Limiting](#rate-limiting)
+    * [Denied logs](#denied-logs)
+    * [Accepted logs](#accepted-logs)
+  * [Sample outputs](#sample-outputs)
+    * [ASG allowed](#asg-allowed)
+    * [ASG denied](#asg-denied)
+    * [c2c allowed](#c2c-allowed)
+    * [c2c denied](#c2c-denied)
+
+<!-- vim-markdown-toc -->
 # Traffic logging
 
 ## Enabling kernel logging
@@ -40,9 +63,7 @@ augmented logs produced by `iptables-logger`.
 
 ## Log Volume and Performance
 
-In [our
-tests](https://docs.google.com/document/d/1LufBEE94d2FulPwxaP-JxeFTCxGiV68MVQV1wJmJxOc/edit),
-turning on IP tables logging had no significant impact on system performance.
+In our tests, turning on IP tables logging had no significant impact on system performance.
 
 From our investigation, it appears that CPU capabilities are the bottleneck for
 application performance. Request failures start to occur at around the same

@@ -1,3 +1,18 @@
+---
+title: Configuring bandwidth for containers
+expires_at: never
+tags: [silk-release]
+---
+
+<!-- vim-markdown-toc GFM -->
+
+* [Configuring bandwidth for containers](#configuring-bandwidth-for-containers)
+  * [How bandwidth limiting is implemented in Silk](#how-bandwidth-limiting-is-implemented-in-silk)
+    * [Ingress traffic into containers](#ingress-traffic-into-containers)
+    * [Egress traffic from containers](#egress-traffic-from-containers)
+  * [Further reading](#further-reading)
+
+<!-- vim-markdown-toc -->
 # Configuring bandwidth for containers
 
 Optional parameters have been added to limit the bandwidth in and out of
