@@ -7,7 +7,6 @@ tags: [silk-release]
 <!-- vim-markdown-toc GFM -->
 
 * [Configuring this release](#configuring-this-release)
-  * [Table of Contents](#table-of-contents)
   * [Silk Network Configuration](#silk-network-configuration)
       * [BOSH properties](#bosh-properties)
       * [Network size limitations](#network-size-limitations)
@@ -22,13 +21,6 @@ tags: [silk-release]
 
 <!-- vim-markdown-toc -->
 # Configuring this release
-
-## Table of Contents
-1. [Silk Network Configuration](#silk-network-configuration)
-1. [Database Configuration](#database-configuration)
-1. [MTU](#mtu)
-1. [Mutual TLS](#mutual-tls)
-1. [Max Open/Idle Connections](#max-openidle-connections)
 
 ## Silk Network Configuration
 The IP address allocation scheme is simple:
