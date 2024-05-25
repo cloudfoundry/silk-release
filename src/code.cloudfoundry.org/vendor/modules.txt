@@ -3,7 +3,7 @@
 code.cloudfoundry.org/bbs/encryption
 code.cloudfoundry.org/bbs/format
 code.cloudfoundry.org/bbs/models
-# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240522170543-b1c6a9333cb6
+# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240524170756-d102f142126f
 ## explicit; go 1.20
 code.cloudfoundry.org/cf-networking-helpers/db
 code.cloudfoundry.org/cf-networking-helpers/db/monitor
@@ -21,10 +21,10 @@ code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics
 code.cloudfoundry.org/cf-networking-helpers/testsupport/ports
 # code.cloudfoundry.org/clock v1.1.0
 ## explicit; go 1.20
-# code.cloudfoundry.org/debugserver v0.0.0-20240522170726-5166a3ff2759
+# code.cloudfoundry.org/debugserver v0.0.0-20240524171011-a228404938b4
 ## explicit; go 1.19
 code.cloudfoundry.org/debugserver
-# code.cloudfoundry.org/diego-logging-client v0.0.0-20240523171002-24c331f0e3c4
+# code.cloudfoundry.org/diego-logging-client v0.0.0-20240524171022-6c2f75ff4f5a
 ## explicit; go 1.21
 code.cloudfoundry.org/diego-logging-client
 code.cloudfoundry.org/diego-logging-client/testhelpers
@@ -34,7 +34,7 @@ code.cloudfoundry.org/executor
 # code.cloudfoundry.org/filelock v0.0.0-20240524151430-f475f13a7f1f
 ## explicit; go 1.20
 code.cloudfoundry.org/filelock
-# code.cloudfoundry.org/garden v0.0.0-20240521192510-e538d3d654a1
+# code.cloudfoundry.org/garden v0.0.0-20240524192812-a517c05e8706
 ## explicit; go 1.20
 code.cloudfoundry.org/garden
 code.cloudfoundry.org/garden/client
@@ -58,7 +58,7 @@ code.cloudfoundry.org/lager/v3/lagerflags
 code.cloudfoundry.org/lager/v3/lagertest
 # code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2
 ## explicit
-# code.cloudfoundry.org/policy_client v0.0.0-20240523170554-0a80ca33c7e0
+# code.cloudfoundry.org/policy_client v0.0.0-20240524170759-f66e7cba4f15
 ## explicit; go 1.20
 code.cloudfoundry.org/policy_client
 # code.cloudfoundry.org/routing-info v0.0.0-20240405184658-449674f046fa
