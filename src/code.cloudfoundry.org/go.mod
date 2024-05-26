@@ -19,11 +19,11 @@ require (
 	code.cloudfoundry.org/debugserver v0.0.0-20240524171011-a228404938b4
 	code.cloudfoundry.org/diego-logging-client v0.0.0-20240524171022-6c2f75ff4f5a
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
-	code.cloudfoundry.org/filelock v0.0.0-20240524151430-f475f13a7f1f
-	code.cloudfoundry.org/garden v0.0.0-20240524192812-a517c05e8706
+	code.cloudfoundry.org/filelock v0.0.0-20240526151625-2fe9a338870a
+	code.cloudfoundry.org/garden v0.0.0-20240525192816-95cc6e9bd84a
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.0.3
-	code.cloudfoundry.org/policy_client v0.0.0-20240524170759-f66e7cba4f15
+	code.cloudfoundry.org/policy_client v0.0.0-20240525170807-53aa54d85888
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.0
@@ -64,7 +64,7 @@ require (
 	github.com/go-test/deep v1.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/pprof v0.0.0-20240521024322-9665fa269a30 // indirect
+	github.com/google/pprof v0.0.0-20240525223248-4bfdf5a9a2af // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jackc/pgx/v5 v5.5.5 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect

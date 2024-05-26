@@ -604,10 +604,10 @@ code.cloudfoundry.org/diego-logging-client v0.0.0-20240524171022-6c2f75ff4f5a h1
 code.cloudfoundry.org/diego-logging-client v0.0.0-20240524171022-6c2f75ff4f5a/go.mod h1:PEx2qzeE23/bsssXewk8gFVlDx5rFiaB2s9reoMk8x8=
 code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850 h1:DmHNflNF95mAK5VFERMEt5xF1Kx3KZcM216V+VUB0vI=
 code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850/go.mod h1:oemBimQzPedAfYleiBj968jpfEkSw8F5OsP+zYkVMRk=
-code.cloudfoundry.org/filelock v0.0.0-20240524151430-f475f13a7f1f h1:8tNacu/ybwnNOkXl0a+DfU0//KR4KIESvAonRSmXC9M=
-code.cloudfoundry.org/filelock v0.0.0-20240524151430-f475f13a7f1f/go.mod h1:zqbVyRtAIozYbyn5woutrJ5wMYstZvCJSzklASXhw3c=
-code.cloudfoundry.org/garden v0.0.0-20240524192812-a517c05e8706 h1:kfuKdJm1aOGnHtPCquVeqeiW1KjSLc/6jyN7G4WUaqM=
-code.cloudfoundry.org/garden v0.0.0-20240524192812-a517c05e8706/go.mod h1:Xiof6919pwG6PU7ZMyInKfH+rFE7QuCpFGfXpleQudw=
+code.cloudfoundry.org/filelock v0.0.0-20240526151625-2fe9a338870a h1:OscMcHlZP8D9/U4x5trjzgAkU+Lb0sH4Nwjjh18Hsy4=
+code.cloudfoundry.org/filelock v0.0.0-20240526151625-2fe9a338870a/go.mod h1:lMVvSNjaIU9Wr3XXBfAr9C3gYpq9PdRCyFaK1JbRTFU=
+code.cloudfoundry.org/garden v0.0.0-20240525192816-95cc6e9bd84a h1:d9da5lZC44hmyQcur8ZmzaHWwUXI6MXnf33sc2hFZDg=
+code.cloudfoundry.org/garden v0.0.0-20240525192816-95cc6e9bd84a/go.mod h1:QbU1TS//y69j6VxZNQ1+QcLUbyuKWGE5VFfnLELl2uQ=
 code.cloudfoundry.org/go-diodes v0.0.0-20240515174142-71582f284718 h1:6wazSuHaJjatGy8pvchSy6L+4M67WPfjgK9yh7cJLMs=
 code.cloudfoundry.org/go-diodes v0.0.0-20240515174142-71582f284718/go.mod h1:eVHabU/rcpC5ocoIAXvnaySkdH6+PgORRVlY5l3SDys=
 code.cloudfoundry.org/go-loggregator/v9 v9.2.1 h1:S6Lgg5UJbhh2bt2TGQxs6R00CF8PrUA3GFPYDxy56Fk=
@@ -616,8 +616,8 @@ code.cloudfoundry.org/lager/v3 v3.0.3 h1:/UTmadZfIaKuT/whEinSxK1mzRfNu1uPfvjFfGq
 code.cloudfoundry.org/lager/v3 v3.0.3/go.mod h1:Zn5q1SrIuuHjEUE7xerMKt3ztunrJQCZETAo7rV0CH8=
 code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 h1:tUpafuylA0aTl6sdQnf20OsO/ipCvdNSZlWOB1cHhz8=
 code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2/go.mod h1:AwHLRkdXtttLXNB8RHgLfErJ2kKafH62AR2OClhy6xI=
-code.cloudfoundry.org/policy_client v0.0.0-20240524170759-f66e7cba4f15 h1:nIu47d1d2NUIYEjBkES+5QdLjWi4rVyFSuq9ucc+I2g=
-code.cloudfoundry.org/policy_client v0.0.0-20240524170759-f66e7cba4f15/go.mod h1:KjbNV+XN5w3Qfs1uPPMyWwpsS7fgFtyo+Y4xQBWlUYE=
+code.cloudfoundry.org/policy_client v0.0.0-20240525170807-53aa54d85888 h1:Fosh7L6y17hKshgmrslk0lpKa3RhRx0/opqfOt4e+Po=
+code.cloudfoundry.org/policy_client v0.0.0-20240525170807-53aa54d85888/go.mod h1:mmag4aJCi2NlRod6h5A1hgrX3YtelsHNDOML0DH+Uo8=
 code.cloudfoundry.org/routing-info v0.0.0-20240405184658-449674f046fa h1:2fBZ6Xc1r8UhlPnD+QozHj6r6zBBqYMmBNYG9cqzygs=
 code.cloudfoundry.org/routing-info v0.0.0-20240405184658-449674f046fa/go.mod h1:ykLgqzJGV5PTkvxtfyOy8hcQy7wxPaoV5ZPyk74aqp8=
 code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6 h1:J08p1/LBnhv5BDDf0WLpHRyMJFCws3vd3fLCFL/iVnQ=
@@ -819,8 +819,8 @@ github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38/go.mod h1:kpwsk12EmLe
 github.com/google/pprof v0.0.0-20210601050228-01bbb1931b22/go.mod h1:kpwsk12EmLew5upagYY7GY0pfYCcupk39gWOCRROcvE=
 github.com/google/pprof v0.0.0-20210609004039-a478d1d731e9/go.mod h1:kpwsk12EmLew5upagYY7GY0pfYCcupk39gWOCRROcvE=
 github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1/go.mod h1:kpwsk12EmLew5upagYY7GY0pfYCcupk39gWOCRROcvE=
-github.com/google/pprof v0.0.0-20240521024322-9665fa269a30 h1:r6YdmbD41tGHeCWDyHF691LWtL7D1iSTyJaKejTWwVU=
-github.com/google/pprof v0.0.0-20240521024322-9665fa269a30/go.mod h1:kf6iHlnVGwgKolg33glAes7Yg/8iWP8ukqeldJSO7jw=
+github.com/google/pprof v0.0.0-20240525223248-4bfdf5a9a2af h1:kmjWCqn2qkEml422C2Rrd27c3VGxi6a/6HNq8QmHRKM=
+github.com/google/pprof v0.0.0-20240525223248-4bfdf5a9a2af/go.mod h1:K1liHPHnj73Fdn/EKuT8nrFqBihUSKXoLYU0BuatOYo=
 github.com/google/renameio v0.1.0/go.mod h1:KWCgfxg9yswjAJkECMjeO8J8rahYeXnNhOm40UhjYkI=
 github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 h1:El6M4kTTCOh6aBiKaUGG7oYTSPP8MxqL4YI3kZKwcP4=
 github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510/go.mod h1:pupxD2MaaD3pAXIBCelhxNneeOaAeabZDe5s4K6zSpQ=
