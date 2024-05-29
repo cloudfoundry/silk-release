@@ -1,14 +1,3 @@
-# Contributing
-
-See the [Contributing.md](./.github/CONTRIBUTING.md) for more
-information on how to contribute.
-
-# Working Group Charter
-
-This repository is maintained by [App Runtime
-Platform](https://github.com/cloudfoundry/community/blob/main/toc/working-groups/app-runtime-platform.md)
-under `Networking` area.
-
 # silk-release
 
 This repository is a [BOSH](https://github.com/cloudfoundry/bosh)
@@ -29,6 +18,17 @@ for [CF Deployment](https://github.com/cloudfoundry/cf-deployment).
     containers](./docs/03-bandwidth-limiting.md)
 -   [Traffic logging](./docs/04-traffic-logging.md)
 -   [Troubleshooting](./docs/05-troubleshooting.md)
+
+# Contributing
+
+See the [Contributing.md](./.github/CONTRIBUTING.md) for more
+information on how to contribute.
+
+# Working Group Charter
+
+This repository is maintained by [App Runtime
+Platform](https://github.com/cloudfoundry/community/blob/main/toc/working-groups/app-runtime-platform.md)
+under `Networking` area.
 
 > \[!IMPORTANT\]
 >
