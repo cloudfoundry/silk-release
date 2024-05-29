@@ -63,7 +63,7 @@ BOSH properties are used:
 > If the overlay network overlaps with anything on the underlay, traffic from the
 > cell will not be able to reach that entity on the underlay.  To repair a
 > deployment that has been misconfigured, follow our [recovery
-> steps](https://github.com/cloudfoundry/cf-networking-release/blob/develop/docs/troubleshooting.md#diagnosing-and-recovering-from-subnet-overlap).
+> steps](https://github.com/cloudfoundry/cf-networking-release/blob/develop/docs/03-troubleshooting.md#diagnosing-and-recovering-from-subnet-overlap).
 
 > **Note**: the `network` property is consumed by two BOSH jobs: `silk-daemon`
 > and `silk-controller`.
