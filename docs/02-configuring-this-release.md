@@ -1,11 +1,26 @@
-# Configuration Information for Operators
+---
+title: Configuring this release
+expires_at: never
+tags: [silk-release]
+---
 
-## Table of Contents
-1. [Silk Network Configuration](#silk-network-configuration)
-1. [Database Configuration](#database-configuration)
-1. [MTU](#mtu)
-1. [Mutual TLS](#mutual-tls)
-1. [Max Open/Idle Connections](#max-openidle-connections)
+<!-- vim-markdown-toc GFM -->
+
+* [Configuring this release](#configuring-this-release)
+  * [Silk Network Configuration](#silk-network-configuration)
+      * [BOSH properties](#bosh-properties)
+      * [Network size limitations](#network-size-limitations)
+      * [Changing the network](#changing-the-network)
+  * [Database Configuration](#database-configuration)
+    * [Hosting options](#hosting-options)
+      * [MySQL](#mysql)
+      * [PostgreSQL](#postgresql)
+  * [MTU](#mtu)
+  * [Mutual TLS](#mutual-tls)
+  * [Max Open/Idle Connections](#max-openidle-connections)
+
+<!-- vim-markdown-toc -->
+# Configuring this release
 
 ## Silk Network Configuration
 The IP address allocation scheme is simple:
