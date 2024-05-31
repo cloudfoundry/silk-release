@@ -15,7 +15,7 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 exclude code.cloudfoundry.org/executor v0.1442.0
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240528171056-466c0f1d1c41
+	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240530171150-b069076ac7ae
 	code.cloudfoundry.org/debugserver v0.0.0-20240528171256-ba541ff4aaaf
 	code.cloudfoundry.org/diego-logging-client v0.0.0-20240529171340-a2004ccdc223
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
@@ -53,7 +53,7 @@ require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20240515174142-71582f284718 // indirect
 	code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 // indirect
 	code.cloudfoundry.org/routing-info v0.0.0-20240405184658-449674f046fa // indirect
-	code.cloudfoundry.org/tlsconfig v0.0.0-20240522170710-79df114af82a // indirect
+	code.cloudfoundry.org/tlsconfig v0.0.0-20240530171334-2593348de0c6 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/alexflint/go-filemutex v1.3.0 // indirect
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
