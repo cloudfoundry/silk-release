@@ -1,4 +1,4 @@
-# silk-release
+# Silk Release
 
 This repository is a [BOSH](https://github.com/cloudfoundry/bosh)
 release for deploying silk container networking plugin to Cloud Foundry
