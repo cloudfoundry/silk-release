@@ -24,7 +24,7 @@ code.cloudfoundry.org/cf-networking-helpers/testsupport/ports
 # code.cloudfoundry.org/debugserver v0.0.0-20240528171256-ba541ff4aaaf
 ## explicit; go 1.19
 code.cloudfoundry.org/debugserver
-# code.cloudfoundry.org/diego-logging-client v0.0.0-20240529171340-a2004ccdc223
+# code.cloudfoundry.org/diego-logging-client v0.0.0-20240531171534-fd452ceff3ef
 ## explicit; go 1.21
 code.cloudfoundry.org/diego-logging-client
 code.cloudfoundry.org/diego-logging-client/testhelpers
@@ -58,7 +58,7 @@ code.cloudfoundry.org/lager/v3/lagerflags
 code.cloudfoundry.org/lager/v3/lagertest
 # code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2
 ## explicit
-# code.cloudfoundry.org/policy_client v0.0.0-20240529171102-c17101297984
+# code.cloudfoundry.org/policy_client v0.0.0-20240531171333-d3478317fac1
 ## explicit; go 1.20
 code.cloudfoundry.org/policy_client
 # code.cloudfoundry.org/routing-info v0.0.0-20240405184658-449674f046fa
