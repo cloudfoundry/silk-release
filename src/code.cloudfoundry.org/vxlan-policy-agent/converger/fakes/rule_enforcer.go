@@ -23,6 +23,17 @@ type RuleEnforcer struct {
 		result1 []enforcer.LiveChain
 		result2 error
 	}
+	CleanupChainStub        func(enforcer.LiveChain) error
+	cleanupChainMutex       sync.RWMutex
+	cleanupChainArgsForCall []struct {
+		arg1 enforcer.LiveChain
+	}
+	cleanupChainReturns struct {
+		result1 error
+	}
+	cleanupChainReturnsOnCall map[int]struct {
+		result1 error
+	}
 	EnforceRulesAndChainStub        func(enforcer.RulesWithChain) (string, error)
 	enforceRulesAndChainMutex       sync.RWMutex
 	enforceRulesAndChainArgsForCall []struct {
@@ -110,6 +121,67 @@ func (fake *RuleEnforcer) CleanChainsMatchingReturnsOnCall(i int, result1 []enfo
 	}{result1, result2}
 }
 
+func (fake *RuleEnforcer) CleanupChain(arg1 enforcer.LiveChain) error {
+	fake.cleanupChainMutex.Lock()
+	ret, specificReturn := fake.cleanupChainReturnsOnCall[len(fake.cleanupChainArgsForCall)]
+	fake.cleanupChainArgsForCall = append(fake.cleanupChainArgsForCall, struct {
+		arg1 enforcer.LiveChain
+	}{arg1})
+	stub := fake.CleanupChainStub
+	fakeReturns := fake.cleanupChainReturns
+	fake.recordInvocation("CleanupChain", []interface{}{arg1})
+	fake.cleanupChainMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *RuleEnforcer) CleanupChainCallCount() int {
+	fake.cleanupChainMutex.RLock()
+	defer fake.cleanupChainMutex.RUnlock()
+	return len(fake.cleanupChainArgsForCall)
+}
+
+func (fake *RuleEnforcer) CleanupChainCalls(stub func(enforcer.LiveChain) error) {
+	fake.cleanupChainMutex.Lock()
+	defer fake.cleanupChainMutex.Unlock()
+	fake.CleanupChainStub = stub
+}
+
+func (fake *RuleEnforcer) CleanupChainArgsForCall(i int) enforcer.LiveChain {
+	fake.cleanupChainMutex.RLock()
+	defer fake.cleanupChainMutex.RUnlock()
+	argsForCall := fake.cleanupChainArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *RuleEnforcer) CleanupChainReturns(result1 error) {
+	fake.cleanupChainMutex.Lock()
+	defer fake.cleanupChainMutex.Unlock()
+	fake.CleanupChainStub = nil
+	fake.cleanupChainReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *RuleEnforcer) CleanupChainReturnsOnCall(i int, result1 error) {
+	fake.cleanupChainMutex.Lock()
+	defer fake.cleanupChainMutex.Unlock()
+	fake.CleanupChainStub = nil
+	if fake.cleanupChainReturnsOnCall == nil {
+		fake.cleanupChainReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.cleanupChainReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *RuleEnforcer) EnforceRulesAndChain(arg1 enforcer.RulesWithChain) (string, error) {
 	fake.enforceRulesAndChainMutex.Lock()
 	ret, specificReturn := fake.enforceRulesAndChainReturnsOnCall[len(fake.enforceRulesAndChainArgsForCall)]
@@ -179,6 +251,8 @@ func (fake *RuleEnforcer) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.cleanChainsMatchingMutex.RLock()
 	defer fake.cleanChainsMatchingMutex.RUnlock()
+	fake.cleanupChainMutex.RLock()
+	defer fake.cleanupChainMutex.RUnlock()
 	fake.enforceRulesAndChainMutex.RLock()
 	defer fake.enforceRulesAndChainMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
