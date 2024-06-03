@@ -11,7 +11,6 @@ import (
 	"code.cloudfoundry.org/executor"
 	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
-	"code.cloudfoundry.org/vxlan-policy-agent/planner"
 	"github.com/hashicorp/go-multierror"
 )
 
@@ -30,6 +29,7 @@ type Planner interface {
 type ruleEnforcer interface {
 	EnforceRulesAndChain(enforcer.RulesWithChain) (string, error)
 	CleanChainsMatching(regex *regexp.Regexp, desiredChains []enforcer.LiveChain) ([]enforcer.LiveChain, error)
+	CleanupChain(chain enforcer.LiveChain) error
 }
 
 //go:generate counterfeiter -o fakes/metrics_sender.go --fake-name MetricsSender . metricsSender
@@ -46,7 +46,7 @@ type SinglePollCycle struct {
 	logger              lager.Logger
 	policyRuleSets      map[enforcer.Chain]enforcer.RulesWithChain
 	asgRuleSets         map[enforcer.LiveChain]enforcer.RulesWithChain
-	containerToASGChain map[enforcer.LiveChain]string
+	asgChainToContainer map[enforcer.LiveChain]string
 	metronClient        loggingclient.IngressClient
 	policyMutex         sync.Locker
 	asgMutex            sync.Locker
@@ -146,8 +146,8 @@ func (m *SinglePollCycle) SyncASGsForContainers(containers ...string) error {
 	if m.asgRuleSets == nil {
 		m.asgRuleSets = make(map[enforcer.LiveChain]enforcer.RulesWithChain)
 	}
-	if m.containerToASGChain == nil {
-		m.containerToASGChain = make(map[enforcer.LiveChain]string)
+	if m.asgChainToContainer == nil {
+		m.asgChainToContainer = make(map[enforcer.LiveChain]string)
 	}
 
 	pollStartTime := time.Now()
@@ -188,7 +188,7 @@ func (m *SinglePollCycle) SyncASGsForContainers(containers ...string) error {
 					m.updateRuleSet(chainKey, chain, ruleset)
 				}
 			}
-			desiredChains = append(desiredChains, enforcer.LiveChain{Table: ruleset.Chain.Table, Name: m.containerToASGChain[chainKey]})
+			desiredChains = append(desiredChains, enforcer.LiveChain{Table: ruleset.Chain.Table, Name: m.asgChainToContainer[chainKey]})
 		}
 		enforceDuration += time.Since(enforceStartTime)
 	}
@@ -198,7 +198,7 @@ func (m *SinglePollCycle) SyncASGsForContainers(containers ...string) error {
 	var cleanupDuration time.Duration
 	if pollingLoop {
 		cleanupStart := time.Now()
-		err := m.cleanupASGsChains(planner.ASGManagedChainsRegex, desiredChains)
+		err := m.cleanupASGsChainsMatching(enforcer.ASGChainRegex, desiredChains)
 		if err != nil {
 			errors = multierror.Append(errors, err)
 		}
@@ -220,31 +220,40 @@ func (m *SinglePollCycle) CleanupOrphanedASGsChains(containerHandle string) erro
 	m.asgMutex.Lock()
 	defer m.asgMutex.Unlock()
 
-	return m.cleanupASGsChains(planner.ASGChainPrefix(containerHandle), []enforcer.LiveChain{})
+	chain := enforcer.LiveChain{Table: enforcer.FilterTable, Name: enforcer.ASGChainName(containerHandle)}
+
+	err := m.enforcer.CleanupChain(chain)
+	if err != nil {
+		return fmt.Errorf("clean-up-orphaned-asg-chains: %s", err)
+	}
+
+	delete(m.asgChainToContainer, chain)
+	delete(m.asgRuleSets, chain)
+	return nil
 }
 
 func (m *SinglePollCycle) updateRuleSet(chainKey enforcer.LiveChain, chain string, ruleset enforcer.RulesWithChain) {
-	m.containerToASGChain[chainKey] = chain
+	m.asgChainToContainer[chainKey] = chain
 	m.asgRuleSets[chainKey] = ruleset
 	m.sendAppLog(ruleset.LogConfig)
 }
 
-func (m *SinglePollCycle) cleanupASGsChains(prefix string, desiredChains []enforcer.LiveChain) error {
+func (m *SinglePollCycle) cleanupASGsChainsMatching(prefix string, desiredChains []enforcer.LiveChain) error {
 	deletedChains, err := m.enforcer.CleanChainsMatching(regexp.MustCompile(prefix), desiredChains)
 	if err != nil {
-		return fmt.Errorf("clean-up-orphaned-asg-chains: %s", err)
-	} else {
-		m.logger.Debug("policy-cycle-asg", lager.Data{
-			"message": "deleted-orphaned-chains",
-			"chains":  deletedChains,
-		})
+		return fmt.Errorf("clean-up-asg-chains-matching: %s", err)
+	}
 
-		for chainKey, chainName := range m.containerToASGChain {
-			for _, deletedChain := range deletedChains {
-				if deletedChain.Table == chainKey.Table && deletedChain.Name == chainName {
-					delete(m.containerToASGChain, chainKey)
-					delete(m.asgRuleSets, chainKey)
-				}
+	m.logger.Debug("policy-cycle-asg", lager.Data{
+		"message": "deleted-orphaned-chains",
+		"chains":  deletedChains,
+	})
+
+	for chainKey, chainName := range m.asgChainToContainer {
+		for _, deletedChain := range deletedChains {
+			if deletedChain.Table == chainKey.Table && deletedChain.Name == chainName {
+				delete(m.asgChainToContainer, chainKey)
+				delete(m.asgRuleSets, chainKey)
 			}
 		}
 	}
@@ -255,7 +264,7 @@ func (m *SinglePollCycle) cleanupASGsChains(prefix string, desiredChains []enfor
 // used to test that we're deleting the right chains and nothing else
 func (m *SinglePollCycle) CurrentlyAppliedChainNames() []string {
 	chains := []string{}
-	for _, chain := range m.containerToASGChain {
+	for _, chain := range m.asgChainToContainer {
 		chains = append(chains, chain)
 	}
 	return chains

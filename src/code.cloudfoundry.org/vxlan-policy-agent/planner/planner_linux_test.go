@@ -152,7 +152,7 @@ var _ = Describe("Planner", func() {
 		chain = enforcer.Chain{
 			Table:       "some-table",
 			ParentChain: "INPUT",
-			Prefix:      "some-prefix",
+			Name:        "some-prefix",
 		}
 
 		policyPlanner = &planner.VxlanPolicyPlanner{
@@ -876,9 +876,8 @@ var _ = Describe("Planner", func() {
 					Expect(containerRules1.Rules).To(Equal([]rules.IPTablesRule{{"rule-2"}, {"rule-1"}}))
 					Expect(containerRules2.Rules).To(Equal([]rules.IPTablesRule{{"rule-4"}, {"rule-3"}}))
 
-					Expect([]string{containerRules1.Chain.Prefix, containerRules2.Chain.Prefix}).To(ConsistOf("asg-498471", "asg-2a07ad"))
-					Expect([]string{containerRules1.Chain.ManagedChainsRegex, containerRules2.Chain.ManagedChainsRegex}).To(ConsistOf(planner.ASGManagedChainsRegex, planner.ASGManagedChainsRegex))
-					Expect([]bool{containerRules1.Chain.CleanUpParentChain, containerRules2.Chain.CleanUpParentChain}).To(ConsistOf(true, true))
+					Expect([]string{containerRules1.Chain.Name, containerRules2.Chain.Name}).To(ConsistOf("asg-containerid1", "asg-containerid2"))
+					Expect([]bool{containerRules1.Chain.Timestamped, containerRules2.Chain.Timestamped}).To(ConsistOf(false, false))
 
 					Expect(netOutChain.IPTablesRulesCallCount()).To(Equal(2))
 
@@ -959,8 +958,8 @@ var _ = Describe("Planner", func() {
 						Expect(containerRules2.Rules).To(Equal([]rules.IPTablesRule{{"rule-4"}, {"rule-3"}}))
 
 						By("assigning unique prefixes to each container")
-						Expect([]string{containerRules1.Chain.Prefix, containerRules2.Chain.Prefix}).To(ConsistOf("asg-498471", "asg-2a07ad"))
-						Expect([]string{containerRules1.Chain.ManagedChainsRegex, containerRules2.Chain.ManagedChainsRegex}).To(ConsistOf(planner.ASGManagedChainsRegex, planner.ASGManagedChainsRegex))
+						Expect([]string{containerRules1.Chain.Name, containerRules2.Chain.Name}).To(ConsistOf("asg-containerid1", "asg-containerid2"))
+						Expect([]bool{containerRules1.Chain.Timestamped, containerRules2.Chain.Timestamped}).To(ConsistOf(false, false))
 
 						Expect(netOutChain.IPTablesRulesCallCount()).To(Equal(2))
 
