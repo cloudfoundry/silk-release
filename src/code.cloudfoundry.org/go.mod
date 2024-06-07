@@ -15,7 +15,7 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 exclude code.cloudfoundry.org/executor v0.1442.0
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240605171753-cbd271632a86
+	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240606171834-15498a222c4a
 	code.cloudfoundry.org/debugserver v0.0.0-20240605172147-3433a40ea1bc
 	code.cloudfoundry.org/diego-logging-client v0.0.0-20240605172200-e2549c297631
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
@@ -23,7 +23,7 @@ require (
 	code.cloudfoundry.org/garden v0.0.0-20240604193611-1a2f0f635229
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.0.3
-	code.cloudfoundry.org/policy_client v0.0.0-20240605171751-2236e7efe268
+	code.cloudfoundry.org/policy_client v0.0.0-20240606171829-4a5d1e3881a9
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.0
@@ -53,7 +53,7 @@ require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20240604201846-c756bfed2ed3 // indirect
 	code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 // indirect
 	code.cloudfoundry.org/routing-info v0.0.0-20240405184658-449674f046fa // indirect
-	code.cloudfoundry.org/tlsconfig v0.0.0-20240604172015-5be76e21ea65 // indirect
+	code.cloudfoundry.org/tlsconfig v0.0.0-20240606172222-82aa02bc07ea // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/alexflint/go-filemutex v1.3.0 // indirect
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect

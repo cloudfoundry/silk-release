@@ -3,7 +3,7 @@
 code.cloudfoundry.org/bbs/encryption
 code.cloudfoundry.org/bbs/format
 code.cloudfoundry.org/bbs/models
-# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240605171753-cbd271632a86
+# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240606171834-15498a222c4a
 ## explicit; go 1.20
 code.cloudfoundry.org/cf-networking-helpers/db
 code.cloudfoundry.org/cf-networking-helpers/db/monitor
@@ -58,7 +58,7 @@ code.cloudfoundry.org/lager/v3/lagerflags
 code.cloudfoundry.org/lager/v3/lagertest
 # code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2
 ## explicit
-# code.cloudfoundry.org/policy_client v0.0.0-20240605171751-2236e7efe268
+# code.cloudfoundry.org/policy_client v0.0.0-20240606171829-4a5d1e3881a9
 ## explicit; go 1.20
 code.cloudfoundry.org/policy_client
 # code.cloudfoundry.org/routing-info v0.0.0-20240405184658-449674f046fa
@@ -67,7 +67,7 @@ code.cloudfoundry.org/routing-info/internalroutes
 # code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 ## explicit
 code.cloudfoundry.org/runtimeschema/metric
-# code.cloudfoundry.org/tlsconfig v0.0.0-20240604172015-5be76e21ea65
+# code.cloudfoundry.org/tlsconfig v0.0.0-20240606172222-82aa02bc07ea
 ## explicit; go 1.19
 code.cloudfoundry.org/tlsconfig
 # filippo.io/edwards25519 v1.1.0
