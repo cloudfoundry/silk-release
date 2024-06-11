@@ -17,7 +17,7 @@ exclude code.cloudfoundry.org/executor v0.1442.0
 require (
 	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240606171834-15498a222c4a
 	code.cloudfoundry.org/debugserver v0.0.0-20240605172147-3433a40ea1bc
-	code.cloudfoundry.org/diego-logging-client v0.0.0-20240607172319-a6c635476209
+	code.cloudfoundry.org/diego-logging-client v0.0.0-20240610172700-1709b2f54f2e
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 	code.cloudfoundry.org/filelock v0.0.0-20240605152813-891eacc2974f
 	code.cloudfoundry.org/garden v0.0.0-20240604193611-1a2f0f635229
@@ -52,7 +52,7 @@ require (
 	code.cloudfoundry.org/clock v1.1.0 // indirect
 	code.cloudfoundry.org/go-diodes v0.0.0-20240604201846-c756bfed2ed3 // indirect
 	code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 // indirect
-	code.cloudfoundry.org/routing-info v0.0.0-20240405184658-449674f046fa // indirect
+	code.cloudfoundry.org/routing-info v0.0.0-20240611155555-dd78756e41b6 // indirect
 	code.cloudfoundry.org/tlsconfig v0.0.0-20240606172222-82aa02bc07ea // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/alexflint/go-filemutex v1.3.0 // indirect
@@ -81,7 +81,7 @@ require (
 	golang.org/x/tools v0.22.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240610135401-a8a62080eff3 // indirect
 	google.golang.org/grpc v1.64.0 // indirect
-	google.golang.org/protobuf v1.34.1 // indirect
+	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
