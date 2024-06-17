@@ -677,10 +677,10 @@ github.com/cncf/xds/go v0.0.0-20211011173535-cb28da3451f1/go.mod h1:eXthEFrGJvWH
 github.com/cncf/xds/go v0.0.0-20220314180256-7f1daf1720fc/go.mod h1:eXthEFrGJvWHgFFCl3hGmgk+/aYT6PnTQLykKQRLhEs=
 github.com/cncf/xds/go v0.0.0-20230105202645-06c439db220b/go.mod h1:eXthEFrGJvWHgFFCl3hGmgk+/aYT6PnTQLykKQRLhEs=
 github.com/cncf/xds/go v0.0.0-20230310173818-32f1caf87195/go.mod h1:eXthEFrGJvWHgFFCl3hGmgk+/aYT6PnTQLykKQRLhEs=
-github.com/containernetworking/cni v1.2.0 h1:fEjhlfWwWAXEvlcMQu/i6z8DA0Kbu7EcmR5+zb6cm5I=
-github.com/containernetworking/cni v1.2.0/go.mod h1:/r+vA/7vrynNfbvSP9g8tIKEoy6win7sALJAw4ZiJks=
-github.com/containernetworking/plugins v1.5.0 h1:P09DMlfvvsLSskDoftnuwXY7lwa7IAhTGznZxA5E8fk=
-github.com/containernetworking/plugins v1.5.0/go.mod h1:bcXMvG9gWGc6jVXeodmMzuXmXqpqMguZm6Zu/oIr7AA=
+github.com/containernetworking/cni v1.2.1 h1:PU9lIBbXNqdPIEuIxWGbtznlecv4Y+ZYqjX/j/2S7ug=
+github.com/containernetworking/cni v1.2.1/go.mod h1:m2nkpHY4lRZx89NUXHj4jahE5JCgaJuygB8cSwj0CTU=
+github.com/containernetworking/plugins v1.5.1 h1:T5ji+LPYjjgW0QM+KyrigZbLsZ8jaX+E5J/EcKOE4gQ=
+github.com/containernetworking/plugins v1.5.1/go.mod h1:MIQfgMayGuHYs0XdNudf31cLLAC+i242hNm6KuDGqCM=
 github.com/coreos/go-iptables v0.7.0 h1:XWM3V+MPRr5/q51NuWSgU0fqMad64Zyxs8ZUoMsamr8=
 github.com/coreos/go-iptables v0.7.0/go.mod h1:Qe8Bv2Xik5FyTXwgIbLAnv2sWSBmvWdFETJConOQ//Q=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=

@@ -26,8 +26,8 @@ require (
 	code.cloudfoundry.org/policy_client v0.0.0-20240614172555-b37f02032d11
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
-	github.com/containernetworking/cni v1.2.0
-	github.com/containernetworking/plugins v1.5.0
+	github.com/containernetworking/cni v1.2.1
+	github.com/containernetworking/plugins v1.5.1
 	github.com/coreos/go-iptables v0.7.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510

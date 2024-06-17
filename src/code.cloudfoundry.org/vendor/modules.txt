@@ -98,7 +98,7 @@ github.com/cloudfoundry/dropsonde/runtime_stats
 # github.com/cloudfoundry/sonde-go v0.0.0-20240515174134-adba8bce1248
 ## explicit; go 1.17
 github.com/cloudfoundry/sonde-go/events
-# github.com/containernetworking/cni v1.2.0
+# github.com/containernetworking/cni v1.2.1
 ## explicit; go 1.21
 github.com/containernetworking/cni/pkg/invoke
 github.com/containernetworking/cni/pkg/ns
@@ -113,7 +113,7 @@ github.com/containernetworking/cni/pkg/utils
 github.com/containernetworking/cni/pkg/version
 github.com/containernetworking/cni/plugins/test/noop
 github.com/containernetworking/cni/plugins/test/noop/debug
-# github.com/containernetworking/plugins v1.5.0
+# github.com/containernetworking/plugins v1.5.1
 ## explicit; go 1.20
 github.com/containernetworking/plugins/pkg/ip
 github.com/containernetworking/plugins/pkg/ns
