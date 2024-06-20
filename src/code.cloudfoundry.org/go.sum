@@ -616,8 +616,8 @@ code.cloudfoundry.org/lager/v3 v3.0.3 h1:/UTmadZfIaKuT/whEinSxK1mzRfNu1uPfvjFfGq
 code.cloudfoundry.org/lager/v3 v3.0.3/go.mod h1:Zn5q1SrIuuHjEUE7xerMKt3ztunrJQCZETAo7rV0CH8=
 code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 h1:tUpafuylA0aTl6sdQnf20OsO/ipCvdNSZlWOB1cHhz8=
 code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2/go.mod h1:AwHLRkdXtttLXNB8RHgLfErJ2kKafH62AR2OClhy6xI=
-code.cloudfoundry.org/policy_client v0.0.0-20240618172956-ead26a8ee00f h1:FI7E1hZBMxpkeIFUNhVQbDDw/LLfomivgjBi2jDdxl4=
-code.cloudfoundry.org/policy_client v0.0.0-20240618172956-ead26a8ee00f/go.mod h1:HEXXhT1N/B4MwBp/bHnyt4ElTcLLjKaQ3E2jxP6v7HA=
+code.cloudfoundry.org/policy_client v0.0.0-20240619173031-7550ac26ce88 h1:HiEmdoHvTikDlPIxT77nXtZ1AdSux8wRrFwBiSnTwDw=
+code.cloudfoundry.org/policy_client v0.0.0-20240619173031-7550ac26ce88/go.mod h1:HgyF6dzWP144KOy5YVm7GwxEHgnW226yeoHYBgGL+yU=
 code.cloudfoundry.org/routing-info v0.0.0-20240611155555-dd78756e41b6 h1:9eB1ThJCTAp2oxss4sW47fkaHG1dzAWW+9u0eVjKfcU=
 code.cloudfoundry.org/routing-info v0.0.0-20240611155555-dd78756e41b6/go.mod h1:ykLgqzJGV5PTkvxtfyOy8hcQy7wxPaoV5ZPyk74aqp8=
 code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6 h1:J08p1/LBnhv5BDDf0WLpHRyMJFCws3vd3fLCFL/iVnQ=
