@@ -23,7 +23,7 @@ require (
 	code.cloudfoundry.org/garden v0.0.0-20240625195848-36e99aad95da
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.0.3
-	code.cloudfoundry.org/policy_client v0.0.0-20240625173524-3147c212fecb
+	code.cloudfoundry.org/policy_client v0.0.0-20240626173536-c40f6a4c0571
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.2
