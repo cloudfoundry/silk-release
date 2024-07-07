@@ -17,13 +17,13 @@ exclude code.cloudfoundry.org/executor v0.1442.0
 require (
 	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240705174608-10d4ff6b6193
 	code.cloudfoundry.org/debugserver v0.0.0-20240705175209-1b863bb63b67
-	code.cloudfoundry.org/diego-logging-client v0.0.0-20240705175210-f205aacaea3c
+	code.cloudfoundry.org/diego-logging-client v0.0.0-20240706175343-008f8dd18da2
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 	code.cloudfoundry.org/filelock v0.0.0-20240705155015-e5997ec78fec
 	code.cloudfoundry.org/garden v0.0.0-20240705200726-e508adf1e306
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.0.3
-	code.cloudfoundry.org/policy_client v0.0.0-20240705174600-18975e7085fc
+	code.cloudfoundry.org/policy_client v0.0.0-20240706174720-cb09d33e83de
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.2
