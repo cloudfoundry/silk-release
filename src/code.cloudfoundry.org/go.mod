@@ -17,13 +17,13 @@ exclude code.cloudfoundry.org/executor v0.1442.0
 require (
 	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240708175029-e471b48d5f9b
 	code.cloudfoundry.org/debugserver v0.0.0-20240708175632-eff029929d18
-	code.cloudfoundry.org/diego-logging-client v0.0.0-20240708175635-caa5cc0c1692
+	code.cloudfoundry.org/diego-logging-client v0.0.0-20240709175802-904ac8cf53b0
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 	code.cloudfoundry.org/filelock v0.0.0-20240708155324-70e410f18013
 	code.cloudfoundry.org/garden v0.0.0-20240708201037-a065bfb99bfb
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.0.3
-	code.cloudfoundry.org/policy_client v0.0.0-20240708175024-24336b6126c6
+	code.cloudfoundry.org/policy_client v0.0.0-20240709175211-d84795ca20e6
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.2
@@ -39,7 +39,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
 	github.com/pivotal-cf-experimental/gomegamatchers v0.0.0-20180326192815-e36bfcc98c3a
-	github.com/rubenv/sql-migrate v1.6.1
+	github.com/rubenv/sql-migrate v1.7.0
 	github.com/tedsuo/ifrit v0.0.0-20230516164442-7862c310ad26
 	github.com/tedsuo/rata v1.0.0
 	github.com/vishvananda/netlink v1.2.1-beta.2
@@ -73,13 +73,13 @@ require (
 	github.com/safchain/ethtool v0.4.1 // indirect
 	github.com/square/certstrap v1.3.0 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
-	go.step.sm/crypto v0.48.1 // indirect
+	go.step.sm/crypto v0.49.0 // indirect
 	golang.org/x/crypto v0.25.0 // indirect
 	golang.org/x/net v0.27.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/tools v0.23.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240708141625-4ad9e859172b // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240709173604-40e1e62336c5 // indirect
 	google.golang.org/grpc v1.65.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect

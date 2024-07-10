@@ -24,7 +24,7 @@ code.cloudfoundry.org/cf-networking-helpers/testsupport/ports
 # code.cloudfoundry.org/debugserver v0.0.0-20240708175632-eff029929d18
 ## explicit; go 1.19
 code.cloudfoundry.org/debugserver
-# code.cloudfoundry.org/diego-logging-client v0.0.0-20240708175635-caa5cc0c1692
+# code.cloudfoundry.org/diego-logging-client v0.0.0-20240709175802-904ac8cf53b0
 ## explicit; go 1.21
 code.cloudfoundry.org/diego-logging-client
 code.cloudfoundry.org/diego-logging-client/testhelpers
@@ -58,7 +58,7 @@ code.cloudfoundry.org/lager/v3/lagerflags
 code.cloudfoundry.org/lager/v3/lagertest
 # code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2
 ## explicit
-# code.cloudfoundry.org/policy_client v0.0.0-20240708175024-24336b6126c6
+# code.cloudfoundry.org/policy_client v0.0.0-20240709175211-d84795ca20e6
 ## explicit; go 1.20
 code.cloudfoundry.org/policy_client
 # code.cloudfoundry.org/routing-info v0.0.0-20240611155555-dd78756e41b6
@@ -243,7 +243,7 @@ github.com/pivotal-cf-experimental/gomegamatchers/internal/prettyprint
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
-# github.com/rubenv/sql-migrate v1.6.1
+# github.com/rubenv/sql-migrate v1.7.0
 ## explicit; go 1.21
 github.com/rubenv/sql-migrate
 github.com/rubenv/sql-migrate/sqlparse
@@ -273,8 +273,8 @@ github.com/vishvananda/netns
 # github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c
 ## explicit
 github.com/ziutek/utils/netaddr
-# go.step.sm/crypto v0.48.1
-## explicit; go 1.20
+# go.step.sm/crypto v0.49.0
+## explicit; go 1.21
 go.step.sm/crypto/fingerprint
 go.step.sm/crypto/internal/bcrypt_pbkdf
 go.step.sm/crypto/internal/emoji
@@ -340,7 +340,7 @@ golang.org/x/text/unicode/norm
 ## explicit; go 1.19
 golang.org/x/tools/cover
 golang.org/x/tools/go/ast/inspector
-# google.golang.org/genproto/googleapis/rpc v0.0.0-20240708141625-4ad9e859172b
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20240709173604-40e1e62336c5
 ## explicit; go 1.20
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.65.0
