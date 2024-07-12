@@ -15,15 +15,15 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 exclude code.cloudfoundry.org/executor v0.1442.0
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240710175338-519d5f940a6d
-	code.cloudfoundry.org/debugserver v0.0.0-20240708175632-eff029929d18
-	code.cloudfoundry.org/diego-logging-client v0.0.0-20240709175802-904ac8cf53b0
+	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240711175438-bacd434c9f92
+	code.cloudfoundry.org/debugserver v0.0.0-20240711175828-bd4bb5559e42
+	code.cloudfoundry.org/diego-logging-client v0.0.0-20240711175830-8c315b151f27
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 	code.cloudfoundry.org/filelock v0.0.0-20240711155740-a50c183dc1e0
-	code.cloudfoundry.org/garden v0.0.0-20240708201037-a065bfb99bfb
+	code.cloudfoundry.org/garden v0.0.0-20240711201323-3e0daa304ebb
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.0.3
-	code.cloudfoundry.org/policy_client v0.0.0-20240709175211-d84795ca20e6
+	code.cloudfoundry.org/policy_client v0.0.0-20240711175427-b7c1da7308b8
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.2
@@ -73,7 +73,7 @@ require (
 	github.com/safchain/ethtool v0.4.1 // indirect
 	github.com/square/certstrap v1.3.0 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
-	go.step.sm/crypto v0.49.0 // indirect
+	go.step.sm/crypto v0.50.0 // indirect
 	golang.org/x/crypto v0.25.0 // indirect
 	golang.org/x/net v0.27.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
