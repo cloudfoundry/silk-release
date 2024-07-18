@@ -48,7 +48,7 @@ require (
 )
 
 require (
-	code.cloudfoundry.org/bbs v0.0.0-20240715202719-b18910b06516 // indirect
+	code.cloudfoundry.org/bbs v0.0.0-20240717173038-096d0e1a7e95 // indirect
 	code.cloudfoundry.org/clock v1.1.0 // indirect
 	code.cloudfoundry.org/go-diodes v0.0.0-20240604201846-c756bfed2ed3 // indirect
 	code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 // indirect
