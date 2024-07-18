@@ -118,6 +118,8 @@ func (s ingressSlice) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
+const ASGManagedChainsRegex = `asg-[a-z0-9]{6}`
+
 func (p *VxlanPolicyPlanner) GetPolicyRulesAndChain() (enforcer.RulesWithChain, error) {
 	allContainers, err := p.readFile()
 	if err != nil {
@@ -204,7 +206,13 @@ func (p *VxlanPolicyPlanner) GetASGRulesAndChains(specifiedContainers ...string)
 		}
 
 		rulesWithChains = append(rulesWithChains, enforcer.RulesWithChain{
-			Chain:     enforcer.NewASGChain(parentChainName, container.Handle),
+			Chain: enforcer.Chain{
+				Table:              enforcer.FilterTable,
+				ParentChain:        parentChainName,
+				Prefix:             ASGChainPrefix(container.Handle),
+				ManagedChainsRegex: ASGManagedChainsRegex,
+				CleanUpParentChain: true,
+			},
 			Rules:     reverseOrderIptablesRules(iptablesRules, defaultRules),
 			LogConfig: container.LogConfig,
 		})

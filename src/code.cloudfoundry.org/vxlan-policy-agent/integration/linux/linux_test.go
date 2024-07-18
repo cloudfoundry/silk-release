@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/vxlan-policy-agent/config"
-	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
+	"code.cloudfoundry.org/vxlan-policy-agent/planner"
 
 	"code.cloudfoundry.org/cf-networking-helpers/mutualtls"
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics"
@@ -334,19 +334,19 @@ var _ = Describe("VXLAN Policy Agent", func() {
 					})
 
 					It("sets rules for asgs", func() {
-						Eventually(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-.+ -m state --state RELATED,ESTABLISHED -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-.+ -p tcp -m state --state INVALID -j DROP`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j asg-.+`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-.+ -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-.+ -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-.+ -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-.+ -j REJECT --reject-with icmp-port-unreachable`))
+						Eventually(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m state --state RELATED,ESTABLISHED -j ACCEPT`))
+						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p tcp -m state --state INVALID -j DROP`))
+						Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j asg-\d+`))
+						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT`))
+						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
+						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
+						Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -j REJECT --reject-with icmp-port-unreachable`))
 					})
 
 					It("cleans up the parent asg keeping the reject rule", func() {
 						Eventually(iptablesFilterRules, "4s", "1s").ShouldNot(MatchRegexp(`-A netout--some-handle -m state --state RELATED,ESTABLISHED -j ACCEPT`))
 						Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -p tcp -m state --state INVALID -j DROP`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j asg-.+`))
+						Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j asg-\d+`))
 						Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT`))
 						Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
 						Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
@@ -372,10 +372,10 @@ var _ = Describe("VXLAN Policy Agent", func() {
 						})
 
 						It("enforces the ASG policies for staging", func() {
-							Eventually(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-.+ -p tcp -m iprange --dst-range 10.0.11.0-10.0.11.255 -m tcp --dport 443 -g netout--some-handle--log`))
-							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-.+ -p tcp -m iprange --dst-range 10.0.11.0-10.0.11.255 -m tcp --dport 80 -g netout--some-handle--log`))
-							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-.+ -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
-							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-.+ -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
+							Eventually(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p tcp -m iprange --dst-range 10.0.11.0-10.0.11.255 -m tcp --dport 443 -g netout--some-handle--log`))
+							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p tcp -m iprange --dst-range 10.0.11.0-10.0.11.255 -m tcp --dport 80 -g netout--some-handle--log`))
+							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
+							Consistently(iptablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
 						})
 					})
 
@@ -392,13 +392,13 @@ var _ = Describe("VXLAN Policy Agent", func() {
 								return resp.StatusCode, nil
 							}).Should(Equal(http.StatusOK))
 
-							Eventually(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-.+ -m state --state RELATED,ESTABLISHED -j ACCEPT`))
-							Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-.+ -p tcp -m state --state INVALID -j DROP`))
-							Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j asg-.+`))
-							Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-.+ -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT`))
-							Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-.+ -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
-							Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-.+ -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
-							Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-.+ -j REJECT --reject-with icmp-port-unreachable`))
+							Eventually(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m state --state RELATED,ESTABLISHED -j ACCEPT`))
+							Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p tcp -m state --state INVALID -j DROP`))
+							Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j asg-\d+`))
+							Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT`))
+							Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
+							Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
+							Expect(iptablesFilterRules()).To(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -j REJECT --reject-with icmp-port-unreachable`))
 						})
 						Context("when EnableASGSyncing is disabled", func() {
 							BeforeEach(func() {
@@ -413,13 +413,13 @@ var _ = Describe("VXLAN Policy Agent", func() {
 									return resp.StatusCode, nil
 								}).Should(Equal(http.StatusOK))
 
-								Eventually(iptablesFilterRules, "1s", "100ms").ShouldNot(MatchRegexp(`-A asg-.+ -m state --state RELATED,ESTABLISHED -j ACCEPT`))
-								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A asg-.+ -p tcp -m state --state INVALID -j DROP`))
-								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -j asg-.+`))
-								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A asg-.+ -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT`))
-								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A asg-.+ -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
-								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A asg-.+ -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
-								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A asg-.+ -j REJECT --reject-with icmp-port-unreachable`))
+								Eventually(iptablesFilterRules, "1s", "100ms").ShouldNot(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m state --state RELATED,ESTABLISHED -j ACCEPT`))
+								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p tcp -m state --state INVALID -j DROP`))
+								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -j asg-\d+`))
+								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT`))
+								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
+								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
+								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -j REJECT --reject-with icmp-port-unreachable`))
 
 							})
 						})
@@ -427,7 +427,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 
 					Describe("the force orphaned asgs cleanup endpoint", func() {
 						It("should not delete the asg chain referenced in netout chain", func() {
-							Eventually(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-.+ -m state --state RELATED,ESTABLISHED -j ACCEPT`))
+							Eventually(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-[a-zA-Z0-9]+ -m state --state RELATED,ESTABLISHED -j ACCEPT`))
 
 							Eventually(func() (int, error) {
 								resp, err := http.Get(fmt.Sprintf("http://%s:%d/force-orphaned-asgs-cleanup?container=some-handle", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort))
@@ -437,13 +437,13 @@ var _ = Describe("VXLAN Policy Agent", func() {
 								return resp.StatusCode, nil
 							}).Should(Equal(http.StatusInternalServerError))
 
-							Consistently(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A netout--some-handle -j asg-.+`))
+							Consistently(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A netout--some-handle -j asg-\d+`))
 						})
 
 						Context("when EnableASGSyncing is disabled", func() {
 							BeforeEach(func() {
 								conf.EnableASGSyncing = false
-								runIptablesCommand("-N", enforcer.ASGChainName("some-handle"))
+								runIptablesCommand("-N", planner.ASGChainPrefix("some-handle")+"11111111")
 							})
 
 							It("doesn't clean up iptables", func() {
@@ -455,7 +455,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 									return resp.StatusCode, nil
 								}).Should(Equal(http.StatusMethodNotAllowed))
 
-								Consistently(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-N asg-.+`))
+								Consistently(iptablesFilterRules, "4s", "1s").Should(MatchRegexp(`-N asg-[a-zA-Z0-9]+`))
 							})
 						})
 					})
@@ -464,13 +464,13 @@ var _ = Describe("VXLAN Policy Agent", func() {
 				Context("when netout chain does not exist", func() {
 					It("does not create asg chain", func() {
 						Eventually(iptablesFilterRules, "4s", "1s").ShouldNot(MatchRegexp(`-N netout--some-handle`))
-						Consistently(iptablesFilterRules, "2s", "1s").ShouldNot(MatchRegexp(`-A netout--some-handle -j asg-.+`))
+						Consistently(iptablesFilterRules, "2s", "1s").ShouldNot(MatchRegexp(`-A netout--some-handle -j asg-\d+`))
 						Consistently(iptablesFilterRules, "2s", "1s").ShouldNot(MatchRegexp(`-A FORWARD -s \d+\.\d+\.\d+.\d+/\d+ -o eth0 -j netout--some-handle`))
 					})
 
 					Context("when there is an asg chain", func() {
 						BeforeEach(func() {
-							runIptablesCommand("-N", enforcer.ASGChainName("some-handle"))
+							runIptablesCommand("-N", planner.ASGChainPrefix("some-handle")+"11111111")
 						})
 
 						It("forcing orphaned chains cleanup deletes the chain", func() {
@@ -482,8 +482,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 								return resp.StatusCode, nil
 							}).Should(Equal(http.StatusOK))
 
-							Eventually(iptablesFilterRules, "4s", "1s").ShouldNot(MatchRegexp(`-N asg-.+`))
-							Eventually(iptablesFilterRules, "4s", "1s").ShouldNot(MatchRegexp(`-A asg-.+`))
+							Eventually(iptablesFilterRules, "4s", "1s").ShouldNot(MatchRegexp(`-A asg-[a-zA-Z0-9]+`))
 						})
 					})
 				})

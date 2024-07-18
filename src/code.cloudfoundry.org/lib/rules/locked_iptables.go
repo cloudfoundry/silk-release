@@ -11,7 +11,6 @@ import (
 //go:generate counterfeiter -o ../fakes/iptables.go --fake-name IPTables . iptables
 type iptables interface {
 	Exists(table, chain string, rulespec ...string) (bool, error)
-	ChainExists(table, chain string) (bool, error)
 	Insert(table, chain string, pos int, rulespec ...string) error
 	AppendUnique(table, chain string, rulespec ...string) error
 	Delete(table, chain string, rulespec ...string) error
@@ -20,14 +19,12 @@ type iptables interface {
 	NewChain(table, chain string) error
 	ClearChain(table, chain string) error
 	DeleteChain(table, chain string) error
-	RenameChain(table, oldChain, newChain string) error
 }
 
 //go:generate counterfeiter -o ../fakes/iptables_extended.go --fake-name IPTablesAdapter . IPTablesAdapter
 type IPTablesAdapter interface {
 	FlushAndRestore(rawInput string) error
 	Exists(table, chain string, rulespec IPTablesRule) (bool, error)
-	ChainExists(table, chain string) (bool, error)
 	Delete(table, chain string, rulespec IPTablesRule) error
 	DeleteAfterRuleNum(table, chain string, ruleNum int) error
 	DeleteAfterRuleNumKeepReject(table, chain string, ruleNum int) error
@@ -36,7 +33,6 @@ type IPTablesAdapter interface {
 	NewChain(table, chain string) error
 	ClearChain(table, chain string) error
 	DeleteChain(table, chain string) error
-	RenameChain(table, oldChain, newChain string) error
 	BulkInsert(table, chain string, pos int, rulespec ...IPTablesRule) error
 	BulkAppend(table, chain string, rulespec ...IPTablesRule) error
 	RuleCount(table string) (int, error)
@@ -107,19 +103,6 @@ func (l *LockedIPTables) Exists(table, chain string, rulespec IPTablesRule) (boo
 	}
 
 	b, err := l.IPTables.Exists(table, chain, rulespec...)
-	if err != nil {
-		return false, handleIPTablesError(err, l.Locker.Unlock())
-	}
-
-	return b, l.Locker.Unlock()
-}
-
-func (l *LockedIPTables) ChainExists(table, chain string) (bool, error) {
-	if err := l.Locker.Lock(); err != nil {
-		return false, fmt.Errorf("lock: %s", err)
-	}
-
-	b, err := l.IPTables.ChainExists(table, chain)
 	if err != nil {
 		return false, handleIPTablesError(err, l.Locker.Unlock())
 	}
@@ -246,19 +229,6 @@ func (l *LockedIPTables) ListChains(table string) ([]string, error) {
 	}
 
 	return ret, l.Locker.Unlock()
-}
-
-func (l *LockedIPTables) RenameChain(table string, oldChain string, newChain string) error {
-	if err := l.Locker.Lock(); err != nil {
-		return fmt.Errorf("lock: %s", err)
-	}
-
-	err := l.IPTables.RenameChain(table, oldChain, newChain)
-	if err != nil {
-		return handleIPTablesError(err, l.Locker.Unlock())
-	}
-
-	return l.Locker.Unlock()
 }
 
 func (l *LockedIPTables) RuleCount(table string) (int, error) {
