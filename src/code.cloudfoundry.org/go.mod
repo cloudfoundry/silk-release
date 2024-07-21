@@ -19,7 +19,7 @@ require (
 	code.cloudfoundry.org/debugserver v0.0.0-20240711175828-bd4bb5559e42
 	code.cloudfoundry.org/diego-logging-client v0.0.0-20240713175943-b577f5aaad4e
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
-	code.cloudfoundry.org/filelock v0.0.0-20240711155740-a50c183dc1e0
+	code.cloudfoundry.org/filelock v0.0.0-20240721160733-dfef009bbf3c
 	code.cloudfoundry.org/garden v0.0.0-20240711201323-3e0daa304ebb
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.0.3
@@ -64,7 +64,7 @@ require (
 	github.com/go-test/deep v1.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/pprof v0.0.0-20240711041743-f6c9dda6c6da // indirect
+	github.com/google/pprof v0.0.0-20240721033354-7089f98c1d14 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jackc/pgx/v5 v5.5.5 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
