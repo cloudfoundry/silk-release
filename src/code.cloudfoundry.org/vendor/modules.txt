@@ -3,7 +3,7 @@
 code.cloudfoundry.org/bbs/encryption
 code.cloudfoundry.org/bbs/format
 code.cloudfoundry.org/bbs/models
-# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240722180736-46272e4ee24b
+# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240725181138-d649b26dcf12
 ## explicit; go 1.21
 code.cloudfoundry.org/cf-networking-helpers/db
 code.cloudfoundry.org/cf-networking-helpers/db/monitor
@@ -21,20 +21,20 @@ code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics
 code.cloudfoundry.org/cf-networking-helpers/testsupport/ports
 # code.cloudfoundry.org/clock v1.1.0
 ## explicit; go 1.20
-# code.cloudfoundry.org/debugserver v0.0.0-20240722180655-b2525cf2b25a
+# code.cloudfoundry.org/debugserver v0.0.0-20240725181150-25b04d48c6b1
 ## explicit; go 1.19
 code.cloudfoundry.org/debugserver
-# code.cloudfoundry.org/diego-logging-client v0.0.0-20240723180750-86431d2f5b00
+# code.cloudfoundry.org/diego-logging-client v0.0.0-20240725181144-da8b6d91a403
 ## explicit; go 1.22
 code.cloudfoundry.org/diego-logging-client
 code.cloudfoundry.org/diego-logging-client/testhelpers
 # code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 ## explicit
 code.cloudfoundry.org/executor
-# code.cloudfoundry.org/filelock v0.0.0-20240722160912-61547654594f
+# code.cloudfoundry.org/filelock v0.0.0-20240726161610-5a0562e492cc
 ## explicit; go 1.20
 code.cloudfoundry.org/filelock
-# code.cloudfoundry.org/garden v0.0.0-20240722202410-dfce198e52ac
+# code.cloudfoundry.org/garden v0.0.0-20240725202647-8ec254b21a12
 ## explicit; go 1.20
 code.cloudfoundry.org/garden
 code.cloudfoundry.org/garden/client
@@ -58,7 +58,7 @@ code.cloudfoundry.org/lager/v3/lagerflags
 code.cloudfoundry.org/lager/v3/lagertest
 # code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2
 ## explicit
-# code.cloudfoundry.org/policy_client v0.0.0-20240723180743-94b206ced9e7
+# code.cloudfoundry.org/policy_client v0.0.0-20240725181219-13bd6ca8ab90
 ## explicit; go 1.21
 code.cloudfoundry.org/policy_client
 # code.cloudfoundry.org/routing-info v0.0.0-20240611155555-dd78756e41b6
@@ -193,7 +193,7 @@ github.com/lib/pq/scram
 # github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
 ## explicit
 github.com/nu7hatch/gouuid
-# github.com/onsi/ginkgo/v2 v2.19.0
+# github.com/onsi/ginkgo/v2 v2.19.1
 ## explicit; go 1.20
 github.com/onsi/ginkgo/v2
 github.com/onsi/ginkgo/v2/config
@@ -215,7 +215,7 @@ github.com/onsi/ginkgo/v2/internal/parallel_support
 github.com/onsi/ginkgo/v2/internal/testingtproxy
 github.com/onsi/ginkgo/v2/reporters
 github.com/onsi/ginkgo/v2/types
-# github.com/onsi/gomega v1.33.1
+# github.com/onsi/gomega v1.34.0
 ## explicit; go 1.20
 github.com/onsi/gomega
 github.com/onsi/gomega/format
@@ -340,7 +340,7 @@ golang.org/x/text/unicode/norm
 ## explicit; go 1.19
 golang.org/x/tools/cover
 golang.org/x/tools/go/ast/inspector
-# google.golang.org/genproto/googleapis/rpc v0.0.0-20240723171418-e6d459c13d2a
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20240725223205-93522f1f2a9f
 ## explicit; go 1.20
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.65.0
