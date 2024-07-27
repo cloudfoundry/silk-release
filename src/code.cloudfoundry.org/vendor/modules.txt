@@ -3,7 +3,7 @@
 code.cloudfoundry.org/bbs/encryption
 code.cloudfoundry.org/bbs/format
 code.cloudfoundry.org/bbs/models
-# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240725181138-d649b26dcf12
+# code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240726181235-5bbb6d45cd6a
 ## explicit; go 1.21
 code.cloudfoundry.org/cf-networking-helpers/db
 code.cloudfoundry.org/cf-networking-helpers/db/monitor
@@ -21,20 +21,20 @@ code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics
 code.cloudfoundry.org/cf-networking-helpers/testsupport/ports
 # code.cloudfoundry.org/clock v1.1.0
 ## explicit; go 1.20
-# code.cloudfoundry.org/debugserver v0.0.0-20240725181150-25b04d48c6b1
+# code.cloudfoundry.org/debugserver v0.0.0-20240726181222-599a5c45bf48
 ## explicit; go 1.19
 code.cloudfoundry.org/debugserver
-# code.cloudfoundry.org/diego-logging-client v0.0.0-20240725181144-da8b6d91a403
+# code.cloudfoundry.org/diego-logging-client v0.0.0-20240726181237-441fce0fff1f
 ## explicit; go 1.22
 code.cloudfoundry.org/diego-logging-client
 code.cloudfoundry.org/diego-logging-client/testhelpers
 # code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 ## explicit
 code.cloudfoundry.org/executor
-# code.cloudfoundry.org/filelock v0.0.0-20240726161610-5a0562e492cc
+# code.cloudfoundry.org/filelock v0.0.0-20240727161713-ab9a4dc8918d
 ## explicit; go 1.20
 code.cloudfoundry.org/filelock
-# code.cloudfoundry.org/garden v0.0.0-20240725202647-8ec254b21a12
+# code.cloudfoundry.org/garden v0.0.0-20240726202833-9b672179f368
 ## explicit; go 1.20
 code.cloudfoundry.org/garden
 code.cloudfoundry.org/garden/client
@@ -58,7 +58,7 @@ code.cloudfoundry.org/lager/v3/lagerflags
 code.cloudfoundry.org/lager/v3/lagertest
 # code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2
 ## explicit
-# code.cloudfoundry.org/policy_client v0.0.0-20240725181219-13bd6ca8ab90
+# code.cloudfoundry.org/policy_client v0.0.0-20240726181222-043d05c803fb
 ## explicit; go 1.21
 code.cloudfoundry.org/policy_client
 # code.cloudfoundry.org/routing-info v0.0.0-20240611155555-dd78756e41b6
@@ -157,7 +157,7 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/pprof v0.0.0-20240722153945-304e4f0156b8
+# github.com/google/pprof v0.0.0-20240727154555-813a5fbdbec8
 ## explicit; go 1.19
 github.com/google/pprof/profile
 # github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510

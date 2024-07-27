@@ -15,15 +15,15 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 exclude code.cloudfoundry.org/executor v0.1442.0
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240725181138-d649b26dcf12
-	code.cloudfoundry.org/debugserver v0.0.0-20240725181150-25b04d48c6b1
-	code.cloudfoundry.org/diego-logging-client v0.0.0-20240725181144-da8b6d91a403
+	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240726181235-5bbb6d45cd6a
+	code.cloudfoundry.org/debugserver v0.0.0-20240726181222-599a5c45bf48
+	code.cloudfoundry.org/diego-logging-client v0.0.0-20240726181237-441fce0fff1f
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
-	code.cloudfoundry.org/filelock v0.0.0-20240726161610-5a0562e492cc
-	code.cloudfoundry.org/garden v0.0.0-20240725202647-8ec254b21a12
+	code.cloudfoundry.org/filelock v0.0.0-20240727161713-ab9a4dc8918d
+	code.cloudfoundry.org/garden v0.0.0-20240726202833-9b672179f368
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.0.3
-	code.cloudfoundry.org/policy_client v0.0.0-20240725181219-13bd6ca8ab90
+	code.cloudfoundry.org/policy_client v0.0.0-20240726181222-043d05c803fb
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.3
@@ -64,7 +64,7 @@ require (
 	github.com/go-test/deep v1.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/pprof v0.0.0-20240722153945-304e4f0156b8 // indirect
+	github.com/google/pprof v0.0.0-20240727154555-813a5fbdbec8 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jackc/pgx/v5 v5.5.5 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
