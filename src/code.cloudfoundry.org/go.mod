@@ -15,15 +15,15 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 exclude code.cloudfoundry.org/executor v0.1442.0
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240806182235-55284921e8bd
-	code.cloudfoundry.org/debugserver v0.0.0-20240806182225-ac639d95f033
-	code.cloudfoundry.org/diego-logging-client v0.0.0-20240806182234-7c29d82f3f8d
+	code.cloudfoundry.org/cf-networking-helpers v0.0.0-20240807182441-59f538598b8c
+	code.cloudfoundry.org/debugserver v0.0.0-20240807182422-240e7d25a275
+	code.cloudfoundry.org/diego-logging-client v0.0.0-20240807182310-8a0d0ee10c9c
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
-	code.cloudfoundry.org/filelock v0.0.0-20240807162722-8815b554f063
-	code.cloudfoundry.org/garden v0.0.0-20240806203810-5e72e48b4930
+	code.cloudfoundry.org/filelock v0.0.0-20240808162753-a392cf836086
+	code.cloudfoundry.org/garden v0.0.0-20240807204022-0f6d09d25a4d
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.0.3
-	code.cloudfoundry.org/policy_client v0.0.0-20240806182213-180bd66fe540
+	code.cloudfoundry.org/policy_client v0.0.0-20240807182350-526aacc34f2a
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.3
@@ -36,7 +36,7 @@ require (
 	github.com/hpcloud/tail v1.0.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.10.9
-	github.com/onsi/ginkgo/v2 v2.19.1
+	github.com/onsi/ginkgo/v2 v2.20.0
 	github.com/onsi/gomega v1.34.1
 	github.com/pivotal-cf-experimental/gomegamatchers v0.0.0-20180326192815-e36bfcc98c3a
 	github.com/rubenv/sql-migrate v1.7.0
@@ -50,14 +50,14 @@ require (
 require (
 	code.cloudfoundry.org/bbs v0.0.0-20240806230301-9be69c0199db // indirect
 	code.cloudfoundry.org/clock v1.1.0 // indirect
-	code.cloudfoundry.org/go-diodes v0.0.0-20240730232652-ce6331b0e7c0 // indirect
+	code.cloudfoundry.org/go-diodes v0.0.0-20240807231455-f9cf434a8c3e // indirect
 	code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 // indirect
 	code.cloudfoundry.org/routing-info v0.0.0-20240611155555-dd78756e41b6 // indirect
 	code.cloudfoundry.org/tlsconfig v0.0.0-20240806182125-2cf75882e274 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/alexflint/go-filemutex v1.3.0 // indirect
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
-	github.com/cloudfoundry/sonde-go v0.0.0-20240620221854-09ef53324489 // indirect
+	github.com/cloudfoundry/sonde-go v0.0.0-20240807231527-361c7ad33dc7 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
@@ -75,12 +75,12 @@ require (
 	github.com/vishvananda/netns v0.0.4 // indirect
 	go.step.sm/crypto v0.51.1 // indirect
 	golang.org/x/crypto v0.26.0 // indirect
-	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
+	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/sys v0.23.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
 	golang.org/x/tools v0.24.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240805194559-2c9e96a0b5d4 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240808171019-573a1156607a // indirect
 	google.golang.org/grpc v1.65.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
