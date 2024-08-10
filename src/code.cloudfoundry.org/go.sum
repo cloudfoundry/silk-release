@@ -600,8 +600,8 @@ code.cloudfoundry.org/clock v1.1.0 h1:XLzC6W3Ah/Y7ht1rmZ6+QfPdt1iGWEAAtIZXgiaj57
 code.cloudfoundry.org/clock v1.1.0/go.mod h1:yA3fxddT9RINQL2XHS7PS+OXxKCGhfrZmlNUCIM6AKo=
 code.cloudfoundry.org/debugserver v0.0.0-20240808182508-aa80400f8069 h1:mbDzmut3VRPC9WUqSR1baPOGDbUBG/vVCV7c+T61C5A=
 code.cloudfoundry.org/debugserver v0.0.0-20240808182508-aa80400f8069/go.mod h1:V1CobqC/CqLPANjWmXykqq4AIkApSQQQsPjSvAEogmE=
-code.cloudfoundry.org/diego-logging-client v0.0.0-20240808182500-69e238999430 h1:9+7GNfHCX65F9pqbjBU6tHreqtmVyqhtlYIgVQDbm94=
-code.cloudfoundry.org/diego-logging-client v0.0.0-20240808182500-69e238999430/go.mod h1:bO1rdl9EfvY5mx2MvCyzAftSqbORCpSwQs5fEC4zfIc=
+code.cloudfoundry.org/diego-logging-client v0.0.0-20240809182614-9f67e858b86a h1:YXMTPxxpEffkSfQhM8ahH1cOE5q2ZhTM5XZSDZ95siU=
+code.cloudfoundry.org/diego-logging-client v0.0.0-20240809182614-9f67e858b86a/go.mod h1:tY2+JCaUxa1gGbXTmElgMBp59HLOhumNXe7l4ScsRt4=
 code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850 h1:DmHNflNF95mAK5VFERMEt5xF1Kx3KZcM216V+VUB0vI=
 code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850/go.mod h1:oemBimQzPedAfYleiBj968jpfEkSw8F5OsP+zYkVMRk=
 code.cloudfoundry.org/filelock v0.0.0-20240809162905-2d85401cacaa h1:An3sPp9yNz7rHW8CIAoi1+5lOfavHd9bZw9bTV61HQg=
@@ -616,8 +616,8 @@ code.cloudfoundry.org/lager/v3 v3.0.3 h1:/UTmadZfIaKuT/whEinSxK1mzRfNu1uPfvjFfGq
 code.cloudfoundry.org/lager/v3 v3.0.3/go.mod h1:Zn5q1SrIuuHjEUE7xerMKt3ztunrJQCZETAo7rV0CH8=
 code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 h1:tUpafuylA0aTl6sdQnf20OsO/ipCvdNSZlWOB1cHhz8=
 code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2/go.mod h1:AwHLRkdXtttLXNB8RHgLfErJ2kKafH62AR2OClhy6xI=
-code.cloudfoundry.org/policy_client v0.0.0-20240808182442-662f254b3247 h1:FDR3RcxeSm9ixFCMJSktD+XLtb2zg1Hsu3DP/Nb5RYI=
-code.cloudfoundry.org/policy_client v0.0.0-20240808182442-662f254b3247/go.mod h1:5rHcjiPhxvSWp9WgpznpeeJtnEzig1HJg+6dIOBIke8=
+code.cloudfoundry.org/policy_client v0.0.0-20240809182657-9f6eec45eee5 h1:XqkllcFNtcZHh7xkmF1ZNH3focLVLetAUzruKWnkLXU=
+code.cloudfoundry.org/policy_client v0.0.0-20240809182657-9f6eec45eee5/go.mod h1:bYI3t49iH2J4Eu9uCeQU49+t/c+4lOiBTLCV4cS+D/o=
 code.cloudfoundry.org/routing-info v0.0.0-20240611155555-dd78756e41b6 h1:9eB1ThJCTAp2oxss4sW47fkaHG1dzAWW+9u0eVjKfcU=
 code.cloudfoundry.org/routing-info v0.0.0-20240611155555-dd78756e41b6/go.mod h1:ykLgqzJGV5PTkvxtfyOy8hcQy7wxPaoV5ZPyk74aqp8=
 code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6 h1:J08p1/LBnhv5BDDf0WLpHRyMJFCws3vd3fLCFL/iVnQ=
