@@ -15,15 +15,15 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 exclude code.cloudfoundry.org/executor v0.1442.0
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.2.0
-	code.cloudfoundry.org/debugserver v0.2.0
-	code.cloudfoundry.org/diego-logging-client v0.5.0
+	code.cloudfoundry.org/cf-networking-helpers v0.3.0
+	code.cloudfoundry.org/debugserver v0.3.0
+	code.cloudfoundry.org/diego-logging-client v0.6.0
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
-	code.cloudfoundry.org/filelock v0.2.0
-	code.cloudfoundry.org/garden v0.0.0-20240821205034-986bea9dbba9
+	code.cloudfoundry.org/filelock v0.3.0
+	code.cloudfoundry.org/garden v0.0.0-20240822205122-48ae705920d5
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
-	code.cloudfoundry.org/lager/v3 v3.1.0
-	code.cloudfoundry.org/policy_client v0.3.0
+	code.cloudfoundry.org/lager/v3 v3.2.0
+	code.cloudfoundry.org/policy_client v0.4.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.3
@@ -42,7 +42,7 @@ require (
 	github.com/rubenv/sql-migrate v1.7.0
 	github.com/tedsuo/ifrit v0.0.0-20230516164442-7862c310ad26
 	github.com/tedsuo/rata v1.0.0
-	github.com/vishvananda/netlink v1.2.1-beta.2
+	github.com/vishvananda/netlink v1.2.1
 	github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c
 	gopkg.in/validator.v2 v2.0.1
 )
@@ -75,7 +75,7 @@ require (
 	github.com/vishvananda/netns v0.0.4 // indirect
 	go.step.sm/crypto v0.51.1 // indirect
 	golang.org/x/crypto v0.26.0 // indirect
-	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa // indirect
+	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
