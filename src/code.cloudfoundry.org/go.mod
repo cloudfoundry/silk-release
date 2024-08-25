@@ -15,15 +15,15 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 exclude code.cloudfoundry.org/executor v0.1442.0
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.4.0
-	code.cloudfoundry.org/debugserver v0.4.0
-	code.cloudfoundry.org/diego-logging-client v0.7.0
+	code.cloudfoundry.org/cf-networking-helpers v0.5.0
+	code.cloudfoundry.org/debugserver v0.5.0
+	code.cloudfoundry.org/diego-logging-client v0.8.0
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 	code.cloudfoundry.org/filelock v0.3.0
 	code.cloudfoundry.org/garden v0.0.0-20240823205131-490159a0f76e
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.3.0
-	code.cloudfoundry.org/policy_client v0.5.0
+	code.cloudfoundry.org/policy_client v0.6.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.3
