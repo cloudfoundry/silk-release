@@ -11,7 +11,6 @@ import (
 	"code.cloudfoundry.org/vxlan-policy-agent/converger"
 	"code.cloudfoundry.org/vxlan-policy-agent/converger/fakes"
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
-	"code.cloudfoundry.org/vxlan-policy-agent/planner"
 
 	"code.cloudfoundry.org/lager/v3/lagertest"
 
@@ -62,7 +61,7 @@ var _ = Describe("Single Poll Cycle", func() {
 				Chain: enforcer.Chain{
 					Table:       "local-table",
 					ParentChain: "INPUT",
-					Prefix:      "some-prefix",
+					Name:        "some-name",
 				},
 			}
 			remoteRulesWithChain = enforcer.RulesWithChain{
@@ -70,7 +69,7 @@ var _ = Describe("Single Poll Cycle", func() {
 				Chain: enforcer.Chain{
 					Table:       "remote-table",
 					ParentChain: "INPUT",
-					Prefix:      "some-prefix",
+					Name:        "some-name",
 				},
 			}
 			policyRulesWithChain = enforcer.RulesWithChain{
@@ -78,7 +77,7 @@ var _ = Describe("Single Poll Cycle", func() {
 				Chain: enforcer.Chain{
 					Table:       "policy-table",
 					ParentChain: "INPUT",
-					Prefix:      "some-prefix",
+					Name:        "some-name",
 				},
 			}
 
@@ -328,7 +327,7 @@ var _ = Describe("Single Poll Cycle", func() {
 			logger = lagertest.NewTestLogger("test")
 
 			fakeEnforcer.EnforceRulesAndChainStub = func(chain enforcer.RulesWithChain) (string, error) {
-				return fmt.Sprintf("%s-with-suffix", chain.Chain.Prefix), nil
+				return chain.Chain.Name, nil
 			}
 
 			p = converger.NewSinglePollCycle(
@@ -346,7 +345,7 @@ var _ = Describe("Single Poll Cycle", func() {
 					Chain: enforcer.Chain{
 						Table:       "filter",
 						ParentChain: "netout-1",
-						Prefix:      "asg-1234",
+						Name:        "asg-1234",
 					},
 					LogConfig: executor.LogConfig{
 						Guid:       "some-app-guid-1",
@@ -359,7 +358,7 @@ var _ = Describe("Single Poll Cycle", func() {
 					Chain: enforcer.Chain{
 						Table:       "filter",
 						ParentChain: "netout-2",
-						Prefix:      "asg-2345",
+						Name:        "asg-2345",
 					},
 					LogConfig: executor.LogConfig{
 						Guid:       "some-app-guid-2",
@@ -372,7 +371,7 @@ var _ = Describe("Single Poll Cycle", func() {
 					Chain: enforcer.Chain{
 						Table:       "filter",
 						ParentChain: "netout-3",
-						Prefix:      "asg-3456",
+						Name:        "asg-3456",
 					},
 					LogConfig: executor.LogConfig{
 						Guid:       "some-app-guid-3",
@@ -400,19 +399,19 @@ var _ = Describe("Single Poll Cycle", func() {
 
 			Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(1))
 			regex, chains := fakeEnforcer.CleanChainsMatchingArgsForCall(0)
-			Expect(regex).To(Equal(regexp.MustCompile(planner.ASGManagedChainsRegex)))
+			Expect(regex).To(Equal(regexp.MustCompile(enforcer.ASGChainRegex)))
 			Expect(chains).To(Equal([]enforcer.LiveChain{
 				{
 					Table: "filter",
-					Name:  "asg-1234-with-suffix",
+					Name:  "asg-1234",
 				},
 				{
 					Table: "filter",
-					Name:  "asg-2345-with-suffix",
+					Name:  "asg-2345",
 				},
 				{
 					Table: "filter",
-					Name:  "asg-3456-with-suffix",
+					Name:  "asg-3456",
 				}}))
 		})
 
@@ -508,7 +507,7 @@ var _ = Describe("Single Poll Cycle", func() {
 					Chain: enforcer.Chain{
 						Table:       "asg-table-orphan",
 						ParentChain: "netout-orphan",
-						Prefix:      "asg-orphaned",
+						Name:        "asg-orphaned",
 					},
 				})
 				fakeASGPlanner.GetASGRulesAndChainsReturns(orphanRulesWithChain, nil)
@@ -516,30 +515,30 @@ var _ = Describe("Single Poll Cycle", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(4))
 				Expect(p.CurrentlyAppliedChainNames()).To(ConsistOf([]string{
-					"asg-1234-with-suffix",
-					"asg-2345-with-suffix",
-					"asg-3456-with-suffix",
-					"asg-orphaned-with-suffix",
+					"asg-1234",
+					"asg-2345",
+					"asg-3456",
+					"asg-orphaned",
 				}))
 				fakeASGPlanner.GetASGRulesAndChainsReturns(ASGRulesWithChain, nil)
 				fakeEnforcer.CleanChainsMatchingReturns([]enforcer.LiveChain{{
-					Table: "asg-table-orphan", Name: "asg-orphaned-with-suffix"}},
+					Table: "asg-table-orphan", Name: "asg-orphaned"}},
 					nil)
 			})
 
-			It("removes the fake ASG iptables/rules", func() {
+			It("removes the orphaned ASG iptables/rules", func() {
 				desiredChainsResult := []enforcer.LiveChain{
 					{
 						Table: "filter",
-						Name:  "asg-1234-with-suffix",
+						Name:  "asg-1234",
 					},
 					{
 						Table: "filter",
-						Name:  "asg-2345-with-suffix",
+						Name:  "asg-2345",
 					},
 					{
 						Table: "filter",
-						Name:  "asg-3456-with-suffix",
+						Name:  "asg-3456",
 					},
 				}
 				err := p.DoASGCycle()
@@ -547,12 +546,12 @@ var _ = Describe("Single Poll Cycle", func() {
 				By("only removing the orphaned rules", func() {
 					Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(2))
 					regex, desiredChains := fakeEnforcer.CleanChainsMatchingArgsForCall(1)
-					Expect(regex).To(Equal(regexp.MustCompile(planner.ASGManagedChainsRegex)))
+					Expect(regex).To(Equal(regexp.MustCompile(enforcer.ASGChainRegex)))
 					Expect(desiredChains).To(Equal(desiredChainsResult))
 					Expect(p.CurrentlyAppliedChainNames()).To(ConsistOf([]string{
-						"asg-1234-with-suffix",
-						"asg-2345-with-suffix",
-						"asg-3456-with-suffix",
+						"asg-1234",
+						"asg-2345",
+						"asg-3456",
 					}))
 				})
 			})
@@ -571,7 +570,7 @@ var _ = Describe("Single Poll Cycle", func() {
 					Expect(ok).To(BeTrue())
 					errors := multiErr.WrappedErrors()
 					Expect(errors).To(HaveLen(1))
-					Expect(errors[0]).To(MatchError("clean-up-orphaned-asg-chains: eggplant"))
+					Expect(errors[0]).To(MatchError("clean-up-asg-chains-matching: eggplant"))
 					Expect(metricsSender.SendDurationCallCount()).To(Equal(metricsCount + 3))
 				})
 			})
@@ -631,7 +630,7 @@ var _ = Describe("Single Poll Cycle", func() {
 			BeforeEach(func() {
 				// set up an initial successful cycle to create the cache of container to asg mappings
 				// fakeEnforcer.EnforceRulesAndChainStub = func(chain enforcer.RulesWithChain) (string, error) {
-				// 	return fmt.Sprintf("%s-with-suffix", chain.Chain.Prefix), nil
+				// 	return fmt.Sprintf("%s-with-suffix", chain.Chain.Name), nil
 				// }
 				err := p.DoASGCycle()
 				Expect(err).ToNot(HaveOccurred())
@@ -643,14 +642,14 @@ var _ = Describe("Single Poll Cycle", func() {
 						Chain: enforcer.Chain{
 							Table:       "filter",
 							ParentChain: "netout-1",
-							Prefix:      "asg-1234",
+							Name:        "asg-1234",
 						},
 					}, {
 						Rules: []rules.IPTablesRule{[]string{"asg-rule4"}},
 						Chain: enforcer.Chain{
 							Table:       "filter",
 							ParentChain: "netout-2",
-							Prefix:      "asg-2345",
+							Name:        "asg-2345",
 						},
 					},
 					{
@@ -658,7 +657,7 @@ var _ = Describe("Single Poll Cycle", func() {
 						Chain: enforcer.Chain{
 							Table:       "filter",
 							ParentChain: "netout-3",
-							Prefix:      "asg-3456",
+							Name:        "asg-3456",
 						},
 					},
 				}
@@ -677,7 +676,7 @@ var _ = Describe("Single Poll Cycle", func() {
 							err = &enforcer.CleanupErr{Err: fmt.Errorf("zucchini")}
 						}
 						i++
-						return fmt.Sprintf("%s-with-new-suffix", e.Chain.Prefix), err
+						return fmt.Sprintf("%s-with-new-suffix", e.Chain.Name), err
 					}
 				})
 
@@ -740,7 +739,7 @@ var _ = Describe("Single Poll Cycle", func() {
 							err = fmt.Errorf("eggplant")
 						}
 						i++
-						return fmt.Sprintf("%s-with-new-suffix", e.Chain.Prefix), err
+						return e.Chain.Name, err
 					}
 				})
 
@@ -771,20 +770,20 @@ var _ = Describe("Single Poll Cycle", func() {
 					err := p.DoASGCycle()
 					Expect(err).To(HaveOccurred())
 					Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(2))
-					_, chains := fakeEnforcer.CleanChainsMatchingArgsForCall(1)
+					_, desiredChains := fakeEnforcer.CleanChainsMatchingArgsForCall(1)
 					By("enforcing that the new chain for successful enforces is desired", func() {
-						Expect(chains[0]).To(Equal(enforcer.LiveChain{
+						Expect(desiredChains[0]).To(Equal(enforcer.LiveChain{
 							Table: "filter",
-							Name:  "asg-1234-with-new-suffix",
+							Name:  "asg-1234",
 						}))
 					})
 					By("enforcing that the old chains for failed enforces are still desired", func() {
-						Expect(chains[1:]).To(Equal([]enforcer.LiveChain{{
+						Expect(desiredChains[1:]).To(Equal([]enforcer.LiveChain{{
 							Table: "filter",
-							Name:  "asg-2345-with-suffix",
+							Name:  "asg-2345",
 						}, {
 							Table: "filter",
-							Name:  "asg-3456-with-suffix",
+							Name:  "asg-3456",
 						}}))
 					})
 				})
@@ -811,7 +810,7 @@ var _ = Describe("Single Poll Cycle", func() {
 						Chain: enforcer.Chain{
 							Table:       "mangle",
 							ParentChain: "FORWARD",
-							Prefix:      "other-mangle-rule",
+							Name:        "other-mangle-rule",
 						},
 					},
 				}
@@ -836,20 +835,20 @@ var _ = Describe("Single Poll Cycle", func() {
 
 				Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(1))
 				regex, chains := fakeEnforcer.CleanChainsMatchingArgsForCall(0)
-				Expect(regex).To(Equal(regexp.MustCompile(planner.ASGManagedChainsRegex)))
+				Expect(regex).To(Equal(regexp.MustCompile(enforcer.ASGChainRegex)))
 				Expect(chains).To(Equal([]enforcer.LiveChain{
 					{
 						Table: "filter",
-						Name:  "asg-1234-with-suffix",
+						Name:  "asg-1234",
 					}, {
 						Table: "filter",
-						Name:  "asg-2345-with-suffix",
+						Name:  "asg-2345",
 					}, {
 						Table: "filter",
-						Name:  "asg-3456-with-suffix",
+						Name:  "asg-3456",
 					}, {
 						Table: "mangle",
-						Name:  "other-mangle-rule-with-suffix",
+						Name:  "other-mangle-rule",
 					}}))
 			})
 
@@ -894,15 +893,24 @@ var _ = Describe("Single Poll Cycle", func() {
 			It("cleans up asg chains with no desired chains", func() {
 				err := p.CleanupOrphanedASGsChains("some-container-handle")
 				Expect(err).ToNot(HaveOccurred())
-				Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(1))
-				asgRegex, desiredChains := fakeEnforcer.CleanChainsMatchingArgsForCall(0)
-				Expect(asgRegex.String()).To(MatchRegexp("asg-[a-z0-9]{6}"))
-				Expect(desiredChains).To(BeEmpty())
+				Expect(fakeEnforcer.CleanupChainCallCount()).To(Equal(1))
+				chain := fakeEnforcer.CleanupChainArgsForCall(0)
+				Expect(chain.Name).To(Equal("asg-somecontainerhandle"))
+				Expect(chain.Table).To(Equal(enforcer.FilterTable))
+			})
+
+			It("cleans up asg chains for check container", func() {
+				err := p.CleanupOrphanedASGsChains("check-b6259c48-29b6-49dd-739c-2a4418fd137c")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(fakeEnforcer.CleanupChainCallCount()).To(Equal(1))
+				chain := fakeEnforcer.CleanupChainArgsForCall(0)
+				Expect(chain.Name).To(Equal("asg-b6259c4829b649dd739c"))
+				Expect(chain.Table).To(Equal(enforcer.FilterTable))
 			})
 
 			Context("the enforcer returns an error", func() {
 				BeforeEach(func() {
-					fakeEnforcer.CleanChainsMatchingReturns([]enforcer.LiveChain{}, errors.New("zucchini"))
+					fakeEnforcer.CleanupChainReturns(errors.New("zucchini"))
 				})
 
 				It("returns the error", func() {
