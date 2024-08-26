@@ -185,16 +185,12 @@ func main() {
 	}
 
 	dynamicPlanner := &planner.VxlanPolicyPlanner{
-		Datastore:     store,
-		PolicyClient:  policyClient,
-		Logger:        logger.Session("rules-updater"),
-		VNI:           conf.VNI,
-		MetricsSender: metricsSender,
-		Chain: enforcer.Chain{
-			Table:       "filter",
-			ParentChain: "FORWARD",
-			Prefix:      "vpa--",
-		},
+		Datastore:                     store,
+		PolicyClient:                  policyClient,
+		Logger:                        logger.Session("rules-updater"),
+		VNI:                           conf.VNI,
+		MetricsSender:                 metricsSender,
+		Chain:                         enforcer.NewPolicyChain(),
 		LoggingState:                  iptablesLoggingState,
 		IPTablesAcceptedUDPLogsPerSec: conf.IPTablesAcceptedUDPLogsPerSec,
 		EnableOverlayIngressRules:     conf.EnableOverlayIngressRules,
