@@ -334,7 +334,7 @@ var _ = Describe("Silk CNI Integration", func() {
 				Expect(routes).To(HaveLen(2))
 
 				// the route returned by the IPAM result
-				Expect(routes[0].Dst).To(BeNil()) // same as 0.0.0.0/0
+				Expect(routes[0].Dst.String()).To(Equal("0.0.0.0/0"))
 				Expect(routes[0].Gw.String()).To(Equal("169.254.0.1"))
 
 				// the route created when the address is assigned
