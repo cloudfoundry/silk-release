@@ -28,7 +28,7 @@ require (
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.3
 	github.com/containernetworking/plugins v1.5.1
-	github.com/coreos/go-iptables v0.7.0
+	github.com/coreos/go-iptables v0.8.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.6.0
@@ -64,7 +64,7 @@ require (
 	github.com/go-test/deep v1.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/pprof v0.0.0-20240727154555-813a5fbdbec8 // indirect
+	github.com/google/pprof v0.0.0-20240827171923-fa2c70bbbfe5 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jackc/pgx/v5 v5.5.5 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
@@ -80,7 +80,7 @@ require (
 	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/text v0.17.0 // indirect
 	golang.org/x/tools v0.24.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240823204242-4ba0660f739c // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240827150818-7e3bb234dfed // indirect
 	google.golang.org/grpc v1.65.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
