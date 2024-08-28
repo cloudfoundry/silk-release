@@ -119,7 +119,9 @@ files:
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/credentials/insecure/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/encoding/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/encoding/proto/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/grpc/experimental/stats/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/grpclog/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/grpc/grpclog/internal/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/backoff/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/balancer/gracefulswitch/*.go # gosub-main-module
@@ -141,11 +143,13 @@ files:
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/resolver/passthrough/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/resolver/unix/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/serviceconfig/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/stats/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/status/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/syscall/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/transport/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/transport/networktype/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/keepalive/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/grpc/mem/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/metadata/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/peer/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/resolver/*.go # gosub-main-module
