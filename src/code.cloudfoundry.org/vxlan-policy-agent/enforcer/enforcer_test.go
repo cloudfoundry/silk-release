@@ -170,7 +170,7 @@ var _ = Describe("Enforcer", func() {
 					Expect(ruleSpec).To(Equal([]rules.IPTablesRule{{"-j", "casg-handle"}}))
 				})
 
-				It("deletes old chain", func() {
+				It("deletes old chain without jump targets", func() {
 					Expect(iptables.DeleteCallCount()).To(Equal(1))
 					table, parentChain, ruleSpec := iptables.DeleteArgsForCall(0)
 					Expect(table).To(Equal("some-table"))
@@ -186,6 +186,50 @@ var _ = Describe("Enforcer", func() {
 					table, chain = iptables.DeleteChainArgsForCall(0)
 					Expect(table).To(Equal("some-table"))
 					Expect(chain).To(Equal("asg-handle"))
+				})
+
+				Context("when old chain has jump targets", func() {
+					BeforeEach(func() {
+						iptables.ListReturnsOnCall(0, []string{
+							"-A asg-handle -m state --state RELATED,ESTABLISHED -j ACCEPT",
+							"-A asg-handle -p tcp -m iprange --dst-range 10.0.1.19-10.0.1.19 -m tcp --dport 1:65535 -g netout--handle--log",
+						}, nil)
+					})
+
+					Context("when jump target is unused", func() {
+						BeforeEach(func() {
+							iptables.ListReturnsOnCall(1, []string{
+								"-A casg-handle -m state --state RELATED,ESTABLISHED -j ACCEPT",
+							}, nil)
+						})
+
+						It("cleans up jump target", func() {
+							Expect(iptables.DeleteChainCallCount()).To(Equal(2))
+							table, chain := iptables.DeleteChainArgsForCall(0)
+							Expect(table).To(Equal("some-table"))
+							Expect(chain).To(Equal("asg-handle"))
+
+							table, chain = iptables.DeleteChainArgsForCall(1)
+							Expect(table).To(Equal("some-table"))
+							Expect(chain).To(Equal("netout--handle--log"))
+						})
+					})
+
+					Context("when jump target is in use", func() {
+						BeforeEach(func() {
+							iptables.ListReturnsOnCall(1, []string{
+								"-A casg-handle -m state --state RELATED,ESTABLISHED -j ACCEPT",
+								"-A casg-handle -p tcp -m iprange --dst-range 20.0.1.19-20.0.1.19 -m tcp --dport 1:65535 -g netout--handle--log",
+							}, nil)
+						})
+
+						It("does not clean up jump target", func() {
+							Expect(iptables.DeleteChainCallCount()).To(Equal(1))
+							table, chain := iptables.DeleteChainArgsForCall(0)
+							Expect(table).To(Equal("some-table"))
+							Expect(chain).To(Equal("asg-handle"))
+						})
+					})
 				})
 
 				It("renames candidate chain to new chain", func() {
