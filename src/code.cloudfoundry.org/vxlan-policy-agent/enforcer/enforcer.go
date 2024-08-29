@@ -17,6 +17,7 @@ const (
 	TimestampedRegex       = `([0-9]{10,16})`
 	ASGChainRegex          = `^c?asg-[A-Za-z0-9]+`
 	ContainerPrefixToStrip = `check-`
+	JumpRuleRegex          = `-A\s+%s\s+.*-g\s+([^\s]+)`
 )
 
 type Timestamper struct{}
@@ -159,7 +160,7 @@ func (e *Enforcer) CleanChainsMatching(regex *regexp.Regexp, desiredChains []Liv
 
 	for _, chain := range chainsToDelete {
 		e.Logger.Debug("deleting-chain-in-enforce-chains-matching", lager.Data{"chain": chain})
-		err := e.deleteChain(e.Logger, chain)
+		err := e.deleteChain(e.Logger, chain, "")
 		if err != nil {
 			e.Logger.Error(fmt.Sprintf("delete-chain-%s-from-%s", chain.Name, chain.Table), err)
 			return []LiveChain{}, fmt.Errorf("deleting chain %s from table %s: %s", chain.Name, chain.Table, err)
@@ -173,7 +174,7 @@ func (e *Enforcer) CleanupChain(chain LiveChain) error {
 	chainExists, _ := e.iptables.ChainExists(chain.Table, chain.Name)
 	if chainExists {
 		e.Logger.Debug("deleting-chain", lager.Data{"name": chain.Name, "table": chain.Table})
-		err := e.deleteChain(e.Logger, LiveChain{Table: chain.Table, Name: chain.Name})
+		err := e.deleteChain(e.Logger, LiveChain{Table: chain.Table, Name: chain.Name}, "")
 		if err != nil {
 			e.Logger.Error(fmt.Sprintf("delete-chain-%s-from-%s", chain.Name, chain.Table), err)
 			return fmt.Errorf("deleting chain %s from table %s: %s", chain.Name, chain.Table, err)
@@ -183,7 +184,7 @@ func (e *Enforcer) CleanupChain(chain LiveChain) error {
 	candidateChainExists, _ := e.iptables.ChainExists(chain.Table, candidateChainName)
 	if candidateChainExists {
 		e.Logger.Debug("deleting-chain", lager.Data{"name": candidateChainName, "table": chain.Table})
-		err := e.deleteChain(e.Logger, LiveChain{Table: chain.Table, Name: candidateChainName})
+		err := e.deleteChain(e.Logger, LiveChain{Table: chain.Table, Name: candidateChainName}, "")
 		if err != nil {
 			e.Logger.Error(fmt.Sprintf("delete-chain-%s-from-%s", candidateChainName, chain.Table), err)
 			return fmt.Errorf("deleting chain %s from table %s: %s", candidateChainName, chain.Table, err)
@@ -257,7 +258,7 @@ func (e *Enforcer) enforce(logger lager.Logger, table string, parentChain string
 	err = e.iptables.BulkInsert(table, parentChain, 1, rules.IPTablesRule{"-j", chainName})
 	if err != nil {
 		logger.Error("insert-chain", err)
-		delErr := e.deleteChain(logger, LiveChain{Table: table, Name: chainName})
+		delErr := e.deleteChain(logger, LiveChain{Table: table, Name: chainName}, "")
 		if delErr != nil {
 			logger.Error("cleanup-failed-insert", delErr)
 		}
@@ -268,7 +269,7 @@ func (e *Enforcer) enforce(logger lager.Logger, table string, parentChain string
 	err = e.iptables.BulkAppend(table, chainName, rulespec...)
 	if err != nil {
 		logger.Error("bulk-append", err)
-		cleanErr := e.cleanupOldChain(logger, LiveChain{Table: table, Name: chainName}, parentChain)
+		cleanErr := e.cleanupOldChain(logger, LiveChain{Table: table, Name: chainName}, parentChain, "")
 		if cleanErr != nil {
 			logger.Error("cleanup-failed-append", cleanErr)
 		}
@@ -297,7 +298,7 @@ func (e *Enforcer) replaceChainRules(logger lager.Logger, c Chain, rulesSpec []r
 
 	if candidateChainJumpExists {
 		if originalChainJumpExists {
-			err := e.cleanupOldChain(e.Logger, LiveChain{Table: c.Table, Name: candidateName}, c.ParentChain)
+			err := e.cleanupOldChain(e.Logger, LiveChain{Table: c.Table, Name: candidateName}, c.ParentChain, "")
 			if err != nil {
 				return err
 			}
@@ -315,7 +316,8 @@ func (e *Enforcer) replaceChainRules(logger lager.Logger, c Chain, rulesSpec []r
 		return err
 	}
 
-	err = e.cleanupOldChain(e.Logger, LiveChain{Table: c.Table, Name: c.Name}, c.ParentChain)
+	// deleting without jump targets if they are unused
+	err = e.cleanupOldChain(e.Logger, LiveChain{Table: c.Table, Name: c.Name}, c.ParentChain, candidateName)
 	if err != nil {
 		return err
 	}
@@ -348,7 +350,7 @@ func (e *Enforcer) cleanupOldRules(logger lager.Logger, table, parentChain, mana
 
 			if oldTime < newTime {
 				logger.Debug("clean-up-old-chain", lager.Data{"name": matches[0]})
-				err = e.cleanupOldChain(logger, LiveChain{Table: table, Name: matches[0]}, parentChain)
+				err = e.cleanupOldChain(logger, LiveChain{Table: table, Name: matches[0]}, parentChain, "")
 				if err != nil {
 					return err
 				}
@@ -359,19 +361,20 @@ func (e *Enforcer) cleanupOldRules(logger lager.Logger, table, parentChain, mana
 	return nil
 }
 
-func (e *Enforcer) cleanupOldChain(logger lager.Logger, chain LiveChain, parentChain string) error {
+// Deletes chain and its jump targets
+func (e *Enforcer) cleanupOldChain(logger lager.Logger, chain LiveChain, parentChain string, newChainName string) error {
 	logger.Debug("delete-parent-chain-jump-rule", lager.Data{"table": chain.Table, "chain": parentChain, "rule": rules.IPTablesRule{"-j", chain.Name}})
 	err := e.iptables.Delete(chain.Table, parentChain, rules.IPTablesRule{"-j", chain.Name})
 	if err != nil {
 		return fmt.Errorf("remove reference to old chain: %s", err)
 	}
 
-	err = e.deleteChain(logger, chain)
+	err = e.deleteChain(logger, chain, newChainName)
 
 	return err
 }
 
-func (e *Enforcer) deleteChain(logger lager.Logger, chain LiveChain) error {
+func (e *Enforcer) deleteChain(logger lager.Logger, chain LiveChain, newChainName string) error {
 	// find gotos and delete those chains as well (since we may have log tables that we reference that need deleting)
 	logger.Debug("list-chain", lager.Data{"table": chain.Table, "chain": chain.Name})
 	rules, err := e.iptables.List(chain.Table, chain.Name)
@@ -379,13 +382,28 @@ func (e *Enforcer) deleteChain(logger lager.Logger, chain LiveChain) error {
 		return fmt.Errorf("list rules for chain: %s", err)
 	}
 
-	reJumpRule := regexp.MustCompile(fmt.Sprintf(`-A\s+%s\s+.*-g\s+([^\s]+)`, chain.Name))
+	reJumpRule := regexp.MustCompile(fmt.Sprintf(JumpRuleRegex, chain.Name))
 	jumpTargets := map[string]struct{}{}
 	for _, rule := range rules {
 		matches := reJumpRule.FindStringSubmatch(rule)
 		if len(matches) > 1 {
 			logger.Debug("found-target-chain-to-recurse", lager.Data{"table": chain.Table, "chain": chain.Name, "target-chain": matches[1]})
 			jumpTargets[matches[1]] = struct{}{}
+		}
+	}
+
+	if newChainName != "" {
+		newRules, err := e.iptables.List(chain.Table, newChainName)
+		if err != nil {
+			return fmt.Errorf("list rules for new chain: %s", err)
+		}
+		reJumpRule := regexp.MustCompile(fmt.Sprintf(JumpRuleRegex, newChainName))
+		for _, rule := range newRules {
+			matches := reJumpRule.FindStringSubmatch(rule)
+			if len(matches) > 1 {
+				logger.Debug("found-target-chain-in-use", lager.Data{"table": chain.Table, "chain": newChainName, "target-chain": matches[1]})
+				delete(jumpTargets, matches[1])
+			}
 		}
 	}
 
