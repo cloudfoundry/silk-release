@@ -17,7 +17,7 @@ const (
 	TimestampedRegex       = `([0-9]{10,16})`
 	ASGChainRegex          = `^c?asg-[A-Za-z0-9]+`
 	ContainerPrefixToStrip = `check-`
-	JumpRuleRegex          = `-A\s+%s\s+.*-g\s+([^\s]+)`
+	JumpRuleRegex          = `-A\s+%s\s+.*-[gj]\s+([^\s]+)`
 )
 
 type Timestamper struct{}
@@ -386,7 +386,7 @@ func (e *Enforcer) deleteChain(logger lager.Logger, chain LiveChain, newChainNam
 	jumpTargets := map[string]struct{}{}
 	for _, rule := range rules {
 		matches := reJumpRule.FindStringSubmatch(rule)
-		if len(matches) > 1 {
+		if len(matches) > 1 && e.isChainJumpTarget(matches[1]) {
 			logger.Debug("found-target-chain-to-recurse", lager.Data{"table": chain.Table, "chain": chain.Name, "target-chain": matches[1]})
 			jumpTargets[matches[1]] = struct{}{}
 		}
@@ -400,7 +400,7 @@ func (e *Enforcer) deleteChain(logger lager.Logger, chain LiveChain, newChainNam
 		reJumpRule := regexp.MustCompile(fmt.Sprintf(JumpRuleRegex, newChainName))
 		for _, rule := range newRules {
 			matches := reJumpRule.FindStringSubmatch(rule)
-			if len(matches) > 1 {
+			if len(matches) > 1 && e.isChainJumpTarget(matches[1]) {
 				logger.Debug("found-target-chain-in-use", lager.Data{"table": chain.Table, "chain": newChainName, "target-chain": matches[1]})
 				delete(jumpTargets, matches[1])
 			}
@@ -431,4 +431,13 @@ func (e *Enforcer) deleteChain(logger lager.Logger, chain LiveChain, newChainNam
 
 func (e *Enforcer) candidateChainName(name string) string {
 	return fmt.Sprintf("c%s", name)
+}
+
+func (e *Enforcer) isChainJumpTarget(jumpTargetName string) bool {
+	switch jumpTargetName {
+	case "ACCEPT", "REJECT", "LOG", "DROP":
+		return false
+	default:
+		return true
+	}
 }
