@@ -731,11 +731,18 @@ var _ = Describe("Enforcer", func() {
 			}
 
 			chainsForTable := map[string][]string{
-				"filter": []string{"asg-bbbbb01645708469990518", "asg-ccccc01645708469990518", "casg-ddddd01645708469990518", "donttouchme"},
-				"mangle": []string{"reallydonttouchme", "asg-aaaaa01645708469990518"},
+				"filter": {"asg-bbbbb01645708469990518", "asg-ccccc01645708469990518", "casg-ddddd01645708469990518", "donttouchme"},
+				"mangle": {"reallydonttouchme", "asg-aaaaa01645708469990518"},
 			}
 			rulesForChain := map[string][]string{
-				"asg-ccccc01645708469990518": []string{"-A asg-ccccc01645708469990518 somefilter -g log-chain"},
+				"asg-ccccc01645708469990518": {
+					"-A asg-ccccc01645708469990518 -m state --state RELATED,ESTABLISHED -j ACCEPT",
+					"-A asg-ccccc01645708469990518 -p tcp -m state --state INVALID -j DROP",
+					"-A asg-ccccc01645708469990518 somefilter -g log-chain",
+					"-A asg-ccccc01645708469990518 somefilter -j log-rate-limit-chain",
+					"-A asg-ccccc01645708469990518 -m limit --limit 1/sec --limit-burst 1 -j LOG --log-prefix foo",
+					"-A asg-ccccc01645708469990518 -j REJECT --reject-with icmp-port-unreachable",
+				},
 			}
 
 			iptables.ListChainsStub = func(table string) ([]string, error) {
@@ -754,7 +761,7 @@ var _ = Describe("Enforcer", func() {
 
 			Expect(iptables.ListChainsArgsForCall(0)).To(Equal("filter"))
 
-			Expect(iptables.DeleteChainCallCount()).To(Equal(2)) // once for the main chain, once for the log-chain it jumps to
+			Expect(iptables.DeleteChainCallCount()).To(Equal(3)) // 1 for the main chain, 1 for the log-chain and 1 for log-rate-limit-chain it jumps to
 			table, chain := iptables.DeleteChainArgsForCall(0)
 			Expect(table).To(Equal("filter"))
 			Expect(chain).To(Equal("asg-ccccc01645708469990518"))
@@ -780,6 +787,10 @@ var _ = Describe("Enforcer", func() {
 				table, chain := iptables.DeleteChainArgsForCall(1)
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("log-chain"))
+
+				table, chain = iptables.DeleteChainArgsForCall(2)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("log-rate-limit-chain"))
 			})
 		})
 
