@@ -3,7 +3,7 @@
 code.cloudfoundry.org/bbs/encryption
 code.cloudfoundry.org/bbs/format
 code.cloudfoundry.org/bbs/models
-# code.cloudfoundry.org/cf-networking-helpers v0.10.0
+# code.cloudfoundry.org/cf-networking-helpers v0.11.0
 ## explicit; go 1.22
 code.cloudfoundry.org/cf-networking-helpers/db
 code.cloudfoundry.org/cf-networking-helpers/db/monitor
@@ -21,20 +21,20 @@ code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics
 code.cloudfoundry.org/cf-networking-helpers/testsupport/ports
 # code.cloudfoundry.org/clock v1.1.0
 ## explicit; go 1.20
-# code.cloudfoundry.org/debugserver v0.10.0
+# code.cloudfoundry.org/debugserver v0.11.0
 ## explicit; go 1.22
 code.cloudfoundry.org/debugserver
-# code.cloudfoundry.org/diego-logging-client v0.14.0
+# code.cloudfoundry.org/diego-logging-client v0.15.0
 ## explicit; go 1.22
 code.cloudfoundry.org/diego-logging-client
 code.cloudfoundry.org/diego-logging-client/testhelpers
 # code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 ## explicit
 code.cloudfoundry.org/executor
-# code.cloudfoundry.org/filelock v0.7.0
+# code.cloudfoundry.org/filelock v0.8.0
 ## explicit; go 1.22
 code.cloudfoundry.org/filelock
-# code.cloudfoundry.org/garden v0.0.0-20240904210308-248eacb9f907
+# code.cloudfoundry.org/garden v0.0.0-20240905210341-1c10b86d2995
 ## explicit; go 1.22
 code.cloudfoundry.org/garden
 code.cloudfoundry.org/garden/client
@@ -58,7 +58,7 @@ code.cloudfoundry.org/lager/v3/lagerflags
 code.cloudfoundry.org/lager/v3/lagertest
 # code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2
 ## explicit
-# code.cloudfoundry.org/policy_client v0.13.0
+# code.cloudfoundry.org/policy_client v0.14.0
 ## explicit; go 1.22
 code.cloudfoundry.org/policy_client
 # code.cloudfoundry.org/routing-info v0.0.0-20240611155555-dd78756e41b6
@@ -67,7 +67,7 @@ code.cloudfoundry.org/routing-info/internalroutes
 # code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 ## explicit
 code.cloudfoundry.org/runtimeschema/metric
-# code.cloudfoundry.org/tlsconfig v0.3.0
+# code.cloudfoundry.org/tlsconfig v0.4.0
 ## explicit; go 1.22
 code.cloudfoundry.org/tlsconfig
 # filippo.io/edwards25519 v1.1.0
