@@ -1,6 +1,6 @@
 module code.cloudfoundry.org
 
-go 1.22
+go 1.22.0
 
 toolchain go1.22.3
 
@@ -19,10 +19,10 @@ require (
 	code.cloudfoundry.org/debugserver v0.11.0
 	code.cloudfoundry.org/diego-logging-client v0.16.0
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
-	code.cloudfoundry.org/filelock v0.8.0
+	code.cloudfoundry.org/filelock v0.9.0
 	code.cloudfoundry.org/garden v0.0.0-20240906210158-d3ba7afc2097
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
-	code.cloudfoundry.org/lager/v3 v3.3.0
+	code.cloudfoundry.org/lager/v3 v3.4.0
 	code.cloudfoundry.org/policy_client v0.15.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
@@ -78,7 +78,7 @@ require (
 	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
-	golang.org/x/tools v0.24.0 // indirect
+	golang.org/x/tools v0.25.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/grpc v1.66.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
