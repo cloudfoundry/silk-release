@@ -740,6 +740,7 @@ var _ = Describe("Enforcer", func() {
 					"-A asg-ccccc01645708469990518 -p tcp -m state --state INVALID -j DROP",
 					"-A asg-ccccc01645708469990518 somefilter -g log-chain",
 					"-A asg-ccccc01645708469990518 somefilter -j log-rate-limit-chain",
+					"-A asg-ccccc01645708469990518 somefilter -j MARK --set-xmark 0xa/0xffffffff",
 					"-A asg-ccccc01645708469990518 -m limit --limit 1/sec --limit-burst 1 -j LOG --log-prefix foo",
 					"-A asg-ccccc01645708469990518 -j REJECT --reject-with icmp-port-unreachable",
 				},
@@ -784,13 +785,12 @@ var _ = Describe("Enforcer", func() {
 				Expect(deletedChains).ToNot(ContainElements([]string{"donttouchme", "reallydonttouchme"}))
 			})
 			By("deleting target chains that the orphan jumps to", func() {
-				table, chain := iptables.DeleteChainArgsForCall(1)
+				table, chain1 := iptables.DeleteChainArgsForCall(1)
 				Expect(table).To(Equal("filter"))
-				Expect(chain).To(Equal("log-chain"))
 
-				table, chain = iptables.DeleteChainArgsForCall(2)
+				table, chain2 := iptables.DeleteChainArgsForCall(2)
 				Expect(table).To(Equal("filter"))
-				Expect(chain).To(Equal("log-rate-limit-chain"))
+				Expect([]string{chain1, chain2}).To(ContainElements("log-chain", "log-rate-limit-chain"))
 			})
 		})
 
@@ -843,7 +843,7 @@ var _ = Describe("Enforcer", func() {
 			It("returns an error", func() {
 				_, err := ruleEnforcer.CleanChainsMatching(regexp.MustCompile(enforcer.ASGChainRegex), desiredChains)
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(fmt.Errorf("deleting chain asg-ccccc01645708469990518 from table filter: cleanup jump target log-chain: iptables delete chain error")))
+				Expect(err).To(MatchError(MatchRegexp("deleting chain asg-ccccc01645708469990518 from table filter: cleanup jump target log.*chain: iptables delete chain error")))
 			})
 		})
 

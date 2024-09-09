@@ -435,7 +435,7 @@ func (e *Enforcer) candidateChainName(name string) string {
 
 func (e *Enforcer) isChainJumpTarget(jumpTargetName string) bool {
 	switch jumpTargetName {
-	case "ACCEPT", "REJECT", "LOG", "DROP":
+	case "ACCEPT", "REJECT", "LOG", "DROP", "MARK":
 		return false
 	default:
 		return true
