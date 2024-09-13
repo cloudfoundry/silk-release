@@ -1,4 +1,4 @@
-# code.cloudfoundry.org/bbs v0.0.0-20240806230301-9be69c0199db
+# code.cloudfoundry.org/bbs v0.0.0-20240913174222-4b574f98c713
 ## explicit
 code.cloudfoundry.org/bbs/encryption
 code.cloudfoundry.org/bbs/format
