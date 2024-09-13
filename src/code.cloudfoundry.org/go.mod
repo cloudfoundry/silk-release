@@ -15,7 +15,7 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 exclude code.cloudfoundry.org/executor v0.1442.0
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.14.0
+	code.cloudfoundry.org/cf-networking-helpers v0.15.0
 	code.cloudfoundry.org/debugserver v0.14.0
 	code.cloudfoundry.org/diego-logging-client v0.19.0
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
