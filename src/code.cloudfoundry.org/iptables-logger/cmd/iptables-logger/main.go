@@ -98,7 +98,7 @@ func main() {
 		HostGuid:      conf.HostGuid,
 	}
 	iptablesLogger := lager.NewLogger(fmt.Sprintf("%s.iptables", logPrefix))
-	outputLogFile, err := os.OpenFile(conf.OutputLogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	outputLogFile, err := os.OpenFile(conf.OutputLogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		logger.Fatal("open-output-log-file", err)
 	}

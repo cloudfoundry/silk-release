@@ -253,7 +253,7 @@ func (c *Store) updateVersion() error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(c.VersionFilePath, []byte(strconv.Itoa(version+1)), os.ModePerm)
+	err = os.WriteFile(c.VersionFilePath, []byte(strconv.Itoa(version+1)), 0600)
 	if err != nil {
 		// not tested
 		return fmt.Errorf("write version file: %s", err)

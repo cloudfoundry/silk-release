@@ -117,7 +117,7 @@ func (dfwf DefaultFileWriterFunc) NewWriter(fileName string) (io.Writer, error) 
 }
 
 func DefaultFileWriter(fileName string) (io.Writer, error) {
-	return os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	return os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 }
 
 //go:generate counterfeiter -o ../fakes/destinationfileinfo.go --fake-name DestinationFileInfo . DestinationFileInfo
