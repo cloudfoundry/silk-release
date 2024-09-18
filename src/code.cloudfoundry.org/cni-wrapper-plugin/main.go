@@ -95,6 +95,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
+		// #nosec G104 - don't capture this error, as the one we generate below is more important to return
 		resp.Body.Close()
 		return fmt.Errorf("vpa response code: %v with message: %s", resp.StatusCode, body)
 	}
@@ -205,6 +206,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusMethodNotAllowed {
 		body, _ := io.ReadAll(resp.Body)
+		// #nosec G104 - don't capture this error, as the one we generate below is more important to return
 		resp.Body.Close()
 		return fmt.Errorf("asg sync returned %v with message: %s", resp.StatusCode, body)
 	}
@@ -337,6 +339,7 @@ func cmdDel(args *skel.CmdArgs) error {
 	}
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusMethodNotAllowed {
 		body, _ := io.ReadAll(resp.Body)
+		// #nosec G104 - don't capture this error, as the one we generate below is more important to return
 		resp.Body.Close()
 		return fmt.Errorf("asg cleanup returned %v with message: %s", resp.StatusCode, body)
 	}

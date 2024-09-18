@@ -45,5 +45,6 @@ func (l *ReleaseLease) ServeHTTP(logger lager.Logger, w http.ResponseWriter, req
 		return
 	}
 
+	// #nosec G104 - ignore errors when writing HTTP responses so we don't spam our logs during a DoS
 	w.Write([]byte(`{}`))
 }

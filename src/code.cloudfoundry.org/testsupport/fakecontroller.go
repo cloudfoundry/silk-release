@@ -45,6 +45,7 @@ func (f *FakeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if fakeHandler == nil {
 		w.WriteHeader(http.StatusTeapot)
+		// #nosec G104 - ignore errors when writing HTTP responses so we don't spam our logs during a DoS
 		w.Write([]byte(`{}`))
 		return
 	}
@@ -52,6 +53,7 @@ func (f *FakeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fakeHandler.LastRequestBody = bodyBytes
 	responseBytes, _ := json.Marshal(fakeHandler.ResponseBody)
 	w.WriteHeader(fakeHandler.ResponseCode)
+	// #nosec G104 - ignore errors when writing HTTP responses so we don't spam our logs during a DoS
 	w.Write(responseBytes)
 }
 

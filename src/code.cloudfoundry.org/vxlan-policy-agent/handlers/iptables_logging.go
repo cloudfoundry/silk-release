@@ -25,11 +25,13 @@ func (h *IPTablesLogging) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		err := json.NewDecoder(r.Body).Decode(&bodyStruct)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
+			// #nosec G104 - ignore errors when writing HTTP responses so we don't spam our logs during a DoS
 			w.Write([]byte(`{ "error": "decoding request body as json" }`))
 			return
 		}
 		if bodyStruct.Enabled == nil {
 			w.WriteHeader(http.StatusBadRequest)
+			// #nosec G104 - ignore errors when writing HTTP responses so we don't spam our logs during a DoS
 			w.Write([]byte(`{ "error": "missing required key 'enabled'" }`))
 			return
 		}
@@ -40,6 +42,7 @@ func (h *IPTablesLogging) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// #nosec G104 - ignore errors when writing HTTP responses so we don't spam our logs during a DoS
 	json.NewEncoder(w).Encode(struct {
 		Enabled bool `json:"enabled"`
 	}{h.LoggingState.IsEnabled()})

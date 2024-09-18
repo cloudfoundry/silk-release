@@ -107,7 +107,10 @@ func LoadWrapperConfig(bytes []byte) (*WrapperConfig, error) {
 		return nil, fmt.Errorf("invalid outbound connection rate")
 	}
 
-	validator.Validate(n)
+	err := validator.Validate(n)
+	if err != nil {
+		return nil, fmt.Errorf("validator: %s", err)
+	}
 
 	return n, nil
 }

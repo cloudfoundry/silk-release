@@ -265,6 +265,7 @@ func buildHealthCheckServer(healthCheckPort uint16, networkInfo daemon.NetworkIn
 		fmt.Sprintf("127.0.0.1:%d", healthCheckPort),
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
+			// #nosec G104 - ignore errors when writing HTTP responses so we don't spam our logs during a DoS
 			w.Write(networkBytes)
 		}),
 	), nil
