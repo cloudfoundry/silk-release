@@ -31,10 +31,10 @@ code.cloudfoundry.org/diego-logging-client/testhelpers
 # code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
 ## explicit
 code.cloudfoundry.org/executor
-# code.cloudfoundry.org/filelock v0.10.0
+# code.cloudfoundry.org/filelock v0.11.0
 ## explicit; go 1.22.0
 code.cloudfoundry.org/filelock
-# code.cloudfoundry.org/garden v0.0.0-20240910210657-fba22f3dc9f0
+# code.cloudfoundry.org/garden v0.0.0-20240916141541-4995881dc952
 ## explicit; go 1.22.0
 code.cloudfoundry.org/garden
 code.cloudfoundry.org/garden/client

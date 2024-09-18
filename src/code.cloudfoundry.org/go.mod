@@ -19,8 +19,8 @@ require (
 	code.cloudfoundry.org/debugserver v0.14.0
 	code.cloudfoundry.org/diego-logging-client v0.19.0
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
-	code.cloudfoundry.org/filelock v0.10.0
-	code.cloudfoundry.org/garden v0.0.0-20240910210657-fba22f3dc9f0
+	code.cloudfoundry.org/filelock v0.11.0
+	code.cloudfoundry.org/garden v0.0.0-20240916141541-4995881dc952
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.6.0
 	code.cloudfoundry.org/policy_client v0.18.0
