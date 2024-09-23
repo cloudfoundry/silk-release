@@ -29,6 +29,7 @@ func main() {
 		fmt.Sprintf("127.0.0.1:%s", port),
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(code)
+			// #nosec G104 - ignore errors when writing HTTP responses so we don't spam our logs during a DoS
 			w.Write([]byte(response))
 		}),
 	)

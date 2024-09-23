@@ -72,7 +72,7 @@ func mainWithError() error {
 }
 
 func createNewChain(ipTablesAdapter rules.IPTablesAdapter) error {
-	// NewChain only returns an error if the chain already exists, so we ignore it :(
+	// #nosec G104 - NewChain only returns an error if the chain already exists, so we ignore it :(
 	ipTablesAdapter.NewChain("filter", IngressChainName)
 
 	jumpRule := rules.IPTablesRule{

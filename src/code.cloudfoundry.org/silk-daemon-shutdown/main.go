@@ -142,7 +142,10 @@ func flushAndDeleteChain(lockedIPTables *rules.LockedIPTables) error {
 	}
 	exists, _ := lockedIPTables.Exists("filter", "OUTPUT", jumpRule)
 	if exists {
-		lockedIPTables.Delete("filter", "OUTPUT", jumpRule)
+		err := lockedIPTables.Delete("filter", "OUTPUT", jumpRule)
+		if err != nil {
+			return err
+		}
 	}
 
 	err := lockedIPTables.ClearChain("filter", "istio-ingress")

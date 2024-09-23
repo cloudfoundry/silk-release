@@ -22,6 +22,7 @@ func (f *FakePolicyServer) Start(listenAddr string, tlsConfig *tls.Config) {
 		switch r.URL.Path {
 		case "/networking/v1/internal/tags":
 			w.WriteHeader(http.StatusOK)
+			// #nosec G104 - ignore errors when writing HTTP responses so we don't spam our logs during a DoS
 			w.Write([]byte(fmt.Sprintf(`{
 					"id": "some-id",
 					"type": "some-type",

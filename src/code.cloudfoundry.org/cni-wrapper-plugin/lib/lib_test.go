@@ -43,7 +43,8 @@ var _ = Describe("LoadWrapperConfig", func() {
 				"burst": 900,
 				"rate_per_sec": 100,
 				"dry_run": false
-			}
+			},
+			"policy_agent_force_poll_address": "http://127.0.0.1:1234"
 		}`)
 	})
 
@@ -59,6 +60,7 @@ var _ = Describe("LoadWrapperConfig", func() {
 			NoMasqueradeCIDRRange:           "10.255.0.0/16",
 			UnderlayIPs:                     []string{"10.244.20.1", "10.244.20.2"},
 			TemporaryUnderlayInterfaceNames: []string{"some-temporary-underlay-interface-name"},
+			PolicyAgentForcePollAddress:     "http://127.0.0.1:1234",
 			IPTablesASGLogging:              true,
 			Delegate: map[string]interface{}{
 				"cniVersion": "1.0.0",

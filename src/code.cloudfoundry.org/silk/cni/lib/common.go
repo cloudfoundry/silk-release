@@ -52,6 +52,7 @@ func (s *Common) BasicSetup(deviceName string, local, peer config.DualAddress) e
 		s.Logger.Debug("hardware-addr-set-correctly", lager.Data{"addr": l.Attrs().HardwareAddr.String()})
 	}
 
+	// #nosec G104 - we have tests explicitly checking that we ignore failures here, so don't handle it
 	s.LinkOperations.DisableIPv6(deviceName)
 
 	if err := s.LinkOperations.StaticNeighborNoARP(link, peer.IP, peer.Hardware); err != nil {

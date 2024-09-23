@@ -89,7 +89,10 @@ func main() {
 		IPTablesRunner: iptablesCommandRunner,
 	}
 
-	dropsonde.Initialize(conf.MetronAddress, "netmon")
+	err = dropsonde.Initialize(conf.MetronAddress, "netmon")
+	if err != nil {
+		logger.Fatal("failed-initializing-dropsonde", err)
+	}
 
 	networkStatsFetcher := network_stats.NewFetcher(lockedIPTables, logger)
 	ruleCountAggregator := network_stats.NewIntAggregator()
