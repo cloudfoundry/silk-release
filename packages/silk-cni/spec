@@ -75,3 +75,4 @@ files:
   - code.cloudfoundry.org/vendor/golang.org/x/sys/unix/*.s # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sys/windows/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/gopkg.in/validator.v2/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/sigs.k8s.io/knftables/*.go # gosub-main-module
