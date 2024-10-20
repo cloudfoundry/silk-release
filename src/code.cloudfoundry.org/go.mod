@@ -1,8 +1,8 @@
 module code.cloudfoundry.org
 
-go 1.22.0
+go 1.23
 
-toolchain go1.22.3
+toolchain go1.23.2
 
 replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 
@@ -15,19 +15,19 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 exclude code.cloudfoundry.org/executor v0.1442.0
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.19.0
-	code.cloudfoundry.org/debugserver v0.17.0
-	code.cloudfoundry.org/diego-logging-client v0.23.0
+	code.cloudfoundry.org/cf-networking-helpers v0.20.0
+	code.cloudfoundry.org/debugserver v0.18.0
+	code.cloudfoundry.org/diego-logging-client v0.24.0
 	code.cloudfoundry.org/executor v0.0.0-20230406153242-208a08c51850
-	code.cloudfoundry.org/filelock v0.13.0
-	code.cloudfoundry.org/garden v0.0.0-20241009020314-b824595a23ce
+	code.cloudfoundry.org/filelock v0.14.0
+	code.cloudfoundry.org/garden v0.0.0-20241018132925-991b03c78f6c
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
-	code.cloudfoundry.org/lager/v3 v3.9.0
-	code.cloudfoundry.org/policy_client v0.22.0
+	code.cloudfoundry.org/lager/v3 v3.10.0
+	code.cloudfoundry.org/policy_client v0.23.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.2.3
-	github.com/containernetworking/plugins v1.5.1
+	github.com/containernetworking/plugins v1.6.0
 	github.com/coreos/go-iptables v0.8.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
@@ -48,7 +48,7 @@ require (
 )
 
 require (
-	code.cloudfoundry.org/bbs v0.0.0-20241008170404-8f119d532056 // indirect
+	code.cloudfoundry.org/bbs v0.0.0-20241016070240-e04c7c1be286 // indirect
 	code.cloudfoundry.org/clock v1.1.0 // indirect
 	code.cloudfoundry.org/go-diodes v0.0.0-20241007161556-ec30366c7912 // indirect
 	code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 // indirect
@@ -57,14 +57,14 @@ require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/alexflint/go-filemutex v1.3.0 // indirect
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
-	github.com/cloudfoundry/sonde-go v0.0.0-20241007161526-e3ce7aa1aabc // indirect
+	github.com/cloudfoundry/sonde-go v0.0.0-20241016180203-3c0e1c24e908 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-test/deep v1.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
-	github.com/google/pprof v0.0.0-20241009165004-a3522334989c // indirect
+	github.com/google/pprof v0.0.0-20241017200806-017d972448fc // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jackc/pgx/v5 v5.5.5 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
@@ -79,11 +79,12 @@ require (
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20241007155032-5fefd90f89a9 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53 // indirect
 	google.golang.org/grpc v1.67.1 // indirect
 	google.golang.org/protobuf v1.35.1 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	sigs.k8s.io/knftables v0.0.17 // indirect
 )
