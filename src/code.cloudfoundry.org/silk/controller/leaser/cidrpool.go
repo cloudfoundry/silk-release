@@ -20,8 +20,17 @@ func NewCIDRPool(subnetRange string, subnetMask int) *CIDRPool {
 	}
 	cidrMask, _ := ipCIDR.Mask.Size()
 
+	if cidrMask > 32 || cidrMask < 0 {
+		panic(fmt.Errorf("subnet range's CIDR mask must be between [0-32]"))
+	}
+	if subnetMask > 32 || subnetMask < 0 {
+		panic(fmt.Errorf("subnet mask must be between [0-32]"))
+	}
+
 	return &CIDRPool{
-		blockPool:  generateBlockPool(ipCIDR.IP, uint(cidrMask), uint(subnetMask)),
+		// #nosec - G115 - we check valid values above for IPv4 subnet masks
+		blockPool: generateBlockPool(ipCIDR.IP, uint(cidrMask), uint(subnetMask)),
+		// #nosec - G115 - we check valid values above for IPv4 subnet masks
 		singlePool: generateSingleIPPool(ipCIDR.IP, uint(subnetMask)),
 	}
 }
