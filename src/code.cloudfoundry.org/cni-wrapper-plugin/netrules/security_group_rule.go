@@ -62,20 +62,22 @@ func (r *securityGroupRule) Ports() []PortRange {
 	for _, portRangeStr := range portRangeStrs {
 		ports := strings.Split(portRangeStr, "-")
 		if len(ports) == 1 {
-			port, err := strconv.Atoi(strings.TrimSpace(ports[0]))
+			port, err := strconv.ParseUint(strings.TrimSpace(ports[0]), 10, 16)
 			if err != nil {
 				continue
 			}
+			// #nosec G115 - ParseUint above validates the int range here
 			portRanges = append(portRanges, PortRange{Start: uint16(port), End: uint16(port)})
 		} else if len(ports) == 2 {
-			startPort, err := strconv.Atoi(strings.TrimSpace(ports[0]))
+			startPort, err := strconv.ParseUint(strings.TrimSpace(ports[0]), 10, 16)
 			if err != nil {
 				continue
 			}
-			endPort, err := strconv.Atoi(strings.TrimSpace(ports[1]))
+			endPort, err := strconv.ParseUint(strings.TrimSpace(ports[1]), 10, 16)
 			if err != nil {
 				continue
 			}
+			// #nosec G115 - ParseUint above validates the int range here
 			portRanges = append(portRanges, PortRange{Start: uint16(startPort), End: uint16(endPort)})
 		}
 	}
@@ -84,7 +86,9 @@ func (r *securityGroupRule) Ports() []PortRange {
 
 func (r *securityGroupRule) ICMPInfo() *ICMPInfo {
 	return &ICMPInfo{
+		// #nosec G115 - CAPI validates these as -1 to 255, and we make use of -1 as a short-hand for "all" types/codes (255)
 		Type: garden.ICMPType(r.rule.Type),
+		// #nosec G115 - CAPI validates these as -1 to 255, and we make use of -1 as a short-hand for "all" types/codes (255)
 		Code: garden.ICMPCode(r.rule.Code),
 	}
 }
