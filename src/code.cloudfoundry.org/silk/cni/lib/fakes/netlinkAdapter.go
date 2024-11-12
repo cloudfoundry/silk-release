@@ -152,6 +152,19 @@ type NetlinkAdapter struct {
 	neighAddPermanentIPv4ReturnsOnCall map[int]struct {
 		result1 error
 	}
+	NeighAddPermanentIPv6Stub        func(int, net.IP, net.HardwareAddr) error
+	neighAddPermanentIPv6Mutex       sync.RWMutex
+	neighAddPermanentIPv6ArgsForCall []struct {
+		arg1 int
+		arg2 net.IP
+		arg3 net.HardwareAddr
+	}
+	neighAddPermanentIPv6Returns struct {
+		result1 error
+	}
+	neighAddPermanentIPv6ReturnsOnCall map[int]struct {
+		result1 error
+	}
 	ParseAddrStub        func(string) (*netlink.Addr, error)
 	parseAddrMutex       sync.RWMutex
 	parseAddrArgsForCall []struct {
@@ -946,6 +959,69 @@ func (fake *NetlinkAdapter) NeighAddPermanentIPv4ReturnsOnCall(i int, result1 er
 	}{result1}
 }
 
+func (fake *NetlinkAdapter) NeighAddPermanentIPv6(arg1 int, arg2 net.IP, arg3 net.HardwareAddr) error {
+	fake.neighAddPermanentIPv6Mutex.Lock()
+	ret, specificReturn := fake.neighAddPermanentIPv6ReturnsOnCall[len(fake.neighAddPermanentIPv6ArgsForCall)]
+	fake.neighAddPermanentIPv6ArgsForCall = append(fake.neighAddPermanentIPv6ArgsForCall, struct {
+		arg1 int
+		arg2 net.IP
+		arg3 net.HardwareAddr
+	}{arg1, arg2, arg3})
+	stub := fake.NeighAddPermanentIPv6Stub
+	fakeReturns := fake.neighAddPermanentIPv6Returns
+	fake.recordInvocation("NeighAddPermanentIPv6", []interface{}{arg1, arg2, arg3})
+	fake.neighAddPermanentIPv6Mutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *NetlinkAdapter) NeighAddPermanentIPv6CallCount() int {
+	fake.neighAddPermanentIPv6Mutex.RLock()
+	defer fake.neighAddPermanentIPv6Mutex.RUnlock()
+	return len(fake.neighAddPermanentIPv6ArgsForCall)
+}
+
+func (fake *NetlinkAdapter) NeighAddPermanentIPv6Calls(stub func(int, net.IP, net.HardwareAddr) error) {
+	fake.neighAddPermanentIPv6Mutex.Lock()
+	defer fake.neighAddPermanentIPv6Mutex.Unlock()
+	fake.NeighAddPermanentIPv6Stub = stub
+}
+
+func (fake *NetlinkAdapter) NeighAddPermanentIPv6ArgsForCall(i int) (int, net.IP, net.HardwareAddr) {
+	fake.neighAddPermanentIPv6Mutex.RLock()
+	defer fake.neighAddPermanentIPv6Mutex.RUnlock()
+	argsForCall := fake.neighAddPermanentIPv6ArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *NetlinkAdapter) NeighAddPermanentIPv6Returns(result1 error) {
+	fake.neighAddPermanentIPv6Mutex.Lock()
+	defer fake.neighAddPermanentIPv6Mutex.Unlock()
+	fake.NeighAddPermanentIPv6Stub = nil
+	fake.neighAddPermanentIPv6Returns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *NetlinkAdapter) NeighAddPermanentIPv6ReturnsOnCall(i int, result1 error) {
+	fake.neighAddPermanentIPv6Mutex.Lock()
+	defer fake.neighAddPermanentIPv6Mutex.Unlock()
+	fake.NeighAddPermanentIPv6Stub = nil
+	if fake.neighAddPermanentIPv6ReturnsOnCall == nil {
+		fake.neighAddPermanentIPv6ReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.neighAddPermanentIPv6ReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *NetlinkAdapter) ParseAddr(arg1 string) (*netlink.Addr, error) {
 	fake.parseAddrMutex.Lock()
 	ret, specificReturn := fake.parseAddrReturnsOnCall[len(fake.parseAddrArgsForCall)]
@@ -1212,6 +1288,8 @@ func (fake *NetlinkAdapter) Invocations() map[string][][]interface{} {
 	defer fake.linkSetUpMutex.RUnlock()
 	fake.neighAddPermanentIPv4Mutex.RLock()
 	defer fake.neighAddPermanentIPv4Mutex.RUnlock()
+	fake.neighAddPermanentIPv6Mutex.RLock()
+	defer fake.neighAddPermanentIPv6Mutex.RUnlock()
 	fake.parseAddrMutex.RLock()
 	defer fake.parseAddrMutex.RUnlock()
 	fake.qdiscAddMutex.RLock()

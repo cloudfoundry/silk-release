@@ -12,18 +12,23 @@ import (
 //go:generate counterfeiter -o fakes/linkOperations.go --fake-name LinkOperations . linkOperations
 type linkOperations interface {
 	DisableIPv6(deviceName string) error
+	EnableIPv6(deviceName string) error
 	StaticNeighborNoARP(link netlink.Link, dstIP net.IP, mac net.HardwareAddr) error
+	StaticNeighborIPv6(link netlink.Link, dstIP net.IP, mac net.HardwareAddr) error
 	SetPointToPointAddress(link netlink.Link, localIPAddr, peerIPAddr net.IP) error
 	RenameLink(oldName, newName string) error
 	DeleteLinkByName(deviceName string) error
 	RouteAddAll(route []*types.Route, sourceIP net.IP) error
+	Route6AddAll(route []*types.Route, deviceName string) error
 	EnableIPv4Forwarding() error
+	EnableIPv6Forwarding() error
 	EnableReversePathFiltering(deviceName string) error
 }
 
 //go:generate counterfeiter -o fakes/common.go --fake-name Common . common
 type common interface {
 	BasicSetup(deviceName string, local, peer config.DualAddress) error
+	BasicSetupIPv6(deviceName string, local, peer config.DualAddress) error
 }
 
 //go:generate counterfeiter -o fakes/netlinkAdapter.go --fake-name NetlinkAdapter . netlinkAdapter
@@ -33,6 +38,7 @@ type netlinkAdapter interface {
 	AddrAddScopeLink(netlink.Link, *netlink.Addr) error
 	LinkSetHardwareAddr(netlink.Link, net.HardwareAddr) error
 	NeighAddPermanentIPv4(index int, destIP net.IP, hwAddr net.HardwareAddr) error
+	NeighAddPermanentIPv6(index int, destIP net.IP, hwAddr net.HardwareAddr) error
 	LinkSetARPOff(netlink.Link) error
 	LinkSetName(netlink.Link, string) error
 	LinkSetUp(netlink.Link) error

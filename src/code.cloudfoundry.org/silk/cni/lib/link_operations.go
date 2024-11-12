@@ -26,6 +26,15 @@ func (s *LinkOperations) DisableIPv6(deviceName string) error {
 	return nil
 }
 
+func (s *LinkOperations) EnableIPv6(deviceName string) error {
+	_, err := s.SysctlAdapter.Sysctl(fmt.Sprintf("net.ipv6.conf.%s.disable_ipv6", deviceName), "0")
+	if err != nil {
+		return fmt.Errorf("sysctl for IPv6 %s: %s", deviceName, err)
+	}
+
+	return nil
+}
+
 func (s *LinkOperations) EnableReversePathFiltering(deviceName string) error {
 	_, err := s.SysctlAdapter.Sysctl(fmt.Sprintf("net.ipv4.conf.%s.rp_filter", deviceName), "1")
 	if err != nil {
@@ -38,6 +47,14 @@ func (s *LinkOperations) EnableIPv4Forwarding() error {
 	_, err := s.SysctlAdapter.Sysctl("net.ipv4.ip_forward", "1")
 	if err != nil {
 		return fmt.Errorf("enabling IPv4 forwarding: %s", err)
+	}
+	return nil
+}
+
+func (s *LinkOperations) EnableIPv6Forwarding() error {
+	_, err := s.SysctlAdapter.Sysctl("net.ipv6.conf.eth0.forwarding", "1")
+	if err != nil {
+		return fmt.Errorf("enabling IPv6 forwarding: %s", err)
 	}
 	return nil
 }
@@ -58,25 +75,45 @@ func (s *LinkOperations) StaticNeighborNoARP(link netlink.Link, destIP net.IP, h
 	return nil
 }
 
+func (s *LinkOperations) StaticNeighborIPv6(link netlink.Link, destIP net.IP, hwAddr net.HardwareAddr) error {
+	err := s.NetlinkAdapter.NeighAddPermanentIPv6(link.Attrs().Index, destIP, hwAddr)
+	if err != nil {
+		return fmt.Errorf("neigh add: %s", err)
+	}
+
+	return nil
+}
+
 func (s *LinkOperations) SetPointToPointAddress(link netlink.Link, localIPAddr, peerIPAddr net.IP) error {
+	var mask []byte
+	if localIPAddr.To4() != nil {
+		// IPv4 point-to-point address configuration
+		mask = []byte{255, 255, 255, 255}
+	} else {
+		// IPv6 point-to-point address configuration
+		mask = []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}
+	}
+
 	localAddr := &net.IPNet{
 		IP:   localIPAddr,
-		Mask: []byte{255, 255, 255, 255},
+		Mask: mask,
 	}
+
 	peerAddr := &net.IPNet{
 		IP:   peerIPAddr,
-		Mask: []byte{255, 255, 255, 255},
+		Mask: mask,
 	}
+
 	addr, err := s.NetlinkAdapter.ParseAddr(localAddr.String())
 	if err != nil {
-		return fmt.Errorf("parsing address %s: %s", localAddr, err)
+		return fmt.Errorf("parsing address %s: %w", localAddr, err)
 	}
 
 	addr.Peer = peerAddr
 
 	err = s.NetlinkAdapter.AddrAddScopeLink(link, addr)
 	if err != nil {
-		return fmt.Errorf("adding IP address %s: %s", localAddr, err)
+		return fmt.Errorf("adding IP address %s: %w", localAddr, err)
 	}
 
 	return nil
@@ -118,8 +155,27 @@ func (s *LinkOperations) RouteAddAll(routes []*types.Route, sourceIP net.IP) err
 			Dst: &dst,
 			Gw:  r.GW,
 		})
+
 		if err != nil {
-			return fmt.Errorf("adding route: %s", err)
+			return fmt.Errorf("adding route: %s, srcIP: %s, dstIP: %s, GW: %s", err, sourceIP, dst, r.GW)
+		}
+	}
+	return nil
+}
+
+func (s *LinkOperations) Route6AddAll(routes []*types.Route, deviceName string) error {
+	link, err := s.NetlinkAdapter.LinkByName(deviceName)
+	if err != nil {
+		return fmt.Errorf("failed to get IPv6 interface %s: %v\n", deviceName, err)
+	}
+
+	for _, r := range routes {
+		err = s.NetlinkAdapter.RouteAdd(
+			&netlink.Route{Gw: r.GW, LinkIndex: link.Attrs().Index, Dst: nil, Scope: netlink.SCOPE_UNIVERSE},
+		)
+
+		if err != nil {
+			return fmt.Errorf("IPv6 adding route: %s, GW: %s", err, r.GW)
 		}
 	}
 	return nil

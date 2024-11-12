@@ -24,13 +24,16 @@ type Config struct {
 		TemporaryDeviceName string
 		Namespace           netNS
 		Address             DualAddress
+		AddressIPv6         DualAddress
 		MTU                 int
 		Routes              []*types.Route
+		RoutesIPv6          []*types.Route
 	}
 	Host struct {
-		DeviceName string
-		Namespace  netNS
-		Address    DualAddress
+		DeviceName  string
+		Namespace   netNS
+		Address     DualAddress
+		AddressIPv6 DualAddress
 	}
 }
 
@@ -38,19 +41,19 @@ func (c *Config) AsCNIResult() *current.Result {
 	ipInterface := 1
 	return &current.Result{
 		Interfaces: []*current.Interface{
-			&current.Interface{
+			{
 				Name:    c.Host.DeviceName,
 				Mac:     c.Host.Address.Hardware.String(),
 				Sandbox: "",
 			},
-			&current.Interface{
+			{
 				Name:    c.Container.DeviceName,
 				Mac:     c.Container.Address.Hardware.String(),
 				Sandbox: c.Container.Namespace.Path(),
 			},
 		},
 		IPs: []*current.IPConfig{
-			&current.IPConfig{
+			{
 				Interface: &ipInterface,
 				Address: net.IPNet{
 					IP:   c.Container.Address.IP,

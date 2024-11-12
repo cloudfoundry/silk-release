@@ -44,6 +44,16 @@ func (*NetlinkAdapter) NeighAddPermanentIPv4(index int, destIP net.IP, hwAddr ne
 	})
 }
 
+func (*NetlinkAdapter) NeighAddPermanentIPv6(index int, destIP net.IP, hwAddr net.HardwareAddr) error {
+	return netlink.NeighAdd(&netlink.Neigh{
+		LinkIndex:    index,
+		Family:       netlink.FAMILY_V6,
+		State:        netlink.NUD_PERMANENT,
+		IP:           destIP,
+		HardwareAddr: hwAddr,
+	})
+}
+
 func (*NetlinkAdapter) NeighSet(neigh *netlink.Neigh) error {
 	return netlink.NeighSet(neigh)
 }
