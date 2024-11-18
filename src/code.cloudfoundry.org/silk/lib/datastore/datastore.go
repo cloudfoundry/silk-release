@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"code.cloudfoundry.org/silk/cni/config"
 	"fmt"
 	"net"
 
@@ -20,14 +21,15 @@ type LockedFile interface {
 
 //go:generate counterfeiter -o ../fakes/datastore.go --fake-name Datastore . Datastore
 type Datastore interface {
-	Add(handle, ip string, metadata map[string]interface{}) error
-	Delete(handle string) (Container, error)
-	ReadAll() (map[string]Container, error)
+	Add(handle, filepath string, ip config.Config, metadata map[string]interface{}) error
+	Delete(filepath, handle string) (Container, error)
+	ReadAll(filepath string) (map[string]Container, error)
 }
 
 type Container struct {
 	Handle   string                 `json:"handle"`
 	IP       string                 `json:"ip"`
+	IPv6     string                 `json:"ipv6,omitempty"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
@@ -44,31 +46,45 @@ func validate(handle, ip string) error {
 	if net.ParseIP(ip) == nil {
 		return fmt.Errorf("invalid ip: %v", ip)
 	}
+
 	return nil
 }
 
-func (c *Store) Add(filePath, handle, ip string, metadata map[string]interface{}) error {
-	if err := validate(handle, ip); err != nil {
+func (c *Store) Add(filePath string, handle string, ip *config.Config, metadata map[string]interface{}) error {
+	if err := validate(handle, ip.Container.Address.IP.String()); err != nil {
 		return err
 	}
 
+	ipv4 := ip.Container.Address.IP.String()
+
 	locker := c.LockerNew(filePath)
+
 	file, err := locker.Open()
 	if err != nil {
 		return fmt.Errorf("open lock: %s", err)
 	}
+
 	defer file.Close()
 
-	pool := make(map[string]Container)
+	pool := make(map[string]*Container)
+
 	err = c.Serializer.DecodeAll(file, &pool)
 	if err != nil {
 		return fmt.Errorf("decoding file: %s", err)
 	}
 
-	pool[handle] = Container{
+	pool[handle] = &Container{
 		Handle:   handle,
-		IP:       ip,
+		IP:       ipv4,
 		Metadata: metadata,
+	}
+
+	if ip.Container.AddressIPv6.IP != nil {
+		if err := validate(handle, ip.Container.AddressIPv6.IP.String()); err != nil {
+			return err
+		}
+
+		pool[handle].IPv6 = ip.Container.AddressIPv6.IP.String()
 	}
 
 	err = c.Serializer.EncodeAndOverwrite(file, pool)
@@ -86,13 +102,16 @@ func (c *Store) Delete(filePath, handle string) (Container, error) {
 	}
 
 	locker := c.LockerNew(filePath)
+
 	file, err := locker.Open()
 	if err != nil {
 		return deleted, fmt.Errorf("open lock: %s", err)
 	}
+
 	defer file.Close()
 
 	pool := make(map[string]Container)
+
 	err = c.Serializer.DecodeAll(file, &pool)
 	if err != nil {
 		return deleted, fmt.Errorf("decoding file: %s", err)
@@ -106,21 +125,26 @@ func (c *Store) Delete(filePath, handle string) (Container, error) {
 	if err != nil {
 		return deleted, fmt.Errorf("encode and overwrite: %s", err)
 	}
+
 	return deleted, nil
 }
 
 func (c *Store) ReadAll(filePath string) (map[string]Container, error) {
 	locker := c.LockerNew(filePath)
+
 	file, err := locker.Open()
 	if err != nil {
 		return nil, fmt.Errorf("open lock: %s", err)
 	}
+
 	defer file.Close()
 
 	pool := make(map[string]Container)
+
 	err = c.Serializer.DecodeAll(file, &pool)
 	if err != nil {
 		return nil, fmt.Errorf("decoding file: %s", err)
 	}
+
 	return pool, nil
 }

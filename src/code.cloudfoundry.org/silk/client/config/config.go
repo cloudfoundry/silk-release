@@ -30,6 +30,7 @@ type Config struct {
 	LogPrefix                 string `json:"log_prefix" validate:"nonzero"`
 	LogLevel                  string `json:"log_level"`
 	SingleIPOnly              bool   `json:"single_ip_only"`
+	IPv6Prefix                string `json:"ipv6_prefix,omitempty"`
 }
 
 func LoadConfig(filePath string) (Config, error) {

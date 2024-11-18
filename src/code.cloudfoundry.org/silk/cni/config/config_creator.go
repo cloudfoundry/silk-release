@@ -1,17 +1,14 @@
 package config
 
 import (
+	"code.cloudfoundry.org/lager/v3"
 	"errors"
 	"fmt"
-	"math/rand"
-	"net"
-	"time"
-
-	"code.cloudfoundry.org/lager/v3"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	current "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/plugins/pkg/ns"
+	"net"
 )
 
 const ipv6gateway = "fe80::1"
@@ -111,25 +108,11 @@ func (c *ConfigCreator) Create(
 		conf.Host.AddressIPv6.IP = net.ParseIP(ipv6gateway)
 		conf.Host.AddressIPv6.Hardware = conf.Host.Address.Hardware
 
-		conf.Container.AddressIPv6.IP = net.ParseIP(generateIPv6())
+		conf.Container.AddressIPv6.IP = ipamResult.IPs[1].Address.IP
 		conf.Container.AddressIPv6.Hardware = conf.Container.Address.Hardware
 
 		conf.Container.RoutesIPv6 = []*types.Route{{GW: conf.Host.AddressIPv6.IP}}
 	}
 
 	return &conf, nil
-}
-
-// TODO Remove me. IPv6 PoC
-const (
-	ipv6Prefix = "2600:1f18:27b3:881e:9148::"
-)
-
-func generateIPv6() string {
-	rand.Seed(time.Now().UnixNano())
-	suffix := fmt.Sprintf("%x:%x", rand.Intn(0xffff), rand.Intn(0xffff))
-
-	newIPv6 := ipv6Prefix + suffix
-
-	return newIPv6
 }

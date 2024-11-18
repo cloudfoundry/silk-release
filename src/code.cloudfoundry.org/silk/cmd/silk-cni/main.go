@@ -204,10 +204,16 @@ func (p *CNIPlugin) cmdAdd(args *skel.CmdArgs) error {
 		return typedError("discover network info", err)
 	}
 
-	p.Logger.Debug("generate-ipam-config", lager.Data{"overlaySubnet": networkInfo.OverlaySubnet, "name": netConf.Name, "dataDir": netConf.DataDir})
+	p.Logger.Debug("generate-ipam-config", lager.Data{
+		"overlaySubnet": networkInfo.OverlaySubnet,
+		"name":          netConf.Name,
+		"dataDir":       netConf.DataDir,
+		"ipv6prefix":    networkInfo.IPv6Prefix,
+	})
+
 	generator := config.IPAMConfigGenerator{}
 
-	ipamConfig, err := generator.GenerateConfig(networkInfo.OverlaySubnet, netConf.Name, netConf.DataDir)
+	ipamConfig, err := generator.GenerateConfig(networkInfo.OverlaySubnet, networkInfo.IPv6Prefix, netConf.Name, netConf.DataDir)
 	if err != nil {
 		p.Logger.Error("generate-ipam-config-failed", err)
 		return typedError("generate ipam config", err)
@@ -282,8 +288,14 @@ func (p *CNIPlugin) cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	// use args.Netns as the 'handle' for now
-	p.Logger.Debug("write-container-metadata", lager.Data{"datastore": netConf.Datastore, "path": filepath.Base(args.Netns), "ip": cfg.Container.Address.IP.String()})
-	err = p.Store.Add(netConf.Datastore, filepath.Base(args.Netns), cfg.Container.Address.IP.String(), nil)
+	p.Logger.Debug("write-container-metadata", lager.Data{
+		"datastore": netConf.Datastore,
+		"path":      filepath.Base(args.Netns),
+		"ip":        cfg.Container.Address.IP.String(),
+		"ipv6":      cfg.Container.AddressIPv6.IP.String(),
+	})
+
+	err = p.Store.Add(netConf.Datastore, filepath.Base(args.Netns), cfg, nil)
 	if err != nil {
 		p.Logger.Error("write-container-metadata-failed", err)
 		return typedError("write container metadata", err)
@@ -313,7 +325,8 @@ func (p *CNIPlugin) cmdDel(args *skel.CmdArgs) error {
 	// use 0.0.0.0/0 for the IPAM subnet during delete so we don't need to discover the subnet.
 	// this way, silk-daemon does not need to be up during deletes, and cleanup that takes place
 	// on startup, after the subnet may have changed, will succeed.
-	ipamConfig, err := generator.GenerateConfig("0.0.0.0/0", netConf.Name, netConf.DataDir)
+	// TODO IPv6
+	ipamConfig, err := generator.GenerateConfig("0.0.0.0/0", "", netConf.Name, netConf.DataDir)
 	if err != nil {
 		p.Logger.Error("generate-ipam-config-failed", err) // untestable
 		// continue, keep trying to cleanup

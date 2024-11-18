@@ -39,6 +39,7 @@ type Config struct {
 
 func (c *Config) AsCNIResult() *current.Result {
 	ipInterface := 1
+
 	return &current.Result{
 		Interfaces: []*current.Interface{
 			{
@@ -60,6 +61,14 @@ func (c *Config) AsCNIResult() *current.Result {
 					Mask: []byte{255, 255, 255, 255},
 				},
 				Gateway: c.Host.Address.IP,
+			},
+			{
+				Interface: &ipInterface,
+				Address: net.IPNet{
+					IP:   c.Container.AddressIPv6.IP,
+					Mask: net.CIDRMask(128, 128),
+				},
+				Gateway: c.Host.AddressIPv6.IP,
 			},
 		},
 		Routes: c.Container.Routes,

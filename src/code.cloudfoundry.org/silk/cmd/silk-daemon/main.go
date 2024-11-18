@@ -297,10 +297,16 @@ func getNetworkInfo(vtepFactory *vtep.Factory, clientConfig config.Config, lease
 		return daemon.NetworkInfo{}, fmt.Errorf("get vtep mtu: %s", err) // not tested
 	}
 
-	return daemon.NetworkInfo{
+	info := daemon.NetworkInfo{
 		OverlaySubnet: lease.OverlaySubnet,
 		MTU:           mtu,
-	}, nil
+	}
+
+	if clientConfig.IPv6Prefix != "" {
+		info.IPv6Prefix = clientConfig.IPv6Prefix
+	}
+
+	return info, nil
 }
 
 func deleteAndAcquire(cfg config.Config, logger lager.Logger, client *controller.Client, vtepConfigCreator *vtep.ConfigCreator, vtepFactory *vtep.Factory) (controller.Lease, error) {

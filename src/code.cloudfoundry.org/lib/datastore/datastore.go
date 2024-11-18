@@ -12,6 +12,8 @@ import (
 	"code.cloudfoundry.org/lib/serial"
 )
 
+type Options func(container *Container) error
+
 //go:generate counterfeiter -o ../fakes/locker.go --fake-name Locker . locker
 type locker interface {
 	Lock() error
@@ -28,6 +30,7 @@ type Datastore interface {
 type Container struct {
 	Handle   string                 `json:"handle"`
 	IP       string                 `json:"ip"`
+	IPv6     string                 `json:"ipv6"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
@@ -59,11 +62,11 @@ func (c *Store) Update(handle, ip string, metadata map[string]interface{}) error
 	return c.AddOrUpdate(handle, ip, metadata, true)
 }
 
-func (c *Store) Add(handle, ip string, metadata map[string]interface{}) error {
-	return c.AddOrUpdate(handle, ip, metadata, false)
+func (c *Store) Add(handle, ip string, metadata map[string]interface{}, options ...Options) error {
+	return c.AddOrUpdate(handle, ip, metadata, false, options...)
 }
 
-func (c *Store) AddOrUpdate(handle, ip string, metadata map[string]interface{}, update bool) error {
+func (c *Store) AddOrUpdate(handle, ip string, metadata map[string]interface{}, update bool, options ...Options) error {
 	if err := validate(handle, ip); err != nil {
 		return err
 	}
@@ -72,15 +75,18 @@ func (c *Store) AddOrUpdate(handle, ip string, metadata map[string]interface{}, 
 	if err != nil {
 		return fmt.Errorf("lock: %s", err)
 	}
+
 	defer c.Locker.Unlock()
 
 	dataFile, err := os.OpenFile(c.DataFilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
 		return fmt.Errorf("open data file: %s", err)
 	}
+
 	defer dataFile.Close()
 
-	pool := make(map[string]Container)
+	pool := make(map[string]*Container)
+
 	err = c.Serializer.DecodeAll(dataFile, &pool)
 	if err != nil {
 		return fmt.Errorf("decoding file: %s", err)
@@ -90,10 +96,18 @@ func (c *Store) AddOrUpdate(handle, ip string, metadata map[string]interface{}, 
 	if !ok && update {
 		return fmt.Errorf("entry does not exist")
 	}
-	pool[handle] = Container{
+
+	pool[handle] = &Container{
 		Handle:   handle,
 		IP:       ip,
 		Metadata: metadata,
+	}
+
+	for _, opt := range options {
+		err = opt(pool[handle])
+		if err != nil {
+			return fmt.Errorf("applying option for ipv6: %s", err)
+		}
 	}
 
 	err = c.Serializer.EncodeAndOverwrite(dataFile, pool)
@@ -107,6 +121,18 @@ func (c *Store) AddOrUpdate(handle, ip string, metadata map[string]interface{}, 
 	}
 
 	return c.ensureFileOwnership()
+}
+
+func WithIPv6(ipv6 string) Options {
+	return func(container *Container) error {
+		if !validateIPv6(container.IPv6) {
+			return fmt.Errorf("invalid ip: %v", ipv6)
+		}
+
+		container.IPv6 = ipv6
+
+		return nil
+	}
 }
 
 func (c *Store) ensureFileOwnership() error {
@@ -283,4 +309,17 @@ func (c *Store) currentVersion() (int, error) {
 		}
 	}
 	return version, err
+}
+
+func validateIPv6(ip string) bool {
+	ipv6 := net.ParseIP(ip)
+	if ipv6 == nil {
+		return false
+	}
+
+	if ipv6.To4() == nil && ipv6.To16() != nil {
+		return true
+	}
+
+	return false
 }

@@ -91,7 +91,7 @@ func (s *LinkOperations) SetPointToPointAddress(link netlink.Link, localIPAddr, 
 		mask = []byte{255, 255, 255, 255}
 	} else {
 		// IPv6 point-to-point address configuration
-		mask = []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}
+		mask = net.CIDRMask(128, 128)
 	}
 
 	localAddr := &net.IPNet{
