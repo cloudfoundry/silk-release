@@ -183,9 +183,9 @@ module Bosh::Template::Test
             )
           ]}
 
-          it 'fallsback to the cf_network.network link property' do
+          it 'does not fallback to the cf_network.network link property' do
             clientConfig = JSON.parse(template.render(merged_manifest_properties, spec: spec, consumes: links))
-            expect(clientConfig['plugins'][0]['no_masquerade_cidr_range']).to eq('10.255.0.0/16')
+            expect(clientConfig['plugins'][0]['no_masquerade_cidr_range']).to eq('')
           end
         end
       end

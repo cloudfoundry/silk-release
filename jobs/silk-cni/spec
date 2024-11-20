@@ -31,7 +31,7 @@ provides:
 
 properties:
   no_masquerade_cidr_range:
-    description: "CIDR address block that should not be masqueraded.  Fallsback to cf_network.network link property if property is not provided."
+    description: "CIDR address block that should not be masqueraded. If not provided, silk-cni will retrieve the Diego Cell's lease provided by silk-daemon and not masquerade when talking to destination addresses in that range."
     default: ""
 
   mtu:
