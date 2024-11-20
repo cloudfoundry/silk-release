@@ -32,8 +32,6 @@ import (
 	uuid "github.com/google/uuid"
 )
 
-const enableIPv6 = true
-
 type CNIPlugin struct {
 	HostNSPath      string
 	HostNS          ns.NetNS
@@ -239,7 +237,7 @@ func (p *CNIPlugin) cmdAdd(args *skel.CmdArgs) error {
 
 	p.Logger.Debug("create-config", lager.Data{"hostNamespace": p.HostNS, "args": args, "result": cniResult, "mtu": networkInfo.MTU})
 
-	cfg, err := p.ConfigCreator.Create(p.HostNS, args, cniResult, networkInfo.MTU, enableIPv6)
+	cfg, err := p.ConfigCreator.Create(p.HostNS, args, cniResult, networkInfo.MTU)
 	if err != nil {
 		p.Logger.Error("create-config-failed", err)
 		return typedError("create config", err)
@@ -269,7 +267,7 @@ func (p *CNIPlugin) cmdAdd(args *skel.CmdArgs) error {
 		return typedError("set up container", err)
 	}
 
-	if enableIPv6 {
+	if cfg.IPV6Enabled() {
 		p.Logger.Debug("setup-host-ipv6", lager.Data{"cfg": cfg})
 
 		err = p.Host.SetupIPv6(cfg)
@@ -287,15 +285,18 @@ func (p *CNIPlugin) cmdAdd(args *skel.CmdArgs) error {
 		}
 	}
 
+	ip := cfg.Container.Address.IP.String()
+	ipv6 := cfg.Container.AddressIPv6.IP.String()
+
 	// use args.Netns as the 'handle' for now
 	p.Logger.Debug("write-container-metadata", lager.Data{
 		"datastore": netConf.Datastore,
 		"path":      filepath.Base(args.Netns),
-		"ip":        cfg.Container.Address.IP.String(),
-		"ipv6":      cfg.Container.AddressIPv6.IP.String(),
+		"ip":        ip,
+		"ipv6":      ipv6,
 	})
 
-	err = p.Store.Add(netConf.Datastore, filepath.Base(args.Netns), cfg, nil)
+	err = p.Store.Add(netConf.Datastore, filepath.Base(args.Netns), ip, ipv6, nil)
 	if err != nil {
 		p.Logger.Error("write-container-metadata-failed", err)
 		return typedError("write container metadata", err)

@@ -1,6 +1,8 @@
 <%=
   require 'json'
 
+  ipv6prefix = '2600:1f18:27b3:881e:53b7::/80'
+
   def subnet_prefix_length
     size = link('cf_network').p('subnet_prefix_length')
     if size < 1 || size > 30
@@ -54,7 +56,8 @@
     'log_prefix' => 'cfnetworking',
     'log_level' => p('logging.level'),
     'vxlan_interface_name' => p('temporary_vxlan_interface', ''),
-    'single_ip_only' => p('single_ip_only')
+    'single_ip_only' => p('single_ip_only'),
+    'ipv6_prefix' => ipv6prefix
   }
 
   JSON.pretty_generate(toRender)

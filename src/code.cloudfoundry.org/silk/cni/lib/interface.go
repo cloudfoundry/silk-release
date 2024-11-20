@@ -23,6 +23,7 @@ type linkOperations interface {
 	EnableIPv4Forwarding() error
 	EnableIPv6Forwarding() error
 	EnableReversePathFiltering(deviceName string) error
+	SysctlIPv6Security(deviceName string) error
 }
 
 //go:generate counterfeiter -o fakes/common.go --fake-name Common . common

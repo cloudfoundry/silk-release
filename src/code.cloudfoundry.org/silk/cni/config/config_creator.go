@@ -1,14 +1,16 @@
 package config
 
 import (
-	"code.cloudfoundry.org/lager/v3"
 	"errors"
 	"fmt"
+	"net"
+
+	"code.cloudfoundry.org/lager/v3"
+	"code.cloudfoundry.org/lib/datastore"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	current "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/plugins/pkg/ns"
-	"net"
 )
 
 const ipv6gateway = "fe80::1"
@@ -43,7 +45,6 @@ func (c *ConfigCreator) Create(
 	addCmdArgs *skel.CmdArgs,
 	ipamResult *current.Result,
 	mtu int,
-	enableIPv6 bool,
 ) (*Config, error) {
 	var conf Config
 	var err error
@@ -68,7 +69,17 @@ func (c *ConfigCreator) Create(
 		return nil, errors.New("no IP address in IPAM result")
 	}
 
-	conf.Container.Address.IP = ipamResult.IPs[0].Address.IP
+	var ips []net.IP
+	for _, ip := range ipamResult.IPs {
+		ips = append(ips, ip.Address.IP)
+	}
+
+	ipv4, ipv6 := datastore.ValidatorIPConfig(ips)
+	if ipv6 != nil {
+		conf.ipv6Enabled = true
+	}
+
+	conf.Container.Address.IP = ipv4
 
 	conf.Container.TemporaryDeviceName, err = c.DeviceNameGenerator.GenerateTemporaryForContainer(conf.Container.Address.IP)
 	if err != nil {
@@ -104,11 +115,11 @@ func (c *ConfigCreator) Create(
 		},
 	}
 
-	if enableIPv6 {
+	if conf.ipv6Enabled {
 		conf.Host.AddressIPv6.IP = net.ParseIP(ipv6gateway)
 		conf.Host.AddressIPv6.Hardware = conf.Host.Address.Hardware
 
-		conf.Container.AddressIPv6.IP = ipamResult.IPs[1].Address.IP
+		conf.Container.AddressIPv6.IP = ipv6
 		conf.Container.AddressIPv6.Hardware = conf.Container.Address.Hardware
 
 		conf.Container.RoutesIPv6 = []*types.Route{{GW: conf.Host.AddressIPv6.IP}}

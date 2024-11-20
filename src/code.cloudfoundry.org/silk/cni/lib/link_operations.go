@@ -3,6 +3,7 @@ package lib
 import (
 	"fmt"
 	"net"
+	"os"
 
 	"code.cloudfoundry.org/lager/v3"
 
@@ -178,5 +179,37 @@ func (s *LinkOperations) Route6AddAll(routes []*types.Route, deviceName string) 
 			return fmt.Errorf("IPv6 adding route: %s, GW: %s", err, r.GW)
 		}
 	}
+	return nil
+}
+
+func (s *LinkOperations) SysctlIPv6Security(deviceName string) error {
+	ipv6settings := map[string]string{
+		"accept_ra":            "0",
+		"accept_ra_defrtr":     "0",
+		"accept_ra_from_local": "0",
+		"accept_redirects":     "0",
+		"accept_source_route":  "0",
+		"accept_dad":           "0",
+		"enhanced_dad":         "0",
+		"suppress_frag_ndisc":  "1",
+		"autoconf":             "0",
+	}
+
+	if _, err := os.Stat(fmt.Sprintf("/proc/sys/net/ipv6/conf/%s", deviceName)); os.IsNotExist(err) {
+		return fmt.Errorf("device %s does not exist", deviceName)
+	}
+
+	var errs []error
+	for k, v := range ipv6settings {
+		_, err := s.SysctlAdapter.Sysctl(fmt.Sprintf("net.ipv6.conf.%s.%s", deviceName, k), v)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to set net.ipv6.conf.%s.%s: %w", deviceName, k, err))
+		}
+	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("errors occurred during sysctl configuration: %v", errs)
+	}
+
 	return nil
 }

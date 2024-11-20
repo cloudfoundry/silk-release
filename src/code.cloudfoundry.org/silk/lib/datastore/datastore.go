@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"code.cloudfoundry.org/silk/cni/config"
 	"fmt"
 	"net"
 
@@ -21,7 +20,7 @@ type LockedFile interface {
 
 //go:generate counterfeiter -o ../fakes/datastore.go --fake-name Datastore . Datastore
 type Datastore interface {
-	Add(handle, filepath string, ip config.Config, metadata map[string]interface{}) error
+	Add(handle, filepath string, ip, ipv6 string, metadata map[string]interface{}) error
 	Delete(filepath, handle string) (Container, error)
 	ReadAll(filepath string) (map[string]Container, error)
 }
@@ -50,12 +49,10 @@ func validate(handle, ip string) error {
 	return nil
 }
 
-func (c *Store) Add(filePath string, handle string, ip *config.Config, metadata map[string]interface{}) error {
-	if err := validate(handle, ip.Container.Address.IP.String()); err != nil {
+func (c *Store) Add(filePath string, handle string, ip, ipv6 string, metadata map[string]interface{}) error {
+	if err := validate(handle, ip); err != nil {
 		return err
 	}
-
-	ipv4 := ip.Container.Address.IP.String()
 
 	locker := c.LockerNew(filePath)
 
@@ -75,16 +72,16 @@ func (c *Store) Add(filePath string, handle string, ip *config.Config, metadata 
 
 	pool[handle] = &Container{
 		Handle:   handle,
-		IP:       ipv4,
+		IP:       ip,
 		Metadata: metadata,
 	}
 
-	if ip.Container.AddressIPv6.IP != nil {
-		if err := validate(handle, ip.Container.AddressIPv6.IP.String()); err != nil {
+	if ipv6 != "" {
+		if err := validate(handle, ipv6); err != nil {
 			return err
 		}
 
-		pool[handle].IPv6 = ip.Container.AddressIPv6.IP.String()
+		pool[handle].IPv6 = ipv6
 	}
 
 	err = c.Serializer.EncodeAndOverwrite(file, pool)

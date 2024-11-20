@@ -35,12 +35,13 @@ type Config struct {
 		Address     DualAddress
 		AddressIPv6 DualAddress
 	}
+	ipv6Enabled bool
 }
 
 func (c *Config) AsCNIResult() *current.Result {
 	ipInterface := 1
 
-	return &current.Result{
+	result := &current.Result{
 		Interfaces: []*current.Interface{
 			{
 				Name:    c.Host.DeviceName,
@@ -62,16 +63,27 @@ func (c *Config) AsCNIResult() *current.Result {
 				},
 				Gateway: c.Host.Address.IP,
 			},
-			{
-				Interface: &ipInterface,
-				Address: net.IPNet{
-					IP:   c.Container.AddressIPv6.IP,
-					Mask: net.CIDRMask(128, 128),
-				},
-				Gateway: c.Host.AddressIPv6.IP,
-			},
 		},
 		Routes: c.Container.Routes,
 		DNS:    types.DNS{},
 	}
+
+	if c.ipv6Enabled {
+		ipv6 := &current.IPConfig{
+			Interface: &ipInterface,
+			Address: net.IPNet{
+				IP:   c.Container.AddressIPv6.IP,
+				Mask: net.CIDRMask(128, 128),
+			},
+			Gateway: c.Host.AddressIPv6.IP,
+		}
+
+		result.IPs = append(result.IPs, ipv6)
+	}
+
+	return result
+}
+
+func (c *Config) IPV6Enabled() bool {
+	return c.ipv6Enabled
 }

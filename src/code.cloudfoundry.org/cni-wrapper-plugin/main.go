@@ -5,23 +5,20 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"os"
+	"os/user"
+	"strconv"
 	"sync"
 
 	"code.cloudfoundry.org/cni-wrapper-plugin/adapter"
 	"code.cloudfoundry.org/cni-wrapper-plugin/lib"
 	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
+	"code.cloudfoundry.org/filelock"
 	"code.cloudfoundry.org/lib/datastore"
 	"code.cloudfoundry.org/lib/interfacelookup"
 	"code.cloudfoundry.org/lib/rules"
 	"code.cloudfoundry.org/lib/serial"
-
-	"net/http"
-
-	"os/user"
-	"strconv"
-
-	"code.cloudfoundry.org/filelock"
 	"github.com/containernetworking/cni/pkg/skel"
 	current "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/cni/pkg/version"
@@ -49,13 +46,12 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return fmt.Errorf("converting result from delegate plugin: %s", err) // not tested
 	}
 
-	containerIP := resultActual.IPs[0].Address.IP
-
-	var containerIPv6 string
-
-	if len(resultActual.IPs) > 1 {
-		containerIPv6 = resultActual.IPs[1].Address.IP.String()
+	var ips []net.IP
+	for _, ip := range resultActual.IPs {
+		ips = append(ips, ip.Address.IP)
 	}
+
+	containerIP, containerIPv6 := datastore.ValidatorIPConfig(ips)
 
 	var containerWorkload string
 
@@ -86,7 +82,13 @@ func cmdAdd(args *skel.CmdArgs) error {
 		containerWorkload, _ = workload.(string)
 	}
 
-	err = store.Add(args.ContainerID, containerIP.String(), cniAddData.Metadata, datastore.WithIPv6(containerIPv6))
+	err = store.Add(
+		args.ContainerID,
+		containerIP.String(),
+		cniAddData.Metadata,
+		datastore.WithIPv6(containerIPv6.String()),
+	)
+
 	if err != nil {
 		storeErr := fmt.Errorf("store add: %s", err)
 		fmt.Fprintf(os.Stderr, "%s", storeErr)

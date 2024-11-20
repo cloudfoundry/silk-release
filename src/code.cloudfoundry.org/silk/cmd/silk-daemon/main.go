@@ -68,6 +68,11 @@ func mainWithError() error {
 	logger, reconfigurableSink := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), getLagerConfig(logLevel))
 	logger.Info("starting")
 
+	if cfg.IPv6Prefix != "" && !isIPv6Enabled() {
+		logger.Info("The IPv6 prefix is supplied but the host is not IPv6 Enabled")
+		cfg.IPv6Prefix = ""
+	}
+
 	tlsConfig, err := mutualtls.NewClientTLSConfig(cfg.ClientCertFile, cfg.ClientKeyFile, cfg.ServerCACertFile)
 	if err != nil {
 		return fmt.Errorf("create tls config: %s", err)
@@ -106,7 +111,7 @@ func mainWithError() error {
 
 	_, overlayNetwork, err := net.ParseCIDR(cfg.OverlayNetwork)
 	if err != nil {
-		return fmt.Errorf("parse overlay network CIDR: %s", err) //TODO add test coverage
+		return fmt.Errorf("parse overlay network CIDR: %s", err) // TODO add test coverage
 	}
 
 	lease, err := discoverLocalLease(cfg, vtepFactory)
@@ -118,7 +123,7 @@ func mainWithError() error {
 	} else {
 		_, localSubnet, err := net.ParseCIDR(lease.OverlaySubnet)
 		if err != nil {
-			return fmt.Errorf("parse local subnet CIDR: %s", err) //TODO add test coverage
+			return fmt.Errorf("parse local subnet CIDR: %s", err) // TODO add test coverage
 		}
 
 		if !overlayNetwork.Contains(localSubnet.IP) {
@@ -176,12 +181,12 @@ func mainWithError() error {
 
 	_, localSubnet, err := net.ParseCIDR(lease.OverlaySubnet)
 	if err != nil {
-		return fmt.Errorf("parse local subnet CIDR: %s", err) //TODO add test coverage
+		return fmt.Errorf("parse local subnet CIDR: %s", err) // TODO add test coverage
 	}
 
 	vxlanIface, err := net.InterfaceByName(cfg.VTEPName)
 	if err != nil || vxlanIface == nil {
-		return fmt.Errorf("find local VTEP: %s", err) //TODO add test coverage
+		return fmt.Errorf("find local VTEP: %s", err) // TODO add test coverage
 	}
 
 	vxlanPoller := &poller.Poller{
@@ -303,7 +308,11 @@ func getNetworkInfo(vtepFactory *vtep.Factory, clientConfig config.Config, lease
 	}
 
 	if clientConfig.IPv6Prefix != "" {
-		info.IPv6Prefix = clientConfig.IPv6Prefix
+		if validateIPv6CIDR(clientConfig.IPv6Prefix) {
+			info.IPv6Prefix = clientConfig.IPv6Prefix
+		} else {
+			return daemon.NetworkInfo{}, fmt.Errorf("IPv6 prefix is set but not valid: %s", clientConfig.IPv6Prefix)
+		}
 	}
 
 	return info, nil
@@ -322,4 +331,30 @@ func getLagerConfig(level string) lagerflags.LagerConfig {
 	lagerConfig.TimeFormat = lagerflags.FormatRFC3339
 	lagerConfig.LogLevel = level
 	return lagerConfig
+}
+
+func validateIPv6CIDR(cidr string) bool {
+	ip, network, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return false
+	}
+
+	return ip.To4() == nil && network.IP.To4() == nil
+}
+
+func isIPv6Enabled() bool {
+	testAddress := "[::1]:0"
+
+	addr, err := net.ResolveUDPAddr("udp6", testAddress)
+	if err != nil {
+		return false
+	}
+
+	conn, err := net.ListenUDP("udp6", addr)
+	if err != nil {
+		return false
+	}
+	defer conn.Close()
+
+	return true
 }

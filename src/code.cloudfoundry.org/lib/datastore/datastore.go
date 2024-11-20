@@ -125,8 +125,9 @@ func (c *Store) AddOrUpdate(handle, ip string, metadata map[string]interface{}, 
 
 func WithIPv6(ipv6 string) Options {
 	return func(container *Container) error {
-		if !validateIPv6(container.IPv6) {
-			return fmt.Errorf("invalid ip: %v", ipv6)
+		if ipv6 == "" {
+			// No IPv6 configuration
+			return nil
 		}
 
 		container.IPv6 = ipv6
@@ -311,15 +312,22 @@ func (c *Store) currentVersion() (int, error) {
 	return version, err
 }
 
-func validateIPv6(ip string) bool {
-	ipv6 := net.ParseIP(ip)
-	if ipv6 == nil {
-		return false
+func ValidatorIPConfig(conf []net.IP) (net.IP, net.IP) {
+	var containerIP, containerIPv6 net.IP
+
+	for _, ip := range conf {
+		if containerIP == nil && ip.To4() != nil {
+			containerIP = ip
+		}
+
+		if containerIPv6 == nil && ip.To4() == nil && ip.To16() != nil {
+			containerIPv6 = ip
+		}
+
+		if containerIP != nil && containerIPv6 != nil {
+			break
+		}
 	}
 
-	if ipv6.To4() == nil && ipv6.To16() != nil {
-		return true
-	}
-
-	return false
+	return containerIP, containerIPv6
 }

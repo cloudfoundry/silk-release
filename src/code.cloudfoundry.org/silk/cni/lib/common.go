@@ -80,24 +80,24 @@ func (s *Common) BasicSetupIPv6(deviceName string, local, peer config.DualAddres
 
 	link, err := s.NetlinkAdapter.LinkByName(deviceName)
 	if err != nil {
-		return fmt.Errorf("failed to find link %q: %s", deviceName, err)
+		return fmt.Errorf("failed to find link %q: %s for ipv6", deviceName, err)
 	}
 
 	// #nosec G104 - we have tests explicitly checking that we ignore failures here, so don't handle it
 	s.LinkOperations.EnableIPv6(deviceName)
 
 	if err := s.LinkOperations.StaticNeighborIPv6(link, peer.IP, peer.Hardware); err != nil {
-		return fmt.Errorf("set permanent neighbor rule for IPv6: %s", err)
+		return fmt.Errorf("set permanent neighbor rule for ipv6: %s", err)
 	}
 
 	if err := s.LinkOperations.SetPointToPointAddress(link, local.IP, peer.IP); err != nil {
 		return fmt.Errorf("setting point to point address for ipv6: %s", err)
 	}
 
-	// TODO FIX me for IPv6
-	//if err := s.LinkOperations.EnableReversePathFiltering(deviceName); err != nil {
-	//	return fmt.Errorf("enable reverse path filtering: %s", err)
-	//}
+	err = s.LinkOperations.SysctlIPv6Security(deviceName)
+	if err != nil {
+		return fmt.Errorf("setting security sysctls for ipv6: %s", err)
+	}
 
 	if err := s.NetlinkAdapter.LinkSetUp(link); err != nil {
 		return fmt.Errorf("setting link %s up: %s", deviceName, err)
