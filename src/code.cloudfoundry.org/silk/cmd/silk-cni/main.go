@@ -286,7 +286,11 @@ func (p *CNIPlugin) cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	ip := cfg.Container.Address.IP.String()
+
 	ipv6 := cfg.Container.AddressIPv6.IP.String()
+	if ipv6 == "<nil>" {
+		ipv6 = ""
+	}
 
 	// use args.Netns as the 'handle' for now
 	p.Logger.Debug("write-container-metadata", lager.Data{
