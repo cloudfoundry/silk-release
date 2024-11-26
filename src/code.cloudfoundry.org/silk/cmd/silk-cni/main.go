@@ -267,6 +267,8 @@ func (p *CNIPlugin) cmdAdd(args *skel.CmdArgs) error {
 		return typedError("set up container", err)
 	}
 
+	var ipv6 string
+
 	if cfg.IPV6Enabled() {
 		p.Logger.Debug("setup-host-ipv6", lager.Data{"cfg": cfg})
 
@@ -283,14 +285,11 @@ func (p *CNIPlugin) cmdAdd(args *skel.CmdArgs) error {
 			p.Logger.Error("setup-container-failed", err)
 			return typedError("set up container", err)
 		}
+
+		ipv6 = cfg.Container.AddressIPv6.IP.String()
 	}
 
 	ip := cfg.Container.Address.IP.String()
-
-	ipv6 := cfg.Container.AddressIPv6.IP.String()
-	if ipv6 == "<nil>" {
-		ipv6 = ""
-	}
 
 	// use args.Netns as the 'handle' for now
 	p.Logger.Debug("write-container-metadata", lager.Data{
