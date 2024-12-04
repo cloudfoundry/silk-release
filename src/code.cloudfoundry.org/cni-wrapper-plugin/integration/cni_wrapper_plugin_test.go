@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
+	"github.com/onsi/gomega/ghttp"
 	"github.com/pivotal-cf-experimental/gomegamatchers"
 	"github.com/vishvananda/netlink"
 )
@@ -66,6 +67,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 		underlayIpAddr2        string
 		policyAgentAddress     string
 		policyAgentServer      mockPolicyAgentServer
+		daemonPort             string
 	)
 
 	var cniCommand = func(command, input string) *exec.Cmd {
@@ -145,6 +147,12 @@ var _ = Describe("CniWrapperPlugin", func() {
 		}
 		policyAgentServer.start()
 
+		fakeSilkDaemon := ghttp.NewServer()
+		fakeSilkDaemon.RouteToHandler("GET", "/", func(rw http.ResponseWriter, req *http.Request) {
+			rw.Write([]byte(`{"overlay_subnet": "10.255.30.0/24", "mtu": 1472}`))
+		})
+		daemonPort = strings.Split(fakeSilkDaemon.Addr(), ":")[1]
+
 		var code garden.ICMPCode = 0
 		inputStruct = InputStruct{
 			Name:       "cni-wrapper",
@@ -155,6 +163,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 				"some":       "other data",
 				"name":       "name",
 				"cniVersion": "1.0.0",
+				"daemonPort": daemonPort,
 			},
 			Metadata: map[string]interface{}{
 				"key1": "value1",
@@ -174,7 +183,6 @@ var _ = Describe("CniWrapperPlugin", func() {
 				IPTablesASGLogging:            false,
 				IngressTag:                    "FFFF0000",
 				VTEPName:                      "some-device",
-				NoMasqueradeCIDRRange:         "10.255.0.0/16",
 				UnderlayIPs:                   []string{underlayIpAddr1, underlayIpAddr2},
 				IPTablesDeniedLogsPerSec:      5,
 				IPTablesAcceptedUDPLogsPerSec: 7,
@@ -253,27 +261,28 @@ var _ = Describe("CniWrapperPlugin", func() {
 			},
 		}
 
-		input = GetInput(inputStruct)
-
 		containerID = "some-container-id-that-is-long"
 		netinChainName = ("netin--" + containerID)[:28]
 		netoutChainName = ("netout--" + containerID)[:28]
 		inputChainName = ("input--" + containerID)[:28]
 		overlayChainName = ("overlay--" + containerID)[:28]
 		netoutLoggingChainName = fmt.Sprintf("%s--log", netoutChainName[:23])
-
+	})
+	JustBeforeEach(func() {
+		input = GetInput(inputStruct)
 		cmd = cniCommand("ADD", input)
 	})
-
-	AfterEach(func() {
+	JustAfterEach(func() {
 		By("Deleting things")
 		cmd := cniCommand("DEL", input)
 		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(session, "5s").Should(gexec.Exit(0))
+	})
 
+	AfterEach(func() {
 		By("checking that ip masquerade rule is removed")
-		Expect(AllIPTablesRules("nat")).ToNot(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.0.0/16 ! -o some-device -j MASQUERADE"))
+		Expect(AllIPTablesRules("nat")).ToNot(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.30.0/24 ! -o some-device -j MASQUERADE"))
 
 		By("checking that iptables netin rules are removed")
 		Expect(AllIPTablesRules("nat")).ToNot(ContainElement(`-N ` + netinChainName))
@@ -303,7 +312,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 		removeDummyInterface(underlayName1, underlayIpAddr1)
 		removeDummyInterface(underlayName2, underlayIpAddr2)
 
-		err = policyAgentServer.stop()
+		err := policyAgentServer.stop()
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -342,7 +351,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Eventually(session).Should(gexec.Exit(0))
 
 			By("check that ip masquerade rule is created")
-			Expect(AllIPTablesRules("nat")).To(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.0.0/16 ! -o some-device -j MASQUERADE"))
+			Expect(AllIPTablesRules("nat")).To(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.30.0/24 ! -o some-device -j MASQUERADE"))
 
 			By("calling DEL")
 			cmd = cniCommand("DEL", input)
@@ -351,7 +360,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Eventually(session).Should(gexec.Exit(0))
 
 			By("check that ip masquerade rule is removed")
-			Expect(AllIPTablesRules("nat")).NotTo(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.0.0/16 ! -o some-device -j MASQUERADE"))
+			Expect(AllIPTablesRules("nat")).NotTo(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.30.0/24 ! -o some-device -j MASQUERADE"))
 		})
 	})
 
@@ -372,12 +381,13 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(debug.Command).To(Equal("ADD"))
 
-			Expect(debug.CmdArgs.StdinData).To(MatchJSON(`{
+			Expect(debug.CmdArgs.StdinData).To(MatchJSON(fmt.Sprintf(`{
 						"cniVersion": "1.0.0",
 						"type": "noop",
 						"some": "other data",
-						"name": "name"
-					}`))
+						"name": "name",
+						"daemonPort": "%s"
+					}`, daemonPort)))
 		})
 
 		It("ensures the container masquerade rule is created", func() {
@@ -385,7 +395,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
 			Expect(session.Out.Contents()).To(MatchJSON(`{ "cniVersion": "1.0.0", "ips": [{ "interface": -1, "address": "1.2.3.4/32" }] }`))
-			Expect(AllIPTablesRules("nat")).To(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.0.0/16 ! -o some-device -j MASQUERADE"))
+			Expect(AllIPTablesRules("nat")).To(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.30.0/24 ! -o some-device -j MASQUERADE"))
 		})
 
 		It("writes default deny input chain rules to prevent connecting to things on the host", func() {
@@ -1075,7 +1085,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 		})
 
 		Context("when the container id is not specified", func() {
-			BeforeEach(func() {
+			JustBeforeEach(func() {
 				cmd.Env[1] = "CNI_CONTAINERID="
 			})
 
@@ -1092,7 +1102,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1))
 
-				Expect(AllIPTablesRules("nat")).NotTo(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.0.0/16 ! -o some-device -j MASQUERADE"))
+				Expect(AllIPTablesRules("nat")).NotTo(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.30.0/24 ! -o some-device -j MASQUERADE"))
 			})
 		})
 
@@ -1115,13 +1125,30 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1))
 
-				Expect(AllIPTablesRules("nat")).NotTo(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.0.0/16 ! -o some-device -j MASQUERADE"))
+				Expect(AllIPTablesRules("nat")).NotTo(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.30.0/24 ! -o some-device -j MASQUERADE"))
+			})
+		})
+
+		Context("when the NoMasqueradeCIDRRange is provided", func() {
+			BeforeEach(func() {
+				inputStruct.WrapperConfig.NoMasqueradeCIDRRange = "10.10.10.10/10"
+			})
+			AfterEach(func() {
+				Expect(AllIPTablesRules("nat")).NotTo(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.0.0.0/10 ! -o some-device -j MASQUERADE"))
+			})
+
+			It("uses the requested NoMasquerideCIDRRange", func() {
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+
+				Expect(AllIPTablesRules("nat")).To(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.0.0.0/10 ! -o some-device -j MASQUERADE"))
 			})
 		})
 	})
 
 	Context("When call with command DEL", func() {
-		BeforeEach(func() {
+		JustBeforeEach(func() {
 			cmd.Env[0] = "CNI_COMMAND=DEL"
 		})
 
@@ -1134,12 +1161,13 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(debug.Command).To(Equal("DEL"))
 
-			Expect(debug.CmdArgs.StdinData).To(MatchJSON(`{
+			Expect(debug.CmdArgs.StdinData).To(MatchJSON(fmt.Sprintf(`{
 						"cniVersion": "1.0.0",
 						"type": "noop",
 						"some": "other data",
-						"name": "name"
-					}`))
+						"name": "name",
+						"daemonPort": "%s"
+					}`, daemonPort)))
 		})
 
 		It("ensures the iptables.lock file is chowned", func() {
@@ -1176,7 +1204,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 		})
 
 		Context("when the policy agent asg updater returns an error", func() {
-			AfterEach(func() {
+			JustAfterEach(func() {
 				policyAgentServer.CleanupOrphanedASGsReturnCode = 200
 				policyAgentServer.CleanupOrphanedASGsReturnErrorMessage = ""
 			})
@@ -1234,12 +1262,13 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(debug.Command).To(Equal("DEL"))
 
-				Expect(debug.CmdArgs.StdinData).To(MatchJSON(`{
+				Expect(debug.CmdArgs.StdinData).To(MatchJSON(fmt.Sprintf(`{
 							"type": "noop",
 							"some": "other data",
 							"name": "name",
-							"cniVersion": "1.0.0"
-						}`))
+							"cniVersion": "1.0.0",
+							"daemonPort": "%s"
+						}`, daemonPort)))
 			})
 		})
 

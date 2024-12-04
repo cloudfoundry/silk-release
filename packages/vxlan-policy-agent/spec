@@ -40,6 +40,7 @@ files:
   - code.cloudfoundry.org/lib/serial/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/policy_client/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/routing-info/internalroutes/*.go # gosub-main-module
+  - code.cloudfoundry.org/silk/daemon/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/tlsconfig/*.go # gosub-main-module
   - code.cloudfoundry.org/vxlan-policy-agent/cmd/pre-start/*.go # gosub-main-module
   - code.cloudfoundry.org/vxlan-policy-agent/cmd/vxlan-policy-agent/*.go # gosub-main-module
