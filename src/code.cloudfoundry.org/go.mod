@@ -8,12 +8,6 @@ replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimesche
 
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
-// Prevents `go get -u ./...` from trying to get a branch of executor that we
-// tried to make an independent module (adding it's own go mod)`
-//   Generated from story https://www.pivotaltracker.com/story/show/184869807
-// i.e. we need executor to float on main (v0.0.0-...)
-exclude code.cloudfoundry.org/executor v0.1442.0
-
 require (
 	code.cloudfoundry.org/cf-networking-helpers v0.28.0
 	code.cloudfoundry.org/debugserver v0.26.0
