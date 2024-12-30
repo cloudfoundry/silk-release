@@ -336,7 +336,7 @@ func (fake *LinkOperations) EnableIPv6(arg1 string) error {
 	}{arg1})
 	stub := fake.EnableIPv6Stub
 	fakeReturns := fake.enableIPv6Returns
-	fake.recordInvocation("EnableIPv6", []interface{}{arg1})
+	fake.recordInvocation("IPv6", []interface{}{arg1})
 	fake.enableIPv6Mutex.Unlock()
 	if stub != nil {
 		return stub(arg1)

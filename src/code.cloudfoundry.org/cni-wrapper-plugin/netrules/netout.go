@@ -47,6 +47,7 @@ type NetOut struct {
 	DNSServers            []string
 	Conn                  OutConn
 	NetOutChain           *NetOutChain
+	IPv6                  bool
 }
 
 func (m *NetOut) Initialize() error {
@@ -104,7 +105,6 @@ func (m *NetOut) Cleanup() error {
 func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 	inputChainName := m.ChainNamer.Prefix(prefixInput, m.ContainerHandle)
 	forwardChainName := m.ChainNamer.Prefix(prefixNetOut, m.ContainerHandle)
-	overlayChain := m.ChainNamer.Prefix(prefixOverlay, m.ContainerHandle)
 
 	args := []IpTablesFullChain{
 		{
@@ -117,7 +117,7 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 			}},
 			[]rules.IPTablesRule{
 				rules.NewInputRelatedEstablishedRule(),
-				rules.NewInputDefaultRejectRule(),
+				rules.NewInputDefaultRejectRule(m.IPv6),
 			},
 		},
 		{
@@ -127,7 +127,13 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 			rules.NewNetOutJumpConditions(m.HostInterfaceNames, m.ContainerIP, forwardChainName),
 			m.NetOutChain.DefaultRules(m.ContainerHandle),
 		},
-		m.addC2CLogging(IpTablesFullChain{
+	}
+
+	// Overlay networking only for ipv4
+	if !m.IPv6 {
+		overlayChain := m.ChainNamer.Prefix(prefixOverlay, m.ContainerHandle)
+
+		args = append(args, m.addC2CLogging(IpTablesFullChain{
 			"filter",
 			"FORWARD",
 			overlayChain,
@@ -138,9 +144,9 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 				rules.NewOverlayAllowEgress(m.VTEPName, m.ContainerIP),
 				rules.NewOverlayRelatedEstablishedRule(m.ContainerIP),
 				rules.NewOverlayTagAcceptRule(m.ContainerIP, m.IngressTag),
-				rules.NewOverlayDefaultRejectRule(m.ContainerIP),
+				rules.NewOverlayDefaultRejectRule(m.ContainerIP, m.IPv6),
 			},
-		}),
+		}))
 	}
 
 	// This log chain is not connected to parent chains, it only gets used when asg logging is set
@@ -224,7 +230,7 @@ func (m *NetOut) appendInputRules(
 		args[0].Rules = append(args[0].Rules, rules.NewInputAllowRule("udp", host, portInt))
 	}
 
-	args[0].Rules = append(args[0].Rules, rules.NewInputDefaultRejectRule())
+	args[0].Rules = append(args[0].Rules, rules.NewInputDefaultRejectRule(m.IPv6))
 
 	return args, nil
 }
@@ -237,7 +243,7 @@ func (m *NetOut) connRateLimitLogChain(forwardChainName string) (IpTablesFullCha
 	}
 
 	if !m.Conn.DryRun {
-		logRules = append(logRules, rules.NewNetOutDefaultRejectRule())
+		logRules = append(logRules, rules.NewNetOutDefaultRejectRule(m.IPv6))
 	}
 
 	return m.netOutLogChain(forwardChainName, suffixNetOutRateLimitLog, logRules)

@@ -86,12 +86,20 @@ properties:
       - 169.254.0.2:9001
       - 169.254.0.2:9002
 
+  host_tcp_services_ipv6:
+    description: "List of IPv6 TCP addresses running on the BOSH VM that should be accessible from containers.  The address must not be in the 127.0.0.0/8 range.  The network plugin will install an iptables INPUT rule for each service."
+    default: []
+
   host_udp_services:
     description: "List of UDP addresses running on the BOSH VM that should be accessible from containers.  The address must not be in the 127.0.0.0/8 range.  The network plugin will install an iptables INPUT rule for each service."
     default: []
     example: |
       - 169.254.0.2:9001
       - 169.254.0.2:9002
+
+  host_udp_services_ipv6:
+    description: "List of IPv6 UDP addresses running on the BOSH VM that should be accessible from containers.  The address must not be in the 127.0.0.0/8 range.  The network plugin will install an iptables INPUT rule for each service."
+    default: []
 
   deny_networks.always:
     default: []
@@ -113,6 +121,30 @@ properties:
     default: []
     description: |
       List of CIDR blocks to which all containers will be denied access, regardless of security groups.
+      This can severely impact the network connectivity of applications.
+      Use with extreme caution and at your own risk.
+      These rules apply during the staging process.
+
+  deny_networks_ipv6.always:
+    default: []
+    description: |
+      List of IPv6 CIDR blocks to which all containers will be denied access, regardless of security groups.
+      This can severely impact the network connectivity of applications.
+      Use with extreme caution and at your own risk.
+      These rules apply to all containers.
+
+  deny_networks_ipv6.running:
+    default: []
+    description: |
+      List of IPv6 CIDR blocks to which all containers will be denied access, regardless of security groups.
+      This can severely impact the network connectivity of applications.
+      Use with extreme caution and at your own risk.
+      These rules apply to running scheduled containers: apps and tasks.
+
+  deny_networks_ipv6.staging:
+    default: []
+    description: |
+      List of IPv6 CIDR blocks to which all containers will be denied access, regardless of security groups.
       This can severely impact the network connectivity of applications.
       Use with extreme caution and at your own risk.
       These rules apply during the staging process.

@@ -329,7 +329,7 @@ func (p *CNIPlugin) cmdDel(args *skel.CmdArgs) error {
 	// use 0.0.0.0/0 for the IPAM subnet during delete so we don't need to discover the subnet.
 	// this way, silk-daemon does not need to be up during deletes, and cleanup that takes place
 	// on startup, after the subnet may have changed, will succeed.
-	// TODO IPv6
+	// cmdDel for host-local plugin does not require subnets for any protocol version.
 	ipamConfig, err := generator.GenerateConfig("0.0.0.0/0", "", netConf.Name, netConf.DataDir)
 	if err != nil {
 		p.Logger.Error("generate-ipam-config-failed", err) // untestable

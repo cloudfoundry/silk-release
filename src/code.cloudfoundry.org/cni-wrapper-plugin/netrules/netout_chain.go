@@ -16,6 +16,7 @@ type NetOutChain struct {
 	ASGLogging       bool
 	DeniedLogsPerSec int
 	Conn             OutConn
+	IPv6             bool
 }
 
 func (c *NetOutChain) Validate() error {
@@ -27,12 +28,16 @@ func (c *NetOutChain) Validate() error {
 
 	for _, denyNetworks := range allDenyNetworkRules {
 		for destinationIndex, destination := range denyNetworks {
-			_, validatedDestination, err := net.ParseCIDR(destination)
-
+			ip, validatedDestination, err := net.ParseCIDR(destination)
 			if err != nil {
 				return fmt.Errorf("deny networks: %s", err)
 			}
 
+			if c.IPv6 && ip.To4() != nil {
+				return fmt.Errorf("network is ipv4 in ipv6 chain: %s", ip)
+			} else if !c.IPv6 && ip.To4() == nil {
+				return fmt.Errorf("network is ipv6 in ipv4 chain: %s", ip)
+			}
 			denyNetworks[destinationIndex] = validatedDestination.String()
 		}
 	}
@@ -46,7 +51,7 @@ func (c *NetOutChain) DefaultRules(containerHandle string) []rules.IPTablesRule 
 		ruleSpec = append(ruleSpec, rules.NewNetOutDefaultRejectLogRule(containerHandle, c.DeniedLogsPerSec))
 	}
 
-	ruleSpec = append(ruleSpec, rules.NewNetOutDefaultRejectRule())
+	ruleSpec = append(ruleSpec, rules.NewNetOutDefaultRejectRule(c.IPv6))
 	return ruleSpec
 }
 
@@ -87,18 +92,18 @@ func (c *NetOutChain) denyNetworksRules(containerWorkload string) []rules.IPTabl
 	denyRules := []rules.IPTablesRule{}
 
 	for _, denyNetwork := range c.DenyNetworks.Always {
-		denyRules = append(denyRules, rules.NewInputRejectRule(denyNetwork))
+		denyRules = append(denyRules, rules.NewInputRejectRule(denyNetwork, c.IPv6))
 	}
 
 	if containerWorkload == "app" || containerWorkload == "task" {
 		for _, denyNetwork := range c.DenyNetworks.Running {
-			denyRules = append(denyRules, rules.NewInputRejectRule(denyNetwork))
+			denyRules = append(denyRules, rules.NewInputRejectRule(denyNetwork, c.IPv6))
 		}
 	}
 
 	if containerWorkload == "staging" {
 		for _, denyNetwork := range c.DenyNetworks.Staging {
-			denyRules = append(denyRules, rules.NewInputRejectRule(denyNetwork))
+			denyRules = append(denyRules, rules.NewInputRejectRule(denyNetwork, c.IPv6))
 		}
 	}
 

@@ -15,6 +15,8 @@ import (
 	"code.cloudfoundry.org/cni-wrapper-plugin/lib"
 	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
 	"code.cloudfoundry.org/filelock"
+	"code.cloudfoundry.org/garden"
+	"code.cloudfoundry.org/lib/common"
 	"code.cloudfoundry.org/lib/datastore"
 	"code.cloudfoundry.org/lib/interfacelookup"
 	"code.cloudfoundry.org/lib/rules"
@@ -31,7 +33,9 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	pluginController, err := newPluginController(cfg)
+	enableIPv6 := common.IsIPv6Enabled()
+
+	pluginController, err := newPluginController(cfg, enableIPv6)
 	if err != nil {
 		return err
 	}
@@ -190,7 +194,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 		Conn:                  outConn,
 	}
 
-	if err := netOutProvider.Initialize(); err != nil {
+	err = netOutProvider.Initialize()
+	if err != nil {
 		return fmt.Errorf("initialize net out: %s", err)
 	}
 
@@ -213,8 +218,51 @@ func cmdAdd(args *skel.CmdArgs) error {
 		if netIn.HostPort <= 0 {
 			return fmt.Errorf("cannot allocate port %d", netIn.HostPort)
 		}
+
 		if err := netinProvider.AddRule(args.ContainerID, int(netIn.HostPort), int(netIn.ContainerPort), cfg.InstanceAddress, containerIP.String()); err != nil {
 			return fmt.Errorf("adding netin rule: %s", err)
+		}
+	}
+
+	var netOutChainIPv6 *netrules.NetOutChain
+	var netOutProviderIPv6 *netrules.NetOut
+
+	if enableIPv6 {
+		netOutChainIPv6 = &netrules.NetOutChain{
+			ChainNamer:       chainNamer,
+			Converter:        &netrules.RuleConverter{LogWriter: os.Stderr},
+			ASGLogging:       cfg.IPTablesASGLogging,
+			DeniedLogsPerSec: cfg.IPTablesDeniedLogsPerSec,
+			DenyNetworks: netrules.DenyNetworks{
+				Always:  cfg.DenyNetworksIPv6.Always,
+				Running: cfg.DenyNetworksIPv6.Running,
+				Staging: cfg.DenyNetworksIPv6.Staging,
+			},
+			Conn: outConn,
+			IPv6: true,
+		}
+
+		netOutProviderIPv6 = &netrules.NetOut{
+			ChainNamer:            chainNamer,
+			IPTables:              pluginController.IP6Tables,
+			NetOutChain:           netOutChainIPv6,
+			DeniedLogsPerSec:      cfg.IPTablesDeniedLogsPerSec,
+			AcceptedUDPLogsPerSec: cfg.IPTablesAcceptedUDPLogsPerSec,
+			IngressTag:            cfg.IngressTag,
+			VTEPName:              cfg.VTEPName,
+			HostInterfaceNames:    interfaceNames,
+			ContainerHandle:       args.ContainerID,
+			ContainerWorkload:     containerWorkload,
+			ContainerIP:           containerIPv6.String(),
+			HostTCPServices:       cfg.HostTCPServicesIPv6,
+			HostUDPServices:       cfg.HostUDPServicesIPv6,
+			Conn:                  outConn,
+			IPv6:                  true,
+		}
+
+		err = netOutProviderIPv6.Initialize()
+		if err != nil {
+			return fmt.Errorf("initialize net out ipv6: %s", err)
 		}
 	}
 
@@ -225,8 +273,18 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	if resp.StatusCode == http.StatusMethodNotAllowed {
 		netOutRules := cfg.RuntimeConfig.NetOutRules
-		if err := netOutProvider.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(netOutRules)); err != nil {
+		v4rules, v6rules := groupRulesByProtocolVersion(netOutRules)
+
+		err = netOutProvider.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(v4rules))
+		if err != nil {
 			return fmt.Errorf("bulk insert: %s", err) // not tested
+		}
+
+		if enableIPv6 && netOutProviderIPv6 != nil {
+			err = netOutProviderIPv6.BulkInsertRules(netrules.NewRulesFromGardenNetOutRules(v6rules))
+			if err != nil {
+				return fmt.Errorf("bulk insert ipv6: %s", err) // not tested
+			}
 		}
 	}
 
@@ -253,6 +311,44 @@ func cmdAdd(args *skel.CmdArgs) error {
 	return resultVersioned.Print()
 }
 
+func groupRulesByProtocolVersion(rules []garden.NetOutRule) ([]garden.NetOutRule, []garden.NetOutRule) {
+	var v4Rules []garden.NetOutRule
+	var v6Rules []garden.NetOutRule
+
+	for _, rule := range rules {
+		var v4Networks []garden.IPRange
+		var v6Networks []garden.IPRange
+
+		for _, network := range rule.Networks {
+			if isIPVersionMatch(network, false) {
+				v4Networks = append(v4Networks, network)
+			} else if isIPVersionMatch(network, true) {
+				v6Networks = append(v6Networks, network)
+			}
+		}
+
+		if len(v4Networks) > 0 {
+			v4Rule := rule
+			v4Rule.Networks = v4Networks
+			v4Rules = append(v4Rules, v4Rule)
+		}
+
+		if len(v6Networks) > 0 {
+			v6Rule := rule
+			v6Rule.Networks = v6Networks
+			v6Rules = append(v6Rules, v6Rule)
+		}
+	}
+
+	return v4Rules, v6Rules
+}
+
+// isIPVersionMatch checks if the given IPRange matches the desired IP version.
+func isIPVersionMatch(ipRange garden.IPRange, isIPv6 bool) bool {
+	// Check if both start and end IPs match the desired version
+	return (ipRange.Start.To4() == nil) == isIPv6 && (ipRange.End.To4() == nil) == isIPv6
+}
+
 func cmdCheck(args *skel.CmdArgs) error {
 	return fmt.Errorf("Meow this isn't implemented yet")
 }
@@ -276,6 +372,8 @@ func cmdDel(args *skel.CmdArgs) error {
 		return err
 	}
 
+	enableIPv6 := common.IsIPv6Enabled()
+
 	store := &datastore.Store{
 		Serializer: &serial.Serial{},
 		Locker: &filelock.Locker{
@@ -292,7 +390,7 @@ func cmdDel(args *skel.CmdArgs) error {
 		fmt.Fprintf(os.Stderr, "store delete: %s", err)
 	}
 
-	pluginController, err := newPluginController(cfg)
+	pluginController, err := newPluginController(cfg, enableIPv6)
 	if err != nil {
 		return err
 	}
@@ -356,6 +454,31 @@ func cmdDel(args *skel.CmdArgs) error {
 		fmt.Fprintf(os.Stderr, "net out cleanup: %s", err)
 	}
 
+	if enableIPv6 {
+		netOutChainIPv6 := &netrules.NetOutChain{
+			ChainNamer: chainNamer,
+			Converter:  &netrules.RuleConverter{LogWriter: os.Stderr},
+			Conn:       outConn,
+			IPv6:       true,
+		}
+
+		netOutProviderIPv6 := netrules.NetOut{
+			ChainNamer:         chainNamer,
+			NetOutChain:        netOutChainIPv6,
+			IPTables:           pluginController.IP6Tables,
+			ContainerHandle:    args.ContainerID,
+			ContainerIP:        container.IPv6,
+			HostInterfaceNames: interfaceNames,
+			Conn:               outConn,
+			IPv6:               true,
+		}
+
+		err = netOutProviderIPv6.Cleanup()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "net out cleanup: %s", err)
+		}
+	}
+
 	masquerader := netrules.Masquerader{
 		PluginController:            pluginController,
 		VTEPName:                    cfg.VTEPName,
@@ -373,6 +496,7 @@ func cmdDel(args *skel.CmdArgs) error {
 	if err != nil {
 		return err
 	}
+
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusMethodNotAllowed {
 		body, _ := io.ReadAll(resp.Body)
 		// #nosec G104 - don't capture this error, as the one we generate below is more important to return
@@ -429,7 +553,7 @@ func lookupFileOwnerUIDandGID(fileOwner, fileGroup string) (int, int, error) {
 	return uid, gid, nil
 }
 
-func newPluginController(config *lib.WrapperConfig) (*lib.PluginController, error) {
+func newPluginController(config *lib.WrapperConfig, enableIPv6 bool) (*lib.PluginController, error) {
 	ipt, err := iptables.New()
 	if err != nil {
 		return nil, err
@@ -455,6 +579,26 @@ func newPluginController(config *lib.WrapperConfig) (*lib.PluginController, erro
 		Delegator: lib.NewDelegator(),
 		IPTables:  lockedIPTables,
 	}
+
+	if enableIPv6 {
+		ip6t, err := iptables.New(iptables.IPFamily(iptables.ProtocolIPv6))
+		if err != nil {
+			return nil, err
+		}
+
+		restorer6 := &rules.Restorer{
+			IPv6: true,
+		}
+
+		lockedIP6Tables := &rules.LockedIPTables{
+			IPTables: ip6t,
+			Locker:   iptLocker,
+			Restorer: restorer6,
+		}
+
+		pluginController.IP6Tables = lockedIP6Tables
+	}
+
 	return pluginController, nil
 }
 

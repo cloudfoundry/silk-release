@@ -85,10 +85,17 @@
       'dns_servers' => p('dns_servers'),
       'host_tcp_services' => p('host_tcp_services'),
       'host_udp_services' => p('host_udp_services'),
+      'host_tcp_services_ipv6' => p('host_tcp_services_ipv6'),
+      'host_udp_services_ipv6' => p('host_udp_services_ipv6'),
       'deny_networks' => {
         'always' => p('deny_networks.always'),
         'running' => p('deny_networks.running'),
         'staging' => p('deny_networks.staging'),
+      },
+      'deny_networks_ipv6' => {
+        'always' => p('deny_networks_ipv6.always'),
+        'running' => p('deny_networks_ipv6.running'),
+        'staging' => p('deny_networks_ipv6.staging'),
       },
       'delegate' => {
         'cniVersion' => '1.0.0',

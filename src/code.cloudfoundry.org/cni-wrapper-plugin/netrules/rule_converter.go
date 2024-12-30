@@ -15,10 +15,11 @@ import (
 type Protocol string
 
 const (
-	ProtocolTCP  = Protocol("tcp")
-	ProtocolUDP  = Protocol("udp")
-	ProtocolICMP = Protocol("icmp")
-	ProtocolAll  = Protocol("all")
+	ProtocolTCP    = Protocol("tcp")
+	ProtocolUDP    = Protocol("udp")
+	ProtocolICMP   = Protocol("icmp")
+	ProtocolICMPv6 = Protocol("icmpv6")
+	ProtocolAll    = Protocol("all")
 )
 
 type PortRange struct {
@@ -108,9 +109,24 @@ func (c *RuleConverter) Convert(rule Rule, logChainName string, globalLogging bo
 				continue
 			}
 			if log {
-				ruleSpec = append(ruleSpec, rules.NewNetOutICMPLogRule(startIP, endIP, icmpInfo.Type, icmpInfo.Code, logChainName))
+				ruleSpec = append(ruleSpec, rules.NewNetOutICMPLogRule(startIP, endIP, icmpInfo.Type, icmpInfo.Code, logChainName, false))
 			} else {
-				ruleSpec = append(ruleSpec, rules.NewNetOutICMPRule(startIP, endIP, icmpInfo.Type, icmpInfo.Code))
+				ruleSpec = append(ruleSpec, rules.NewNetOutICMPRule(startIP, endIP, icmpInfo.Type, icmpInfo.Code, false))
+			}
+		case ProtocolICMPv6:
+			icmpInfo := rule.ICMPInfo()
+			if icmpInfo == nil {
+				c.log("invalid-rule", "ICMPv6 rule must specify ICMP type/code: %+v\n", rule)
+				continue
+			}
+			if len(ports) > 0 {
+				c.log("invalid-rule", "ICMPv6 rule must not specify ports: %+v\n", rule)
+				continue
+			}
+			if log {
+				ruleSpec = append(ruleSpec, rules.NewNetOutICMPLogRule(startIP, endIP, icmpInfo.Type, icmpInfo.Code, logChainName, true))
+			} else {
+				ruleSpec = append(ruleSpec, rules.NewNetOutICMPRule(startIP, endIP, icmpInfo.Type, icmpInfo.Code, true))
 			}
 		case ProtocolAll:
 			if len(ports) > 0 {

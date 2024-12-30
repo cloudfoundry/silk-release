@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"math"
+	"net"
 	"time"
 )
 
@@ -58,4 +59,21 @@ func isRetryableError(err error) bool {
 	}
 
 	return false
+}
+
+func IsIPv6Enabled() bool {
+	testAddress := "[::1]:0"
+
+	addr, err := net.ResolveUDPAddr("udp6", testAddress)
+	if err != nil {
+		return false
+	}
+
+	conn, err := net.ListenUDP("udp6", addr)
+	if err != nil {
+		return false
+	}
+	defer conn.Close()
+
+	return true
 }
