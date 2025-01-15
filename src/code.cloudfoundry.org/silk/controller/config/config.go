@@ -16,7 +16,7 @@ type Config struct {
 	CACertFile                    string    `json:"ca_cert_file" validate:"nonzero"`
 	ServerCertFile                string    `json:"server_cert_file" validate:"nonzero"`
 	ServerKeyFile                 string    `json:"server_key_file" validate:"nonzero"`
-	Network                       string    `json:"network" validate:"nonzero"`
+	Network                       []string  `json:"network" validate:"nonzero"`
 	SubnetPrefixLength            int       `json:"subnet_prefix_length" validate:"nonzero"`
 	Database                      db.Config `json:"database" validate:"nonzero"`
 	LeaseExpirationSeconds        int       `json:"lease_expiration_seconds" validate:"min=1"`

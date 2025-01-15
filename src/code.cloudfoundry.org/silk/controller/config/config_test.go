@@ -32,7 +32,7 @@ var _ = Describe("Config.ReadFromFile", func() {
 			"ca_cert_file":         "/some/cert/file",
 			"server_cert_file":     "/some/other/cert/file",
 			"server_key_file":      "/some/key/file",
-			"network":              "10.255.0.0/16",
+			"network":              []string{"10.255.0.0/16"},
 			"subnet_prefix_length": 24,
 			"database": db.Config{
 				Type:         "mysql",
@@ -113,5 +113,6 @@ var _ = Describe("Config.ReadFromFile", func() {
 		Entry("invalid max_open_connections", "max_open_connections", -2, "MaxOpenConnections: less than min"),
 		Entry("invalid max_idle_connections", "max_idle_connections", -2, "MaxIdleConnections: less than min"),
 		Entry("invalid connections_max_lifetime_seconds", "connections_max_lifetime_seconds", -2, "MaxConnectionsLifetimeSeconds: less than min"),
+		Entry("invalid network", "network", []string{}, "Network: zero value"),
 	)
 })
