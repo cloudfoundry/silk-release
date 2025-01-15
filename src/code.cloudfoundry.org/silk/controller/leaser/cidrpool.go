@@ -1,9 +1,9 @@
 package leaser
 
 import (
+	mcn "code.cloudfoundry.org/lib/multiple-cidr-network"
 	"fmt"
 	mathRand "math/rand"
-	"net"
 
 	"github.com/ziutek/utils/netaddr"
 )
@@ -13,25 +13,26 @@ type CIDRPool struct {
 	singlePool map[string]struct{}
 }
 
-func NewCIDRPool(subnetRange string, subnetMask int) *CIDRPool {
-	_, ipCIDR, err := net.ParseCIDR(subnetRange)
-	if err != nil {
-		panic(err)
-	}
-	cidrMask, _ := ipCIDR.Mask.Size()
+func NewCIDRPool(subnetRanges []string, subnetMask int) *CIDRPool {
 
-	if cidrMask > 32 || cidrMask < 0 {
-		panic(fmt.Errorf("subnet range's CIDR mask must be between [0-32]"))
+	if len(subnetRanges) == 0 {
+		panic(fmt.Errorf("network must be provided"))
 	}
+
+	overlayNetworks, err := mcn.NewMultipleCIDRNetwork(subnetRanges)
+	if err != nil {
+		panic(fmt.Errorf("invalid overlay network: %s", err))
+	}
+
 	if subnetMask > 32 || subnetMask < 0 {
 		panic(fmt.Errorf("subnet mask must be between [0-32]"))
 	}
 
 	return &CIDRPool{
 		// #nosec - G115 - we check valid values above for IPv4 subnet masks
-		blockPool: generateBlockPool(ipCIDR.IP, uint(cidrMask), uint(subnetMask)),
+		blockPool: generateBlockPool(overlayNetworks, uint(subnetMask)),
 		// #nosec - G115 - we check valid values above for IPv4 subnet masks
-		singlePool: generateSingleIPPool(ipCIDR.IP, uint(subnetMask)),
+		singlePool: generateSingleIPPool(overlayNetworks, uint(subnetMask)),
 	}
 }
 
@@ -87,23 +88,44 @@ func getAvailable(taken []string, pool map[string]struct{}) string {
 	return ""
 }
 
-func generateBlockPool(ipStart net.IP, cidrMask, cidrMaskBlock uint) map[string]struct{} {
+func generateBlockPool(overlayNetworks mcn.MultipleCIDRNetwork, cidrMaskBlock uint) map[string]struct{} {
 	pool := make(map[string]struct{})
-	fullRange := 1 << (32 - cidrMask)
 	blockSize := 1 << (32 - cidrMaskBlock)
-	for i := blockSize; i < fullRange; i += blockSize {
-		subnet := fmt.Sprintf("%s/%d", netaddr.IPAdd(ipStart, i), cidrMaskBlock)
-		pool[subnet] = struct{}{}
+
+	// loop over all subnets
+	for _, subnet := range overlayNetworks.Networks {
+		// get the starting IP
+		ipStart := subnet.IP
+
+		// get the size of the mask
+		cidrMask, _ := subnet.Mask.Size()
+		fullRange := 1 << (32 - cidrMask)
+
+		// for all subnets, skip over the first block, it is reserved for the
+		// single IP pool and for setting up the networking between cells
+		for i := blockSize; i < fullRange; i += blockSize {
+			subnet := fmt.Sprintf("%s/%d", netaddr.IPAdd(ipStart, i), cidrMaskBlock)
+			pool[subnet] = struct{}{}
+		}
 	}
 	return pool
 }
 
-func generateSingleIPPool(ipStart net.IP, cidrMaskBlock uint) map[string]struct{} {
+func generateSingleIPPool(overlayNetworks mcn.MultipleCIDRNetwork, cidrMaskBlock uint) map[string]struct{} {
+	// Only use IPs from the 1st network. SingleIPs from different networks
+	// can't talk to each other. We check above to make sure there is at leas
+	// one, so it is safe to use the 0 index.
+	firstNetwork := overlayNetworks.Networks[0]
+
 	pool := make(map[string]struct{})
 	blockSize := 1 << (32 - cidrMaskBlock)
+
+	// Never create a lease from the first IP. This is used for setting up the
+	// networking between the cells. That is why this starts at i := 1.
 	for i := 1; i < blockSize; i++ {
-		singleCIDR := fmt.Sprintf("%s/32", netaddr.IPAdd(ipStart, i))
+		singleCIDR := fmt.Sprintf("%s/32", netaddr.IPAdd(firstNetwork.IP, i))
 		pool[singleCIDR] = struct{}{}
 	}
+
 	return pool
 }

@@ -10,6 +10,7 @@ import (
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport"
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics"
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport/ports"
+	mcn "code.cloudfoundry.org/lib/multiple-cidr-network"
 	"code.cloudfoundry.org/silk/controller"
 	"code.cloudfoundry.org/silk/controller/config"
 	"code.cloudfoundry.org/silk/controller/integration/helpers"
@@ -83,14 +84,21 @@ var _ = Describe("Silk Controller", func() {
 
 	Describe("acquiring", func() {
 		It("provides an endpoint to acquire a subnet leases", func() {
+			By("acquiring a lease")
 			lease, err := testClient.AcquireSubnetLease("10.244.4.5")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(lease.UnderlayIP).To(Equal("10.244.4.5"))
+
+			By("checking that the lease subnet is valid")
 			_, subnet, err := net.ParseCIDR(lease.OverlaySubnet)
 			Expect(err).NotTo(HaveOccurred())
-			_, network, err := net.ParseCIDR(conf.Network)
+
+			By("checking that the lease is contained in the overlay network")
+			overlayNetwork, err := mcn.NewMultipleCIDRNetwork(conf.Network)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(network.Contains(subnet.IP)).To(BeTrue())
+			Expect(overlayNetwork.Contains(subnet.IP)).To(BeTrue())
+
+			By("checking the hardware addr")
 			expectedHardwareAddr, err := (&leaser.HardwareAddressGenerator{}).GenerateForVTEP(subnet.IP)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(lease.OverlayHardwareAddr).To(Equal(expectedHardwareAddr.String()))
@@ -117,19 +125,29 @@ var _ = Describe("Silk Controller", func() {
 			Context("when the existing lease is in a different overlay network", func() {
 				BeforeEach(func() {
 					helpers.StopServer(session)
-					conf.Network = "10.254.0.0/16"
+					conf.Network = []string{"10.254.0.0/16", "10.253.0.0/16"}
 					session = helpers.StartAndWaitForServer(controllerBinaryPath, conf, testClient)
 				})
+
 				It("returns a new lease in the new network", func() {
+					By("validating that the old lease is not in the new network")
+					overlayNetwork, err := mcn.NewMultipleCIDRNetwork(conf.Network)
+					Expect(err).NotTo(HaveOccurred())
+					ip, _, err := net.ParseCIDR(existingLease.OverlaySubnet)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(overlayNetwork.Contains(ip)).To(BeFalse())
+
+					By("acquiring a new lease after the overlay network has changed")
 					lease, err := testClient.AcquireSubnetLease("10.244.4.5")
 					Expect(err).NotTo(HaveOccurred())
-
 					Expect(lease).NotTo(Equal(existingLease))
+
+					By("checking that the new lease is a valid subnet")
 					_, subnet, err := net.ParseCIDR(lease.OverlaySubnet)
 					Expect(err).NotTo(HaveOccurred())
-					_, network, err := net.ParseCIDR(conf.Network)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(network.Contains(subnet.IP)).To(BeTrue())
+
+					By("checking that the new lease is in the new overlay network")
+					Expect(overlayNetwork.Contains(subnet.IP)).To(BeTrue())
 				})
 			})
 		})
@@ -199,7 +217,7 @@ var _ = Describe("Silk Controller", func() {
 	Describe("lease expiration", func() {
 		BeforeEach(func() {
 			helpers.StopServer(session)
-			conf.Network = "10.255.0.0/29"
+			conf.Network = []string{"10.255.0.0/29"}
 			conf.SubnetPrefixLength = 30
 			conf.LeaseExpirationSeconds = 3
 			session = helpers.StartAndWaitForServer(controllerBinaryPath, conf, testClient)
@@ -299,14 +317,43 @@ var _ = Describe("Silk Controller", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			Context("when the existing lease is in a different overlay network", func() {
+			// This test simulates what happens during a deployment when the
+			// operator changes the overlay network from ON-1 to ON-2.
+
+			// 1. Before the deploy, there is a Diego Cell with apps on it. The
+			//	  lease for that Diego Cell is a subnet of ON-1.
+			// 2. The deploy starts.
+			// 3. Silk-controller rolls first. It updates the cidr-pool to
+			//    calculate leases for the new overlay network: ON-2.
+			// 4. The Diego Cell has not rolled yet. The apps are still using
+			//    overlay IPs from ON-1.
+			// 5. The Diego Cell renews its lease from ON-1. This renewal
+			//    attempt succeeds, despite the fact that the lease is not in
+			//    ON-2. A Diego Cell's lease should never change while apps are
+			//    running on the cell.
+			// 6. During the deploy the Diego Cell drains the apps.
+			// 7. When the Diego Cell starts up again it will claim a lease in
+			//    the new overlay network ON-2.
+			Context("when the overylay network has changed", func() {
+				var oldOverlayNetwork []string
 				BeforeEach(func() {
+					oldOverlayNetwork = conf.Network
 					helpers.StopServer(session)
-					conf.Network = "10.254.0.0/16"
+					conf.Network = []string{"10.254.0.0/16"}
 					session = helpers.StartAndWaitForServer(controllerBinaryPath, conf, testClient)
 				})
+
 				It("renews the same lease in the old network", func() {
-					err := testClient.RenewSubnetLease(existingLease)
+					By("validating that the old lease is in the old network")
+					overlayNetwork, err := mcn.NewMultipleCIDRNetwork(oldOverlayNetwork)
+					Expect(err).NotTo(HaveOccurred())
+
+					ip, _, err := net.ParseCIDR(existingLease.OverlaySubnet)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(overlayNetwork.Contains(ip)).To(BeTrue())
+
+					By("renewing the lease")
+					err = testClient.RenewSubnetLease(existingLease)
 					Expect(err).NotTo(HaveOccurred())
 
 					By("checking that the lease is present in the list of routable leases")
@@ -399,7 +446,7 @@ var _ = Describe("Silk Controller", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				helpers.StopServer(session)
-				conf.Network = "10.254.0.0/16"
+				conf.Network = []string{"10.254.0.0/16"}
 				session = helpers.StartAndWaitForServer(controllerBinaryPath, conf, testClient)
 
 				newNetworkLease, err = testClient.AcquireSubnetLease("10.244.4.6")
@@ -437,13 +484,13 @@ var _ = Describe("Silk Controller", func() {
 
 		leaseIPs := make(map[string]struct{})
 		leaseSubnets := make(map[string]struct{})
-		_, network, err := net.ParseCIDR(conf.Network)
+		overlayNetwork, err := mcn.NewMultipleCIDRNetwork(conf.Network)
 		Expect(err).NotTo(HaveOccurred())
 
 		for lease := range leases {
 			_, subnet, err := net.ParseCIDR(lease.OverlaySubnet)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(network.Contains(subnet.IP)).To(BeTrue())
+			Expect(overlayNetwork.Contains(subnet.IP)).To(BeTrue())
 
 			leaseIPs[lease.UnderlayIP] = struct{}{}
 			leaseSubnets[lease.OverlaySubnet] = struct{}{}
@@ -474,13 +521,13 @@ var _ = Describe("Silk Controller", func() {
 
 		leaseUnderlays := make(map[string]struct{})
 		leaseIPs := make(map[string]struct{})
-		_, network, err := net.ParseCIDR(conf.Network)
+		overlayNetwork, err := mcn.NewMultipleCIDRNetwork(conf.Network)
 		Expect(err).NotTo(HaveOccurred())
 
 		for lease := range leases {
 			_, subnet, err := net.ParseCIDR(lease.OverlaySubnet)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(network.Contains(subnet.IP)).To(BeTrue())
+			Expect(overlayNetwork.Contains(subnet.IP)).To(BeTrue())
 			Expect(lease.OverlaySubnet).To(ContainSubstring("/32"))
 
 			leaseUnderlays[lease.UnderlayIP] = struct{}{}
@@ -531,7 +578,11 @@ var _ = Describe("Silk Controller", func() {
 				Eventually(fakeMetron.AllEvents, "10s").Should(ContainElement(hasMetricWithValue("totalLeases", 2)))
 			})
 			It("emits number of free leases", func() {
-				Eventually(fakeMetron.AllEvents, "10s").Should(ContainElement(hasMetricWithValue("freeLeases", 253)))
+				// 256 per /16
+				// 2 * /16 cidrs = 512
+				// 512 - 2 (for the reserved subnet for each network cidr) = 511
+				// 511 - 2 (for the two leases acquired in this test) = 209
+				Eventually(fakeMetron.AllEvents, "10s").Should(ContainElement(hasMetricWithValue("freeLeases", 508)))
 			})
 			It("emits number of stale leases", func() {
 				Eventually(fakeMetron.AllEvents, "2s").Should(ContainElement(hasMetricWithValue("staleLeases", 0)))
@@ -539,6 +590,5 @@ var _ = Describe("Silk Controller", func() {
 				Eventually(fakeMetron.AllEvents, "10s").Should(ContainElement(hasMetricWithValue("staleLeases", 2)))
 			})
 		})
-
 	})
 })

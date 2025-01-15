@@ -20,6 +20,7 @@ files:
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/v3/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/v3/internal/truncate/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/v3/lagerflags/*.go # gosub-main-module
+  - code.cloudfoundry.org/lib/multiple-cidr-network/*.go # gosub-main-module
   - code.cloudfoundry.org/silk/cmd/silk-controller/*.go # gosub-main-module
   - code.cloudfoundry.org/silk/controller/*.go # gosub-main-module
   - code.cloudfoundry.org/silk/controller/config/*.go # gosub-main-module

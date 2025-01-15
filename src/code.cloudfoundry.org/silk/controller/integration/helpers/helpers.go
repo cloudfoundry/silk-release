@@ -31,7 +31,7 @@ func DefaultTestConfig(dbConf db.Config, fixturesPath string) config.Config {
 		CACertFile:                filepath.Join(fixturesPath, "ca.crt"),
 		ServerCertFile:            filepath.Join(fixturesPath, "server.crt"),
 		ServerKeyFile:             filepath.Join(fixturesPath, "server.key"),
-		Network:                   "10.255.0.0/16",
+		Network:                   []string{"10.255.0.0/16", "10.250.0.0/16"},
 		SubnetPrefixLength:        24,
 		Database:                  dbConf,
 		LeaseExpirationSeconds:    60,
