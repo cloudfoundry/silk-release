@@ -17,6 +17,7 @@ import (
 	"code.cloudfoundry.org/filelock"
 	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/lager/v3/lagerflags"
+	mcn "code.cloudfoundry.org/lib/multiple-cidr-network"
 	"code.cloudfoundry.org/silk/client/config"
 	"code.cloudfoundry.org/silk/controller"
 	"code.cloudfoundry.org/silk/daemon"
@@ -104,9 +105,9 @@ func mainWithError() error {
 		LockerNew:  filelock.NewLocker,
 	}
 
-	_, overlayNetwork, err := net.ParseCIDR(cfg.OverlayNetwork)
+	overlayNetworks, err := mcn.NewMultipleCIDRNetwork(cfg.OverlayNetworks)
 	if err != nil {
-		return fmt.Errorf("parse overlay network CIDR: %s", err) //TODO add test coverage
+		return fmt.Errorf("parse overlay network CIDR: %s", err)
 	}
 
 	lease, err := discoverLocalLease(cfg, vtepFactory)
@@ -118,13 +119,13 @@ func mainWithError() error {
 	} else {
 		_, localSubnet, err := net.ParseCIDR(lease.OverlaySubnet)
 		if err != nil {
-			return fmt.Errorf("parse local subnet CIDR: %s", err) //TODO add test coverage
+			return fmt.Errorf("parse local subnet CIDR: %s", err) // not tested
 		}
 
-		if !overlayNetwork.Contains(localSubnet.IP) {
+		if !overlayNetworks.Contains(localSubnet.IP) {
 			logger.Error("network-contains-lease", fmt.Errorf("discovered lease is not in overlay network"), lager.Data{
 				"lease":   lease,
-				"network": cfg.OverlayNetwork,
+				"network": cfg.OverlayNetworks,
 			})
 
 			metadata, err := store.ReadAll(cfg.Datastore)
@@ -176,12 +177,12 @@ func mainWithError() error {
 
 	_, localSubnet, err := net.ParseCIDR(lease.OverlaySubnet)
 	if err != nil {
-		return fmt.Errorf("parse local subnet CIDR: %s", err) //TODO add test coverage
+		return fmt.Errorf("parse local subnet CIDR: %s", err) // not tested
 	}
 
 	vxlanIface, err := net.InterfaceByName(cfg.VTEPName)
 	if err != nil || vxlanIface == nil {
-		return fmt.Errorf("find local VTEP: %s", err) //TODO add test coverage
+		return fmt.Errorf("find local VTEP: %s", err) // not tested
 	}
 
 	vxlanPoller := &poller.Poller{
@@ -193,11 +194,12 @@ func mainWithError() error {
 			ControllerClient: client,
 			Lease:            lease,
 			Converger: &vtep.Converger{
-				OverlayNetwork: overlayNetwork,
+				OverlayNetwork: overlayNetworks,
 				LocalSubnet:    localSubnet,
 				LocalVTEP:      *vxlanIface,
 				NetlinkAdapter: &adapter.NetlinkAdapter{},
 				Logger:         logger,
+				IsSingleIP:     cfg.SingleIPOnly,
 			},
 			ErrorDetector: planner.NewGracefulDetector(
 				time.Duration(cfg.PartitionToleranceSeconds) * time.Second,
