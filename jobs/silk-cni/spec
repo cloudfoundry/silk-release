@@ -10,8 +10,6 @@ packages:
   - silk-cni
 
 consumes:
-- name: cf_network
-  type: cf_network
 - name: vpa
   type: policy-agent
 
@@ -31,7 +29,10 @@ provides:
 
 properties:
   no_masquerade_cidr_range:
-    description: "CIDR address block that should not be masqueraded.  Fallsback to cf_network.network link property if property is not provided."
+    description: |
+        When set, app traffic sent to this CIDR will not be masqueraded. If this
+        property is not set, then silk-cni will not masquerade traffic sent to the
+        overlay network, which allows container-to-container networking to work.
     default: ""
 
   mtu:

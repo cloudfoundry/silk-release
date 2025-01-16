@@ -166,28 +166,6 @@ module Bosh::Template::Test
           clientConfig = JSON.parse(template.render(merged_manifest_properties, spec: spec, consumes: links))
           expect(clientConfig['plugins'][0]['no_masquerade_cidr_range']).to eq('')
         end
-
-        context 'when a cf_network.network link exists' do
-          let(:links) {[
-            Link.new(
-              name: 'cf_network',
-              properties: {
-                'network' => '10.255.0.0/16'
-              }
-            ),
-            Link.new(
-              name: 'vpa',
-              properties: {
-                'force_policy_poll_cycle_port' => 5555
-              }
-            )
-          ]}
-
-          it 'fallsback to the cf_network.network link property' do
-            clientConfig = JSON.parse(template.render(merged_manifest_properties, spec: spec, consumes: links))
-            expect(clientConfig['plugins'][0]['no_masquerade_cidr_range']).to eq('10.255.0.0/16')
-          end
-        end
       end
 
       context 'when mtu is greater than 0' do
