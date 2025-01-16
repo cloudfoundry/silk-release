@@ -33,7 +33,7 @@ type VxlanPolicyAgent struct {
 	ForcePolicyPollCyclePort      int                       `json:"force_policy_poll_cycle_port" validate:"nonzero"`
 	ForcePolicyPollCycleHost      string                    `json:"force_policy_poll_cycle_host" validate:"nonzero"`
 	DisableContainerNetworkPolicy bool                      `json:"disable_container_network_policy"`
-	OverlayNetwork                string                    `json:"overlay_network"`
+	OverlayNetwork                []string                  `json:"overlay_network" validate:"nonzero"`
 	UnderlayIPs                   []string                  `json:"underlay_ips"`
 	IPTablesASGLogging            bool                      `json:"iptables_asg_logging"`
 	IPTablesDeniedLogsPerSec      int                       `json:"iptables_denied_logs_per_sec"`
