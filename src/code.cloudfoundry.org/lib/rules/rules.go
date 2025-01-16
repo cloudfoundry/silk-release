@@ -240,9 +240,9 @@ func NewAcceptRule() IPTablesRule {
 	}
 }
 
-func NewAcceptEverythingRule(ipRange string) IPTablesRule {
+func NewAcceptEverythingRule(srcIPRange, dstIPRange string) IPTablesRule {
 	return IPTablesRule{
-		"-s", ipRange, "-d", ipRange, "-j", "ACCEPT",
+		"-s", srcIPRange, "-d", dstIPRange, "-j", "ACCEPT",
 	}
 }
 
