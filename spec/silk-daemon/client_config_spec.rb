@@ -32,16 +32,18 @@ module Bosh::Template::Test
         }
       end
 
-      links = [
-        Link.new(
-          name: 'cf_network',
-          instances: [LinkInstance.new()],
-          properties: {
-            'network' => '10.255.0.0/16',
-            'subnet_prefix_length' => 24
-          }
-        )
-      ]
+      let(:links) do
+        [
+          Link.new(
+            name: 'cf_network',
+            instances: [LinkInstance.new()],
+            properties: {
+              'network' => ['10.255.0.0/16'],
+              'subnet_prefix_length' => 24
+            }
+          )
+        ]
+      end
 
       describe 'silk-daemon job' do let(:job) {release.job('silk-daemon')}
         describe 'config/client-config.json' do
@@ -52,7 +54,7 @@ module Bosh::Template::Test
             expect(clientConfig).to eq({
               'underlay_ip' => '192.168.0.0',
               'subnet_prefix_length' => 24,
-              'overlay_network' => '10.255.0.0/16',
+              'overlay_network' => ['10.255.0.0/16'],
               'health_check_port' => 12345,
               'vtep_name' => 'silk-vtep',
               'connectivity_server_url' => 'https://some-host:12345',
@@ -127,6 +129,26 @@ module Bosh::Template::Test
               expect {
                 template.render(merged_manifest_properties, consumes: links)
               }.to raise_error("'meow' is not a valid timestamp format for the property 'logging.format.timestamp'. Valid options are: 'rfc3339' and 'deprecated'.")
+            end
+          end
+
+          context 'when network is a single string instead of an array' do
+            let(:links) do
+              [
+                Link.new(
+                  name: 'cf_network',
+                  instances: [LinkInstance.new()],
+                  properties: {
+                    'network' => '10.234.0.0/16',
+                    'subnet_prefix_length' => 24
+                  }
+                )
+              ]
+            end
+
+            it 'turns the network property into an array' do
+              clientConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links))
+              expect(clientConfig['overlay_network']).to eq(['10.234.0.0/16'])
             end
           end
         end

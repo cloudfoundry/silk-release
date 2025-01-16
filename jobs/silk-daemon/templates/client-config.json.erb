@@ -1,6 +1,12 @@
 <%=
   require 'json'
 
+  def network_array
+    network = link('cf_network').p('network')
+    return [network] if network.class != Array
+    return network
+  end
+
   def subnet_prefix_length
     size = link('cf_network').p('subnet_prefix_length')
     if size < 1 || size > 30
@@ -36,7 +42,7 @@
   toRender = {
     'underlay_ip' => underlay_ip,
     'subnet_prefix_length' => subnet_prefix_length,
-    'overlay_network' => link('cf_network').p('network'),
+    'overlay_network' => network_array,
     'health_check_port' => p('listen_port'),
     'vtep_name' => 'silk-vtep',
     'connectivity_server_url' => silk_controller_url,
