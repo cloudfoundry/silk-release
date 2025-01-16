@@ -49,7 +49,7 @@ func NewEnforcer(logger lager.Logger, timestamper TimeStamper, ipt rules.IPTable
 
 type EnforcerConfig struct {
 	DisableContainerNetworkPolicy bool
-	OverlayNetwork                string
+	OverlayNetwork                []string
 }
 
 const FilterTable = "filter"
@@ -255,8 +255,19 @@ func (e *Enforcer) enforce(logger lager.Logger, table string, parentChain string
 		return fmt.Errorf("creating chain: %s", err)
 	}
 
-	if e.conf.DisableContainerNetworkPolicy && e.conf.OverlayNetwork != "" {
-		rulespec = append([]rules.IPTablesRule{rules.NewAcceptEverythingRule(e.conf.OverlayNetwork)}, rulespec...)
+	if e.conf.DisableContainerNetworkPolicy {
+		// This allows traffic from all overlay network CIDRs to all other overlay
+		// network CIDRs. This could be simplified by making the source the lease
+		// subet for this VM, then there would only be N rules where N is the
+		// number of overlay network CIDRs. However, this would put a dependency on
+		// the vxlan-policy-agent getting the lease from the silk-daemon. This
+		// method makes NxN rules. However, N is likely to be a very small number
+		// <5, which is why we have decided to do it this way.
+		for _, srcNet := range e.conf.OverlayNetwork {
+			for _, dstNet := range e.conf.OverlayNetwork {
+				rulespec = append([]rules.IPTablesRule{rules.NewAcceptEverythingRule(srcNet, dstNet)}, rulespec...)
+			}
+		}
 	}
 
 	logger.Debug("insert-chain", lager.Data{"parent-chain": parentChain, "table": table, "index": 1, "rule": rules.IPTablesRule{"-j", chainName}})

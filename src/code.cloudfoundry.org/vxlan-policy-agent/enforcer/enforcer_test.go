@@ -36,7 +36,11 @@ var _ = Describe("Enforcer", func() {
 			iptables = &libfakes.IPTablesAdapter{}
 
 			timestamper.CurrentTimeReturns(42)
-			ruleEnforcer = enforcer.NewEnforcer(logger, timestamper, iptables, enforcer.EnforcerConfig{DisableContainerNetworkPolicy: false, OverlayNetwork: "10.10.0.0/16"})
+			ruleEnforcer = enforcer.NewEnforcer(logger, timestamper, iptables,
+				enforcer.EnforcerConfig{
+					DisableContainerNetworkPolicy: false,
+					OverlayNetwork:                []string{"10.10.0.0/16"},
+				})
 		})
 
 		Context("when chain is not timestamped", func() {
@@ -660,39 +664,92 @@ var _ = Describe("Enforcer", func() {
 			})
 
 			Context("when network policy is disabled", func() {
-				BeforeEach(func() {
-					ruleEnforcer = enforcer.NewEnforcer(
-						logger,
-						timestamper,
-						iptables,
-						enforcer.EnforcerConfig{
-							DisableContainerNetworkPolicy: true,
-							OverlayNetwork:                "10.10.0.0/16",
-						},
-					)
+				Context("when there is one overlay network cidr", func() {
+					BeforeEach(func() {
+						ruleEnforcer = enforcer.NewEnforcer(
+							logger,
+							timestamper,
+							iptables,
+							enforcer.EnforcerConfig{
+								DisableContainerNetworkPolicy: true,
+								OverlayNetwork:                []string{"10.10.0.0/16"},
+							},
+						)
+					})
+
+					It("allows all container connections", func() {
+						_, err := ruleEnforcer.EnforceOnChain(
+							enforcer.Chain{
+								Table:       "some-table",
+								ParentChain: "some-chain",
+								Name:        "foo",
+								Timestamped: true,
+							},
+							[]rules.IPTablesRule{fakeRule},
+						)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(iptables.NewChainCallCount()).To(Equal(1))
+						Expect(iptables.BulkInsertCallCount()).To(Equal(1))
+						_, _, position, _ := iptables.BulkInsertArgsForCall(0)
+						Expect(position).To(Equal(1))
+
+						table, chain, rulespec := iptables.BulkAppendArgsForCall(0)
+						Expect(table).To(Equal("some-table"))
+						Expect(chain).To(Equal("foo42"))
+						Expect(rulespec).To(Equal([]rules.IPTablesRule{{"-s", "10.10.0.0/16", "-d", "10.10.0.0/16", "-j", "ACCEPT"}, {"rule1"}}))
+					})
 				})
 
-				It("allows all container connections", func() {
-					_, err := ruleEnforcer.EnforceOnChain(
-						enforcer.Chain{
-							Table:       "some-table",
-							ParentChain: "some-chain",
-							Name:        "foo",
-							Timestamped: true,
-						},
-						[]rules.IPTablesRule{fakeRule},
-					)
-					Expect(err).NotTo(HaveOccurred())
+				Context("when there are multiple overlay network cidr", func() {
+					BeforeEach(func() {
+						ruleEnforcer = enforcer.NewEnforcer(
+							logger,
+							timestamper,
+							iptables,
+							enforcer.EnforcerConfig{
+								DisableContainerNetworkPolicy: true,
+								OverlayNetwork:                []string{"10.20.0.0/23", "10.250.0.0/24", "10.255.0.0/24"},
+							},
+						)
+					})
 
-					Expect(iptables.NewChainCallCount()).To(Equal(1))
-					Expect(iptables.BulkInsertCallCount()).To(Equal(1))
-					_, _, position, _ := iptables.BulkInsertArgsForCall(0)
-					Expect(position).To(Equal(1))
+					It("allows all container connections", func() {
+						_, err := ruleEnforcer.EnforceOnChain(
+							enforcer.Chain{
+								Table:       "some-table",
+								ParentChain: "some-chain",
+								Name:        "foo",
+								Timestamped: true,
+							},
+							[]rules.IPTablesRule{fakeRule},
+						)
+						Expect(err).NotTo(HaveOccurred())
 
-					table, chain, rulespec := iptables.BulkAppendArgsForCall(0)
-					Expect(table).To(Equal("some-table"))
-					Expect(chain).To(Equal("foo42"))
-					Expect(rulespec).To(Equal([]rules.IPTablesRule{{"-s", "10.10.0.0/16", "-d", "10.10.0.0/16", "-j", "ACCEPT"}, {"rule1"}}))
+						Expect(iptables.NewChainCallCount()).To(Equal(1))
+						Expect(iptables.BulkInsertCallCount()).To(Equal(1))
+						_, _, position, _ := iptables.BulkInsertArgsForCall(0)
+						Expect(position).To(Equal(1))
+
+						table, chain, rulespec := iptables.BulkAppendArgsForCall(0)
+						Expect(table).To(Equal("some-table"))
+						Expect(chain).To(Equal("foo42"))
+						Expect(rulespec).To(ContainElements([]rules.IPTablesRule{
+							{"-s", "10.20.0.0/23", "-d", "10.20.0.0/23", "-j", "ACCEPT"},
+							{"-s", "10.20.0.0/23", "-d", "10.250.0.0/24", "-j", "ACCEPT"},
+							{"-s", "10.20.0.0/23", "-d", "10.255.0.0/24", "-j", "ACCEPT"},
+
+							{"-s", "10.250.0.0/24", "-d", "10.20.0.0/23", "-j", "ACCEPT"},
+							{"-s", "10.250.0.0/24", "-d", "10.250.0.0/24", "-j", "ACCEPT"},
+							{"-s", "10.250.0.0/24", "-d", "10.255.0.0/24", "-j", "ACCEPT"},
+
+							{"-s", "10.255.0.0/24", "-d", "10.20.0.0/23", "-j", "ACCEPT"},
+							{"-s", "10.255.0.0/24", "-d", "10.250.0.0/24", "-j", "ACCEPT"},
+							{"-s", "10.255.0.0/24", "-d", "10.255.0.0/24", "-j", "ACCEPT"},
+
+							{"rule1"},
+						}))
+					})
 				})
 			})
 		})
@@ -713,7 +770,7 @@ var _ = Describe("Enforcer", func() {
 			iptables = &libfakes.IPTablesAdapter{}
 
 			timestamper.CurrentTimeReturns(42)
-			ruleEnforcer = enforcer.NewEnforcer(logger, timestamper, iptables, enforcer.EnforcerConfig{DisableContainerNetworkPolicy: false, OverlayNetwork: "10.10.0.0/16"})
+			ruleEnforcer = enforcer.NewEnforcer(logger, timestamper, iptables, enforcer.EnforcerConfig{DisableContainerNetworkPolicy: false, OverlayNetwork: []string{"10.10.0.0/16"}})
 
 			desiredChains = []enforcer.LiveChain{
 				{
