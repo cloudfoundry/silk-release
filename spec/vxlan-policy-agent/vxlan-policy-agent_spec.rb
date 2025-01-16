@@ -91,7 +91,7 @@ module Bosh::Template::Test
               'force_policy_poll_cycle_host' => '127.0.0.1',
               'force_policy_poll_cycle_port' => 8722,
               'disable_container_network_policy' => false,
-              'overlay_network' => '10.255.0.0/16',
+              'overlay_network' => ['10.255.0.0/16'],
               'iptables_asg_logging' => true,
               'iptables_denied_logs_per_sec' => 2,
               'deny_networks' => {
@@ -158,6 +158,17 @@ module Bosh::Template::Test
               expect(rendered_client_key).to eq("\nsome-client-key\n\n")
             end
           end
+          
+          context 'when the network is a single IP and not an array' do
+            before do
+              links.first.properties['network'] = '10.234.0.0/16'
+            end
+
+            it 'turns it into an array' do
+              rendered_config = JSON.parse(template.render(merged_manifest_properties, consumes: links))
+              expect(rendered_config['overlay_network']).to eq(['10.234.0.0/16'])
+            end
+          end 
         end
       end
     end
