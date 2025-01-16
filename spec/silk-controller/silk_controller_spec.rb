@@ -66,7 +66,7 @@ module Bosh::Template::Test
           'ca_cert_file' => '/var/vcap/jobs/silk-controller/config/certs/ca.crt',
           'server_cert_file' => '/var/vcap/jobs/silk-controller/config/certs/server.crt',
           'server_key_file' => '/var/vcap/jobs/silk-controller/config/certs/server.key',
-          'network' => '10.255.0.1/12',
+          'network' => ['10.255.0.1/12'],
           'subnet_prefix_length' => 30,
           'database' => {
             'type' => 'postgres',
@@ -135,34 +135,157 @@ module Bosh::Template::Test
         }.to raise_error('must provide database link or set database.host')
       end
 
-      it 'raises an error when given a value greater than 30 for subnet prefix length' do
-        merged_manifest_properties['subnet_prefix_length'] = 100 
-        expect{
-          JSON.parse(template.render(merged_manifest_properties))
-        }.to raise_error('subnet_prefix_length must be a value between 1-30')
-      end
+      context 'network and subnet prefix length' do
+        context 'when the network is a single cidr' do
+          it 'it converts it to an array with length 1' do
+            merged_manifest_properties['network'] = '10.250.0.0/10'
+            config = JSON.parse(template.render(merged_manifest_properties))
+            expect(config['network']).to eq(['10.250.0.0/10'])
+          end
 
-      it 'raises an error when given a value less than 1 for subnet prefix length' do
-        merged_manifest_properties['subnet_prefix_length'] = -10
-        expect{
-          JSON.parse(template.render(merged_manifest_properties))
-        }.to raise_error('subnet_prefix_length must be a value between 1-30')
-      end
+          it 'raises an error when the subnet_prefix_length larger than the network' do
+            merged_manifest_properties['subnet_prefix_length'] = 15
+            merged_manifest_properties['network'] = '10.255.0.0/16'
+            expect{
+              JSON.parse(template.render(merged_manifest_properties))
+            }.to raise_error('subnet_prefix_length \'15\' must be smaller than the network \'10.255.0.0/16\'')
+          end
 
-      it 'raises an error when the subnet_prefix_length larger than the network' do
-        merged_manifest_properties['subnet_prefix_length'] = 15
-        merged_manifest_properties['network'] = '10.255.0.0/16'
-        expect{
-          JSON.parse(template.render(merged_manifest_properties))
-        }.to raise_error('subnet_prefix_length \'15\' must be smaller than the network \'10.255.0.0/16\'')
-      end
+          it 'raises an error when the subnet_prefix_length is the same size as the network' do
+            merged_manifest_properties['subnet_prefix_length'] = 16
+            merged_manifest_properties['network'] = '10.255.0.0/16'
+            expect{
+              JSON.parse(template.render(merged_manifest_properties))
+            }.to raise_error('subnet_prefix_length \'16\' must be smaller than the network \'10.255.0.0/16\'')
+          end
+        end
 
-      it 'raises an error when the subnet_prefix_length is the same size as the network' do
-        merged_manifest_properties['subnet_prefix_length'] = 16
-        merged_manifest_properties['network'] = '10.255.0.0/16'
-        expect{
-          JSON.parse(template.render(merged_manifest_properties))
-        }.to raise_error('subnet_prefix_length \'16\' must be smaller than the network \'10.255.0.0/16\'')
+        context 'when the network is an array of cidrs' do
+          it 'succeeds with cidrs in order' do
+            network = ['10.250.0.0/16', '10.255.0.0/16']
+            merged_manifest_properties['network'] = network
+            config = JSON.parse(template.render(merged_manifest_properties))
+            expect(config['network']).to eq(network)
+          end
+
+          it 'succeeds with cidrs out of order' do
+            network = ['10.255.0.0/16', '10.250.0.0/16']
+            merged_manifest_properties['network'] = network
+            config = JSON.parse(template.render(merged_manifest_properties))
+            expect(config['network']).to eq(network)
+          end
+
+          it 'fails when the subnet_prefix_length is the same size as the smallest network cidr' do
+            network = ['10.255.0.0/16', '10.250.0.0/24']
+            merged_manifest_properties['network'] = network
+            merged_manifest_properties['subnet_prefix_length'] = 24
+            expect {
+              template.render(merged_manifest_properties, consumes: [database_link])
+            }.to raise_error (/subnet_prefix_length '24' must be smaller than the network '10.250.0.0\/24'/)
+          end
+
+          it 'raises an error when the cidrs overlap' do
+            network = ['10.255.0.0/16', '10.250.0.0/10']
+            merged_manifest_properties['network'] = network
+            expect{
+              JSON.parse(template.render(merged_manifest_properties))
+            }.to raise_error('\'network\' must not contain overlapping cidrs: \'10.255.0.0/16\' and \'10.250.0.0/10\'')
+          end
+
+          it 'raises an error when the cidrs overlap because they are identical' do
+            network = ['10.255.0.0/16', '10.255.0.0/16']
+            merged_manifest_properties['network'] = network
+            expect{
+              JSON.parse(template.render(merged_manifest_properties))
+            }.to raise_error('\'network\' must not contain overlapping cidrs: \'10.255.0.0/16\' and \'10.255.0.0/16\'')
+          end
+
+          it 'raises an error when any of the cidrs have a leading zero' do
+            network = ['10.250.0.0/16', '010.255.0.0/16']
+            merged_manifest_properties['network'] = network
+            expect {
+              template.render(merged_manifest_properties, consumes: [database_link])
+            }.to raise_error (/Invalid network/)
+          end
+
+          it 'raises an error when any of the cidrs contain an invalid IP' do
+            network = ['10.250.0.0/16', '10.600.0.0/16']
+            merged_manifest_properties['network'] = network
+            expect {
+              template.render(merged_manifest_properties, consumes: [database_link])
+            }.to raise_error (/Invalid network/)
+          end
+
+          it 'raises an error when given a value that is not a cidr' do
+            network = ['10.250.0.0/16', 'meow', '10.10.0.0/32']
+            merged_manifest_properties['network'] = network
+            expect {
+              template.render(merged_manifest_properties, consumes: [database_link])
+            }.to raise_error (/Invalid network/)
+          end
+
+          it 'raises an error when any of the cidrs contain an invalid network length' do
+            network = ['10.250.0.0/16', '10.255.0.0/50']
+            merged_manifest_properties['network'] = network
+            expect {
+              template.render(merged_manifest_properties, consumes: [database_link])
+            }.to raise_error (/Invalid network/)
+          end
+
+          it 'raises an error when the subnet_prefix_length is larger than any of the subnets' do
+            network = ['10.250.0.0/16', '10.255.0.0/16', '10.10.0.0/32']
+            merged_manifest_properties['network'] = network
+            merged_manifest_properties['subnet_prefix_length'] = 20
+              expect {
+                template.render(merged_manifest_properties, consumes: [database_link])
+              }.to raise_error (/subnet_prefix_length '20' must be smaller than the network '10.10.0.0\/32'/)
+          end
+
+          context 'when there is only one network in the array' do
+            it 'succeeds when the subnet_prefix_length is smaller than the network cidr prefix' do
+              network = ['10.255.0.0/16']
+              merged_manifest_properties['network'] = network
+              merged_manifest_properties['subnet_prefix_length'] = 17
+              config = JSON.parse(template.render(merged_manifest_properties))
+              expect(config['network']).to eq(network)
+              expect(config['subnet_prefix_length']).to eq(17)
+            end
+
+            it 'raises an error when the subnet_prefix_length is larger than the size of the network' do
+              network = ['10.255.0.0/16']
+              merged_manifest_properties['network'] = network
+              merged_manifest_properties['subnet_prefix_length'] = 15
+              expect {
+                template.render(merged_manifest_properties, consumes: [database_link])
+              }.to raise_error (/subnet_prefix_length '15' must be smaller than the network/)
+            end
+
+            it 'raises an error when the subnet_prefix_length is the same size as the network' do
+              network = ['10.255.0.0/16']
+              merged_manifest_properties['network'] = network
+              merged_manifest_properties['subnet_prefix_length'] = 16
+              expect {
+                template.render(merged_manifest_properties, consumes: [database_link])
+              }.to raise_error (/subnet_prefix_length '16' must be smaller than the network/)
+            end
+          end
+        end
+
+        context 'when the subnet_prefix_length is invalid' do
+          it 'raises an error when given a value greater than 30 for subnet prefix length' do
+            merged_manifest_properties['subnet_prefix_length'] = 100
+            expect{
+              JSON.parse(template.render(merged_manifest_properties))
+            }.to raise_error('subnet_prefix_length must be a value between 1-30')
+          end
+
+          it 'raises an error when given a value less than 1 for subnet prefix length' do
+            merged_manifest_properties['subnet_prefix_length'] = -10
+            expect{
+              JSON.parse(template.render(merged_manifest_properties))
+            }.to raise_error('subnet_prefix_length must be a value between 1-30')
+          end
+        end
       end
 
       it 'raises an error when the driver (type) is unknown' do
