@@ -27,7 +27,7 @@ var _ = Describe("Config.LoadConfig", func() {
 		requiredFields = map[string]interface{}{
 			"underlay_ip":                 "1.2.3.4",
 			"subnet_prefix_length":        24,
-			"overlay_network":             "10.255.0.0/16",
+			"overlay_network":             []string{"10.255.0.0/16"},
 			"health_check_port":           22222,
 			"vtep_name":                   "silk-vxlan",
 			"connectivity_server_url":     "https://silk-controller.something",
@@ -104,6 +104,23 @@ var _ = Describe("Config.LoadConfig", func() {
 			loadedConfig, err := config.LoadConfig(file.Name())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(loadedConfig.VxlanInterfaceName).To(Equal("something"))
+		})
+	})
+
+	Context("when multiple overlay networks are provided", func() {
+		It("sets all of them", func() {
+			overlayNets := []string{"10.255.0.0/16", "10.2.0.0/16"}
+			cfg := cloneMap(requiredFields)
+			cfg["overlay_network"] = overlayNets
+
+			file, err := os.CreateTemp(os.TempDir(), "config-")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(json.NewEncoder(file).Encode(cfg)).To(Succeed())
+
+			loadedConfig, err := config.LoadConfig(file.Name())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(loadedConfig.OverlayNetworks).To(Equal(overlayNets))
 		})
 	})
 })

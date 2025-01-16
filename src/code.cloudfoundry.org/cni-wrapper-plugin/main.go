@@ -77,11 +77,19 @@ func cmdAdd(args *skel.CmdArgs) error {
 		containerWorkload, _ = workload.(string)
 	}
 
+	masquerader := netrules.Masquerader{
+		PluginController:            pluginController,
+		VTEPName:                    cfg.VTEPName,
+		DaemonPort:                  fmt.Sprintf("%v", cfg.Delegate["daemonPort"]),
+		ContainerIP:                 containerIP.String(),
+		CustomNoMasqueradeCIDRRange: cfg.NoMasqueradeCIDRRange,
+	}
+
 	if err := store.Add(args.ContainerID, containerIP.String(), cniAddData.Metadata); err != nil {
 		storeErr := fmt.Errorf("store add: %s", err)
 		fmt.Fprintf(os.Stderr, "%s", storeErr)
 		fmt.Fprint(os.Stderr, "cleaning up from error")
-		err = pluginController.DelIPMasq(containerIP.String(), cfg.NoMasqueradeCIDRRange, cfg.VTEPName)
+		err := masquerader.DelIPMasq()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "during cleanup: removing IP masq: %s", err)
 		}
@@ -211,7 +219,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return fmt.Errorf("asg sync returned %v with message: %s", resp.StatusCode, body)
 	}
 
-	err = pluginController.AddIPMasq(containerIP.String(), cfg.NoMasqueradeCIDRRange, cfg.VTEPName)
+	err = masquerader.AddIPMasq()
 	if err != nil {
 		return fmt.Errorf("error setting up default ip masq rule: %s", err)
 	}
@@ -328,7 +336,15 @@ func cmdDel(args *skel.CmdArgs) error {
 		fmt.Fprintf(os.Stderr, "net out cleanup: %s", err)
 	}
 
-	err = pluginController.DelIPMasq(container.IP, cfg.NoMasqueradeCIDRRange, cfg.VTEPName)
+	masquerader := netrules.Masquerader{
+		PluginController:            pluginController,
+		VTEPName:                    cfg.VTEPName,
+		DaemonPort:                  fmt.Sprintf("%v", cfg.Delegate["daemonPort"]),
+		ContainerIP:                 container.IP,
+		CustomNoMasqueradeCIDRRange: cfg.NoMasqueradeCIDRRange,
+	}
+
+	err = masquerader.DelIPMasq()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "removing IP masq: %s", err)
 	}

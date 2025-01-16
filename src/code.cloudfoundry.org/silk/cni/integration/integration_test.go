@@ -383,7 +383,7 @@ var _ = Describe("Silk CNI Integration", func() {
 
 			By("installing the requisite iptables rule")
 			iptablesRule := func(action string) []string {
-				return []string{"-t", "nat", action, "POSTROUTING", "-s", sourceIP, "!", "-d", "10.255.0.0/16", "-j", "MASQUERADE"}
+				return []string{"-t", "nat", action, "POSTROUTING", "-s", sourceIP, "!", "-d", "10.255.30.0/24", "-j", "MASQUERADE"}
 			}
 			mustSucceed("iptables", iptablesRule("-A")...)
 
