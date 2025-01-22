@@ -88,7 +88,13 @@ properties:
     default: false
 
   single_ip_only:
-    description: "When true, this VM will get assigned exactly one IP address on the Silk network.  Use this to connect this VM to the Silk network without acquiring a whole block of addresses (as would be required for a Diego Cell)."
+    description: |
+        When true, this VM will get assigned exactly one IP address on the Silk
+        network.  Use this to connect this VM to the Silk network without
+        acquiring a whole block of addresses (as would be required for a Diego
+        Cell). WARNING: Do not use single_ip_only mode when the overylay network has
+        more than one CIDR. The overlay network is set on the silk-controller
+        job via the "network" bosh property.
     default: false
 
   policy_server_url:
