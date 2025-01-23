@@ -129,6 +129,7 @@ func (r *RulesWithChain) Equals(other RulesWithChain) bool {
 			}
 		}
 	}
+
 	return true
 }
 
@@ -148,6 +149,7 @@ func (e *Enforcer) CleanChainsMatching(regex *regexp.Regexp, desiredChains []Liv
 		e.Logger.Error(fmt.Sprintf("list-chains-%s", FilterTable), err)
 		return []LiveChain{}, fmt.Errorf("listing chains in %s: %s", FilterTable, err)
 	}
+
 	e.Logger.Debug("allchains", lager.Data{"chains": allChains})
 
 	for _, chainName := range allChains {
@@ -160,12 +162,13 @@ func (e *Enforcer) CleanChainsMatching(regex *regexp.Regexp, desiredChains []Liv
 
 	for _, chain := range chainsToDelete {
 		e.Logger.Debug("deleting-chain-in-enforce-chains-matching", lager.Data{"chain": chain})
-		err := e.deleteChain(e.Logger, chain, "")
+		err = e.deleteChain(e.Logger, chain, "")
 		if err != nil {
 			e.Logger.Error(fmt.Sprintf("delete-chain-%s-from-%s", chain.Name, chain.Table), err)
 			return []LiveChain{}, fmt.Errorf("deleting chain %s from table %s: %s", chain.Name, chain.Table, err)
 		}
 	}
+
 	return chainsToDelete, nil
 }
 
@@ -180,6 +183,7 @@ func (e *Enforcer) CleanupChain(chain LiveChain) error {
 			return fmt.Errorf("deleting chain %s from table %s: %s", chain.Name, chain.Table, err)
 		}
 	}
+
 	candidateChainName := e.candidateChainName(chain.Name)
 	candidateChainExists, _ := e.iptables.ChainExists(chain.Table, candidateChainName)
 	if candidateChainExists {
@@ -199,6 +203,7 @@ func (e *Enforcer) EnforceRulesAndChain(rulesAndChain RulesWithChain) (string, e
 }
 
 func (e *Enforcer) EnforceOnChain(c Chain, rulesSpec []rules.IPTablesRule) (string, error) {
+	// TODO: do we support ipv6?
 	if c.Timestamped {
 		// used for C2C
 		newTime := e.timestamper.CurrentTime()
@@ -244,12 +249,14 @@ func (e *Enforcer) EnforceOnChain(c Chain, rulesSpec []rules.IPTablesRule) (stri
 
 func (e *Enforcer) enforce(logger lager.Logger, table string, parentChain string, chainName string, rulespec ...rules.IPTablesRule) error {
 	logger.Debug("create-chain", lager.Data{"chain": chainName, "table": table})
+
 	err := e.iptables.NewChain(table, chainName)
 	if err != nil {
 		logger.Error("create-chain", err)
 		return fmt.Errorf("creating chain: %s", err)
 	}
 
+	// TODO: support this for ipv6?
 	if e.conf.DisableContainerNetworkPolicy {
 		// This allows traffic from all overlay network CIDRs to all other overlay
 		// network CIDRs. This could be simplified by making the source the lease
@@ -323,6 +330,7 @@ func (e *Enforcer) replaceChainRules(logger lager.Logger, c Chain, rulesSpec []r
 	}
 
 	err := e.enforce(logger, c.Table, c.ParentChain, candidateName, rulesSpec...)
+
 	if err != nil {
 		return err
 	}
@@ -388,14 +396,14 @@ func (e *Enforcer) cleanupOldChain(logger lager.Logger, chain LiveChain, parentC
 func (e *Enforcer) deleteChain(logger lager.Logger, chain LiveChain, newChainName string) error {
 	// find gotos and delete those chains as well (since we may have log tables that we reference that need deleting)
 	logger.Debug("list-chain", lager.Data{"table": chain.Table, "chain": chain.Name})
-	rules, err := e.iptables.List(chain.Table, chain.Name)
+	existingRules, err := e.iptables.List(chain.Table, chain.Name)
 	if err != nil {
 		return fmt.Errorf("list rules for chain: %s", err)
 	}
 
 	reJumpRule := regexp.MustCompile(fmt.Sprintf(JumpRuleRegex, chain.Name))
 	jumpTargets := map[string]struct{}{}
-	for _, rule := range rules {
+	for _, rule := range existingRules {
 		matches := reJumpRule.FindStringSubmatch(rule)
 		if len(matches) > 1 && e.isChainJumpTarget(matches[1]) {
 			logger.Debug("found-target-chain-to-recurse", lager.Data{"table": chain.Table, "chain": chain.Name, "target-chain": matches[1]})
@@ -405,6 +413,7 @@ func (e *Enforcer) deleteChain(logger lager.Logger, chain LiveChain, newChainNam
 
 	if newChainName != "" {
 		newRules, err := e.iptables.List(chain.Table, newChainName)
+
 		if err != nil {
 			return fmt.Errorf("list rules for new chain: %s", err)
 		}

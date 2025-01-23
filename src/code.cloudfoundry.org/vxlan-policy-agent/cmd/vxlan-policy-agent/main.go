@@ -79,6 +79,8 @@ func main() {
 
 	logger.Info("parsed-config", lager.Data{"config": conf})
 
+	enableIPv6 := common.IsIPv6Enabled()
+
 	_, err = os.Stat(filepath.Dir(conf.Datastore))
 	if err != nil {
 		die(logger, "datastore-directory-stat", err)
@@ -233,33 +235,95 @@ func main() {
 		policyClient,
 		metricsSender,
 		metronClient,
-		logger,
+		logger.Session("policy-cycle"),
 	)
+
+	pollCycles := []*converger.SinglePollCycle{
+		singlePollCycle,
+	}
+
+	if enableIPv6 {
+		netOutChainIPv6 := &netrules.NetOutChain{
+			ChainNamer:       chainNamer,
+			Converter:        &netrules.RuleConverter{Logger: logger},
+			ASGLogging:       conf.IPTablesASGLogging,
+			DeniedLogsPerSec: conf.IPTablesDeniedLogsPerSec,
+			Conn:             outConn,
+			IPv6:             true,
+		}
+
+		ip6t, _ := iptables.NewWithProtocol(iptables.ProtocolIPv6)
+		restorerIPv6 := &rules.Restorer{
+			IPv6: true,
+		}
+		lockedIPv6Tables := &rules.LockedIPTables{
+			IPTables: ip6t,
+			Locker:   iptLocker,
+			Restorer: restorerIPv6,
+		}
+
+		ruleEnforcerIPv6 := enforcer.NewEnforcer(
+			logger.Session("rules-enforcer-ipv6"),
+			&enforcer.Timestamper{},
+			lockedIPv6Tables,
+			enforcer.EnforcerConfig{
+				DisableContainerNetworkPolicy: conf.DisableContainerNetworkPolicy,
+			},
+		)
+
+		dynamicPlannerV6 := &planner.VxlanPolicyPlanner{
+			Datastore:                     store,
+			PolicyClient:                  policyClient,
+			Logger:                        logger.Session("rules-updater-ipv6"),
+			VNI:                           conf.VNI,
+			MetricsSender:                 metricsSender,
+			Chain:                         enforcer.NewPolicyChain(),
+			LoggingState:                  iptablesLoggingState,
+			IPTablesAcceptedUDPLogsPerSec: conf.IPTablesAcceptedUDPLogsPerSec,
+			EnableOverlayIngressRules:     false, // IPv6 does not support overlay network
+			HostInterfaceNames:            interfaceNames,
+			NetOutChain:                   netOutChainIPv6,
+			IPv6:                          true,
+		}
+
+		singlePollCycleIPv6 := converger.NewSinglePollCycle(
+			[]converger.Planner{dynamicPlannerV6},
+			ruleEnforcerIPv6,
+			policyClient,
+			metricsSender,
+			metronClient,
+			logger.Session("policy-cycle-ipv6"),
+		)
+
+		pollCycles = append(pollCycles, singlePollCycleIPv6)
+	}
+
+	compositePollCycle := converger.NewCompositePollCycle(pollCycles...)
 
 	policyPoller := &poller.Poller{
 		Logger:          logger,
 		PollInterval:    pollInterval,
-		SingleCycleFunc: singlePollCycle.DoPolicyCycleWithLastUpdatedCheck,
+		SingleCycleFunc: compositePollCycle.DoPolicyCycleWithLastUpdatedCheck,
 	}
 
 	asgPoller := &poller.Poller{
 		Logger:          logger,
 		PollInterval:    asgPollInterval,
-		SingleCycleFunc: singlePollCycle.DoASGCycle,
+		SingleCycleFunc: compositePollCycle.DoASGCycle,
 	}
 
 	forcePolicyPollCycleServerAddress := fmt.Sprintf("%s:%d", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort)
 
 	forceHandlers := map[string]http.Handler{
 		"/force-policy-poll-cycle": &handlers.ForcePolicyPollCycle{
-			PollCycleFunc: singlePollCycle.DoPolicyCycle,
+			PollCycleFunc: compositePollCycle.DoPolicyCycle,
 		},
 		"/force-asgs-for-container": &handlers.ForceASGsForContainer{
-			ASGUpdateFunc:    singlePollCycle.SyncASGsForContainers,
+			ASGUpdateFunc:    compositePollCycle.SyncASGsForContainers,
 			EnableASGSyncing: conf.EnableASGSyncing,
 		},
 		"/force-orphaned-asgs-cleanup": &handlers.ForceOrphanedASGsCleanup{
-			ASGCleanupFunc:   singlePollCycle.CleanupOrphanedASGsChains,
+			ASGCleanupFunc:   compositePollCycle.CleanupOrphanedASGsChains,
 			EnableASGSyncing: conf.EnableASGSyncing,
 		},
 	}

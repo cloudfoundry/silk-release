@@ -66,6 +66,60 @@ func NewSinglePollCycle(planners []Planner, re ruleEnforcer, p policyClient, ms 
 	}
 }
 
+type childAction func(singlePollCycle *SinglePollCycle) error
+
+type CompositePollCycle struct {
+	singlePollCycles []*SinglePollCycle
+}
+
+func NewCompositePollCycle(singlePollCycles ...*SinglePollCycle) *CompositePollCycle {
+	return &CompositePollCycle{
+		singlePollCycles: singlePollCycles,
+	}
+}
+
+func (m *CompositePollCycle) DoASGCycle() error {
+	return m.runForEachChild(func(singlePollCycle *SinglePollCycle) error {
+		return singlePollCycle.DoASGCycle()
+	})
+}
+
+func (m *CompositePollCycle) SyncASGsForContainers(containers ...string) error {
+	return m.runForEachChild(func(singlePollCycle *SinglePollCycle) error {
+		return singlePollCycle.SyncASGsForContainers(containers...)
+	})
+}
+
+func (m *CompositePollCycle) CleanupOrphanedASGsChains(containerHandle string) error {
+	return m.runForEachChild(func(singlePollCycle *SinglePollCycle) error {
+		return singlePollCycle.CleanupOrphanedASGsChains(containerHandle)
+	})
+}
+
+func (m *CompositePollCycle) DoPolicyCycle() error {
+	return m.runForEachChild(func(singlePollCycle *SinglePollCycle) error {
+		return singlePollCycle.DoPolicyCycle()
+	})
+}
+
+func (m *CompositePollCycle) DoPolicyCycleWithLastUpdatedCheck() error {
+	return m.runForEachChild(func(singlePollCycle *SinglePollCycle) error {
+		return singlePollCycle.DoPolicyCycleWithLastUpdatedCheck()
+	})
+}
+
+func (m *CompositePollCycle) runForEachChild(action childAction) error {
+	var multiError error
+	for _, child := range m.singlePollCycles {
+		err := action(child)
+		if err != nil {
+			multiError = multierror.Append(multiError, err)
+		}
+	}
+
+	return multiError
+}
+
 const metricEnforceDuration = "iptablesEnforceTime"
 const metricPollDuration = "totalPollTime"
 

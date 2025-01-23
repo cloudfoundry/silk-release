@@ -189,7 +189,7 @@ func (p *VxlanPolicyPlanner) GetASGRulesAndChains(specifiedContainers ...string)
 		} else if container.Purpose == "app" || container.Purpose == "task" {
 			sgRules = append(defaultRunningRules, runningRulesForSpace[container.SpaceID]...)
 		}
-		ruleSpec, err := netrules.NewRulesFromSecurityGroupRules(sgRules)
+		ruleSpec, err := p.filterRulesByIPVersion(sgRules)
 		if err != nil {
 			p.Logger.Error("rules-from-security-group-rules", err)
 			continue
@@ -211,6 +211,31 @@ func (p *VxlanPolicyPlanner) GetASGRulesAndChains(specifiedContainers ...string)
 	}
 
 	return rulesWithChains, nil
+}
+
+func (p *VxlanPolicyPlanner) filterRulesByIPVersion(sgRules []policy_client.SecurityGroupRule) ([]netrules.Rule, error) {
+	var filteredRules []netrules.Rule
+	for _, sgRule := range sgRules {
+		rule, err := netrules.NewRuleFromSecurityGroupRule(sgRule)
+		if err != nil {
+			return nil, err
+		}
+		for _, network := range rule.Networks() {
+			start := network.Start
+			end := network.Start
+
+			if start == nil || end == nil {
+				return nil, fmt.Errorf("invalid IP address: %s, %s", network.Start, network.End)
+			}
+			if p.IPv6 && start.To4() == nil {
+				filteredRules = append(filteredRules, rule)
+			} else if !p.IPv6 && start.To4() != nil {
+				filteredRules = append(filteredRules, rule)
+			}
+		}
+	}
+
+	return filteredRules, nil
 }
 
 func reverseOrderIptablesRules(iptablesRules, defaultRules []rules.IPTablesRule) []rules.IPTablesRule {
