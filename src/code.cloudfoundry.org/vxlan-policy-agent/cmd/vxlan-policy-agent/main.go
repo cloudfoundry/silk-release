@@ -266,9 +266,7 @@ func main() {
 			logger.Session("rules-enforcer-ipv6"),
 			&enforcer.Timestamper{},
 			lockedIPv6Tables,
-			enforcer.EnforcerConfig{
-				DisableContainerNetworkPolicy: conf.DisableContainerNetworkPolicy,
-			},
+			enforcer.EnforcerConfig{},
 		)
 
 		dynamicPlannerV6 := &planner.VxlanPolicyPlanner{

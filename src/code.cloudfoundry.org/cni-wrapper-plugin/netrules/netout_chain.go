@@ -38,6 +38,7 @@ func (c *NetOutChain) Validate() error {
 			} else if !c.IPv6 && ip.To4() == nil {
 				return fmt.Errorf("network is ipv6 in ipv4 chain: %s", ip)
 			}
+
 			denyNetworks[destinationIndex] = validatedDestination.String()
 		}
 	}
