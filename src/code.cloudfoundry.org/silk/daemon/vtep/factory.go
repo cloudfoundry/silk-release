@@ -68,18 +68,27 @@ func (f *Factory) CreateVTEP(cfg *Config) error {
 		return fmt.Errorf("up link: %s", err)
 	}
 
-	overlayNetworkMask := net.CIDRMask(cfg.OverlayNetworkPrefixLength, 32)
-
-	err = f.NetlinkAdapter.AddrAddScopeLink(vxlan, &netlink.Addr{
-		IPNet: &net.IPNet{
-			IP:   cfg.OverlayIP,
-			Mask: overlayNetworkMask,
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("add address: %s", err)
+	if !cfg.OverlayNetworks.Contains(cfg.LeaseIP) {
+		return fmt.Errorf("lease IP '%s' is not in any of the overlay networks: %s", cfg.LeaseIP, cfg.OverlayNetworks.Networks)
 	}
 
+	for _, overlayNet := range cfg.OverlayNetworks.Networks {
+		ip := overlayNet.IP
+		if overlayNet.Contains(cfg.LeaseIP) {
+			ip = cfg.LeaseIP
+		}
+
+		err = f.NetlinkAdapter.AddrAddScopeLink(vxlan, &netlink.Addr{
+			IPNet: &net.IPNet{
+				IP:   ip,
+				Mask: overlayNet.Mask,
+			},
+		})
+
+		if err != nil {
+			return fmt.Errorf("add address: %s", err)
+		}
+	}
 	return nil
 }
 

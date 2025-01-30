@@ -30,7 +30,7 @@ var _ = Describe("ConfigCreator", func() {
 				SubnetPrefixLength: 24,
 				VTEPName:           "some-vtep-name",
 				VNI:                99,
-				OverlayNetwork:     "10.255.0.0/16",
+				OverlayNetworks:    []string{"10.255.0.0/16"},
 				VTEPPort:           12225,
 			}
 			lease = controller.Lease{
@@ -56,10 +56,9 @@ var _ = Describe("ConfigCreator", func() {
 			Expect(conf.VTEPName).To(Equal("some-vtep-name"))
 			Expect(conf.UnderlayInterface).To(Equal(net.Interface{Index: 42}))
 			Expect(conf.UnderlayIP.String()).To(Equal("172.255.30.2"))
-			Expect(conf.OverlayIP.String()).To(Equal("10.255.30.0"))
+			Expect(conf.LeaseIP.String()).To(Equal("10.255.30.0"))
 			Expect(conf.OverlayHardwareAddr).To(Equal(net.HardwareAddr{0xee, 0xee, 0x0a, 0xff, 0x1e, 0x00}))
 			Expect(conf.VNI).To(Equal(99))
-			Expect(conf.OverlayNetworkPrefixLength).To(Equal(16))
 			Expect(conf.VTEPPort).To(Equal(12225))
 
 			Expect(fakeNetAdapter.InterfacesCallCount()).To(Equal(1))
@@ -97,7 +96,7 @@ var _ = Describe("ConfigCreator", func() {
 
 		Context("when the overlay network prefix length is greater than or equal to the subnet prefix length", func() {
 			BeforeEach(func() {
-				clientConf.OverlayNetwork = "10.255.0.0/30"
+				clientConf.OverlayNetworks = []string{"10.255.0.0/30"}
 			})
 			It("returns an error", func() {
 				_, err := creator.Create(clientConf, lease)
@@ -107,11 +106,11 @@ var _ = Describe("ConfigCreator", func() {
 
 		Context("when the overlay network is not set", func() {
 			BeforeEach(func() {
-				clientConf.OverlayNetwork = ""
+				clientConf.OverlayNetworks = []string{}
 			})
 			It("returns an error", func() {
 				_, err := creator.Create(clientConf, lease)
-				Expect(err).To(MatchError("determine overlay network: invalid CIDR address: "))
+				Expect(err).To(MatchError("no overlay networks specified"))
 			})
 		})
 
@@ -209,9 +208,60 @@ var _ = Describe("ConfigCreator", func() {
 			BeforeEach(func() {
 				lease.OverlayHardwareAddr = "foo"
 			})
+
 			It("returns a sensible error", func() {
 				_, err := creator.Create(clientConf, lease)
 				Expect(err).To(MatchError(ContainSubstring("parsing hardware address:")))
+			})
+		})
+
+		Context("when there are multiple overlay networks", func() {
+			BeforeEach(func() {
+				clientConf.OverlayNetworks = append(clientConf.OverlayNetworks, "10.2.0.0/16", "10.3.0.0/20")
+			})
+
+			It("returns a config with multiple overlays", func() {
+				conf, err := creator.Create(clientConf, lease)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(conf.OverlayNetworks.Networks).To(Equal([]*net.IPNet{{
+					IP:   net.IP{10, 255, 0, 0},
+					Mask: net.IPMask{255, 255, 0, 0},
+				}, {
+					IP:   net.IP{10, 2, 0, 0},
+					Mask: net.IPMask{255, 255, 0, 0},
+				}, {
+					IP:   net.IP{10, 3, 0, 0},
+					Mask: net.IPMask{255, 255, 240, 0},
+				}}))
+			})
+
+			Context("when one of the overlay networks is invalid", func() {
+				It("errors when it is not a network", func() {
+					clientConf.OverlayNetworks = append(clientConf.OverlayNetworks, "meow")
+					_, err := creator.Create(clientConf, lease)
+					Expect(err).To(MatchError(ContainSubstring("creating multiple CIDR Network:")))
+				})
+
+				It("errors when there is a bad octet", func() {
+					clientConf.OverlayNetworks = append(clientConf.OverlayNetworks, "10.999.0.0/16")
+					_, err := creator.Create(clientConf, lease)
+					Expect(err).To(MatchError(ContainSubstring("creating multiple CIDR Network:")))
+				})
+
+				It("errors when there is a bad mask", func() {
+					clientConf.OverlayNetworks = append(clientConf.OverlayNetworks, "10.5.0.0/99")
+					_, err := creator.Create(clientConf, lease)
+					Expect(err).To(MatchError(ContainSubstring("creating multiple CIDR Network:")))
+				})
+			})
+
+			Context("when one of the overlay networks is smaller than the subnet_prefix_length", func() {
+				It("errors", func() {
+					clientConf.OverlayNetworks = append(clientConf.OverlayNetworks, "10.5.0.0/32")
+					clientConf.SubnetPrefixLength = 24
+					_, err := creator.Create(clientConf, lease)
+					Expect(err).To(MatchError(ContainSubstring("overlay prefix 32 must be smaller than subnet prefix 24")))
+				})
 			})
 		})
 	})

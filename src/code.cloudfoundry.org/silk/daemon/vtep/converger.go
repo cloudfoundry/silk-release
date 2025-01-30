@@ -5,17 +5,22 @@ import (
 	"net"
 	"syscall"
 
+	"strings"
+
 	"code.cloudfoundry.org/lager/v3"
+	mcn "code.cloudfoundry.org/lib/multiple-cidr-network"
 	"code.cloudfoundry.org/silk/controller"
 	"github.com/vishvananda/netlink"
+	"golang.org/x/sys/unix"
 )
 
 type Converger struct {
-	OverlayNetwork *net.IPNet
+	OverlayNetwork mcn.MultipleCIDRNetwork
 	LocalSubnet    *net.IPNet
 	LocalVTEP      net.Interface
 	NetlinkAdapter netlinkAdapter
 	Logger         lager.Logger
+	IsSingleIP     bool
 }
 
 func (c *Converger) Converge(leases []controller.Lease) error {
@@ -42,11 +47,13 @@ func (c *Converger) Converge(leases []controller.Lease) error {
 			continue
 		}
 
-		route, err := c.addRoute(destNet, destAddr)
-		if err != nil {
-			return err
+		if !isSingleIPLease(lease) {
+			route, err := c.addRoute(destNet, destAddr)
+			if err != nil {
+				return err
+			}
+			currentRoutes = append(currentRoutes, route)
 		}
-		currentRoutes = append(currentRoutes, route)
 
 		underlayIP := net.ParseIP(lease.UnderlayIP)
 		if underlayIP == nil {
@@ -94,6 +101,10 @@ func (c *Converger) Converge(leases []controller.Lease) error {
 
 func (c *Converger) isLocal(destNet *net.IPNet) bool {
 	return destNet.String() == c.LocalSubnet.String()
+}
+
+func isSingleIPLease(lease controller.Lease) bool {
+	return strings.Contains(lease.OverlaySubnet, "/32")
 }
 
 func getDeletedRoutes(previous, current []netlink.Route) []netlink.Route {
@@ -156,12 +167,30 @@ func (c *Converger) getPreviousState(index int) ([]netlink.Route, []netlink.Neig
 }
 
 func (c *Converger) addRoute(destNet *net.IPNet, destAddr net.IP) (netlink.Route, error) {
+
 	route := netlink.Route{
 		LinkIndex: c.LocalVTEP.Index,
 		Scope:     netlink.SCOPE_UNIVERSE,
 		Dst:       destNet,
 		Gw:        destAddr,
-		Src:       c.LocalSubnet.IP,
+	}
+
+	if c.IsSingleIP {
+		route.Flags = unix.RTNH_F_ONLINK
+	}
+
+	overlayNetwork := c.OverlayNetwork.WhichNetworkContains(destAddr)
+
+	if overlayNetwork == nil {
+		// This should never happen because it would be marked
+		// as a "nonRoutableLease" above before this point.
+		return netlink.Route{}, fmt.Errorf("no overlay network contains the destination addr '%v'", destAddr)
+	}
+
+	if overlayNetwork.Contains(c.LocalSubnet.IP) {
+		route.Src = c.LocalSubnet.IP
+	} else {
+		route.Src = overlayNetwork.IP
 	}
 
 	err := c.NetlinkAdapter.RouteReplace(&route)

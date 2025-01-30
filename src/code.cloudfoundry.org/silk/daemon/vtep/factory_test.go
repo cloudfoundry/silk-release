@@ -5,6 +5,7 @@ import (
 	"net"
 
 	"code.cloudfoundry.org/lager/v3/lagertest"
+	mcn "code.cloudfoundry.org/lib/multiple-cidr-network"
 	"code.cloudfoundry.org/silk/daemon/vtep"
 	"code.cloudfoundry.org/silk/daemon/vtep/fakes"
 
@@ -39,19 +40,28 @@ var _ = Describe("Factory", func() {
 			HardwareAddr: net.HardwareAddr{0xbb, 0xbb, 0x00, 0x00, 0x12, 0x34},
 			Flags:        net.FlagUp | net.FlagMulticast,
 		}
+
+		overlayNetworks, err := mcn.NewMultipleCIDRNetwork([]string{"10.2.0.0/24", "10.240.0.0/16", "10.255.0.0/16"})
+		Expect(err).NotTo(HaveOccurred())
+
 		vtepConfig = &vtep.Config{
-			VTEPName:                   "some-device",
-			UnderlayInterface:          underlayInterface,
-			UnderlayIP:                 net.IP{172, 255, 0, 0},
-			OverlayIP:                  net.IP{10, 255, 32, 0},
-			OverlayHardwareAddr:        overlayMAC,
-			VNI:                        99,
-			OverlayNetworkPrefixLength: 10,
-			VTEPPort:                   4913,
+			VTEPName:            "some-device",
+			UnderlayInterface:   underlayInterface,
+			UnderlayIP:          net.IP{172, 255, 0, 0},
+			LeaseIP:             net.IP{10, 255, 32, 0},
+			OverlayNetworks:     overlayNetworks,
+			OverlayHardwareAddr: overlayMAC,
+			VNI:                 99,
+			VTEPPort:            4913,
 		}
 	})
 
 	Describe("CreateVTEP", func() {
+		var vtepLinkIndex int
+		BeforeEach(func() {
+			vtepLinkIndex = 2
+			fakeNetlinkAdapter.LinkByNameReturns(&netlink.Vxlan{LinkAttrs: netlink.LinkAttrs{Index: vtepLinkIndex}}, nil)
+		})
 		It("creates the link, with the HW address", func() {
 			err := factory.CreateVTEP(vtepConfig)
 			Expect(err).NotTo(HaveOccurred())
@@ -76,13 +86,35 @@ var _ = Describe("Factory", func() {
 
 			Expect(fakeNetlinkAdapter.LinkSetHardwareAddrCallCount()).To(Equal(0))
 
-			Expect(fakeNetlinkAdapter.AddrAddScopeLinkCallCount()).To(Equal(1))
+			// for network: 10.2.0.0/24
+			Expect(fakeNetlinkAdapter.AddrAddScopeLinkCallCount()).To(Equal(vtepConfig.OverlayNetworks.Length()))
 			link, addr := fakeNetlinkAdapter.AddrAddScopeLinkArgsForCall(0)
 			Expect(link).To(Equal(expectedLink))
 			Expect(addr).To(Equal(&netlink.Addr{
 				IPNet: &net.IPNet{
+					IP:   net.IP{10, 2, 0, 0},
+					Mask: net.IPMask{0xff, 0xff, 0xff, 0x00},
+				},
+			}))
+
+			// for network: 10.240.0.0/16
+			link, addr = fakeNetlinkAdapter.AddrAddScopeLinkArgsForCall(1)
+			Expect(link).To(Equal(expectedLink))
+			Expect(addr).To(Equal(&netlink.Addr{
+				IPNet: &net.IPNet{
+					IP:   net.IP{10, 240, 0, 0},
+					Mask: net.IPMask{0xff, 0xff, 0x00, 0x00},
+				},
+			}))
+
+			// for network: 10.255.0.0/16
+			link, addr = fakeNetlinkAdapter.AddrAddScopeLinkArgsForCall(2)
+			Expect(link).To(Equal(expectedLink))
+			Expect(addr).To(Equal(&netlink.Addr{
+				IPNet: &net.IPNet{
+					// the lease for this daemon is in this subnet, so we use the lease IP instead of the first IP
 					IP:   net.IP{10, 255, 32, 0},
-					Mask: net.IPMask{0xff, 0xc0, 0x00, 0x00},
+					Mask: net.IPMask{0xff, 0xff, 0x00, 0x00},
 				},
 			}))
 		})
@@ -116,6 +148,14 @@ var _ = Describe("Factory", func() {
 				Expect(err).To(MatchError("add address: potato"))
 			})
 		})
+
+		Context("when the leaseIP is not in any of the overlay networks", func() {
+			It("returns an error", func() {
+				vtepConfig.LeaseIP = net.IP{10, 30, 0, 0}
+				err := factory.CreateVTEP(vtepConfig)
+				Expect(err).To(MatchError(ContainSubstring("lease IP '10.30.0.0' is not in any of the overlay networks")))
+			})
+		})
 	})
 
 	Describe("GetVTEPState", func() {
@@ -127,15 +167,14 @@ var _ = Describe("Factory", func() {
 					HardwareAddr: net.HardwareAddr{0xee, 0xee, 0x0a, 0xff, 0x42, 0x00},
 				},
 			}, nil)
-			fakeNetlinkAdapter.AddrListReturns([]netlink.Addr{
-				netlink.Addr{
-					IPNet: &net.IPNet{
-						IP:   net.IP{10, 255, 32, 0},
-						Mask: net.IPMask{0xff, 0xff, 0xff, 0xff},
-					},
+			fakeNetlinkAdapter.AddrListReturns([]netlink.Addr{{
+				IPNet: &net.IPNet{
+					IP:   net.IP{10, 255, 32, 0},
+					Mask: net.IPMask{0xff, 0xff, 0xff, 0xff},
 				},
-			}, nil)
+			}}, nil)
 		})
+
 		It("returns the overlay address, hardware addr, and MTU", func() {
 			hwAddr, ip, mtu, err := factory.GetVTEPState(vtepConfig.VTEPName)
 			Expect(err).NotTo(HaveOccurred())
