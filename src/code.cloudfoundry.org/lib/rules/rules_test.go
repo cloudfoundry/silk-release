@@ -235,4 +235,132 @@ var _ = Describe("Rules", func() {
 			}))
 		})
 	})
+
+	Describe("NewInputRejectRule", func() {
+		It("create a reject rule with icmp type", func() {
+			rule := rules.NewInputRejectRule("1.2.3.4", false)
+			Expect(rule).To(Equal(rules.IPTablesRule{
+				"-d", "1.2.3.4",
+				"--jump", "REJECT",
+				"--reject-with", "icmp-port-unreachable",
+			}))
+		})
+
+		It("create a reject rule with icmp type", func() {
+			rule := rules.NewInputRejectRule("2000::1", true)
+			Expect(rule).To(Equal(rules.IPTablesRule{
+				"-d", "2000::1",
+				"--jump", "REJECT",
+				"--reject-with", "icmp6-port-unreachable",
+			}))
+		})
+	})
+
+	Describe("NewInputDefaultRejectRule", func() {
+		It("create a default reject rule with icmp reject type", func() {
+			rule := rules.NewInputDefaultRejectRule(false)
+			Expect(rule).To(Equal(rules.IPTablesRule{
+				"--jump", "REJECT",
+				"--reject-with", "icmp-port-unreachable",
+			}))
+		})
+
+		It("create a default reject rule with icmp reject type", func() {
+			rule := rules.NewInputDefaultRejectRule(true)
+			Expect(rule).To(Equal(rules.IPTablesRule{
+				"--jump", "REJECT",
+				"--reject-with", "icmp6-port-unreachable",
+			}))
+		})
+	})
+
+	Describe("NewOverlayDefaultRejectRule", func() {
+		It("create a reject rule with icmp reject type", func() {
+			rule := rules.NewOverlayDefaultRejectRule("1.2.3.4", false)
+			Expect(rule).To(Equal(rules.IPTablesRule{
+				"-d", "1.2.3.4",
+				"--jump", "REJECT",
+				"--reject-with", "icmp-port-unreachable",
+			}))
+		})
+
+		It("create a reject rule with icmp reject type", func() {
+			rule := rules.NewOverlayDefaultRejectRule("2000::1", true)
+			Expect(rule).To(Equal(rules.IPTablesRule{
+				"-d", "2000::1",
+				"--jump", "REJECT",
+				"--reject-with", "icmp6-port-unreachable",
+			}))
+		})
+	})
+
+	Describe("NewNetOutDefaultRejectRule", func() {
+		It("create a default reject rule with icmp reject type", func() {
+			rule := rules.NewNetOutDefaultRejectRule(false)
+			Expect(rule).To(Equal(rules.IPTablesRule{
+				"--jump", "REJECT",
+				"--reject-with", "icmp-port-unreachable",
+			}))
+		})
+
+		It("create a default reject rule with icmp reject type", func() {
+			rule := rules.NewNetOutDefaultRejectRule(true)
+			Expect(rule).To(Equal(rules.IPTablesRule{
+				"--jump", "REJECT",
+				"--reject-with", "icmp6-port-unreachable",
+			}))
+		})
+	})
+
+	Describe("NewNetOutICMPRule", func() {
+		It("create an ICMP netout rule", func() {
+			rule := rules.NewNetOutICMPRule("1.1.1.1", "2.2.2.2", 1, 2, false)
+			Expect(rule).To(Equal(rules.IPTablesRule{
+				"-m", "iprange",
+				"-p", "icmp",
+				"--dst-range", "1.1.1.1-2.2.2.2",
+				"-m", "icmp",
+				"--icmp-type", "1/2",
+				"--jump", "ACCEPT",
+			}))
+		})
+
+		It("create an ICMPv6 netout rule", func() {
+			rule := rules.NewNetOutICMPRule("2001::1", "2001::2", 1, 2, true)
+			Expect(rule).To(Equal(rules.IPTablesRule{
+				"-m", "iprange",
+				"-p", "icmpv6",
+				"--dst-range", "2001::1-2001::2",
+				"-m", "icmpv6",
+				"--icmpv6-type", "1/2",
+				"--jump", "ACCEPT",
+			}))
+		})
+	})
+
+	Describe("NewNetOutICMPLogRule", func() {
+		It("create an ICMP log rule", func() {
+			rule := rules.NewNetOutICMPLogRule("1.1.1.1", "2.2.2.2", 1, 2, "imaginary-chain", false)
+			Expect(rule).To(Equal(rules.IPTablesRule{
+				"-m", "iprange",
+				"-p", "icmp",
+				"--dst-range", "1.1.1.1-2.2.2.2",
+				"-m", "icmp",
+				"--icmp-type", "1/2",
+				"-g", "imaginary-chain",
+			}))
+		})
+
+		It("create an ICMPv6 log rule", func() {
+			rule := rules.NewNetOutICMPLogRule("2001::1", "2001::2", 1, 2, "imaginary-chain", true)
+			Expect(rule).To(Equal(rules.IPTablesRule{
+				"-m", "iprange",
+				"-p", "icmpv6",
+				"--dst-range", "2001::1-2001::2",
+				"-m", "icmpv6",
+				"--icmpv6-type", "1/2",
+				"-g", "imaginary-chain",
+			}))
+		})
+	})
 })

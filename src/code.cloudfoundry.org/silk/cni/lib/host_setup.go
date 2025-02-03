@@ -46,11 +46,11 @@ func (h *Host) SetupIPv6(cfg *config.Config) error {
 
 	return cfg.Host.Namespace.Do(func(_ ns.NetNS) error {
 		if err := h.Common.BasicSetupIPv6(deviceName, local, peer); err != nil {
-			return fmt.Errorf("setting up device in host: %s", err)
+			return fmt.Errorf("setting up IPv6 device in host: %s", err)
 		}
 
 		if err := h.LinkOperations.EnableIPv6Forwarding(); err != nil {
-			return fmt.Errorf("enabling packet forwarding on host: %s", err)
+			return fmt.Errorf("enabling IPv6 packet forwarding on host: %s", err)
 		}
 
 		return nil

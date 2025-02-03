@@ -14,7 +14,6 @@ import (
 )
 
 var _ = Describe("Container Setup", func() {
-
 	var (
 		containerNS        *fakes.NetNS
 		cfg                *config.Config
@@ -23,13 +22,13 @@ var _ = Describe("Container Setup", func() {
 		containerSetup     *lib.Container
 		containerAddr      config.DualAddress
 		hostAddr           config.DualAddress
-		fakelogger         *lagertest.TestLogger
+		fakeLogger         *lagertest.TestLogger
 	)
 
 	BeforeEach(func() {
 		fakeLinkOperations = &fakes.LinkOperations{}
 		fakeCommon = &fakes.Common{}
-		fakelogger = lagertest.NewTestLogger("test")
+		fakeLogger = lagertest.NewTestLogger("test")
 		containerNS = &fakes.NetNS{}
 		containerNS.DoStub = lib.NetNsDoStub
 
@@ -68,7 +67,7 @@ var _ = Describe("Container Setup", func() {
 		containerSetup = &lib.Container{
 			Common:         fakeCommon,
 			LinkOperations: fakeLinkOperations,
-			Logger:         fakelogger,
+			Logger:         fakeLogger,
 		}
 	})
 
@@ -122,6 +121,71 @@ var _ = Describe("Container Setup", func() {
 			It("returns a meaningful error", func() {
 				err := containerSetup.Setup(cfg)
 				Expect(err).To(MatchError("adding route in container: lettuce"))
+			})
+		})
+	})
+
+	Describe("SetupIPv6", func() {
+		var (
+			containerAddrIPv6 config.DualAddress
+			hostAddrIPv6      config.DualAddress
+		)
+
+		BeforeEach(func() {
+			containerAddrIPv6 = config.DualAddress{IP: net.ParseIP("2001:db8::1")}
+			hostAddrIPv6 = config.DualAddress{IP: net.ParseIP("fe80::1")}
+
+			cfg.Container.AddressIPv6 = containerAddrIPv6
+			cfg.Host.AddressIPv6 = hostAddrIPv6
+			cfg.Container.RoutesIPv6 = []*types.Route{
+				{
+					GW: net.ParseIP("fe80::1"),
+				},
+				{
+					GW: net.ParseIP("fe80::2"),
+				},
+				{
+					GW: net.ParseIP("fe80::3"),
+				},
+			}
+		})
+
+		It("calls basic setup in the container namespace", func() {
+			err := containerSetup.SetupIPv6(cfg)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(fakeCommon.BasicSetupIPv6CallCount()).To(Equal(1))
+			device, local, peer := fakeCommon.BasicSetupIPv6ArgsForCall(0)
+			Expect(device).To(Equal("eth0"))
+			Expect(local).To(Equal(containerAddrIPv6))
+			Expect(peer).To(Equal(hostAddrIPv6))
+
+			By("Adding all the routes")
+			Expect(fakeLinkOperations.Route6AddAllCallCount()).To(Equal(1))
+			routes, deviceName := fakeLinkOperations.Route6AddAllArgsForCall(0)
+			Expect(routes).To(Equal(cfg.Container.RoutesIPv6))
+			Expect(deviceName).To(Equal(cfg.Container.DeviceName))
+		})
+
+		Context("when the basic device setup fails", func() {
+			BeforeEach(func() {
+				fakeCommon.BasicSetupIPv6Returns(errors.New("lettuce"))
+			})
+
+			It("returns a meaningful error", func() {
+				err := containerSetup.SetupIPv6(cfg)
+				Expect(err).To(MatchError("setting up IPv6 device in container: lettuce"))
+			})
+		})
+
+		Context("when adding the routes fails", func() {
+			BeforeEach(func() {
+				fakeLinkOperations.Route6AddAllReturns(errors.New("lettuce"))
+			})
+
+			It("returns a meaningful error", func() {
+				err := containerSetup.SetupIPv6(cfg)
+				Expect(err).To(MatchError("adding IPv6 route in container: lettuce"))
 			})
 		})
 	})

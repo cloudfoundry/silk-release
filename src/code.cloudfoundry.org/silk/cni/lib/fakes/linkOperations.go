@@ -149,6 +149,17 @@ type LinkOperations struct {
 	staticNeighborNoARPReturnsOnCall map[int]struct {
 		result1 error
 	}
+	SysctlIPv6SecurityStub        func(string) error
+	sysctlIPv6SecurityMutex       sync.RWMutex
+	sysctlIPv6SecurityArgsForCall []struct {
+		arg1 string
+	}
+	sysctlIPv6SecurityReturns struct {
+		result1 error
+	}
+	sysctlIPv6SecurityReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -336,7 +347,7 @@ func (fake *LinkOperations) EnableIPv6(arg1 string) error {
 	}{arg1})
 	stub := fake.EnableIPv6Stub
 	fakeReturns := fake.enableIPv6Returns
-	fake.recordInvocation("IPv6", []interface{}{arg1})
+	fake.recordInvocation("EnableIPv6", []interface{}{arg1})
 	fake.enableIPv6Mutex.Unlock()
 	if stub != nil {
 		return stub(arg1)
@@ -888,6 +899,67 @@ func (fake *LinkOperations) StaticNeighborNoARPReturnsOnCall(i int, result1 erro
 	}{result1}
 }
 
+func (fake *LinkOperations) SysctlIPv6Security(arg1 string) error {
+	fake.sysctlIPv6SecurityMutex.Lock()
+	ret, specificReturn := fake.sysctlIPv6SecurityReturnsOnCall[len(fake.sysctlIPv6SecurityArgsForCall)]
+	fake.sysctlIPv6SecurityArgsForCall = append(fake.sysctlIPv6SecurityArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.SysctlIPv6SecurityStub
+	fakeReturns := fake.sysctlIPv6SecurityReturns
+	fake.recordInvocation("SysctlIPv6Security", []interface{}{arg1})
+	fake.sysctlIPv6SecurityMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *LinkOperations) SysctlIPv6SecurityCallCount() int {
+	fake.sysctlIPv6SecurityMutex.RLock()
+	defer fake.sysctlIPv6SecurityMutex.RUnlock()
+	return len(fake.sysctlIPv6SecurityArgsForCall)
+}
+
+func (fake *LinkOperations) SysctlIPv6SecurityCalls(stub func(string) error) {
+	fake.sysctlIPv6SecurityMutex.Lock()
+	defer fake.sysctlIPv6SecurityMutex.Unlock()
+	fake.SysctlIPv6SecurityStub = stub
+}
+
+func (fake *LinkOperations) SysctlIPv6SecurityArgsForCall(i int) string {
+	fake.sysctlIPv6SecurityMutex.RLock()
+	defer fake.sysctlIPv6SecurityMutex.RUnlock()
+	argsForCall := fake.sysctlIPv6SecurityArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *LinkOperations) SysctlIPv6SecurityReturns(result1 error) {
+	fake.sysctlIPv6SecurityMutex.Lock()
+	defer fake.sysctlIPv6SecurityMutex.Unlock()
+	fake.SysctlIPv6SecurityStub = nil
+	fake.sysctlIPv6SecurityReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *LinkOperations) SysctlIPv6SecurityReturnsOnCall(i int, result1 error) {
+	fake.sysctlIPv6SecurityMutex.Lock()
+	defer fake.sysctlIPv6SecurityMutex.Unlock()
+	fake.SysctlIPv6SecurityStub = nil
+	if fake.sysctlIPv6SecurityReturnsOnCall == nil {
+		fake.sysctlIPv6SecurityReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.sysctlIPv6SecurityReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *LinkOperations) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -915,6 +987,8 @@ func (fake *LinkOperations) Invocations() map[string][][]interface{} {
 	defer fake.staticNeighborIPv6Mutex.RUnlock()
 	fake.staticNeighborNoARPMutex.RLock()
 	defer fake.staticNeighborNoARPMutex.RUnlock()
+	fake.sysctlIPv6SecurityMutex.RLock()
+	defer fake.sysctlIPv6SecurityMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

@@ -19,6 +19,7 @@ import (
 	"syscall"
 
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport/ports"
+	current "github.com/containernetworking/cni/pkg/types/100"
 	noop_debug "github.com/containernetworking/cni/plugins/test/noop/debug"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -69,6 +70,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 		policyAgentServer      mockPolicyAgentServer
 		daemonPort             string
 		fakeSilkDaemon         *ghttp.Server
+		cniResult              *current.Result
 	)
 
 	var cniCommand = func(command, input string) *exec.Cmd {
@@ -89,6 +91,13 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 	AllIPTablesRules := func(tableName string) []string {
 		iptablesSession, err := gexec.Start(exec.Command("iptables", "-w", "-S", "-t", tableName), GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(iptablesSession).Should(gexec.Exit(0))
+		return strings.Split(string(iptablesSession.Out.Contents()), "\n")
+	}
+
+	AllIP6TablesRules := func(tableName string) []string {
+		iptablesSession, err := gexec.Start(exec.Command("ip6tables", "-w", "-S", "-t", tableName), GinkgoWriter, GinkgoWriter)
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(iptablesSession).Should(gexec.Exit(0))
 		return strings.Split(string(iptablesSession.Out.Contents()), "\n")
@@ -118,11 +127,18 @@ var _ = Describe("CniWrapperPlugin", func() {
 		Expect(debugFile.Close()).To(Succeed())
 		debugFileName = debugFile.Name()
 
-		debug = &noop_debug.Debug{
-			ReportResult:         `{ "cniVersion": "1.0.0", "ips": [{ "interface": -1, "address": "1.2.3.4/32" }]}`,
-			ReportVersionSupport: []string{"1.0.0"},
+		cniResult = &current.Result{
+			CNIVersion: "1.0.0",
+			IPs: []*current.IPConfig{
+				{
+					Address: net.IPNet{
+						IP:   net.ParseIP("1.2.3.4"),
+						Mask: net.CIDRMask(32, 32),
+					},
+					Interface: intPtr(-1),
+				},
+			},
 		}
-		Expect(debug.WriteDebug(debugFileName)).To(Succeed())
 
 		tmpDir, err := os.MkdirTemp("", "cni-wrapper-integration")
 		Expect(err).NotTo(HaveOccurred())
@@ -273,6 +289,13 @@ var _ = Describe("CniWrapperPlugin", func() {
 	JustBeforeEach(func() {
 		input = GetInput(inputStruct)
 		cmd = cniCommand("ADD", input)
+
+		noopOutput, _ := json.Marshal(cniResult)
+		debug = &noop_debug.Debug{
+			ReportResult:         string(noopOutput),
+			ReportVersionSupport: []string{"1.0.0"},
+		}
+		Expect(debug.WriteDebug(debugFileName)).To(Succeed())
 	})
 
 	JustAfterEach(func() {
@@ -307,6 +330,12 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 		By("checking that there are no more overlay rules for this container")
 		Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(overlayChainName)))
+
+		// IPv6
+		By("checking that there are no more ipv6 netout rules for this container")
+		Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(inputChainName)))
+		Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutChainName)))
+		Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutLoggingChainName)))
 
 		os.Remove(debugFileName)
 		os.Remove(datastorePath)
@@ -343,6 +372,43 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(stateFileBytes)).NotTo(ContainSubstring("1.2.3.4"))
 			Expect(string(stateFileBytes)).NotTo(ContainSubstring("value1"))
+		})
+
+		Context("when IPv6 is enabled", func() {
+			BeforeEach(func() {
+				cniResult.IPs = append(cniResult.IPs, &current.IPConfig{
+					Address: net.IPNet{
+						IP:   net.ParseIP("2001:db8::1"),
+						Mask: net.CIDRMask(128, 128),
+					},
+					Interface: intPtr(-1),
+				})
+			})
+
+			It("stores and removes metadata with the lifetime of the container", func() {
+				By("calling ADD")
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+
+				By("check that metadata is stored")
+				stateFileBytes, err := os.ReadFile(datastorePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(stateFileBytes)).To(ContainSubstring("2001:db8::1"))
+				Expect(string(stateFileBytes)).To(ContainSubstring("value1"))
+
+				By("calling DEL")
+				cmd = cniCommand("DEL", input)
+				session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+
+				By("check that metadata is has been removed")
+				stateFileBytes, err = os.ReadFile(datastorePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(stateFileBytes)).NotTo(ContainSubstring("2001:db8::1"))
+				Expect(string(stateFileBytes)).NotTo(ContainSubstring("value1"))
+			})
 		})
 	})
 
@@ -1075,7 +1141,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 		})
 
 		Context("When the delegate plugin returns an error", func() {
-			BeforeEach(func() {
+			JustBeforeEach(func() {
 				debug.ReportError = "banana"
 				Expect(debug.WriteDebug(debugFileName)).To(Succeed())
 			})
@@ -1165,6 +1231,508 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(session.Out.Contents()).To(ContainSubstring("failed to get lease from silk daemon"))
 			})
 		})
+
+		Context("when IPv6 is enabled", func() {
+			BeforeEach(func() {
+				cniResult.IPs = append(cniResult.IPs, &current.IPConfig{
+					Address: net.IPNet{
+						IP:   net.ParseIP("2001:db8::1"),
+						Mask: net.CIDRMask(128, 128),
+					},
+					Interface: intPtr(-1),
+				})
+
+				var code garden.ICMPCode = 0
+				inputStruct.WrapperConfig.RuntimeConfig.NetOutRules = append(
+					inputStruct.WrapperConfig.RuntimeConfig.NetOutRules, []garden.NetOutRule{
+						{
+							Protocol: garden.ProtocolAll,
+							Networks: []garden.IPRange{
+								{
+									Start: net.ParseIP("2111:1::1"),
+									End:   net.ParseIP("2222:2::2"),
+								},
+							},
+						},
+						{
+							Protocol: garden.ProtocolTCP,
+							Networks: []garden.IPRange{
+								{
+									Start: net.ParseIP("2333:3::3"),
+									End:   net.ParseIP("2444:4::4"),
+								},
+							},
+							Ports: []garden.PortRange{
+								{
+									Start: 53,
+									End:   54,
+								},
+							},
+						},
+						{
+							Protocol: garden.ProtocolUDP,
+							Networks: []garden.IPRange{
+								{
+									Start: net.ParseIP("2555:5::5"),
+									End:   net.ParseIP("2666:6::6"),
+								},
+							},
+							Ports: []garden.PortRange{
+								{
+									Start: 53,
+									End:   54,
+								},
+							},
+						},
+						{
+							Protocol: garden.ProtocolICMPv6,
+							Networks: []garden.IPRange{
+								{
+									Start: net.ParseIP("2999:9::9"),
+									End:   net.ParseIP("3111:1::1"),
+								},
+							},
+							ICMPs: &garden.ICMPControl{
+								Type: 8,
+								Code: &code,
+							},
+						},
+					}...)
+			})
+
+			It("passes the delegate result back to the caller", func() {
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+				Expect(session.Out.Contents()).To(MatchJSON(`{ "cniVersion": "1.0.0", "ips": [{ "interface": -1, "address": "1.2.3.4/32" }, { "interface": -1, "address": "2001:db8::1/128" }] }`))
+			})
+
+			It("writes default deny input chain rules to prevent connecting to things on the host", func() {
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+
+				By("checking that the input chain jumps to the container's input chain")
+				Expect(AllIP6TablesRules("filter")).To(ContainElement("-A INPUT -s 2001:db8::1/128 -j " + inputChainName))
+
+				By("checking that the default deny rules in the container's input chain are created")
+				Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+					"-A " + inputChainName + " -m state --state RELATED,ESTABLISHED -j ACCEPT",
+					"-A " + inputChainName + " -j REJECT --reject-with icmp6-port-unreachable",
+				}))
+			})
+
+			Context("when the policy agent asg updater returns 200 (Dynamic ASGs enabled)", func() {
+				It("does not add additional iptables rules to the netout-chain", func() {
+					policyAgentServer.ASGReturnCode = 200
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).ToNot(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(0))
+					Expect(policyAgentServer.SyncASGEndpointCallCount).To(Equal(1))
+					Expect(policyAgentServer.SyncASGEndpointContainerRequested).To(Equal("some-container-id-that-is-long"))
+					Expect(strings.Join(AllIP6TablesRules("filter"), "\n")).ToNot(ContainSubstring("2333:3::3-2444:4::4"))
+				})
+			})
+
+			Context("when the policy agent asg updater returns 405 (Dynamic ASGs disabled)", func() {
+				It("adds additional iptables rules to the netout-chain", func() {
+					policyAgentServer.ASGReturnCode = 405
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).ToNot(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(0))
+					Expect(policyAgentServer.SyncASGEndpointCallCount).To(Equal(1))
+					Expect(policyAgentServer.SyncASGEndpointContainerRequested).To(Equal("some-container-id-that-is-long"))
+					Expect(strings.Join(AllIP6TablesRules("filter"), "\n")).To(ContainSubstring("2333:3::3-2444:4::4"))
+				})
+			})
+
+			Context("when an iptables rule is already present on the INPUT chain", func() {
+				BeforeEach(func() {
+					iptablesSession, err := gexec.Start(exec.Command("ip6tables", "-I", "INPUT", "1", "--destination", "fe80::1", "-j", "ACCEPT"), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(iptablesSession).Should(gexec.Exit(0))
+				})
+
+				AfterEach(func() {
+					iptablesSession, err := gexec.Start(exec.Command("ip6tables", "-D", "INPUT", "--destination", "fe80::1", "-j", "ACCEPT"), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(iptablesSession).Should(gexec.Exit(0))
+				})
+
+				It("appends to the INPUT chain", func() {
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(0))
+
+					By("checking that the container's input chain comes after the already present iptables rule")
+					Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+						"-A INPUT -d fe80::1/128 -j ACCEPT",
+						"-A INPUT -s 2001:db8::1/128 -j " + inputChainName,
+					}))
+				})
+			})
+
+			Context("when host TCP services are configured", func() {
+				BeforeEach(func() {
+					inputStruct.HostTCPServicesIPv6 = []string{"[2002::1]:9001", "[2003::1]:8080"}
+				})
+
+				It("writes input chain rules for host TCP services", func() {
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(0))
+
+					Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+						"-A " + inputChainName + " -m state --state RELATED,ESTABLISHED -j ACCEPT",
+						"-A " + inputChainName + " -d 2002::1/128 -p tcp -m tcp --dport 9001 -j ACCEPT",
+						"-A " + inputChainName + " -d 2003::1/128 -p tcp -m tcp --dport 8080 -j ACCEPT",
+						"-A " + inputChainName + " -j REJECT --reject-with icmp6-port-unreachable",
+					}))
+				})
+			})
+
+			Context("when host UDP services are configured", func() {
+				BeforeEach(func() {
+					inputStruct.HostUDPServicesIPv6 = []string{"[2004::1]:9001", "[2005::1]:8080"}
+				})
+
+				It("writes input chain rules for host UDP services", func() {
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(0))
+
+					Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+						"-A " + inputChainName + " -m state --state RELATED,ESTABLISHED -j ACCEPT",
+						"-A " + inputChainName + " -d 2004::1/128 -p udp -m udp --dport 9001 -j ACCEPT",
+						"-A " + inputChainName + " -d 2005::1/128 -p udp -m udp --dport 8080 -j ACCEPT",
+						"-A " + inputChainName + " -j REJECT --reject-with icmp6-port-unreachable",
+					}))
+				})
+			})
+
+			Context("when no runtime config is passed in", func() {
+				BeforeEach(func() {
+					inputStruct.RuntimeConfig = lib.RuntimeConfig{}
+				})
+
+				It("still writes the default netout rules", func() {
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(0))
+
+					By("checking that the default forwarding rules are created for that container")
+					Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+						`-A ` + netoutChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
+						`-A ` + netoutChainName + ` -p tcp -m state --state INVALID -j DROP`,
+						`-A ` + netoutChainName + ` -j REJECT --reject-with icmp6-port-unreachable`,
+					}))
+
+					By("checking that the default input rules are created for that container")
+					Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+						`-A ` + inputChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
+						`-A ` + inputChainName + ` -j REJECT --reject-with icmp6-port-unreachable`,
+					}))
+				})
+			})
+
+			Context("when the delegate plugin doesn't return IPv6 address", func() {
+				BeforeEach(func() {
+					cniResult = &current.Result{
+						CNIVersion: "1.0.0",
+						IPs: []*current.IPConfig{
+							{
+								Address: net.IPNet{
+									IP:   net.ParseIP("1.2.3.4"),
+									Mask: net.CIDRMask(32, 32),
+								},
+								Interface: intPtr(-1),
+							},
+						},
+					}
+				})
+
+				It("does not write any iptables rules", func() {
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(0))
+
+					By("checking that there are no rules for this container")
+					Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(inputChainName)))
+					Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutChainName)))
+					Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutLoggingChainName)))
+				})
+			})
+
+			Describe("NetOutRules", func() {
+				It("creates iptables netout rules", func() {
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(0))
+
+					By("checking that the jump rules are created for that container's netout chain")
+					Expect(AllIP6TablesRules("filter")).To(ContainElement("-A FORWARD -s 2001:db8::1/128 -o " + underlayName1 + " -j " + netoutChainName))
+					Expect(AllIP6TablesRules("filter")).To(ContainElement("-A FORWARD -s 2001:db8::1/128 -o " + underlayName2 + " -j " + netoutChainName))
+
+					By("checking that the default forwarding rules are created for that container")
+					Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+						`-A ` + netoutChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
+						`-A ` + netoutChainName + ` -p tcp -m state --state INVALID -j DROP`,
+						`-A ` + netoutChainName + ` -p ipv6-icmp -m iprange --dst-range 2999:9::9-3111:1::1 -m icmp6 --icmpv6-type 8/0 -j ACCEPT`,
+						`-A ` + netoutChainName + ` -p udp -m iprange --dst-range 2555:5::5-2666:6::6 -m udp --dport 53:54 -j ACCEPT`,
+						`-A ` + netoutChainName + ` -p tcp -m iprange --dst-range 2333:3::3-2444:4::4 -m tcp --dport 53:54 -j ACCEPT`,
+						`-A ` + netoutChainName + ` -m iprange --dst-range 2111:1::1-2222:2::2 -j ACCEPT`,
+						`-A ` + netoutChainName + ` -j REJECT --reject-with icmp6-port-unreachable`,
+					}))
+
+					By("checking that the default input rules are created for that container")
+					Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+						`-A ` + inputChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
+						`-A ` + inputChainName + ` -j REJECT --reject-with icmp6-port-unreachable`,
+					}))
+
+					By("checking that the rules are written")
+					Expect(AllIP6TablesRules("filter")).To(ContainElement(`-A ` + netoutChainName + ` -m iprange --dst-range 2111:1::1-2222:2::2 -j ACCEPT`))
+					Expect(AllIP6TablesRules("filter")).To(ContainElement(`-A ` + netoutChainName + ` -p tcp -m iprange --dst-range 2333:3::3-2444:4::4 -m tcp --dport 53:54 -j ACCEPT`))
+					Expect(AllIP6TablesRules("filter")).To(ContainElement(`-A ` + netoutChainName + ` -p udp -m iprange --dst-range 2555:5::5-2666:6::6 -m udp --dport 53:54 -j ACCEPT`))
+					Expect(AllIP6TablesRules("filter")).To(ContainElement(`-A ` + netoutChainName + ` -p ipv6-icmp -m iprange --dst-range 2999:9::9-3111:1::1 -m icmp6 --icmpv6-type 8/0 -j ACCEPT`))
+				})
+
+				Context("when iptables_asg_logging is enabled", func() {
+					BeforeEach(func() {
+						for i := range inputStruct.WrapperConfig.RuntimeConfig.NetOutRules {
+							inputStruct.WrapperConfig.RuntimeConfig.NetOutRules[i].Log = false
+						}
+						inputStruct.WrapperConfig.IPTablesASGLogging = true
+					})
+
+					It("writes iptables asg logging rules", func() {
+						cmd = cniCommand("ADD", input)
+						session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+						Expect(err).NotTo(HaveOccurred())
+						Eventually(session).Should(gexec.Exit(0))
+
+						By("checking that the filter rule was installed and that logging can be enabled")
+						Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+							`-A ` + netoutChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
+							`-A ` + netoutChainName + ` -p tcp -m state --state INVALID -j DROP`,
+							`-A ` + netoutChainName + ` -p ipv6-icmp -m iprange --dst-range 2999:9::9-3111:1::1 -m icmp6 --icmpv6-type 8/0 -g ` + netoutLoggingChainName,
+							`-A ` + netoutChainName + ` -p udp -m iprange --dst-range 2555:5::5-2666:6::6 -m udp --dport 53:54 -g ` + netoutLoggingChainName,
+							`-A ` + netoutChainName + ` -p tcp -m iprange --dst-range 2333:3::3-2444:4::4 -m tcp --dport 53:54 -g ` + netoutLoggingChainName,
+							`-A ` + netoutChainName + ` -m iprange --dst-range 2111:1::1-2222:2::2 -g ` + netoutLoggingChainName,
+						}))
+
+						By("checking that it writes the logging rules")
+						Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+							`-A ` + netoutLoggingChainName + ` ! -p udp -m conntrack --ctstate INVALID,NEW,UNTRACKED -j LOG --log-prefix "OK_` + containerID[:25] + ` "`,
+							`-A ` + netoutLoggingChainName + ` -p udp -m limit --limit 7/sec --limit-burst 7 -j LOG --log-prefix "OK_` + containerID[:25] + ` "`,
+						}))
+					})
+
+					It("always writes a rate limited default deny log rule", func() {
+						expectedDenyLogRule := `-A netout--some-container-id-th -m limit --limit 5/sec -j LOG --log-prefix "DENY_` + containerID[:23] + ` "`
+
+						By("by starting the CNI plugin")
+						cmd = cniCommand("ADD", input)
+						session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+						Expect(err).NotTo(HaveOccurred())
+						Eventually(session).Should(gexec.Exit(0))
+
+						By("checking that a default deny log rule was written")
+						Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+							expectedDenyLogRule,
+							`-A ` + netoutChainName + ` -j REJECT --reject-with icmp6-port-unreachable`,
+						}))
+					})
+				})
+
+				Context("when outbound container connection limiting with logging is enabled", func() {
+					BeforeEach(func() {
+						inputStruct.WrapperConfig.OutConn.Limit = true
+						inputStruct.WrapperConfig.OutConn.Logging = true
+					})
+
+					It("additionally writes iptables netout connection rate limit artifacts", func() {
+						cmd = cniCommand("ADD", input)
+						session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+						Expect(err).NotTo(HaveOccurred())
+						Eventually(session).Should(gexec.Exit(0))
+
+						By("creating a rate limit logging chain")
+						Expect(AllIP6TablesRules("filter")).To(ContainElement(`-N netout--some-contain--rl-log`))
+
+						By("writing the default forwarding and outbound connection rate limit rule for that container")
+
+						expectedRateLimitCfg := "-m hashlimit --hashlimit-above 100/sec --hashlimit-burst 999 --hashlimit-mode dstip,dstport"
+						expectedRateLimitCfg += " --hashlimit-name " + containerID + " --hashlimit-htable-expire 10000"
+
+						Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+							`-A ` + netoutChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
+							`-A ` + netoutChainName + ` -p tcp -m state --state INVALID -j DROP`,
+							`-A ` + netoutChainName + ` -p tcp -m conntrack --ctstate NEW ` + expectedRateLimitCfg + ` -j netout--some-contain--rl-log`,
+							`-A ` + netoutChainName + ` -p ipv6-icmp -m iprange --dst-range 2999:9::9-3111:1::1 -m icmp6 --icmpv6-type 8/0 -j ACCEPT`,
+							`-A ` + netoutChainName + ` -p udp -m iprange --dst-range 2555:5::5-2666:6::6 -m udp --dport 53:54 -j ACCEPT`,
+							`-A ` + netoutChainName + ` -p tcp -m iprange --dst-range 2333:3::3-2444:4::4 -m tcp --dport 53:54 -j ACCEPT`,
+							`-A ` + netoutChainName + ` -m iprange --dst-range 2111:1::1-2222:2::2 -j ACCEPT`,
+							`-A ` + netoutChainName + ` -j REJECT --reject-with icmp6-port-unreachable`,
+						}))
+
+						By("writing the rate limit logging rules")
+						Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+							`-A netout--some-contain--rl-log -m limit --limit 5/sec -j LOG --log-prefix "DENY_ORL_` + containerID[:19] + ` "`,
+							`-A netout--some-contain--rl-log -j REJECT --reject-with icmp6-port-unreachable`,
+						}))
+					})
+				})
+
+				Context("when outbound container connection limiting with logging and dry_run is enabled", func() {
+					BeforeEach(func() {
+						inputStruct.WrapperConfig.OutConn.Limit = true
+						inputStruct.WrapperConfig.OutConn.Logging = true
+						inputStruct.WrapperConfig.OutConn.DryRun = true
+					})
+
+					It("additionally writes iptables netout connection rate limit artifacts", func() {
+						cmd = cniCommand("ADD", input)
+						session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+						Expect(err).NotTo(HaveOccurred())
+						Eventually(session).Should(gexec.Exit(0))
+
+						By("creating a rate limit logging chain")
+						Expect(AllIP6TablesRules("filter")).To(ContainElement(`-N netout--some-contain--rl-log`))
+
+						By("writing the default forwarding and outbound connection rate limit rule for that container")
+
+						expectedRateLimitCfg := "-m hashlimit --hashlimit-above 100/sec --hashlimit-burst 999 --hashlimit-mode dstip,dstport"
+						expectedRateLimitCfg += " --hashlimit-name " + containerID + " --hashlimit-htable-expire 10000"
+
+						Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+							`-A ` + netoutChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
+							`-A ` + netoutChainName + ` -p tcp -m state --state INVALID -j DROP`,
+							`-A ` + netoutChainName + ` -p tcp -m conntrack --ctstate NEW ` + expectedRateLimitCfg + ` -j netout--some-contain--rl-log`,
+							`-A ` + netoutChainName + ` -p ipv6-icmp -m iprange --dst-range 2999:9::9-3111:1::1 -m icmp6 --icmpv6-type 8/0 -j ACCEPT`,
+							`-A ` + netoutChainName + ` -p udp -m iprange --dst-range 2555:5::5-2666:6::6 -m udp --dport 53:54 -j ACCEPT`,
+							`-A ` + netoutChainName + ` -p tcp -m iprange --dst-range 2333:3::3-2444:4::4 -m tcp --dport 53:54 -j ACCEPT`,
+							`-A ` + netoutChainName + ` -m iprange --dst-range 2111:1::1-2222:2::2 -j ACCEPT`,
+							`-A ` + netoutChainName + ` -j REJECT --reject-with icmp6-port-unreachable`,
+						}))
+
+						By("writing the rate limit logging rules")
+						Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+							`-A netout--some-contain--rl-log -m limit --limit 5/sec -j LOG --log-prefix "DENY_ORL_` + containerID[:19] + ` "`,
+						}))
+					})
+				})
+
+				Context("when a TCP rule has logging enabled", func() {
+					BeforeEach(func() {
+						inputStruct.WrapperConfig.RuntimeConfig.NetOutRules[5].Log = true
+						inputStruct.WrapperConfig.IPTablesASGLogging = false
+					})
+
+					It("writes iptables asg logging rules for that rule", func() {
+						cmd = cniCommand("ADD", input)
+						session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+						Expect(err).NotTo(HaveOccurred())
+						Eventually(session).Should(gexec.Exit(0))
+
+						By("checking that the filter rule was installed and that logging can be enabled")
+						Expect(AllIP6TablesRules("filter")).To(ContainElement(`-A ` + netoutChainName + ` -p tcp -m iprange --dst-range 2333:3::3-2444:4::4 -m tcp --dport 53:54 -g ` + netoutLoggingChainName))
+
+						By("checking that it writes the logging rules")
+						Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+							`-A ` + netoutLoggingChainName + ` ! -p udp -m conntrack --ctstate INVALID,NEW,UNTRACKED -j LOG --log-prefix "OK_` + containerID[:25] + ` "`,
+							`-A ` + netoutLoggingChainName + ` -p udp -m limit --limit 7/sec --limit-burst 7 -j LOG --log-prefix "OK_` + containerID[:25] + ` "`,
+						}))
+					})
+				})
+
+				Context("when a UDP rule has logging enabled", func() {
+					BeforeEach(func() {
+						inputStruct.WrapperConfig.RuntimeConfig.NetOutRules[6].Log = true
+						inputStruct.WrapperConfig.IPTablesASGLogging = false
+					})
+
+					It("writes iptables asg logging rules for that rule", func() {
+						cmd = cniCommand("ADD", input)
+						session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+						Expect(err).NotTo(HaveOccurred())
+						Eventually(session).Should(gexec.Exit(0))
+
+						By("checking that the filter rule was installed and that logging can be enabled")
+						Expect(AllIP6TablesRules("filter")).To(ContainElement(`-A ` + netoutChainName + ` -p udp -m iprange --dst-range 2555:5::5-2666:6::6 -m udp --dport 53:54 -g ` + netoutLoggingChainName))
+
+						By("checking that it writes the logging rules")
+						Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+							`-A ` + netoutLoggingChainName + ` ! -p udp -m conntrack --ctstate INVALID,NEW,UNTRACKED -j LOG --log-prefix "OK_` + containerID[:25] + ` "`,
+							`-A ` + netoutLoggingChainName + ` -p udp -m limit --limit 7/sec --limit-burst 7 -j LOG --log-prefix "OK_` + containerID[:25] + ` "`,
+						}))
+
+					})
+				})
+
+				Context("when an ICMPv6 rule has logging enabled", func() {
+					BeforeEach(func() {
+						inputStruct.WrapperConfig.RuntimeConfig.NetOutRules[7].Log = true
+						inputStruct.WrapperConfig.IPTablesASGLogging = false
+					})
+
+					It("writes iptables asg logging rules for that rule", func() {
+						cmd = cniCommand("ADD", input)
+						session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+						Expect(err).NotTo(HaveOccurred())
+						Eventually(session).Should(gexec.Exit(0))
+
+						By("checking that the filter rule was installed and that logging can be enabled")
+						Expect(AllIP6TablesRules("filter")).To(ContainElement(`-A ` + netoutChainName + ` -p ipv6-icmp -m iprange --dst-range 2999:9::9-3111:1::1 -m icmp6 --icmpv6-type 8/0 -g ` + netoutLoggingChainName))
+
+						By("checking that it writes the logging rules")
+						Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+							`-A ` + netoutLoggingChainName + ` ! -p udp -m conntrack --ctstate INVALID,NEW,UNTRACKED -j LOG --log-prefix "OK_` + containerID[:25] + ` "`,
+							`-A ` + netoutLoggingChainName + ` -p udp -m limit --limit 7/sec --limit-burst 7 -j LOG --log-prefix "OK_` + containerID[:25] + ` "`,
+						}))
+
+					})
+				})
+
+				Context("when deny networks are configured", func() {
+					BeforeEach(func() {
+						inputStruct.Metadata["container_workload"] = "app"
+						inputStruct.DenyNetworksIPv6 = lib.DenyNetworksConfig{
+							Running: []string{"2222:2::2/120"},
+							Always:  []string{"3333:3::3/120"},
+						}
+					})
+
+					It("writes input chain rules for deny networks", func() {
+						session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+						Expect(err).NotTo(HaveOccurred())
+						Eventually(session).Should(gexec.Exit(0))
+
+						By("checking that the default filter rules are installed before the deny")
+						Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+							`-A ` + netoutChainName + ` -m state --state RELATED,ESTABLISHED -j ACCEPT`,
+							`-A ` + netoutChainName + ` -p tcp -m state --state INVALID -j DROP`,
+
+							`-A ` + netoutChainName + ` -d 2222:2::/120 -j REJECT --reject-with icmp6-port-unreachable`,
+							`-A ` + netoutChainName + ` -d 3333:3::/120 -j REJECT --reject-with icmp6-port-unreachable`,
+						}))
+
+						By("checking that the default filter rules are installed before the container rules")
+						Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+							`-A ` + netoutChainName + ` -d 2222:2::/120 -j REJECT --reject-with icmp6-port-unreachable`,
+							`-A ` + netoutChainName + ` -d 3333:3::/120 -j REJECT --reject-with icmp6-port-unreachable`,
+
+							`-A ` + netoutChainName + ` -p ipv6-icmp -m iprange --dst-range 2999:9::9-3111:1::1 -m icmp6 --icmpv6-type 8/0 -j ACCEPT`,
+							`-A ` + netoutChainName + ` -p udp -m iprange --dst-range 2555:5::5-2666:6::6 -m udp --dport 53:54 -j ACCEPT`,
+							`-A ` + netoutChainName + ` -p tcp -m iprange --dst-range 2333:3::3-2444:4::4 -m tcp --dport 53:54 -j ACCEPT`,
+							`-A ` + netoutChainName + ` -m iprange --dst-range 2111:1::1-2222:2::2 -j ACCEPT`,
+
+							`-A ` + netoutChainName + ` -j REJECT --reject-with icmp6-port-unreachable`,
+						}))
+					})
+				})
+			})
+		})
 	})
 
 	Context("When call with command DEL", func() {
@@ -1243,7 +1811,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 		})
 
 		Context("When the delegate plugin return an error", func() {
-			BeforeEach(func() {
+			JustBeforeEach(func() {
 				debug.ReportError = "banana"
 				Expect(debug.WriteDebug(debugFileName)).To(Succeed())
 			})
@@ -1393,4 +1961,8 @@ func removeDummyInterface(interfaceName, ipAddress string) {
 
 	err = netlink.LinkDel(link)
 	Expect(err).ToNot(HaveOccurred())
+}
+
+func intPtr(val int) *int {
+	return &val
 }

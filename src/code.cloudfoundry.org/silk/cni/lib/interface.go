@@ -2,6 +2,7 @@ package lib
 
 import (
 	"net"
+	"os"
 
 	"code.cloudfoundry.org/silk/cni/config"
 	"github.com/containernetworking/cni/pkg/types"
@@ -66,4 +67,10 @@ func NetNsDoStub(f func(h ns.NetNS) error) error {
 //go:generate counterfeiter -o fakes/sysctlAdapter.go --fake-name SysctlAdapter . sysctlAdapter
 type sysctlAdapter interface {
 	Sysctl(name string, params ...string) (string, error)
+}
+
+//go:generate counterfeiter -o fakes/osAdapter.go --fake-name OsAdapter . osAdapter
+type osAdapter interface {
+	Stat(name string) (os.FileInfo, error)
+	IsNotExist(err error) bool
 }

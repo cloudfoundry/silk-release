@@ -130,6 +130,68 @@ var _ = Describe("RuleConverter", func() {
 					Expect(logger.String()).To(ContainSubstring("UDP/TCP rule must specify ports"))
 				})
 			})
+
+			Context("when the networks contain IPv6 range", func() {
+				BeforeEach(func() {
+					netOutRule.Networks = []garden.IPRange{
+						{Start: net.ParseIP("2001:db8::1"), End: net.ParseIP("2001:db8::2")},
+						{Start: net.ParseIP("2001:db8::3"), End: net.ParseIP("2001:db8::4")},
+					}
+				})
+
+				It("converts a netout rule to a list of iptables rules", func() {
+					ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
+					Expect(ruleSpec).To(ConsistOf(
+						rules.IPTablesRule{"-m", "iprange", "-p", "tcp",
+							"--dst-range", "2001:db8::1-2001:db8::2",
+							"-m", "tcp", "--destination-port", "9000:9999",
+							"--jump", "ACCEPT"},
+						rules.IPTablesRule{"-m", "iprange", "-p", "tcp",
+							"--dst-range", "2001:db8::1-2001:db8::2",
+							"-m", "tcp", "--destination-port", "1111:2222",
+							"--jump", "ACCEPT"},
+						rules.IPTablesRule{"-m", "iprange", "-p", "tcp",
+							"--dst-range", "2001:db8::3-2001:db8::4",
+							"-m", "tcp", "--destination-port", "9000:9999",
+							"--jump", "ACCEPT"},
+						rules.IPTablesRule{"-m", "iprange", "-p", "tcp",
+							"--dst-range", "2001:db8::3-2001:db8::4",
+							"-m", "tcp", "--destination-port", "1111:2222",
+							"--jump", "ACCEPT"},
+					))
+				})
+
+				Context("and an IPv4 address", func() {
+					BeforeEach(func() {
+						netOutRule.Networks = []garden.IPRange{
+							{Start: net.ParseIP("2001:db8::1"), End: net.ParseIP("2001:db8::2")},
+							{Start: net.ParseIP("3.3.3.3"), End: net.ParseIP("4.4.4.4")},
+						}
+					})
+
+					It("converts a netout rule to a list of iptables rules", func() {
+						ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
+						Expect(ruleSpec).To(ConsistOf(
+							rules.IPTablesRule{"-m", "iprange", "-p", "tcp",
+								"--dst-range", "2001:db8::1-2001:db8::2",
+								"-m", "tcp", "--destination-port", "9000:9999",
+								"--jump", "ACCEPT"},
+							rules.IPTablesRule{"-m", "iprange", "-p", "tcp",
+								"--dst-range", "2001:db8::1-2001:db8::2",
+								"-m", "tcp", "--destination-port", "1111:2222",
+								"--jump", "ACCEPT"},
+							rules.IPTablesRule{"-m", "iprange", "-p", "tcp",
+								"--dst-range", "3.3.3.3-4.4.4.4",
+								"-m", "tcp", "--destination-port", "9000:9999",
+								"--jump", "ACCEPT"},
+							rules.IPTablesRule{"-m", "iprange", "-p", "tcp",
+								"--dst-range", "3.3.3.3-4.4.4.4",
+								"-m", "tcp", "--destination-port", "1111:2222",
+								"--jump", "ACCEPT"},
+						))
+					})
+				})
+			})
 		})
 
 		Context("when the protocol is ICMP", func() {
@@ -244,6 +306,120 @@ var _ = Describe("RuleConverter", func() {
 				It("logs the warning", func() {
 					converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
 					Expect(logger.String()).To(ContainSubstring("ICMP rule must not specify ports"))
+				})
+			})
+		})
+
+		Context("when the protocol is ICMPv6", func() {
+			BeforeEach(func() {
+				var code garden.ICMPCode = 0
+				netOutRule = garden.NetOutRule{
+					Protocol: garden.ProtocolICMPv6,
+					Networks: []garden.IPRange{
+						{Start: net.ParseIP("2001:db8::1"), End: net.ParseIP("2001:db8::2")},
+						{Start: net.ParseIP("2001:db8::3"), End: net.ParseIP("2001:db8::4")},
+					},
+					ICMPs: &garden.ICMPControl{
+						Type: 8,
+						Code: &code,
+					},
+				}
+			})
+
+			It("converts a netout rule to a list of iptables rules", func() {
+				ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
+				Expect(ruleSpec).To(ConsistOf(
+					rules.IPTablesRule{"-m", "iprange",
+						"-p", "icmpv6",
+						"--dst-range", "2001:db8::1-2001:db8::2", "-m", "icmpv6", "--icmpv6-type", "8/0",
+						"--jump", "ACCEPT"},
+					rules.IPTablesRule{"-m", "iprange",
+						"-p", "icmpv6",
+						"--dst-range", "2001:db8::3-2001:db8::4", "-m", "icmpv6", "--icmpv6-type", "8/0",
+						"--jump", "ACCEPT"},
+				))
+			})
+
+			Context("when the globalLogging is set to true", func() {
+				It("returns iptables rules that goto the log chain", func() {
+					ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, true)
+					Expect(ruleSpec).To(ConsistOf(
+						rules.IPTablesRule{"-m", "iprange",
+							"-p", "icmpv6",
+							"--dst-range", "2001:db8::1-2001:db8::2", "-m", "icmpv6", "--icmpv6-type", "8/0",
+							"-g", "some-chain"},
+						rules.IPTablesRule{"-m", "iprange",
+							"-p", "icmpv6",
+							"--dst-range", "2001:db8::3-2001:db8::4", "-m", "icmpv6", "--icmpv6-type", "8/0",
+							"-g", "some-chain"},
+					))
+				})
+			})
+
+			Context("when Log on the netout rule is set to true", func() {
+				BeforeEach(func() {
+					netOutRule.Log = true
+				})
+
+				It("returns iptables rules that goto the log chain", func() {
+					ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
+					Expect(ruleSpec).To(ConsistOf(
+						rules.IPTablesRule{"-m", "iprange",
+							"-p", "icmpv6",
+							"--dst-range", "2001:db8::1-2001:db8::2", "-m", "icmpv6", "--icmpv6-type", "8/0",
+							"-g", "some-chain"},
+						rules.IPTablesRule{"-m", "iprange",
+							"-p", "icmpv6",
+							"--dst-range", "2001:db8::3-2001:db8::4", "-m", "icmpv6", "--icmpv6-type", "8/0",
+							"-g", "some-chain"},
+					))
+				})
+			})
+
+			Context("when the netout rule does not specify ICMP type or code", func() {
+				BeforeEach(func() {
+					netOutRule.ICMPs = nil
+				})
+
+				It("adds no iptables rules", func() {
+					ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
+					Expect(ruleSpec).To(BeEmpty())
+				})
+
+				It("logs the warning", func() {
+					converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
+					Expect(logger.String()).To(ContainSubstring("ICMPv6 rule must specify ICMP type/code"))
+				})
+			})
+
+			Context("when the netout rule does not specify ICMP code", func() {
+				BeforeEach(func() {
+					netOutRule.ICMPs.Code = nil
+				})
+				It("adds no iptables rules", func() {
+					ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
+					Expect(ruleSpec).To(BeEmpty())
+				})
+				It("logs the warning", func() {
+					converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
+					Expect(logger.String()).To(ContainSubstring("ICMPv6 rule must specify ICMP type/code"))
+				})
+			})
+
+			Context("when the netout rule specifies ports", func() {
+				BeforeEach(func() {
+					netOutRule.Ports = []garden.PortRange{
+						{Start: 9000, End: 9999},
+						{Start: 1111, End: 2222},
+					}
+				})
+				It("adds no iptables rules", func() {
+					ruleSpec := converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
+					Expect(ruleSpec).To(BeEmpty())
+				})
+				It("logs the warning", func() {
+					converter.Convert(netrules.NewRuleFromGardenNetOutRule(netOutRule), logChainName, false)
+					Expect(logger.String()).To(ContainSubstring("ICMPv6 rule must not specify ports"))
 				})
 			})
 		})
@@ -426,6 +602,7 @@ var _ = Describe("RuleConverter", func() {
 		})
 
 	})
+
 	Describe("DeduplicateRules", func() {
 		var unfilteredRules []rules.IPTablesRule
 		Context("when there are duplicate iptables rules", func() {
@@ -461,6 +638,18 @@ var _ = Describe("RuleConverter", func() {
 						"-m", "tcp", "--destination-port", "9000:9999",
 						"--jump", "ACCEPT",
 					},
+					{
+						"-m", "iprange", "-p", "tcp",
+						"--dst-range", "2001:db8::1-2001:db8::2",
+						"-m", "tcp", "--destination-port", "9000:9999",
+						"--jump", "ACCEPT",
+					},
+					{
+						"-m", "iprange", "-p", "tcp",
+						"--dst-range", "2001:db8::1-2001:db8::2",
+						"-m", "tcp", "--destination-port", "9000:9999",
+						"--jump", "ACCEPT",
+					},
 				}
 			})
 
@@ -478,6 +667,10 @@ var _ = Describe("RuleConverter", func() {
 						"--jump", "ACCEPT"},
 					rules.IPTablesRule{"-m", "iprange", "-p", "tcp",
 						"--dst-range", "3.3.3.3-4.4.4.4",
+						"-m", "tcp", "--destination-port", "9000:9999",
+						"--jump", "ACCEPT"},
+					rules.IPTablesRule{"-m", "iprange", "-p", "tcp",
+						"--dst-range", "2001:db8::1-2001:db8::2",
 						"-m", "tcp", "--destination-port", "9000:9999",
 						"--jump", "ACCEPT"},
 				))

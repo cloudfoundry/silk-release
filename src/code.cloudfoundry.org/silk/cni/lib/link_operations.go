@@ -3,10 +3,8 @@ package lib
 import (
 	"fmt"
 	"net"
-	"os"
 
 	"code.cloudfoundry.org/lager/v3"
-
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/vishvananda/netlink"
 )
@@ -16,6 +14,7 @@ import (
 type LinkOperations struct {
 	SysctlAdapter  sysctlAdapter
 	NetlinkAdapter netlinkAdapter
+	OsAdapter      osAdapter
 	Logger         lager.Logger
 }
 
@@ -30,7 +29,7 @@ func (s *LinkOperations) DisableIPv6(deviceName string) error {
 func (s *LinkOperations) EnableIPv6(deviceName string) error {
 	_, err := s.SysctlAdapter.Sysctl(fmt.Sprintf("net.ipv6.conf.%s.disable_ipv6", deviceName), "0")
 	if err != nil {
-		return fmt.Errorf("sysctl for IPv6 %s: %s", deviceName, err)
+		return fmt.Errorf("sysctl for %s: %s", deviceName, err)
 	}
 
 	return nil
@@ -53,7 +52,7 @@ func (s *LinkOperations) EnableIPv4Forwarding() error {
 }
 
 func (s *LinkOperations) EnableIPv6Forwarding() error {
-	_, err := s.SysctlAdapter.Sysctl("net.ipv6.conf.eth0.forwarding", "1")
+	_, err := s.SysctlAdapter.Sysctl("net.ipv6.conf.all.forwarding", "1")
 	if err != nil {
 		return fmt.Errorf("enabling IPv6 forwarding: %s", err)
 	}
@@ -195,7 +194,7 @@ func (s *LinkOperations) SysctlIPv6Security(deviceName string) error {
 		"autoconf":             "0",
 	}
 
-	if _, err := os.Stat(fmt.Sprintf("/proc/sys/net/ipv6/conf/%s", deviceName)); os.IsNotExist(err) {
+	if _, err := s.OsAdapter.Stat(fmt.Sprintf("/proc/sys/net/ipv6/conf/%s", deviceName)); s.OsAdapter.IsNotExist(err) {
 		return fmt.Errorf("device %s does not exist", deviceName)
 	}
 

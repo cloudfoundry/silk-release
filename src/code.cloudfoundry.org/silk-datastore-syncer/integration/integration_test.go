@@ -88,6 +88,31 @@ var _ = Describe("Datastore syncer", func() {
 			Metadata: map[string]interface{}{"log_config": `{"guid":"test","index":0,"source_name":"test","tags":{"test":"value2"}}`},
 		}))
 	})
+
+	It("updates the log config when the container has IPv6 address", func() {
+		err := store.Add("test", "127.0.0.1", map[string]interface{}{"log_config": `{"guid":"test","index":0,"source_name":"test","tags":{"test":"value"}}`}, datastore.WithIPv6("2600::1"))
+		Expect(err).ToNot(HaveOccurred())
+		containers := struct {
+			Handles []string
+		}{
+			Handles: []string{"test"},
+		}
+		properties := map[string]string{"log_config": `{"guid":"test","index":0,"source_name":"test","tags":{"test":"value2"}}`}
+		fakeGarden.RouteToHandler("GET", "/containers", ghttp.RespondWithJSONEncoded(http.StatusOK, containers))
+		fakeGarden.RouteToHandler("GET", "/containers/test/properties", ghttp.RespondWithJSONEncoded(http.StatusOK, properties))
+
+		Eventually(func() datastore.Container {
+			readContainers, err := store.ReadAll()
+			Expect(err).ToNot(HaveOccurred())
+			return readContainers["test"]
+		}, 10).Should(Equal(datastore.Container{
+			Handle:   "test",
+			IP:       "127.0.0.1",
+			IPv6:     "2600::1",
+			Metadata: map[string]interface{}{"log_config": `{"guid":"test","index":0,"source_name":"test","tags":{"test":"value2"}}`},
+		}))
+	})
+
 	It("doesn't add new entries, or remove old entries in the log config", func() {
 		err := store.Add("test", "127.0.0.1", map[string]interface{}{"log_config": `{"guid":"test","index":0,"source_name":"test","tags":{"test":"value"}}`})
 		Expect(err).ToNot(HaveOccurred())

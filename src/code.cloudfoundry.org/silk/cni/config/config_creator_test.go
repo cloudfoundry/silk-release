@@ -181,5 +181,48 @@ var _ = Describe("ConfigCreator", func() {
 				Expect(err).To(MatchError("no IP address in IPAM result"))
 			})
 		})
+
+		Context("when the IPAM config contains an IPv6 address", func() {
+			BeforeEach(func() {
+				ipamResult.IPs = append(ipamResult.IPs, &current.IPConfig{
+					Address: net.IPNet{
+						IP: net.ParseIP("2001::1"),
+					},
+				})
+			})
+
+			It("creates a config with the desired container device metadata", func() {
+				conf, err := configCreator.Create(hostNS, addCmdArgs, ipamResult, 1450)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(conf.Container.DeviceName).To(Equal("eth0"))
+				Expect(conf.Container.TemporaryDeviceName).To(Equal("c-010255030004"))
+				Expect(conf.Container.Namespace).To(Equal(containerNS))
+				Expect(conf.Container.AddressIPv6.IP).To(Equal(ipamResult.IPs[1].Address.IP))
+				Expect(conf.Container.AddressIPv6.Hardware).To(Equal(containerMAC))
+				By("Adding a route with fe80::1 as the gateway", func() {
+					Expect(conf.Container.RoutesIPv6).To(ConsistOf([]*types.Route{
+						&types.Route{
+							Dst: net.IPNet{
+								IP:   net.IPv6zero,
+								Mask: net.CIDRMask(0, 128),
+							},
+							GW: net.ParseIP("fe80::1"),
+						},
+					}))
+					Expect(conf.Container.MTU).To(Equal(1450))
+				})
+			})
+
+			It("creates a config with the desired host device metadata", func() {
+				conf, err := configCreator.Create(hostNS, addCmdArgs, ipamResult, 1450)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(conf.Host.DeviceName).To(Equal("s-010255030004"))
+				Expect(conf.Host.Namespace).To(Equal(hostNS))
+				Expect(conf.Host.AddressIPv6.IP).To(Equal(net.ParseIP("fe80::1")))
+				Expect(conf.Host.AddressIPv6.Hardware).To(Equal(hostMAC))
+			})
+		})
 	})
 })

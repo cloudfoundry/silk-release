@@ -83,8 +83,9 @@ func (s *Common) BasicSetupIPv6(deviceName string, local, peer config.DualAddres
 		return fmt.Errorf("failed to find link %q: %s for ipv6", deviceName, err)
 	}
 
-	// #nosec G104 - we have tests explicitly checking that we ignore failures here, so don't handle it
-	s.LinkOperations.EnableIPv6(deviceName)
+	if err := s.LinkOperations.EnableIPv6(deviceName); err != nil {
+		return fmt.Errorf("failed to enable IPv6: %s", err)
+	}
 
 	if err := s.LinkOperations.StaticNeighborIPv6(link, peer.IP, peer.Hardware); err != nil {
 		return fmt.Errorf("set permanent neighbor rule for ipv6: %s", err)

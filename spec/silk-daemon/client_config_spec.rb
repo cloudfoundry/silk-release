@@ -72,7 +72,8 @@ module Bosh::Template::Test
               'log_prefix' => 'cfnetworking',
               'log_level' => 'error',
               'vxlan_interface_name' => '',
-              'single_ip_only' => true
+              'single_ip_only' => true,
+              'ipv6_prefix' => '2600:1f18:27b3:881e:53b7::/80'
             })
           end
 

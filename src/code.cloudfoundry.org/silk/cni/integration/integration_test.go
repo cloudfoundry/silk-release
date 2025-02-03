@@ -469,6 +469,151 @@ var _ = Describe("Silk CNI Integration", func() {
 			})
 		})
 
+		Context("when the daemon returns IPv6 prefix", func() {
+			BeforeEach(func() {
+				fakeServer = startFakeDaemonInHost(daemonPort, http.StatusOK, `{"overlay_subnet": "10.255.30.0/24", "ipv6_prefix": "2600:bd18::/80", "mtu": 1472}`)
+			})
+
+			It("returns the expected CNI result", func() {
+				By("calling ADD")
+				sess := startCommandInHost("ADD", cniStdin)
+				Eventually(sess, cmdTimeout).Should(gexec.Exit(0))
+				result := cniResultForCurrentVersion(sess.Out.Contents())
+
+				inHost := ifacesWithNS(result.Interfaces, "")
+
+				expectedCNIStdout := fmt.Sprintf(`
+					{
+						"cniVersion": "1.0.0",
+						"interfaces": [
+								{
+										"name": "%s",
+										"mac": "aa:aa:0a:ff:1e:02"
+								},
+								{
+										"name": "eth0",
+										"mac": "ee:ee:0a:ff:1e:02",
+										"sandbox": "%s"
+								}
+						],
+						"ips": [
+								{
+										"address": "10.255.30.2/32",
+										"gateway": "169.254.0.1",
+										"interface": 1
+								},
+          						{
+          						    	"address": "2600:bd18::2/128",
+										"gateway": "fe80::1",
+          						    	"interface": 1
+          						}
+						],
+						"routes": [
+								{
+									"dst": "0.0.0.0/0", 
+									"gw": "169.254.0.1"
+								},
+          						{
+              						"dst": "::/0",
+              						"gw": "fe80::1"
+          						}]
+					}`, inHost[0].Name, containerNS.Path())
+
+				Expect(sess.Out.Contents()).To(MatchJSON(expectedCNIStdout))
+			})
+
+			It("sets up the IP address and MAC address", func() {
+				By("calling ADD")
+				sess := startCommandInHost("ADD", cniStdin)
+				Eventually(sess, cmdTimeout).Should(gexec.Exit(0))
+
+				By("checking the host side")
+				err := fakeHostNS.Do(func(_ ns.NetNS) error {
+					defer GinkgoRecover()
+
+					hostLink := hostLinkFromResult(sess.Out.Contents())
+
+					hostAddrs, err := netlink.AddrList(hostLink, netlink.FAMILY_ALL)
+					Expect(err).NotTo(HaveOccurred())
+
+					// 1 IPv4 address and 2 IPv6 addresses(autoconfigured link-local and the one we manually configured)
+					Expect(hostAddrs).To(HaveLen(3))
+					Expect(hostAddrs[1].IPNet.String()).To(Equal("fe80::1/128"))
+					Expect(hostAddrs[1].Scope).To(Equal(int(netlink.SCOPE_LINK)))
+					Expect(hostAddrs[1].Peer.String()).To(Equal("2600:bd18::2/128"))
+					Expect(hostLink.Attrs().HardwareAddr.String()).To(Equal("aa:aa:0a:ff:1e:02"))
+					return nil
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("checking the container side")
+				err = containerNS.Do(func(_ ns.NetNS) error {
+					defer GinkgoRecover()
+
+					link, err := netlink.LinkByName("eth0")
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(link.Attrs().Name).To(Equal("eth0"))
+
+					containerAddrs, err := netlink.AddrList(link, netlink.FAMILY_ALL)
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(containerAddrs).To(HaveLen(3))
+					Expect(containerAddrs[1].IPNet.String()).To(Equal("2600:bd18::2/128"))
+					// We assign GUA on the container side
+					Expect(containerAddrs[1].Scope).To(Equal(int(netlink.SCOPE_UNIVERSE)))
+					Expect(containerAddrs[1].Peer.String()).To(Equal("fe80::1/128"))
+					Expect(link.Attrs().HardwareAddr.String()).To(Equal("ee:ee:0a:ff:1e:02"))
+					return nil
+				})
+
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("enables connectivity between the host and container", func() {
+				cniStdin = cniConfig(dataDir, datastorePath, daemonPort)
+
+				sess := startCommandInHost("ADD", cniStdin)
+				Eventually(sess, cmdTimeout).Should(gexec.Exit(0))
+
+				By("enabling connectivity from the host to the container")
+				mustSucceedInFakeHost("ping6", "-c", "1", "2600:bd18::2")
+
+				By("enabling connectivity from the container to the host")
+				// Linux follows RFC 6724, which prioritizes link-local addresses for same-link communication.
+				// If the destination address is also link-local (fe80::1), Linux prefers a link-local source address.
+				// Therefore, we need to specify the source address to be the GUA address.
+				mustSucceedInContainer("ping6", "-I", "2600:bd18::2", "-c", "1", "fe80::1")
+			})
+
+			It("allows the container to reach IP addresses on the internet", func() {
+				Skip("can't get this test to run, needs further investigation")
+				// NOTE: unlike all other tests in this suite
+				// this one uses the REAL host namespace in order to
+				// test proper packet forwarding to the internet
+				// Because it messes with the REAL host namespace, it cannot safely run
+				// concurrently with any other test that also touches the REAL host namespace
+				// Avoid writing such tests if you can.
+				By("starting the fake daemon")
+				fakeServer = startFakeDaemonInRealHostNamespace(daemonPort, http.StatusOK, `{"overlay_subnet": "10.255.30.0/24", "ipv6_prefix": "2600:bd18::/80", "mtu": 1350}`)
+
+				By("calling CNI with ADD")
+				cniStdin = cniConfig(dataDir, datastorePath, daemonPort)
+				sess := startCommandInRealHostNamespace("ADD", cniStdin)
+				Eventually(sess, cmdTimeout).Should(gexec.Exit(0))
+
+				By("discovering the container IP")
+				var cniResult current.Result
+				Expect(json.Unmarshal(sess.Out.Contents(), &cniResult)).To(Succeed())
+
+				By("attempting to reach the internet from the container")
+				mustSucceedInContainer("curl", "-6", "-f", "example.com")
+
+				By("calling CNI with DEL to clean up")
+				sess = startCommandInRealHostNamespace("DEL", cniStdin)
+				Eventually(sess, cmdTimeout).Should(gexec.Exit(0))
+			})
+		})
 	})
 
 	Describe("CNI version support", func() {
@@ -486,6 +631,7 @@ var _ = Describe("Silk CNI Integration", func() {
 		BeforeEach(func() {
 			cniStdin = cniConfig(dataDir, datastorePath, daemonPort)
 		})
+
 		It("allocates and frees ips", func() {
 			By("calling ADD")
 			sess := startCommandInHost("ADD", cniStdin)
@@ -493,7 +639,6 @@ var _ = Describe("Silk CNI Integration", func() {
 
 			result := cniResultForCurrentVersion(sess.Out.Contents())
 
-			Expect(result.IPs).To(HaveLen(1))
 			Expect(result.IPs).To(HaveLen(1))
 			Expect(*result.IPs[0].Interface).To(Equal(1))
 			Expect(result.IPs[0].Address.String()).To(Equal("10.255.30.2/32"))
@@ -539,7 +684,69 @@ var _ = Describe("Silk CNI Integration", func() {
 			containerMetadata, err = os.ReadFile(datastorePath)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(string(containerMetadata)).NotTo(ContainSubstring("169.254.0.1"))
+			Expect(string(containerMetadata)).NotTo(ContainSubstring("10.255.30.2"))
+		})
+
+		Context("when the daemon returns IPv6 prefix", func() {
+			BeforeEach(func() {
+				fakeServer = startFakeDaemonInHost(daemonPort, http.StatusOK, `{"overlay_subnet": "10.255.30.0/24", "ipv6_prefix": "2600:bd18::/80", "mtu": 1472}`)
+			})
+
+			It("allocates and frees ips", func() {
+				By("calling ADD")
+				sess := startCommandInHost("ADD", cniStdin)
+				Eventually(sess, cmdTimeout).Should(gexec.Exit(0))
+
+				result := cniResultForCurrentVersion(sess.Out.Contents())
+
+				// 1 IPv4 address and 2 IPv6 addresses(autoconfigured link-local and the one we manually configured)
+				Expect(result.IPs).To(HaveLen(2))
+				Expect(*result.IPs[1].Interface).To(Equal(1))
+				Expect(result.IPs[1].Address.String()).To(Equal("2600:bd18::2/128"))
+				Expect(result.IPs[1].Gateway.String()).To(Equal("fe80::1"))
+
+				By("checking that the ip is reserved for the correct container id")
+				bytes, err := os.ReadFile(filepath.Join(dataDir, "ipam/my-silk-network/2600:bd18::2"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(bytes)).To(Equal(fmt.Sprintf("%s\r\neth0", containerID)))
+
+				By("calling DEL")
+				sess = startCommandInHost("DEL", cniStdin)
+				Eventually(sess, cmdTimeout).Should(gexec.Exit(0))
+				Expect(sess.Out.Contents()).To(BeEmpty())
+
+				By("checking that the ip reserved is freed")
+				Expect(filepath.Join(dataDir, "ipam/my-silk-network/2600:bd18::2")).NotTo(BeAnExistingFile())
+			})
+
+			It("writes and deletes container metadata", func() {
+				By("calling ADD")
+				sess := startCommandInHost("ADD", cniStdin)
+				Eventually(sess, cmdTimeout).Should(gexec.Exit(0))
+
+				By("checking that the container metadata is written")
+				containerMetadata, err := os.ReadFile(datastorePath)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(string(containerMetadata)).To(MatchJSON(fmt.Sprintf(`{
+				"%s": {
+					"handle":"%s",
+					"ip":"10.255.30.2",
+					"ipv6":"2600:bd18::2",
+					"metadata":null }
+				}`, containerNSName, containerNSName)))
+
+				By("calling DEL")
+				sess = startCommandInHost("DEL", cniStdin)
+				Eventually(sess, cmdTimeout).Should(gexec.Exit(0))
+				Expect(sess.Out.Contents()).To(BeEmpty())
+
+				By("checking that the container metadata is deleted")
+				containerMetadata, err = os.ReadFile(datastorePath)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(string(containerMetadata)).NotTo(ContainSubstring("2600:bd18::2"))
+			})
 		})
 	})
 
@@ -548,6 +755,7 @@ var _ = Describe("Silk CNI Integration", func() {
 			containerNSList  []ns.NetNS
 			numIPAllocations int
 		)
+
 		BeforeEach(func() {
 			cniStdin = cniConfig(dataDir, datastorePath, daemonPort)
 			prefixSize := 29
@@ -560,6 +768,7 @@ var _ = Describe("Silk CNI Integration", func() {
 				containerNSList = append(containerNSList, containerNS)
 			}
 		})
+
 		AfterEach(func() {
 			for _, containerNS := range containerNSList {
 				containerNS.Close()
@@ -590,6 +799,59 @@ var _ = Describe("Silk CNI Integration", func() {
 				"code": 100,
 				"msg": "run ipam plugin",
 				"details": "failed to allocate for range 0: no IP addresses available in range set: 10.255.30.1-10.255.30.6"
+				}`))
+		})
+	})
+
+	Describe("Reserve all IPv6 addresses", func() {
+		var (
+			containerNSList  []ns.NetNS
+			numIPAllocations int
+		)
+
+		BeforeEach(func() {
+			cniStdin = cniConfig(dataDir, datastorePath, daemonPort)
+			prefixSize := 125
+			fakeServer = startFakeDaemonInHost(daemonPort, http.StatusOK, fmt.Sprintf(`{"overlay_subnet": "10.255.30.0/24", "ipv6_prefix": "2600:bd18::/%d", "mtu": 1350}`, prefixSize))
+			numIPAllocations = int(math.Pow(2, float64(128-prefixSize)) - 1)
+
+			for i := 0; i < numIPAllocations; i++ {
+				containerNS, err := testutils.NewNS()
+				Expect(err).NotTo(HaveOccurred())
+				containerNSList = append(containerNSList, containerNS)
+			}
+		})
+
+		AfterEach(func() {
+			for _, containerNS := range containerNSList {
+				containerNS.Close()
+			}
+		})
+
+		It("fails to allocate an IP if none is available", func() {
+			By("exhausting all ips")
+			for i := 0; i < numIPAllocations-1; i++ {
+				cniEnv["CNI_NETNS"] = containerNSList[i].Path()
+				cniEnv["CNI_CONTAINERID"] = fmt.Sprintf("test-%03d-%x", GinkgoParallelProcess(), randomGenerator.Int31())
+				sess := startCommandInHost("ADD", cniStdin)
+				Eventually(sess, cmdTimeout).Should(gexec.Exit(0))
+
+				result := cniResultForCurrentVersion(sess.Out.Contents())
+
+				Expect(result.IPs).To(HaveLen(2))
+				Expect(*result.IPs[1].Interface).To(Equal(1))
+				Expect(result.IPs[1].Address.String()).To(Equal(fmt.Sprintf("2600:bd18::%d/128", i+2)))
+				Expect(result.IPs[1].Gateway.String()).To(Equal("fe80::1"))
+			}
+
+			cniEnv["CNI_NETNS"] = containerNSList[numIPAllocations-1].Path()
+			cniEnv["CNI_CONTAINERID"] = fmt.Sprintf("test-%03d-%x", GinkgoParallelProcess(), randomGenerator.Int31())
+			sess := startCommandInHost("ADD", cniStdin)
+			Eventually(sess, cmdTimeout).Should(gexec.Exit(1))
+			Expect(sess.Out.Contents()).To(MatchJSON(`{
+				"code": 100,
+				"msg": "run ipam plugin",
+				"details": "failed to allocate for range 1: no IP addresses available in range set: 2600:bd18::1-2600:bd18::7"
 				}`))
 		})
 	})

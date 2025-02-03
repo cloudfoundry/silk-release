@@ -80,6 +80,7 @@ func main() {
 	netlinkAdapter := &libAdapter.NetlinkAdapter{}
 	linkOperations := &lib.LinkOperations{
 		SysctlAdapter:  &adapter.SysctlAdapter{},
+		OsAdapter:      &adapter.OsAdapter{},
 		NetlinkAdapter: netlinkAdapter,
 		Logger:         logger,
 	}

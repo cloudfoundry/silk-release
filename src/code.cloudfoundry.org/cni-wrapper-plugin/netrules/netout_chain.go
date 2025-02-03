@@ -33,10 +33,11 @@ func (c *NetOutChain) Validate() error {
 				return fmt.Errorf("deny networks: %s", err)
 			}
 
-			if c.IPv6 && ip.To4() != nil {
-				return fmt.Errorf("network is ipv4 in ipv6 chain: %s", ip)
-			} else if !c.IPv6 && ip.To4() == nil {
-				return fmt.Errorf("network is ipv6 in ipv4 chain: %s", ip)
+			isIPv4 := ip.To4() != nil
+			if c.IPv6 && isIPv4 {
+				return fmt.Errorf("network is ipv4 in ipv6 mode: %s", ip)
+			} else if !c.IPv6 && !isIPv4 {
+				return fmt.Errorf("network is ipv6 in ipv4 mode: %s", ip)
 			}
 
 			denyNetworks[destinationIndex] = validatedDestination.String()

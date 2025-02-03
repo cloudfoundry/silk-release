@@ -163,6 +163,28 @@ var _ = Describe("Datastore Lifecycle", func() {
 			})
 		})
 
+		Context("and IPv6 option is provided", func() {
+			var ipv6 string
+			var option datastore.Option
+
+			BeforeEach(func() {
+				ipv6 = "2001:db8::68"
+				option = datastore.WithIPv6(ipv6)
+			})
+
+			It("can add entry with IPv6 to datastore", func() {
+				err := store.Add(handle, ip, metadata, option)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("verify entry is in store")
+				data, err := store.ReadAll()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(data).Should(HaveKey(handle))
+
+				Expect(data[handle].IPv6).To(Equal(ipv6))
+			})
+		})
+
 		It("can add multiple entries to datastore", func() {
 			total := 250
 			By("adding an entries to store")

@@ -122,7 +122,14 @@ func (c *ConfigCreator) Create(
 		conf.Container.AddressIPv6.IP = ipv6
 		conf.Container.AddressIPv6.Hardware = conf.Container.Address.Hardware
 
-		conf.Container.RoutesIPv6 = []*types.Route{{GW: conf.Host.AddressIPv6.IP}}
+		conf.Container.RoutesIPv6 = []*types.Route{
+			{
+				Dst: net.IPNet{
+					IP:   net.IPv6zero,
+					Mask: net.CIDRMask(0, 128),
+				},
+				GW: conf.Host.AddressIPv6.IP,
+			}}
 	}
 
 	return &conf, nil

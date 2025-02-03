@@ -94,6 +94,37 @@ var _ = Describe("Locked IPTables Integration Test", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(AllIPTablesRules("filter")).To(ContainElement(`-A FORWARD -s 10.255.0.0/16 -d 10.255.0.0/16 -j ACCEPT`))
 	})
+
+	Context("when IPv6 is enabled", func() {
+		BeforeEach(func() {
+			flock := filelock.NewLocker("/tmp/restorer.lock")
+			locker = &filelock.Locker{
+				FileLocker: flock,
+				Mutex:      &sync.Mutex{},
+			}
+			restorer = &rules.Restorer{
+				IPv6: true,
+			}
+			var err error
+			ipt, err = goiptables.NewWithProtocol(goiptables.ProtocolIPv6)
+			Expect(err).NotTo(HaveOccurred())
+			lockedIPT = &rules.LockedIPTables{
+				Locker:   locker,
+				Restorer: restorer,
+				IPTables: ipt,
+			}
+		})
+
+		It("bulk inserts iptables rules", func() {
+			onlyRunOnLinux()
+			err := lockedIPT.BulkInsert("filter", "FORWARD", 1, []rules.IPTablesRule{
+				rules.NewNetOutWithPortsRule("2001::1", "2001::2", 42, 419, "tcp"),
+			}...)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(AllIP6TablesRules("filter")).To(ContainElement(
+				"-A FORWARD -p tcp -m iprange --dst-range 2001::1-2001::2 -m tcp --dport 42:419 -j ACCEPT"))
+		})
+	})
 })
 
 func onlyRunOnLinux() {
@@ -104,6 +135,13 @@ func onlyRunOnLinux() {
 
 func AllIPTablesRules(tableName string) []string {
 	iptablesSession, err := gexec.Start(exec.Command("iptables", "-w", "-S", "-t", tableName), nil, nil)
+	Expect(err).NotTo(HaveOccurred())
+	Eventually(iptablesSession, "3s").Should(gexec.Exit(0))
+	return strings.Split(strings.TrimSpace(string(iptablesSession.Out.Contents())), "\n")
+}
+
+func AllIP6TablesRules(tableName string) []string {
+	iptablesSession, err := gexec.Start(exec.Command("ip6tables", "-w", "-S", "-t", tableName), nil, nil)
 	Expect(err).NotTo(HaveOccurred())
 	Eventually(iptablesSession, "3s").Should(gexec.Exit(0))
 	return strings.Split(strings.TrimSpace(string(iptablesSession.Out.Contents())), "\n")

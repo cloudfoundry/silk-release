@@ -18,24 +18,36 @@ type DualAddress struct {
 	IP       net.IP
 }
 
+type ContainerConfig struct {
+	DeviceName          string
+	TemporaryDeviceName string
+	Namespace           netNS
+	Address             DualAddress
+	AddressIPv6         DualAddress
+	MTU                 int
+	Routes              []*types.Route
+	RoutesIPv6          []*types.Route
+}
+
+type HostConfig struct {
+	DeviceName  string
+	Namespace   netNS
+	Address     DualAddress
+	AddressIPv6 DualAddress
+}
+
 type Config struct {
-	Container struct {
-		DeviceName          string
-		TemporaryDeviceName string
-		Namespace           netNS
-		Address             DualAddress
-		AddressIPv6         DualAddress
-		MTU                 int
-		Routes              []*types.Route
-		RoutesIPv6          []*types.Route
-	}
-	Host struct {
-		DeviceName  string
-		Namespace   netNS
-		Address     DualAddress
-		AddressIPv6 DualAddress
-	}
+	Container   ContainerConfig
+	Host        HostConfig
 	ipv6Enabled bool
+}
+
+func NewConfig(container ContainerConfig, host HostConfig, enableIPv6 bool) *Config {
+	return &Config{
+		Container:   container,
+		Host:        host,
+		ipv6Enabled: enableIPv6,
+	}
 }
 
 func (c *Config) AsCNIResult() *current.Result {
@@ -79,6 +91,7 @@ func (c *Config) AsCNIResult() *current.Result {
 		}
 
 		result.IPs = append(result.IPs, ipv6)
+		result.Routes = append(result.Routes, c.Container.RoutesIPv6...)
 	}
 
 	return result

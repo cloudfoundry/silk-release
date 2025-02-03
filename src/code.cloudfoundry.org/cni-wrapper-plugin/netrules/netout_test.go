@@ -16,20 +16,30 @@ import (
 
 var _ = Describe("Netout", func() {
 	var (
-		netOut     *netrules.NetOut
-		converter  *fakes.RuleConverter
-		chainNamer *fakes.ChainNamer
-		ipTables   *lib_fakes.IPTablesAdapter
+		netOut      *netrules.NetOut
+		converter   *fakes.RuleConverter
+		chainNamer  *fakes.ChainNamer
+		ipTables    *lib_fakes.IPTablesAdapter
+		netOutChain *netrules.NetOutChain
+		containerIP string
 	)
+
 	BeforeEach(func() {
 		chainNamer = &fakes.ChainNamer{}
 		converter = &fakes.RuleConverter{}
 		ipTables = &lib_fakes.IPTablesAdapter{}
-		netOutChain := &netrules.NetOutChain{
+		containerIP = "5.6.7.8"
+		netOutChain = &netrules.NetOutChain{
 			Converter:    converter,
 			ChainNamer:   chainNamer,
 			DenyNetworks: netrules.DenyNetworks{Running: []string{"10.0.5.0/24"}},
 		}
+
+		chainNamer.PrefixStub = func(prefix, handle string) string {
+			return prefix + "-" + handle
+		}
+		chainNamer.PostfixReturns("some-other-chain-name", nil)
+
 		netOut = &netrules.NetOut{
 			ChainNamer:            chainNamer,
 			NetOutChain:           netOutChain,
@@ -39,7 +49,7 @@ var _ = Describe("Netout", func() {
 			HostInterfaceNames:    []string{"some-device", "eth0"},
 			DeniedLogsPerSec:      3,
 			AcceptedUDPLogsPerSec: 6,
-			ContainerIP:           "5.6.7.8",
+			ContainerIP:           containerIP,
 			ContainerHandle:       "some-container-handle",
 			ContainerWorkload:     "app",
 			Conn: netrules.OutConn{
@@ -47,10 +57,6 @@ var _ = Describe("Netout", func() {
 				DryRun: false,
 			},
 		}
-		chainNamer.PrefixStub = func(prefix, handle string) string {
-			return prefix + "-" + handle
-		}
-		chainNamer.PostfixReturns("some-other-chain-name", nil)
 	})
 
 	Describe("Initialize", func() {
@@ -168,6 +174,7 @@ var _ = Describe("Netout", func() {
 			BeforeEach(func() {
 				ipTables.NewChainReturns(errors.New("potata"))
 			})
+
 			It("returns the error", func() {
 				err := netOut.Initialize()
 				Expect(err).To(MatchError("creating chain: potata"))
@@ -178,6 +185,7 @@ var _ = Describe("Netout", func() {
 			BeforeEach(func() {
 				chainNamer.PostfixReturns("", errors.New("banana"))
 			})
+
 			It("returns the error", func() {
 				err := netOut.Initialize()
 				Expect(err).To(MatchError("getting chain name: banana"))
@@ -188,6 +196,7 @@ var _ = Describe("Netout", func() {
 			BeforeEach(func() {
 				ipTables.BulkAppendReturns(errors.New("potato"))
 			})
+
 			It("returns the error", func() {
 				err := netOut.Initialize()
 				Expect(err).To(MatchError("appending rule to chain: potato"))
@@ -203,6 +212,7 @@ var _ = Describe("Netout", func() {
 					return errors.New("potato")
 				}
 			})
+
 			It("returns the error", func() {
 				err := netOut.Initialize()
 				Expect(err).To(MatchError("appending rule: potato"))
@@ -213,6 +223,7 @@ var _ = Describe("Netout", func() {
 			BeforeEach(func() {
 				netOut.C2CLogging = true
 			})
+
 			It("writes a log rule for denies", func() {
 				err := netOut.Initialize()
 				Expect(err).NotTo(HaveOccurred())
@@ -272,6 +283,7 @@ var _ = Describe("Netout", func() {
 				BeforeEach(func() {
 					netOut.HostTCPServices = []string{"169.125.0.4:9001", "169.125.0.9:8080"}
 				})
+
 				It("creates rules for both dns servers and the host TCP services", func() {
 					err := netOut.Initialize()
 					Expect(err).NotTo(HaveOccurred())
@@ -300,6 +312,7 @@ var _ = Describe("Netout", func() {
 				BeforeEach(func() {
 					netOut.HostUDPServices = []string{"169.125.0.4:9001", "169.125.0.9:8080"}
 				})
+
 				It("creates rules for both dns servers and the host UDP services", func() {
 					err := netOut.Initialize()
 					Expect(err).NotTo(HaveOccurred())
@@ -329,6 +342,7 @@ var _ = Describe("Netout", func() {
 					netOut.HostTCPServices = []string{"169.125.0.4:9001", "169.125.0.9:8080"}
 					netOut.HostUDPServices = []string{"169.251.0.4:9001", "169.251.0.9:8080"}
 				})
+
 				It("creates rules for dns servers, the host TCP services, and the host UDP services", func() {
 					err := netOut.Initialize()
 					Expect(err).NotTo(HaveOccurred())
@@ -422,6 +436,341 @@ var _ = Describe("Netout", func() {
 				netOut.HostUDPServices = []string{"169.125.0.123:port"}
 				err = netOut.Initialize()
 				Expect(err).To(MatchError(MatchRegexp("host udp services.*parsing")))
+			})
+		})
+
+		Context("when IPv6 is enabled", func() {
+			BeforeEach(func() {
+				netOut.IPv6 = true
+				netOut.ContainerIP = "2001::1"
+				netOut.NetOutChain = &netrules.NetOutChain{
+					Converter:    converter,
+					ChainNamer:   chainNamer,
+					DenyNetworks: netrules.DenyNetworks{Running: []string{"2000::/120"}},
+					IPv6:         true,
+				}
+			})
+
+			It("creates the input chain, netout forwarding chain, and the logging chain", func() {
+				err := netOut.Initialize()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(chainNamer.PrefixCallCount()).To(Equal(2))
+				prefix, handle := chainNamer.PrefixArgsForCall(0)
+				Expect(prefix).To(Equal("input"))
+				Expect(handle).To(Equal("some-container-handle"))
+
+				prefix, handle = chainNamer.PrefixArgsForCall(1)
+				Expect(prefix).To(Equal("netout"))
+				Expect(handle).To(Equal("some-container-handle"))
+
+				Expect(chainNamer.PostfixCallCount()).To(Equal(1))
+				body, suffix := chainNamer.PostfixArgsForCall(0)
+				Expect(body).To(Equal("netout-some-container-handle"))
+				Expect(suffix).To(Equal("log"))
+
+				Expect(ipTables.NewChainCallCount()).To(Equal(3))
+				table, chain := ipTables.NewChainArgsForCall(0)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("input-some-container-handle"))
+				table, chain = ipTables.NewChainArgsForCall(1)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("netout-some-container-handle"))
+				table, chain = ipTables.NewChainArgsForCall(2)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("some-other-chain-name"))
+			})
+
+			It("writes the default netout and logging rules", func() {
+				err := netOut.Initialize()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+				table, chain, rulespec := ipTables.BulkAppendArgsForCall(0)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("INPUT"))
+				Expect(rulespec).To(Equal([]rules.IPTablesRule{
+					{"-s", "2001::1", "--jump", "input-some-container-handle"},
+				}))
+
+				table, chain, rulespec = ipTables.BulkAppendArgsForCall(1)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("FORWARD"))
+				Expect(rulespec).To(Equal([]rules.IPTablesRule{
+					{"-s", "2001::1", "-o", "some-device", "--jump", "netout-some-container-handle"},
+					{"-s", "2001::1", "-o", "eth0", "--jump", "netout-some-container-handle"},
+				}))
+
+				table, chain, rulespec = ipTables.BulkAppendArgsForCall(2)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("input-some-container-handle"))
+				Expect(rulespec).To(Equal([]rules.IPTablesRule{
+					{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
+					{"--jump", "REJECT", "--reject-with", "icmp6-port-unreachable"},
+				}))
+
+				table, chain, rulespec = ipTables.BulkAppendArgsForCall(3)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("netout-some-container-handle"))
+				Expect(rulespec).To(Equal([]rules.IPTablesRule{
+					{"--jump", "REJECT", "--reject-with", "icmp6-port-unreachable"},
+				}))
+
+				table, chain, rulespec = ipTables.BulkAppendArgsForCall(4)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("some-other-chain-name"))
+				Expect(rulespec).To(Equal([]rules.IPTablesRule{
+					{"!", "-p", "udp",
+						"-m", "conntrack", "--ctstate", "INVALID,NEW,UNTRACKED",
+						"-j", "LOG", "--log-prefix", `"OK_some-container-handle "`},
+					{"-p", "udp",
+						"-m", "limit", "--limit", "6/s", "--limit-burst", "6",
+						"-j", "LOG", "--log-prefix", `"OK_some-container-handle "`},
+					{"--jump", "ACCEPT"},
+				}))
+			})
+
+			Context("when C2C logging is enabled", func() {
+				BeforeEach(func() {
+					netOut.C2CLogging = true
+				})
+
+				It("does not write a log rule for denies", func() {
+					err := netOut.Initialize()
+					Expect(err).NotTo(HaveOccurred())
+
+					// For IPv6 no overlay rules will be created, thus 2 fewer calls to BulkAppend
+					Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+				})
+			})
+
+			Context("when dns servers are specified", func() {
+				BeforeEach(func() {
+					netOut.DNSServers = []string{"2001:4860:4860::7777", "2606:4700:4700::2222"}
+				})
+
+				It("creates rules for the dns servers", func() {
+					err := netOut.Initialize()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+
+					table, chain, rulespec := ipTables.BulkAppendArgsForCall(2)
+					Expect(table).To(Equal("filter"))
+					Expect(chain).To(Equal("input-some-container-handle"))
+					Expect(rulespec).To(Equal([]rules.IPTablesRule{
+						{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
+
+						{"-p", "tcp", "-d", "2001:4860:4860::7777", "--destination-port", "53", "--jump", "ACCEPT"},
+						{"-p", "udp", "-d", "2001:4860:4860::7777", "--destination-port", "53", "--jump", "ACCEPT"},
+						{"-p", "tcp", "-d", "2606:4700:4700::2222", "--destination-port", "53", "--jump", "ACCEPT"},
+						{"-p", "udp", "-d", "2606:4700:4700::2222", "--destination-port", "53", "--jump", "ACCEPT"},
+
+						{"--jump", "REJECT", "--reject-with", "icmp6-port-unreachable"},
+					}))
+				})
+
+				Context("when host TCP services are specified", func() {
+					BeforeEach(func() {
+						netOut.HostTCPServices = []string{"[2001::2]:9001", "[2001::3]:8080"}
+					})
+
+					It("creates rules for both dns servers and the host TCP services", func() {
+						err := netOut.Initialize()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+
+						table, chain, rulespec := ipTables.BulkAppendArgsForCall(2)
+						Expect(table).To(Equal("filter"))
+						Expect(chain).To(Equal("input-some-container-handle"))
+						Expect(rulespec).To(Equal([]rules.IPTablesRule{
+							{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
+
+							{"-p", "tcp", "-d", "2001:4860:4860::7777", "--destination-port", "53", "--jump", "ACCEPT"},
+							{"-p", "udp", "-d", "2001:4860:4860::7777", "--destination-port", "53", "--jump", "ACCEPT"},
+							{"-p", "tcp", "-d", "2606:4700:4700::2222", "--destination-port", "53", "--jump", "ACCEPT"},
+							{"-p", "udp", "-d", "2606:4700:4700::2222", "--destination-port", "53", "--jump", "ACCEPT"},
+
+							{"-p", "tcp", "-d", "2001::2", "--destination-port", "9001", "--jump", "ACCEPT"},
+							{"-p", "tcp", "-d", "2001::3", "--destination-port", "8080", "--jump", "ACCEPT"},
+
+							{"--jump", "REJECT", "--reject-with", "icmp6-port-unreachable"},
+						}))
+					})
+				})
+
+				Context("when host UDP services are specified", func() {
+					BeforeEach(func() {
+						netOut.HostUDPServices = []string{"[2001::4]:9001", "[2001::5]:8080"}
+					})
+
+					It("creates rules for both dns servers and the host UDP services", func() {
+						err := netOut.Initialize()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+
+						table, chain, rulespec := ipTables.BulkAppendArgsForCall(2)
+						Expect(table).To(Equal("filter"))
+						Expect(chain).To(Equal("input-some-container-handle"))
+						Expect(rulespec).To(Equal([]rules.IPTablesRule{
+							{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
+
+							{"-p", "tcp", "-d", "2001:4860:4860::7777", "--destination-port", "53", "--jump", "ACCEPT"},
+							{"-p", "udp", "-d", "2001:4860:4860::7777", "--destination-port", "53", "--jump", "ACCEPT"},
+							{"-p", "tcp", "-d", "2606:4700:4700::2222", "--destination-port", "53", "--jump", "ACCEPT"},
+							{"-p", "udp", "-d", "2606:4700:4700::2222", "--destination-port", "53", "--jump", "ACCEPT"},
+
+							{"-p", "udp", "-d", "2001::4", "--destination-port", "9001", "--jump", "ACCEPT"},
+							{"-p", "udp", "-d", "2001::5", "--destination-port", "8080", "--jump", "ACCEPT"},
+
+							{"--jump", "REJECT", "--reject-with", "icmp6-port-unreachable"},
+						}))
+					})
+				})
+
+				Context("when host TCP services and host UDP services are specified", func() {
+					BeforeEach(func() {
+						netOut.HostTCPServices = []string{"[2001::2]:9001", "[2001::3]:8080"}
+						netOut.HostUDPServices = []string{"[2001::4]:9001", "[2001::5]:8080"}
+					})
+
+					It("creates rules for dns servers, the host TCP services, and the host UDP services", func() {
+						err := netOut.Initialize()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+
+						table, chain, rulespec := ipTables.BulkAppendArgsForCall(2)
+						Expect(table).To(Equal("filter"))
+						Expect(chain).To(Equal("input-some-container-handle"))
+						Expect(rulespec).To(Equal([]rules.IPTablesRule{
+							{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
+
+							{"-p", "tcp", "-d", "2001:4860:4860::7777", "--destination-port", "53", "--jump", "ACCEPT"},
+							{"-p", "udp", "-d", "2001:4860:4860::7777", "--destination-port", "53", "--jump", "ACCEPT"},
+							{"-p", "tcp", "-d", "2606:4700:4700::2222", "--destination-port", "53", "--jump", "ACCEPT"},
+							{"-p", "udp", "-d", "2606:4700:4700::2222", "--destination-port", "53", "--jump", "ACCEPT"},
+
+							{"-p", "tcp", "-d", "2001::2", "--destination-port", "9001", "--jump", "ACCEPT"},
+							{"-p", "tcp", "-d", "2001::3", "--destination-port", "8080", "--jump", "ACCEPT"},
+
+							{"-p", "udp", "-d", "2001::4", "--destination-port", "9001", "--jump", "ACCEPT"},
+							{"-p", "udp", "-d", "2001::5", "--destination-port", "8080", "--jump", "ACCEPT"},
+
+							{"--jump", "REJECT", "--reject-with", "icmp6-port-unreachable"},
+						}))
+					})
+				})
+			})
+
+			Context("when host TCP services are specified", func() {
+				BeforeEach(func() {
+					netOut.HostTCPServices = []string{"[2001::2]:9001", "[2001::3]:8080"}
+				})
+
+				It("creates rules for the host TCP services", func() {
+					err := netOut.Initialize()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+
+					table, chain, rulespec := ipTables.BulkAppendArgsForCall(2)
+					Expect(table).To(Equal("filter"))
+					Expect(chain).To(Equal("input-some-container-handle"))
+					Expect(rulespec).To(Equal([]rules.IPTablesRule{
+						{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
+
+						{"-p", "tcp", "-d", "2001::2", "--destination-port", "9001", "--jump", "ACCEPT"},
+						{"-p", "tcp", "-d", "2001::3", "--destination-port", "8080", "--jump", "ACCEPT"},
+
+						{"--jump", "REJECT", "--reject-with", "icmp6-port-unreachable"},
+					}))
+				})
+
+				It("returns an error for improperly formatted host TCP services", func() {
+					netOut.HostTCPServices = []string{"169.125.0.4:9001"}
+					err := netOut.Initialize()
+					Expect(err).To(MatchError(MatchRegexp("host tcp services.*network is ipv4 in ipv6 mode")))
+
+					netOut.HostTCPServices = []string{"2001::2"}
+					err = netOut.Initialize()
+					Expect(err).To(MatchError(MatchRegexp("host tcp services.*too many colons in address")))
+
+					netOut.HostTCPServices = []string{"2001::2:port"}
+					err = netOut.Initialize()
+					Expect(err).To(MatchError(MatchRegexp("host tcp services.*too many colons in address")))
+				})
+			})
+
+			Context("when host UDP services are specified", func() {
+				BeforeEach(func() {
+					netOut.HostUDPServices = []string{"[2001::4]:9001", "[2001::5]:8080"}
+				})
+
+				It("creates rules for the host UDP services", func() {
+					err := netOut.Initialize()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+
+					table, chain, rulespec := ipTables.BulkAppendArgsForCall(2)
+					Expect(table).To(Equal("filter"))
+					Expect(chain).To(Equal("input-some-container-handle"))
+					Expect(rulespec).To(Equal([]rules.IPTablesRule{
+						{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
+
+						{"-p", "udp", "-d", "2001::4", "--destination-port", "9001", "--jump", "ACCEPT"},
+						{"-p", "udp", "-d", "2001::5", "--destination-port", "8080", "--jump", "ACCEPT"},
+
+						{"--jump", "REJECT", "--reject-with", "icmp6-port-unreachable"},
+					}))
+				})
+
+				It("returns an error for improperly formatted host UDP services", func() {
+					netOut.HostUDPServices = []string{"169.125.0.4:9001"}
+					err := netOut.Initialize()
+					Expect(err).To(MatchError(MatchRegexp("host udp services.*network is ipv4 in ipv6 mode")))
+
+					netOut.HostUDPServices = []string{"2001::2"}
+					err = netOut.Initialize()
+					Expect(err).To(MatchError(MatchRegexp("host udp services.*too many colons in address")))
+
+					netOut.HostUDPServices = []string{"2001::2:port"}
+					err = netOut.Initialize()
+					Expect(err).To(MatchError(MatchRegexp("host udp services.*too many colons in address")))
+				})
+			})
+
+			Context("when outbound container connection limiting is enabled", func() {
+				BeforeEach(func() {
+					netOut.Conn.Limit = true
+					chainNamer.PostfixReturnsOnCall(1, "netout-some-container-handle-rl-log", nil)
+				})
+
+				Context("when denied outbound container connections logging is enabled", func() {
+					BeforeEach(func() {
+						netOut.Conn.Logging = true
+					})
+
+					It("creates the rate limit logging chain", func() {
+						err := netOut.Initialize()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(ipTables.NewChainCallCount()).To(Equal(4))
+
+						table, chain := ipTables.NewChainArgsForCall(3)
+						Expect(table).To(Equal("filter"))
+						Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
+					})
+				})
+
+				Context("when denied outbound container connections logging is disabled", func() {
+					BeforeEach(func() {
+						netOut.Conn.Logging = false
+					})
+
+					It("doesn't create the rate limit logging chain", func() {
+						err := netOut.Initialize()
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(ipTables.NewChainCallCount()).To(Equal(3))
+					})
+				})
 			})
 		})
 	})
@@ -630,6 +979,137 @@ var _ = Describe("Netout", func() {
 
 					Expect(ipTables.ClearChainCallCount()).To(Equal(4))
 					Expect(ipTables.DeleteChainCallCount()).To(Equal(4))
+				})
+			})
+		})
+
+		Context("when IPv6 is enabled", func() {
+			BeforeEach(func() {
+				netOut.IPv6 = true
+				netOut.ContainerIP = "2001::1"
+				netOut.NetOutChain = &netrules.NetOutChain{
+					Converter:    converter,
+					ChainNamer:   chainNamer,
+					DenyNetworks: netrules.DenyNetworks{Running: []string{"2000::/120"}},
+					IPv6:         true,
+				}
+			})
+
+			It("deletes the correct jump rules from the forward chain", func() {
+				err := netOut.Cleanup()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(chainNamer.PrefixCallCount()).To(Equal(2))
+				prefix, handle := chainNamer.PrefixArgsForCall(0)
+				Expect(prefix).To(Equal("input"))
+				Expect(handle).To(Equal("some-container-handle"))
+
+				prefix, handle = chainNamer.PrefixArgsForCall(1)
+				Expect(prefix).To(Equal("netout"))
+				Expect(handle).To(Equal("some-container-handle"))
+
+				Expect(chainNamer.PostfixCallCount()).To(Equal(1))
+				body, suffix := chainNamer.PostfixArgsForCall(0)
+				Expect(body).To(Equal("netout-some-container-handle"))
+				Expect(suffix).To(Equal("log"))
+
+				Expect(ipTables.DeleteCallCount()).To(Equal(3))
+				table, chain, extraArgs := ipTables.DeleteArgsForCall(0)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("INPUT"))
+				Expect(extraArgs).To(Equal(rules.IPTablesRule{"-s", "2001::1", "--jump", "input-some-container-handle"}))
+
+				table, chain, extraArgs = ipTables.DeleteArgsForCall(1)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("FORWARD"))
+				Expect(extraArgs).To(Equal(rules.IPTablesRule{"-s", "2001::1", "-o", "some-device", "--jump", "netout-some-container-handle"}))
+
+				table, chain, extraArgs = ipTables.DeleteArgsForCall(2)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("FORWARD"))
+				Expect(extraArgs).To(Equal(rules.IPTablesRule{"-s", "2001::1", "-o", "eth0", "--jump", "netout-some-container-handle"}))
+			})
+
+			It("clears the container chain", func() {
+				err := netOut.Cleanup()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(ipTables.ClearChainCallCount()).To(Equal(3))
+				table, chain := ipTables.ClearChainArgsForCall(0)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("input-some-container-handle"))
+
+				table, chain = ipTables.ClearChainArgsForCall(1)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("netout-some-container-handle"))
+
+				table, chain = ipTables.ClearChainArgsForCall(2)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("some-other-chain-name"))
+			})
+
+			It("deletes the container chain", func() {
+				err := netOut.Cleanup()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(ipTables.DeleteChainCallCount()).To(Equal(3))
+				table, chain := ipTables.DeleteChainArgsForCall(0)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("input-some-container-handle"))
+
+				table, chain = ipTables.DeleteChainArgsForCall(1)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("netout-some-container-handle"))
+
+				table, chain = ipTables.DeleteChainArgsForCall(2)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("some-other-chain-name"))
+			})
+
+			Context("when outbound container connection limiting is enabled", func() {
+				BeforeEach(func() {
+					netOut.Conn.Limit = true
+					chainNamer.PostfixReturnsOnCall(1, "netout-some-container-handle-rl-log", nil)
+				})
+
+				Context("when denied outbound container connections logging is enabled", func() {
+					BeforeEach(func() {
+						netOut.Conn.Logging = true
+					})
+
+					It("additionally clears the rate limit logging chain", func() {
+						err := netOut.Cleanup()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(ipTables.ClearChainCallCount()).To(Equal(4))
+
+						table, chain := ipTables.ClearChainArgsForCall(3)
+						Expect(table).To(Equal("filter"))
+						Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
+					})
+
+					It("additionally deletes the rate limit logging chain", func() {
+						err := netOut.Cleanup()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(ipTables.DeleteChainCallCount()).To(Equal(4))
+
+						table, chain := ipTables.DeleteChainArgsForCall(3)
+						Expect(table).To(Equal("filter"))
+						Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
+					})
+				})
+
+				Context("when denied outbound container connections logging is disabled", func() {
+					BeforeEach(func() {
+						netOut.Conn.Logging = false
+					})
+
+					It("doesn't clean up the rate limit logging chain", func() {
+						err := netOut.Cleanup()
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(ipTables.ClearChainCallCount()).To(Equal(3))
+						Expect(ipTables.DeleteChainCallCount()).To(Equal(3))
+					})
 				})
 			})
 		})

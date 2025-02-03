@@ -13,7 +13,6 @@ import (
 )
 
 var _ = Describe("Host Setup", func() {
-
 	var (
 		hostNS             *fakes.NetNS
 		cfg                *config.Config
@@ -22,7 +21,7 @@ var _ = Describe("Host Setup", func() {
 		hostSetup          *lib.Host
 		containerAddr      config.DualAddress
 		hostAddr           config.DualAddress
-		fakelogger         *lagertest.TestLogger
+		fakeLogger         *lagertest.TestLogger
 	)
 
 	BeforeEach(func() {
@@ -31,7 +30,7 @@ var _ = Describe("Host Setup", func() {
 		hostNS = &fakes.NetNS{}
 		hostNS.DoStub = lib.NetNsDoStub
 
-		fakelogger = lagertest.NewTestLogger("test")
+		fakeLogger = lagertest.NewTestLogger("test")
 
 		containerAddr = config.DualAddress{IP: net.IP{10, 255, 30, 4}}
 		hostAddr = config.DualAddress{IP: net.IP{169, 254, 0, 1}}
@@ -45,7 +44,7 @@ var _ = Describe("Host Setup", func() {
 		hostSetup = &lib.Host{
 			Common:         fakeCommon,
 			LinkOperations: fakeLinkOperations,
-			Logger:         fakelogger,
+			Logger:         fakeLogger,
 		}
 	})
 
@@ -85,6 +84,61 @@ var _ = Describe("Host Setup", func() {
 			It("returns a meaningful error", func() {
 				err := hostSetup.Setup(cfg)
 				Expect(err).To(MatchError("enabling packet forwarding on host: beans"))
+			})
+		})
+	})
+
+	Describe("SetupIPv6", func() {
+		var (
+			containerAddrIPv6 config.DualAddress
+			hostAddrIPv6      config.DualAddress
+		)
+
+		BeforeEach(func() {
+			containerAddrIPv6 = config.DualAddress{IP: net.ParseIP("fe80::1")}
+			hostAddrIPv6 = config.DualAddress{IP: net.ParseIP("2001:db8::1")}
+
+			cfg.Container.AddressIPv6 = containerAddrIPv6
+			cfg.Host.AddressIPv6 = hostAddrIPv6
+		})
+
+		It("calls basic setup in the host namespace", func() {
+			err := hostSetup.SetupIPv6(cfg)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(fakeCommon.BasicSetupIPv6CallCount()).To(Equal(1))
+			device, local, peer := fakeCommon.BasicSetupIPv6ArgsForCall(0)
+			Expect(device).To(Equal("someHostDeviceName"))
+			Expect(local).To(Equal(hostAddrIPv6))
+			Expect(peer).To(Equal(containerAddrIPv6))
+		})
+
+		It("enables IPv6 forwarding on the host", func() {
+			err := hostSetup.SetupIPv6(cfg)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(fakeLinkOperations.EnableIPv6ForwardingCallCount()).To(Equal(1))
+		})
+
+		Context("when the basic device setup fails", func() {
+			BeforeEach(func() {
+				fakeCommon.BasicSetupIPv6Returns(errors.New("beans"))
+			})
+
+			It("returns a meaningful error", func() {
+				err := hostSetup.SetupIPv6(cfg)
+				Expect(err).To(MatchError("setting up IPv6 device in host: beans"))
+			})
+		})
+
+		Context("when enabling packet forwarding fails", func() {
+			BeforeEach(func() {
+				fakeLinkOperations.EnableIPv6ForwardingReturns(errors.New("beans"))
+			})
+
+			It("returns a meaningful error", func() {
+				err := hostSetup.SetupIPv6(cfg)
+				Expect(err).To(MatchError("enabling IPv6 packet forwarding on host: beans"))
 			})
 		})
 	})
