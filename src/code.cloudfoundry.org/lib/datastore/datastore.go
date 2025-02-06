@@ -12,7 +12,7 @@ import (
 	"code.cloudfoundry.org/lib/serial"
 )
 
-type Options func(container *Container) error
+type Option func(container *Container) error
 
 //go:generate counterfeiter -o ../fakes/locker.go --fake-name Locker . locker
 type locker interface {
@@ -58,15 +58,15 @@ func validate(handle, ip string) error {
 	return nil
 }
 
-func (c *Store) Update(handle, ip string, metadata map[string]interface{}) error {
-	return c.AddOrUpdate(handle, ip, metadata, true)
+func (c *Store) Update(handle, ip string, metadata map[string]interface{}, options ...Option) error {
+	return c.AddOrUpdate(handle, ip, metadata, true, options...)
 }
 
-func (c *Store) Add(handle, ip string, metadata map[string]interface{}, options ...Options) error {
+func (c *Store) Add(handle, ip string, metadata map[string]interface{}, options ...Option) error {
 	return c.AddOrUpdate(handle, ip, metadata, false, options...)
 }
 
-func (c *Store) AddOrUpdate(handle, ip string, metadata map[string]interface{}, update bool, options ...Options) error {
+func (c *Store) AddOrUpdate(handle, ip string, metadata map[string]interface{}, update bool, options ...Option) error {
 	if err := validate(handle, ip); err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func (c *Store) AddOrUpdate(handle, ip string, metadata map[string]interface{}, 
 	for _, opt := range options {
 		err = opt(pool[handle])
 		if err != nil {
-			return fmt.Errorf("applying option for ipv6: %s", err)
+			return fmt.Errorf("applying option: %s", err)
 		}
 	}
 
@@ -123,11 +123,14 @@ func (c *Store) AddOrUpdate(handle, ip string, metadata map[string]interface{}, 
 	return c.ensureFileOwnership()
 }
 
-func WithIPv6(ipv6 string) Options {
+func WithIPv6(ipv6 string) Option {
 	return func(container *Container) error {
 		if ipv6 == "" {
 			// No IPv6 configuration
 			return nil
+		}
+		if net.ParseIP(ipv6) == nil {
+			return fmt.Errorf("invalid ip: %v", ipv6)
 		}
 
 		container.IPv6 = ipv6
