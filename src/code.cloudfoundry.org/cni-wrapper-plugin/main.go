@@ -56,6 +56,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 
 	containerIP, containerIPv6 := datastore.ValidatorIPConfig(ips)
+	enableIPv6 = enableIPv6 && containerIPv6 != nil
 
 	var containerWorkload string
 
@@ -94,11 +95,16 @@ func cmdAdd(args *skel.CmdArgs) error {
 		CustomNoMasqueradeCIDRRange: cfg.NoMasqueradeCIDRRange,
 	}
 
+	var storeOpts []datastore.Option
+	if enableIPv6 {
+		storeOpts = append(storeOpts, datastore.WithIPv6(containerIPv6.String()))
+	}
+
 	err = store.Add(
 		args.ContainerID,
 		containerIP.String(),
 		cniAddData.Metadata,
-		datastore.WithIPv6(containerIPv6.String()),
+		storeOpts...,
 	)
 
 	if err != nil {
@@ -389,6 +395,8 @@ func cmdDel(args *skel.CmdArgs) error {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "store delete: %s", err)
 	}
+
+	enableIPv6 = enableIPv6 && container.IPv6 != ""
 
 	pluginController, err := newPluginController(cfg, enableIPv6)
 	if err != nil {
