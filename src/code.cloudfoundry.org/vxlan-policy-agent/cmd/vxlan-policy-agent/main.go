@@ -299,9 +299,10 @@ func main() {
 	compositePollCycle := converger.NewCompositePollCycle(pollCycles...)
 
 	policyPoller := &poller.Poller{
-		Logger:          logger,
-		PollInterval:    pollInterval,
-		SingleCycleFunc: compositePollCycle.DoPolicyCycleWithLastUpdatedCheck,
+		Logger:       logger,
+		PollInterval: pollInterval,
+		// Policy cycle is not supported in IPv6?
+		SingleCycleFunc: singlePollCycle.DoPolicyCycleWithLastUpdatedCheck,
 	}
 
 	asgPoller := &poller.Poller{
@@ -314,7 +315,8 @@ func main() {
 
 	forceHandlers := map[string]http.Handler{
 		"/force-policy-poll-cycle": &handlers.ForcePolicyPollCycle{
-			PollCycleFunc: compositePollCycle.DoPolicyCycle,
+			// Policy cycle is not supported in IPv6?
+			PollCycleFunc: singlePollCycle.DoPolicyCycle,
 		},
 		"/force-asgs-for-container": &handlers.ForceASGsForContainer{
 			ASGUpdateFunc:    compositePollCycle.SyncASGsForContainers,
