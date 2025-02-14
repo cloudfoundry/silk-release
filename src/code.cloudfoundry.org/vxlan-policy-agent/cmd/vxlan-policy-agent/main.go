@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -90,7 +91,8 @@ func main() {
 		NetlinkAdapter: &adapter.NetlinkAdapter{},
 	}
 
-	interfaceNames, err := interfaceNameLookup.GetNamesFromIPs(conf.UnderlayIPs)
+	ifAddressesv4 := filterInterfaceAddresses(conf.UnderlayIPs)
+	interfaceNames, err := interfaceNameLookup.GetNamesFromIPs(ifAddressesv4)
 	if err != nil {
 		log.Fatalf("%s: looking up interface names: %s", logPrefix, err)
 	}
@@ -301,7 +303,7 @@ func main() {
 		pollCycles = append(pollCycles, singlePollCycleIPv6)
 	}
 
-	compositePollCycle := converger.NewCompositePollCycle(pollCycles...)
+	policyCycleGroup := converger.NewPollCycleGroup(pollCycles...)
 
 	policyPoller := &poller.Poller{
 		Logger:       logger,
@@ -313,7 +315,7 @@ func main() {
 	asgPoller := &poller.Poller{
 		Logger:          logger,
 		PollInterval:    asgPollInterval,
-		SingleCycleFunc: compositePollCycle.DoASGCycle,
+		SingleCycleFunc: policyCycleGroup.DoASGCycle,
 	}
 
 	forcePolicyPollCycleServerAddress := fmt.Sprintf("%s:%d", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort)
@@ -324,11 +326,11 @@ func main() {
 			PollCycleFunc: singlePollCycle.DoPolicyCycle,
 		},
 		"/force-asgs-for-container": &handlers.ForceASGsForContainer{
-			ASGUpdateFunc:    compositePollCycle.SyncASGsForContainers,
+			ASGUpdateFunc:    policyCycleGroup.SyncASGsForContainers,
 			EnableASGSyncing: conf.EnableASGSyncing,
 		},
 		"/force-orphaned-asgs-cleanup": &handlers.ForceOrphanedASGsCleanup{
-			ASGCleanupFunc:   compositePollCycle.CleanupOrphanedASGsChains,
+			ASGCleanupFunc:   policyCycleGroup.CleanupOrphanedASGsChains,
 			EnableASGSyncing: conf.EnableASGSyncing,
 		},
 	}
@@ -379,4 +381,16 @@ func createForceUpdateServer(listenAddress string, handlers map[string]http.Hand
 	}
 
 	return http_server.New(listenAddress, mux)
+}
+
+func filterInterfaceAddresses(ips []string) []string {
+	var ipsV4 []string
+	for _, ip := range ips {
+		parsed := net.ParseIP(ip)
+		if parsed.To4() != nil {
+			ipsV4 = append(ipsV4, ip)
+		}
+	}
+
+	return ipsV4
 }

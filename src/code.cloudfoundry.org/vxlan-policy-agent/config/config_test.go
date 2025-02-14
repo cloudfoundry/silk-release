@@ -58,6 +58,12 @@ var _ = Describe("Config", func() {
 						"running": ["10.0.1.0/24"],
 						"staging": ["10.0.2.0/24"]
 					},
+					"deny_networks_ipv6": {
+						"always": ["2001::1/120"],
+						"running": ["2001::2/120"],
+						"staging": ["2001::3/120"]
+					},
+					"enable_ipv6": true,
 					"outbound_connections": {
 						"limit": true,
 						"logging": true,
@@ -94,10 +100,14 @@ var _ = Describe("Config", func() {
 				Expect(c.DenyNetworks.Always).To(Equal([]string{"10.0.0.0/24"}))
 				Expect(c.DenyNetworks.Running).To(Equal([]string{"10.0.1.0/24"}))
 				Expect(c.DenyNetworks.Staging).To(Equal([]string{"10.0.2.0/24"}))
+				Expect(c.DenyNetworksIPv6.Always).To(Equal([]string{"2001::1/120"}))
+				Expect(c.DenyNetworksIPv6.Running).To(Equal([]string{"2001::2/120"}))
+				Expect(c.DenyNetworksIPv6.Staging).To(Equal([]string{"2001::3/120"}))
 				Expect(c.OutConn.Limit).To(BeTrue())
 				Expect(c.OutConn.Logging).To(BeTrue())
 				Expect(c.OutConn.Burst).To(Equal(900))
 				Expect(c.OutConn.RatePerSec).To(Equal(100))
+				Expect(c.EnableIPv6).To(BeTrue())
 				Expect(c.OverlayNetwork).To(Equal([]string{overlayNetworkCIDR}))
 			})
 		})

@@ -763,6 +763,7 @@ var _ = Describe("Enforcer", func() {
 			ruleEnforcer  *enforcer.Enforcer
 			desiredChains []enforcer.LiveChain
 		)
+
 		BeforeEach(func() {
 
 			timestamper = &fakes.TimeStamper{}
@@ -873,6 +874,7 @@ var _ = Describe("Enforcer", func() {
 				Expect(err).To(MatchError(fmt.Errorf("listing chains in filter: iptables list error")))
 			})
 		})
+
 		Context("when List returns an error", func() {
 			BeforeEach(func() {
 				iptables.ListReturns([]string{}, fmt.Errorf("iptables list error"))
@@ -883,6 +885,7 @@ var _ = Describe("Enforcer", func() {
 				Expect(err).To(MatchError(fmt.Errorf("deleting chain asg-ccccc01645708469990518 from table filter: list rules for chain: iptables list error")))
 			})
 		})
+
 		Context("when DeleteChain returns an error", func() {
 			BeforeEach(func() {
 				iptables.DeleteChainReturns(fmt.Errorf("iptables delete chain error"))
@@ -893,6 +896,7 @@ var _ = Describe("Enforcer", func() {
 				Expect(err).To(MatchError(fmt.Errorf("deleting chain asg-ccccc01645708469990518 from table filter: delete old chain: iptables delete chain error")))
 			})
 		})
+
 		Context("when DeleteChain returns an error cleaning up a jump target", func() {
 			BeforeEach(func() {
 				iptables.DeleteChainReturnsOnCall(1, fmt.Errorf("iptables delete chain error"))
@@ -903,8 +907,8 @@ var _ = Describe("Enforcer", func() {
 				Expect(err).To(MatchError(MatchRegexp("deleting chain asg-ccccc01645708469990518 from table filter: cleanup jump target log.*chain: iptables delete chain error")))
 			})
 		})
-
 	})
+
 	Describe("RulesWithChain", func() {
 		Describe("Equals", func() {
 			var ruleSet, otherRuleSet enforcer.RulesWithChain

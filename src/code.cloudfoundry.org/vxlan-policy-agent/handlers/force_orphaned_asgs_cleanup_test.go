@@ -2,6 +2,7 @@ package handlers_test
 
 import (
 	"errors"
+	"github.com/hashicorp/go-multierror"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -66,5 +67,23 @@ var _ = Describe("Force Orphanded ASGs Cleanup", func() {
 		handler.ServeHTTP(response, request)
 		Expect(response.Code).To(Equal(500))
 		Expect(io.ReadAll(response.Body)).To(Equal([]byte("failed to cleanup ASGs for container some-guid: failure")))
+	})
+
+	Context("when the ASGCleanupFunc returns multierror", func() {
+		BeforeEach(func() {
+			handler.ASGCleanupFunc = func(container string) error {
+				err1 := errors.New("failure1")
+				err2 := errors.New("failure2")
+				multiErr := multierror.Append(err1, err2)
+				return multiErr
+			}
+
+			handler.ServeHTTP(response, request)
+		})
+
+		It("returns 500 response with all errors", func() {
+			Expect(response.Code).To(Equal(500))
+			Expect(io.ReadAll(response.Body)).To(Equal([]byte("failed to cleanup ASGs for container some-guid: 2 errors occurred:\n\t* failure1\n\t* failure2\n\n")))
+		})
 	})
 })

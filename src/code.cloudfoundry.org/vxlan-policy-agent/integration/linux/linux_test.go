@@ -134,6 +134,11 @@ var _ = Describe("VXLAN Policy Agent", func() {
 		runIptablesCommandOnTable("nat", "F")
 		runIptablesCommandOnTable("nat", "X")
 
+		runIp6tablesCommandOnTable("filter", "F")
+		runIp6tablesCommandOnTable("filter", "X")
+		runIp6tablesCommandOnTable("nat", "F")
+		runIp6tablesCommandOnTable("nat", "X")
+
 		Expect(fakeMetron.Close()).To(Succeed())
 	})
 
@@ -150,6 +155,25 @@ var _ = Describe("VXLAN Policy Agent", func() {
 	}
 
 	Describe("policy agent", func() {
+		setNetOutIPv4 := func() {
+			runIptablesCommand("-N", "netout--some-handle")
+			runIptablesCommand("-A", "netout--some-handle", "-p", "icmp", "-m", "iprange", "--dst-range", "0.0.0.0-255.255.255.255", "-m", "icmp", "--icmp-type", "255/255", "-j", "ACCEPT")
+			runIptablesCommand(strings.Split("-A netout--some-handle -m state --state RELATED,ESTABLISHED -j ACCEPT", " ")...)
+			runIptablesCommand(strings.Split("-A netout--some-handle -p tcp -m state --state INVALID -j DROP", " ")...)
+			runIptablesCommand(strings.Split("-A netout--some-handle -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT", " ")...)
+			runIptablesCommand(strings.Split("-A netout--some-handle -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT", " ")...)
+			runIptablesCommand(strings.Split("-A netout--some-handle -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT", " ")...)
+			runIptablesCommand(strings.Split("-A netout--some-handle -j REJECT --reject-with icmp-port-unreachable", " ")...)
+
+			Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -m state --state RELATED,ESTABLISHED -j ACCEPT`))
+			Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -p tcp -m state --state INVALID -j DROP`))
+			Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT`))
+			Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
+			Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
+			Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j REJECT --reject-with icmp-port-unreachable`))
+			Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type any -j ACCEPT`))
+		}
+
 		Context("when underlay interface can't be found", func() {
 			BeforeEach(func() {
 				conf.UnderlayIPs = []string{"meow"}
@@ -342,22 +366,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 
 				Context("when netout chain exists", func() {
 					BeforeEach(func() {
-						runIptablesCommand("-N", "netout--some-handle")
-						runIptablesCommand("-A", "netout--some-handle", "-p", "icmp", "-m", "iprange", "--dst-range", "0.0.0.0-255.255.255.255", "-m", "icmp", "--icmp-type", "255/255", "-j", "ACCEPT")
-						runIptablesCommand(strings.Split("-A netout--some-handle -m state --state RELATED,ESTABLISHED -j ACCEPT", " ")...)
-						runIptablesCommand(strings.Split("-A netout--some-handle -p tcp -m state --state INVALID -j DROP", " ")...)
-						runIptablesCommand(strings.Split("-A netout--some-handle -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT", " ")...)
-						runIptablesCommand(strings.Split("-A netout--some-handle -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT", " ")...)
-						runIptablesCommand(strings.Split("-A netout--some-handle -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT", " ")...)
-						runIptablesCommand(strings.Split("-A netout--some-handle -j REJECT --reject-with icmp-port-unreachable", " ")...)
-
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -m state --state RELATED,ESTABLISHED -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -p tcp -m state --state INVALID -j DROP`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j REJECT --reject-with icmp-port-unreachable`))
-						Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type any -j ACCEPT`))
+						setNetOutIPv4()
 					})
 
 					It("sets rules for asgs", func() {
@@ -535,6 +544,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 				Expect(iptablesFilterRules()).To(ContainSubstring(`-d 10.255.100.21/32 -p udp -m udp --dport 7000:8000 -m mark --mark 0xd -m comment --comment "src:yet-another-app-guid_dst:some-very-very-long-app-guid" -j ACCEPT`))
 			})
 		})
+
 		Context("when requests to the policy server time out", func() {
 			BeforeEach(func() {
 				conf.ClientTimeoutSeconds = 1
@@ -552,6 +562,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 				session.Kill()
 			})
 		})
+
 		Context("when vxlan policy agent is deployed with iptables logging enabled", func() {
 			BeforeEach(func() {
 				conf.IPTablesLogging = true
@@ -580,6 +591,234 @@ var _ = Describe("VXLAN Policy Agent", func() {
 
 				By("checking that the logging rules are present")
 				Eventually(iptablesFilterRules, "2s", "0.5s").Should(MatchRegexp(PolicyRulesRegexp(LoggingEnabled)))
+			})
+		})
+
+		Context("when IPv6 is enabled", func() {
+			BeforeEach(func() {
+				conf.EnableIPv6 = true
+			})
+
+			Context("when the policy server is up and running", func() {
+				getIPTablesLogging := func() (bool, error) {
+					endpoint := fmt.Sprintf("http://%s:%d/iptables-c2c-logging", conf.DebugServerHost, conf.DebugServerPort)
+					resp, err := http.DefaultClient.Get(endpoint)
+					if err != nil {
+						return false, err
+					}
+					defer resp.Body.Close()
+					Expect(resp.StatusCode).To(Equal(http.StatusOK))
+					var respStruct struct {
+						Enabled bool `json:"enabled"`
+					}
+					Expect(json.NewDecoder(resp.Body).Decode(&respStruct)).To(Succeed())
+					return respStruct.Enabled, nil
+				}
+
+				JustBeforeEach(func() {
+					mockPolicyServer = startServer(serverListenAddr, serverTLSConfig)
+					session = startAgent(paths.VxlanPolicyAgentPath, configFilePath)
+
+					Eventually(func() error {
+						_, err := getIPTablesLogging()
+						return err
+					}, "5s").Should(Succeed()) // wait until vxlan-policy-agent debug server is up
+				})
+
+				It("should boot and gracefully terminate", func() {
+					Consistently(session).ShouldNot(gexec.Exit())
+					session.Interrupt()
+					Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit())
+				})
+
+				Describe("asgs", func() {
+					BeforeEach(func() {
+						conf.ASGPollInterval = 1
+						conf.EnableASGSyncing = true
+					})
+
+					Context("when netout chain does not exist", func() {
+						It("does not create asg chain", func() {
+							Eventually(ip6tablesFilterRules, "4s", "1s").ShouldNot(MatchRegexp(`-N netout--some-handle`))
+							Consistently(ip6tablesFilterRules, "2s", "1s").ShouldNot(MatchRegexp(`-A netout--some-handle -j asg-.+`))
+							Consistently(ip6tablesFilterRules, "2s", "1s").ShouldNot(MatchRegexp(`-A FORWARD -s \d+\.\d+\.\d+.\d+/\d+ -o eth0 -j netout--some-handle`))
+						})
+
+						Context("when there is an asg chain", func() {
+							BeforeEach(func() {
+								runIp6tablesCommand("-N", enforcer.ASGChainName("some-handle"))
+							})
+
+							It("forcing orphaned chains cleanup deletes the chain", func() {
+								Eventually(func() (int, error) {
+									resp, err := http.Get(fmt.Sprintf("http://%s:%d/force-orphaned-asgs-cleanup?container=some-handle", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort))
+									if err != nil {
+										return -1, err
+									}
+									return resp.StatusCode, nil
+								}).Should(Equal(http.StatusOK))
+
+								Eventually(ip6tablesFilterRules, "4s", "1s").ShouldNot(MatchRegexp(`-N asg-.+`))
+								Eventually(ip6tablesFilterRules, "4s", "1s").ShouldNot(MatchRegexp(`-A asg-.+`))
+							})
+						})
+					})
+
+					Context("when netout chain exists", func() {
+						BeforeEach(func() {
+							setNetOutIPv4()
+
+							runIp6tablesCommand("-N", "netout--some-handle")
+							runIp6tablesCommand(strings.Split("-A netout--some-handle -m state --state RELATED,ESTABLISHED -j ACCEPT", " ")...)
+							runIp6tablesCommand(strings.Split("-A netout--some-handle -p tcp -m state --state INVALID -j DROP", " ")...)
+							runIp6tablesCommand(strings.Split("-A netout--some-handle -p icmpv6 -m iprange --dst-range 2000::-2999:: -m icmpv6 --icmpv6-type 255/255 -j ACCEPT", " ")...)
+							runIp6tablesCommand(strings.Split("-A netout--some-handle -p icmpv6 -m iprange --dst-range 2001::-2001::ff -m icmpv6 --icmpv6-type 0/0 -j ACCEPT", " ")...)
+							runIp6tablesCommand(strings.Split("-A netout--some-handle -m iprange --dst-range 2006::-2007:: -j ACCEPT", " ")...)
+							runIp6tablesCommand(strings.Split("-A netout--some-handle -m iprange --dst-range 2005::-2006:: -j ACCEPT", " ")...)
+							runIp6tablesCommand(strings.Split("-A netout--some-handle -j REJECT --reject-with icmp6-port-unreachable", " ")...)
+
+							Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -m state --state RELATED,ESTABLISHED -j ACCEPT`))
+							Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -p tcp -m state --state INVALID -j DROP`))
+							Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -p ipv6-icmp -m iprange --dst-range 2000::-2999:: -m icmp6 --icmpv6-type 255/255 -j ACCEPT`))
+							Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -p ipv6-icmp -m iprange --dst-range 2001::-2001::ff -m icmp6 --icmpv6-type 0/0 -j ACCEPT`))
+							Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 2006::-2007:: -j ACCEPT`))
+							Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 2005::-2006:: -j ACCEPT`))
+							Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j REJECT --reject-with icmp6-port-unreachable`))
+						})
+
+						It("sets rules for asgs", func() {
+							Eventually(ip6tablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-.+ -m state --state RELATED,ESTABLISHED -j ACCEPT`))
+							Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A asg-.+ -p tcp -m state --state INVALID -j DROP`))
+							Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j asg-.+`))
+							Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A asg-.+ -m iprange --dst-range 2001::-2001::ff -m icmp6 --icmpv6-type 0/0 -j ACCEPT`)) //
+							Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A asg-.+ -m iprange --dst-range 2006::-2007:: -j ACCEPT`))
+							Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A asg-.+ -m iprange --dst-range 2005::-2006:: -j ACCEPT`))
+							Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A asg-.+ -j REJECT --reject-with icmp6-port-unreachable`))
+						})
+
+						It("cleans up the parent asg keeping the reject rule", func() {
+							Eventually(ip6tablesFilterRules, "4s", "1s").ShouldNot(MatchRegexp(`-A netout--some-handle -m state --state RELATED,ESTABLISHED -j ACCEPT`))
+							Expect(ip6tablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -p tcp -m state --state INVALID -j DROP`))
+							Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j asg-.+`))
+							Expect(ip6tablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -p ipv6-icmp -m iprange --dst-range 2000::-2999:: -m icmp6 --icmpv6-type 255/255 -j ACCEPT`))
+							Expect(ip6tablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -p ipv6-icmp -m iprange --dst-range 2001::-2001::ff -m icmp6 --icmpv6-type 0/0 -j ACCEPT`))
+							Expect(ip6tablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 2006::-2007:: -j ACCEPT`))
+							Expect(ip6tablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 2005::-2006:: -j ACCEPT`))
+							Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j REJECT --reject-with icmp6-port-unreachable`))
+						})
+
+						Context("when the container is staging", func() {
+							BeforeEach(func() {
+								containerMetadata := `{
+							"some-handle": {
+								"handle":"some-handle",
+								"ip":"10.255.100.21",
+								"ipv6":"2001::db8:1",
+								"metadata": {
+									"policy_group_id":"some-very-very-long-app-guid",
+									"space_id": "some-other-space",
+									"ports": "8080, 9090",
+									"container_workload": "staging"
+								}
+							}
+						}`
+								Expect(os.WriteFile(datastorePath, []byte(containerMetadata), os.ModePerm))
+								runIp6tablesCommand("-N", "netout--some-handle--log")
+							})
+
+							It("enforces the ASG policies for staging", func() {
+								Eventually(ip6tablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-.+ -p tcp -m iprange --dst-range 2901::-2901::ff -m tcp --dport 443 -g netout--some-handle--log`))
+								Consistently(ip6tablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-.+ -p tcp -m iprange --dst-range 2901::-2901::ff -m tcp --dport 80 -g netout--some-handle--log`))
+								Consistently(ip6tablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-.+ -m iprange --dst-range 2006::-2007:: -j ACCEPT`))
+								Consistently(ip6tablesFilterRules, "2s", "1s").Should(MatchRegexp(`-A asg-.+ -m iprange --dst-range 2005::-2006:: -j ACCEPT`))
+							})
+						})
+
+						Describe("the force asgs poll cycle endpoint", func() {
+							BeforeEach(func() {
+								conf.ASGPollInterval = math.MaxInt32
+							})
+
+							It("should cause iptables to be updated", func() {
+								Eventually(func() (int, error) {
+									resp, err := http.Get(fmt.Sprintf("http://%s:%d/force-asgs-for-container?container=some-handle", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort))
+									if err != nil {
+										return -1, err
+									}
+									return resp.StatusCode, nil
+								}).Should(Equal(http.StatusOK))
+
+								Eventually(ip6tablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-.+ -m state --state RELATED,ESTABLISHED -j ACCEPT`))
+								Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A asg-.+ -p tcp -m state --state INVALID -j DROP`))
+								Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j asg-.+`))
+								Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A asg-.+ -m iprange --dst-range 2001::-2001::ff -m icmp6 --icmpv6-type 0/0 -j ACCEPT`)) //
+								Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A asg-.+ -m iprange --dst-range 2006::-2007:: -j ACCEPT`))
+								Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A asg-.+ -m iprange --dst-range 2005::-2006:: -j ACCEPT`))
+								Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A asg-.+ -j REJECT --reject-with icmp6-port-unreachable`))
+							})
+
+							Context("when EnableASGSyncing is disabled", func() {
+								BeforeEach(func() {
+									conf.EnableASGSyncing = false
+								})
+
+								It("Doesn't update iptables", func() {
+									Eventually(func() (int, error) {
+										resp, err := http.Get(fmt.Sprintf("http://%s:%d/force-policy-poll-cycle", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort))
+										if err != nil {
+											return -1, err
+										}
+										return resp.StatusCode, nil
+									}).Should(Equal(http.StatusOK))
+
+									Eventually(ip6tablesFilterRules, "4s", "1s").ShouldNot(MatchRegexp(`-A asg-.+ -m state --state RELATED,ESTABLISHED -j ACCEPT`))
+									Expect(ip6tablesFilterRules()).NotTo(MatchRegexp(`-A asg-.+ -p tcp -m state --state INVALID -j DROP`))
+									Expect(ip6tablesFilterRules()).NotTo(MatchRegexp(`-A netout--some-handle -j asg-.+`))
+									Expect(ip6tablesFilterRules()).NotTo(MatchRegexp(`-A asg-.+ -m iprange --dst-range 2001::-2001::ff -m icmp6 --icmpv6-type 0/0 -j ACCEPT`)) //
+									Expect(ip6tablesFilterRules()).NotTo(MatchRegexp(`-A asg-.+ -m iprange --dst-range 2006::-2007:: -j ACCEPT`))
+									Expect(ip6tablesFilterRules()).NotTo(MatchRegexp(`-A asg-.+ -m iprange --dst-range 2005::-2006:: -j ACCEPT`))
+									Expect(ip6tablesFilterRules()).NotTo(MatchRegexp(`-A asg-.+ -j REJECT --reject-with icmp6-port-unreachable`))
+
+								})
+							})
+						})
+
+						Describe("the force orphaned asgs cleanup endpoint", func() {
+							It("should not delete the asg chain referenced in netout chain", func() {
+								Eventually(ip6tablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A asg-.+ -m state --state RELATED,ESTABLISHED -j ACCEPT`))
+
+								Eventually(func() (int, error) {
+									resp, err := http.Get(fmt.Sprintf("http://%s:%d/force-orphaned-asgs-cleanup?container=some-handle", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort))
+									if err != nil {
+										return -1, err
+									}
+									return resp.StatusCode, nil
+								}).Should(Equal(http.StatusInternalServerError))
+
+								Consistently(ip6tablesFilterRules, "4s", "1s").Should(MatchRegexp(`-A netout--some-handle -j asg-.+`))
+							})
+
+							Context("when EnableASGSyncing is disabled", func() {
+								BeforeEach(func() {
+									conf.EnableASGSyncing = false
+									runIp6tablesCommand("-N", enforcer.ASGChainName("some-handle"))
+								})
+
+								It("doesn't clean up iptables", func() {
+									Eventually(func() (int, error) {
+										resp, err := http.Get(fmt.Sprintf("http://%s:%d/force-orphaned-asgs-cleanup?container=some-handle", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort))
+										if err != nil {
+											return -1, err
+										}
+										return resp.StatusCode, nil
+									}).Should(Equal(http.StatusMethodNotAllowed))
+
+									Consistently(ip6tablesFilterRules, "4s", "1s").Should(MatchRegexp(`-N asg-.+`))
+								})
+							})
+						})
+					})
+				})
 			})
 		})
 	})
@@ -654,12 +893,28 @@ func iptablesFilterRules() string {
 	return runIptablesCommandOnTable("filter", "S")
 }
 
+func ip6tablesFilterRules() string {
+	return runIp6tablesCommandOnTable("filter", "S")
+}
+
 func runIptablesCommandOnTable(table, flag string) string {
 	return runIptablesCommand("-w", "-t", table, "-"+flag)
 }
 
+func runIp6tablesCommandOnTable(table, flag string) string {
+	return runIp6tablesCommand("-w", "-t", table, "-"+flag)
+}
+
 func runIptablesCommand(args ...string) string {
 	iptCmd := exec.Command("iptables", args...)
+	iptablesSession, err := gexec.Start(iptCmd, GinkgoWriter, GinkgoWriter)
+	Expect(err).NotTo(HaveOccurred())
+	Eventually(iptablesSession, DEFAULT_TIMEOUT).Should(gexec.Exit(0))
+	return string(iptablesSession.Out.Contents())
+}
+
+func runIp6tablesCommand(args ...string) string {
+	iptCmd := exec.Command("ip6tables", args...)
 	iptablesSession, err := gexec.Start(iptCmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).NotTo(HaveOccurred())
 	Eventually(iptablesSession, DEFAULT_TIMEOUT).Should(gexec.Exit(0))
@@ -728,6 +983,17 @@ func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 						"some-other-space"
 					  ],
 					  "running_space_guids": []
+					},
+					{
+					  "guid": "sg-ipv6-2-guid",
+					  "name": "ipv6-security-group-2",
+					  "rules": "[{\"protocol\":\"tcp\",\"destination\":\"2901::/120\",\"ports\":\"80,443\",\"type\":0,\"code\":0,\"description\":\"Allow http and https traffic to ZoneA\",\"log\":true}]",
+					  "staging_default": false,
+					  "running_default": false,
+					  "staging_space_guids": [
+						"some-other-space"
+					  ],
+					  "running_space_guids": []
 					}
 				  ]
 				}`)))
@@ -739,7 +1005,7 @@ func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 					{
 					  "guid": "public-asg-guid",
 					  "name": "public_networks",
-					  "rules": "[{\"protocol\":\"all\",\"destination\":\"0.0.0.0-9.255.255.255\",\"ports\":\"\",\"type\":0,\"code\":0,\"description\":\"\",\"log\":false},{\"protocol\":\"all\",\"destination\":\"11.0.0.0-169.253.255.255\",\"ports\":\"\",\"type\":0,\"code\":0,\"description\":\"\",\"log\":false}]",
+					  "rules": "[{\"protocol\":\"all\",\"destination\":\"0.0.0.0-9.255.255.255\",\"ports\":\"\",\"type\":0,\"code\":0,\"description\":\"\",\"log\":false},{\"protocol\":\"all\",\"destination\":\"11.0.0.0-169.253.255.255\",\"ports\":\"\",\"type\":0,\"code\":0,\"description\":\"\",\"log\":false},{\"protocol\":\"all\",\"destination\":\"2005::-2006::\",\"ports\":\"\",\"type\":0,\"code\":0,\"description\":\"\",\"log\":false},{\"protocol\":\"all\",\"destination\":\"2006::-2007::\",\"ports\":\"\",\"type\":0,\"code\":0,\"description\":\"\",\"log\":false}]",
 					  "staging_default": true,
 					  "running_default": true,
 					  "staging_space_guids": [],
@@ -749,6 +1015,17 @@ func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 					  "guid": "sg-1-guid",
 					  "name": "security-group-1",
 					  "rules": "[{\"protocol\":\"icmp\",\"destination\":\"0.0.0.0/0\",\"ports\":\"\",\"type\":0,\"code\":0,\"description\":\"\",\"log\":false}]",
+					  "staging_default": false,
+					  "running_default": false,
+					  "staging_space_guids": [],
+					  "running_space_guids": [
+						"some-space"
+					  ]
+					},
+					{
+					  "guid": "sg-ipv6-1-guid",
+					  "name": "ipv6-security-group-1",
+					  "rules": "[{\"protocol\":\"icmpv6\",\"destination\":\"2001::/120\",\"ports\":\"\",\"type\":0,\"code\":0,\"description\":\"\",\"log\":false}]",
 					  "staging_default": false,
 					  "running_default": false,
 					  "staging_space_guids": [],
@@ -782,7 +1059,7 @@ func stopServer(server ifrit.Process) {
 		return
 	}
 	server.Signal(os.Interrupt)
-	Eventually(server.Wait()).Should(Receive())
+	Eventually(server.Wait(), DEFAULT_TIMEOUT).Should(Receive())
 }
 
 const (

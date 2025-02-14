@@ -1322,6 +1322,21 @@ var _ = Describe("CniWrapperPlugin", func() {
 				}))
 			})
 
+			It("writes default deny forward chain rules to prevent ingress", func() {
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+
+				By("checking that the forward chain jumps to the container's overlay chain")
+				Expect(AllIP6TablesRules("filter")).To(ContainElement("-A FORWARD -j " + overlayChainName))
+
+				By("checking that the default rules in the container's overlay chain are created")
+				Expect(AllIP6TablesRules("filter")).To(gomegamatchers.ContainSequence([]string{
+					"-A " + overlayChainName + " -d 2001:db8::1/128 -m state --state RELATED,ESTABLISHED -j ACCEPT",
+					"-A " + overlayChainName + " -d 2001:db8::1/128 -j REJECT --reject-with icmp6-port-unreachable",
+				}))
+			})
+
 			Context("when the policy agent asg updater returns 200 (Dynamic ASGs enabled)", func() {
 				It("does not add additional iptables rules to the netout-chain", func() {
 					policyAgentServer.ASGReturnCode = 200

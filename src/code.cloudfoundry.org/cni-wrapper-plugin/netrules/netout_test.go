@@ -455,7 +455,7 @@ var _ = Describe("Netout", func() {
 				err := netOut.Initialize()
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(chainNamer.PrefixCallCount()).To(Equal(2))
+				Expect(chainNamer.PrefixCallCount()).To(Equal(3))
 				prefix, handle := chainNamer.PrefixArgsForCall(0)
 				Expect(prefix).To(Equal("input"))
 				Expect(handle).To(Equal("some-container-handle"))
@@ -464,12 +464,16 @@ var _ = Describe("Netout", func() {
 				Expect(prefix).To(Equal("netout"))
 				Expect(handle).To(Equal("some-container-handle"))
 
+				prefix, handle = chainNamer.PrefixArgsForCall(2)
+				Expect(prefix).To(Equal("overlay"))
+				Expect(handle).To(Equal("some-container-handle"))
+
 				Expect(chainNamer.PostfixCallCount()).To(Equal(1))
 				body, suffix := chainNamer.PostfixArgsForCall(0)
 				Expect(body).To(Equal("netout-some-container-handle"))
 				Expect(suffix).To(Equal("log"))
 
-				Expect(ipTables.NewChainCallCount()).To(Equal(3))
+				Expect(ipTables.NewChainCallCount()).To(Equal(4))
 				table, chain := ipTables.NewChainArgsForCall(0)
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("input-some-container-handle"))
@@ -478,6 +482,9 @@ var _ = Describe("Netout", func() {
 				Expect(chain).To(Equal("netout-some-container-handle"))
 				table, chain = ipTables.NewChainArgsForCall(2)
 				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("overlay-some-container-handle"))
+				table, chain = ipTables.NewChainArgsForCall(3)
+				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("some-other-chain-name"))
 			})
 
@@ -485,7 +492,7 @@ var _ = Describe("Netout", func() {
 				err := netOut.Initialize()
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+				Expect(ipTables.BulkAppendCallCount()).To(Equal(7))
 				table, chain, rulespec := ipTables.BulkAppendArgsForCall(0)
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("INPUT"))
@@ -503,20 +510,37 @@ var _ = Describe("Netout", func() {
 
 				table, chain, rulespec = ipTables.BulkAppendArgsForCall(2)
 				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("FORWARD"))
+				Expect(rulespec).To(Equal([]rules.IPTablesRule{{"--jump", "overlay-some-container-handle"}}))
+
+				table, chain, rulespec = ipTables.BulkAppendArgsForCall(3)
+				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("input-some-container-handle"))
 				Expect(rulespec).To(Equal([]rules.IPTablesRule{
 					{"-m", "state", "--state", "RELATED,ESTABLISHED", "--jump", "ACCEPT"},
 					{"--jump", "REJECT", "--reject-with", "icmp6-port-unreachable"},
 				}))
 
-				table, chain, rulespec = ipTables.BulkAppendArgsForCall(3)
+				table, chain, rulespec = ipTables.BulkAppendArgsForCall(4)
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("netout-some-container-handle"))
 				Expect(rulespec).To(Equal([]rules.IPTablesRule{
 					{"--jump", "REJECT", "--reject-with", "icmp6-port-unreachable"},
 				}))
 
-				table, chain, rulespec = ipTables.BulkAppendArgsForCall(4)
+				table, chain, rulespec = ipTables.BulkAppendArgsForCall(5)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("overlay-some-container-handle"))
+				Expect(rulespec).To(Equal([]rules.IPTablesRule{
+					{"-d", "2001::1",
+						"-m", "state", "--state", "RELATED,ESTABLISHED",
+						"--jump", "ACCEPT"},
+					{"-d", "2001::1",
+						"--jump", "REJECT",
+						"--reject-with", "icmp6-port-unreachable"},
+				}))
+
+				table, chain, rulespec = ipTables.BulkAppendArgsForCall(6)
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("some-other-chain-name"))
 				Expect(rulespec).To(Equal([]rules.IPTablesRule{
@@ -535,12 +559,26 @@ var _ = Describe("Netout", func() {
 					netOut.C2CLogging = true
 				})
 
-				It("does not write a log rule for denies", func() {
+				It("writes a log rule for denies", func() {
 					err := netOut.Initialize()
 					Expect(err).NotTo(HaveOccurred())
 
-					// For IPv6 no overlay rules will be created, thus 2 fewer calls to BulkAppend
-					Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+					Expect(ipTables.BulkAppendCallCount()).To(Equal(7))
+
+					table, chain, rulespec := ipTables.BulkAppendArgsForCall(5)
+					Expect(table).To(Equal("filter"))
+					Expect(chain).To(Equal("overlay-some-container-handle"))
+					Expect(rulespec).To(Equal([]rules.IPTablesRule{
+						{"-d", "2001::1",
+							"-m", "state", "--state", "RELATED,ESTABLISHED",
+							"--jump", "ACCEPT"},
+						{"-d", "2001::1",
+							"-m", "limit", "--limit", "3/s", "--limit-burst", "3",
+							"--jump", "LOG", "--log-prefix", `"DENY_C2C_some-container-hand "`},
+						{"-d", "2001::1",
+							"--jump", "REJECT",
+							"--reject-with", "icmp6-port-unreachable"},
+					}))
 				})
 			})
 
@@ -552,9 +590,9 @@ var _ = Describe("Netout", func() {
 				It("creates rules for the dns servers", func() {
 					err := netOut.Initialize()
 					Expect(err).NotTo(HaveOccurred())
-					Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+					Expect(ipTables.BulkAppendCallCount()).To(Equal(7))
 
-					table, chain, rulespec := ipTables.BulkAppendArgsForCall(2)
+					table, chain, rulespec := ipTables.BulkAppendArgsForCall(3)
 					Expect(table).To(Equal("filter"))
 					Expect(chain).To(Equal("input-some-container-handle"))
 					Expect(rulespec).To(Equal([]rules.IPTablesRule{
@@ -577,9 +615,9 @@ var _ = Describe("Netout", func() {
 					It("creates rules for both dns servers and the host TCP services", func() {
 						err := netOut.Initialize()
 						Expect(err).NotTo(HaveOccurred())
-						Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+						Expect(ipTables.BulkAppendCallCount()).To(Equal(7))
 
-						table, chain, rulespec := ipTables.BulkAppendArgsForCall(2)
+						table, chain, rulespec := ipTables.BulkAppendArgsForCall(3)
 						Expect(table).To(Equal("filter"))
 						Expect(chain).To(Equal("input-some-container-handle"))
 						Expect(rulespec).To(Equal([]rules.IPTablesRule{
@@ -606,9 +644,9 @@ var _ = Describe("Netout", func() {
 					It("creates rules for both dns servers and the host UDP services", func() {
 						err := netOut.Initialize()
 						Expect(err).NotTo(HaveOccurred())
-						Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+						Expect(ipTables.BulkAppendCallCount()).To(Equal(7))
 
-						table, chain, rulespec := ipTables.BulkAppendArgsForCall(2)
+						table, chain, rulespec := ipTables.BulkAppendArgsForCall(3)
 						Expect(table).To(Equal("filter"))
 						Expect(chain).To(Equal("input-some-container-handle"))
 						Expect(rulespec).To(Equal([]rules.IPTablesRule{
@@ -636,9 +674,9 @@ var _ = Describe("Netout", func() {
 					It("creates rules for dns servers, the host TCP services, and the host UDP services", func() {
 						err := netOut.Initialize()
 						Expect(err).NotTo(HaveOccurred())
-						Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+						Expect(ipTables.BulkAppendCallCount()).To(Equal(7))
 
-						table, chain, rulespec := ipTables.BulkAppendArgsForCall(2)
+						table, chain, rulespec := ipTables.BulkAppendArgsForCall(3)
 						Expect(table).To(Equal("filter"))
 						Expect(chain).To(Equal("input-some-container-handle"))
 						Expect(rulespec).To(Equal([]rules.IPTablesRule{
@@ -669,9 +707,9 @@ var _ = Describe("Netout", func() {
 				It("creates rules for the host TCP services", func() {
 					err := netOut.Initialize()
 					Expect(err).NotTo(HaveOccurred())
-					Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+					Expect(ipTables.BulkAppendCallCount()).To(Equal(7))
 
-					table, chain, rulespec := ipTables.BulkAppendArgsForCall(2)
+					table, chain, rulespec := ipTables.BulkAppendArgsForCall(3)
 					Expect(table).To(Equal("filter"))
 					Expect(chain).To(Equal("input-some-container-handle"))
 					Expect(rulespec).To(Equal([]rules.IPTablesRule{
@@ -707,9 +745,9 @@ var _ = Describe("Netout", func() {
 				It("creates rules for the host UDP services", func() {
 					err := netOut.Initialize()
 					Expect(err).NotTo(HaveOccurred())
-					Expect(ipTables.BulkAppendCallCount()).To(Equal(5))
+					Expect(ipTables.BulkAppendCallCount()).To(Equal(7))
 
-					table, chain, rulespec := ipTables.BulkAppendArgsForCall(2)
+					table, chain, rulespec := ipTables.BulkAppendArgsForCall(3)
 					Expect(table).To(Equal("filter"))
 					Expect(chain).To(Equal("input-some-container-handle"))
 					Expect(rulespec).To(Equal([]rules.IPTablesRule{
@@ -751,9 +789,9 @@ var _ = Describe("Netout", func() {
 					It("creates the rate limit logging chain", func() {
 						err := netOut.Initialize()
 						Expect(err).NotTo(HaveOccurred())
-						Expect(ipTables.NewChainCallCount()).To(Equal(4))
+						Expect(ipTables.NewChainCallCount()).To(Equal(5))
 
-						table, chain := ipTables.NewChainArgsForCall(3)
+						table, chain := ipTables.NewChainArgsForCall(4)
 						Expect(table).To(Equal("filter"))
 						Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
 					})
@@ -768,7 +806,7 @@ var _ = Describe("Netout", func() {
 						err := netOut.Initialize()
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(ipTables.NewChainCallCount()).To(Equal(3))
+						Expect(ipTables.NewChainCallCount()).To(Equal(4))
 					})
 				})
 			})
@@ -999,7 +1037,7 @@ var _ = Describe("Netout", func() {
 				err := netOut.Cleanup()
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(chainNamer.PrefixCallCount()).To(Equal(2))
+				Expect(chainNamer.PrefixCallCount()).To(Equal(3))
 				prefix, handle := chainNamer.PrefixArgsForCall(0)
 				Expect(prefix).To(Equal("input"))
 				Expect(handle).To(Equal("some-container-handle"))
@@ -1008,12 +1046,16 @@ var _ = Describe("Netout", func() {
 				Expect(prefix).To(Equal("netout"))
 				Expect(handle).To(Equal("some-container-handle"))
 
+				prefix, handle = chainNamer.PrefixArgsForCall(2)
+				Expect(prefix).To(Equal("overlay"))
+				Expect(handle).To(Equal("some-container-handle"))
+
 				Expect(chainNamer.PostfixCallCount()).To(Equal(1))
 				body, suffix := chainNamer.PostfixArgsForCall(0)
 				Expect(body).To(Equal("netout-some-container-handle"))
 				Expect(suffix).To(Equal("log"))
 
-				Expect(ipTables.DeleteCallCount()).To(Equal(3))
+				Expect(ipTables.DeleteCallCount()).To(Equal(4))
 				table, chain, extraArgs := ipTables.DeleteArgsForCall(0)
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("INPUT"))
@@ -1028,13 +1070,18 @@ var _ = Describe("Netout", func() {
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("FORWARD"))
 				Expect(extraArgs).To(Equal(rules.IPTablesRule{"-s", "2001::1", "-o", "eth0", "--jump", "netout-some-container-handle"}))
+
+				table, chain, extraArgs = ipTables.DeleteArgsForCall(3)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("FORWARD"))
+				Expect(extraArgs).To(Equal(rules.IPTablesRule{"--jump", "overlay-some-container-handle"}))
 			})
 
 			It("clears the container chain", func() {
 				err := netOut.Cleanup()
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(ipTables.ClearChainCallCount()).To(Equal(3))
+				Expect(ipTables.ClearChainCallCount()).To(Equal(4))
 				table, chain := ipTables.ClearChainArgsForCall(0)
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("input-some-container-handle"))
@@ -1045,6 +1092,10 @@ var _ = Describe("Netout", func() {
 
 				table, chain = ipTables.ClearChainArgsForCall(2)
 				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("overlay-some-container-handle"))
+
+				table, chain = ipTables.ClearChainArgsForCall(3)
+				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("some-other-chain-name"))
 			})
 
@@ -1052,7 +1103,7 @@ var _ = Describe("Netout", func() {
 				err := netOut.Cleanup()
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(ipTables.DeleteChainCallCount()).To(Equal(3))
+				Expect(ipTables.DeleteChainCallCount()).To(Equal(4))
 				table, chain := ipTables.DeleteChainArgsForCall(0)
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("input-some-container-handle"))
@@ -1062,6 +1113,10 @@ var _ = Describe("Netout", func() {
 				Expect(chain).To(Equal("netout-some-container-handle"))
 
 				table, chain = ipTables.DeleteChainArgsForCall(2)
+				Expect(table).To(Equal("filter"))
+				Expect(chain).To(Equal("overlay-some-container-handle"))
+
+				table, chain = ipTables.DeleteChainArgsForCall(3)
 				Expect(table).To(Equal("filter"))
 				Expect(chain).To(Equal("some-other-chain-name"))
 			})
@@ -1080,9 +1135,9 @@ var _ = Describe("Netout", func() {
 					It("additionally clears the rate limit logging chain", func() {
 						err := netOut.Cleanup()
 						Expect(err).NotTo(HaveOccurred())
-						Expect(ipTables.ClearChainCallCount()).To(Equal(4))
+						Expect(ipTables.ClearChainCallCount()).To(Equal(5))
 
-						table, chain := ipTables.ClearChainArgsForCall(3)
+						table, chain := ipTables.ClearChainArgsForCall(4)
 						Expect(table).To(Equal("filter"))
 						Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
 					})
@@ -1090,9 +1145,9 @@ var _ = Describe("Netout", func() {
 					It("additionally deletes the rate limit logging chain", func() {
 						err := netOut.Cleanup()
 						Expect(err).NotTo(HaveOccurred())
-						Expect(ipTables.DeleteChainCallCount()).To(Equal(4))
+						Expect(ipTables.DeleteChainCallCount()).To(Equal(5))
 
-						table, chain := ipTables.DeleteChainArgsForCall(3)
+						table, chain := ipTables.DeleteChainArgsForCall(4)
 						Expect(table).To(Equal("filter"))
 						Expect(chain).To(Equal("netout-some-container-handle-rl-log"))
 					})
@@ -1107,8 +1162,8 @@ var _ = Describe("Netout", func() {
 						err := netOut.Cleanup()
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(ipTables.ClearChainCallCount()).To(Equal(3))
-						Expect(ipTables.DeleteChainCallCount()).To(Equal(3))
+						Expect(ipTables.ClearChainCallCount()).To(Equal(4))
+						Expect(ipTables.DeleteChainCallCount()).To(Equal(4))
 					})
 				})
 			})

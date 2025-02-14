@@ -39,47 +39,47 @@ type metricsSender interface {
 
 type childAction func(singlePollCycle *SinglePollCycle) error
 
-type CompositePollCycle struct {
+type PollCycleGroup struct {
 	singlePollCycles []*SinglePollCycle
 }
 
-func NewCompositePollCycle(singlePollCycles ...*SinglePollCycle) *CompositePollCycle {
-	return &CompositePollCycle{
+func NewPollCycleGroup(singlePollCycles ...*SinglePollCycle) *PollCycleGroup {
+	return &PollCycleGroup{
 		singlePollCycles: singlePollCycles,
 	}
 }
 
-func (m *CompositePollCycle) DoASGCycle() error {
+func (m *PollCycleGroup) DoASGCycle() error {
 	return m.runForEachChild(func(singlePollCycle *SinglePollCycle) error {
 		return singlePollCycle.DoASGCycle()
 	})
 }
 
-func (m *CompositePollCycle) SyncASGsForContainers(containers ...string) error {
+func (m *PollCycleGroup) SyncASGsForContainers(containers ...string) error {
 	return m.runForEachChild(func(singlePollCycle *SinglePollCycle) error {
 		return singlePollCycle.SyncASGsForContainers(containers...)
 	})
 }
 
-func (m *CompositePollCycle) CleanupOrphanedASGsChains(containerHandle string) error {
+func (m *PollCycleGroup) CleanupOrphanedASGsChains(containerHandle string) error {
 	return m.runForEachChild(func(singlePollCycle *SinglePollCycle) error {
 		return singlePollCycle.CleanupOrphanedASGsChains(containerHandle)
 	})
 }
 
-func (m *CompositePollCycle) DoPolicyCycle() error {
+func (m *PollCycleGroup) DoPolicyCycle() error {
 	return m.runForEachChild(func(singlePollCycle *SinglePollCycle) error {
 		return singlePollCycle.DoPolicyCycle()
 	})
 }
 
-func (m *CompositePollCycle) DoPolicyCycleWithLastUpdatedCheck() error {
+func (m *PollCycleGroup) DoPolicyCycleWithLastUpdatedCheck() error {
 	return m.runForEachChild(func(singlePollCycle *SinglePollCycle) error {
 		return singlePollCycle.DoPolicyCycleWithLastUpdatedCheck()
 	})
 }
 
-func (m *CompositePollCycle) runForEachChild(action childAction) error {
+func (m *PollCycleGroup) runForEachChild(action childAction) error {
 	var multiError error
 	for _, child := range m.singlePollCycles {
 		err := action(child)
@@ -145,6 +145,7 @@ func (m *SinglePollCycle) DoPolicyCycleWithLastUpdatedCheck() error {
 }
 
 func (m *SinglePollCycle) DoPolicyCycle() error {
+	// TODO: what happens here if its ipv6 enabled deployment?
 	m.policyMutex.Lock()
 
 	if m.policyRuleSets == nil {
