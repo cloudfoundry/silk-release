@@ -79,7 +79,7 @@ func main() {
 
 	logger.Info("parsed-config", lager.Data{"config": conf})
 
-	enableIPv6 := common.IsIPv6Enabled()
+	enableIPv6 := conf.EnableIPv6 && common.IsIPv6Enabled()
 
 	_, err = os.Stat(filepath.Dir(conf.Datastore))
 	if err != nil {
@@ -249,7 +249,12 @@ func main() {
 			ASGLogging:       conf.IPTablesASGLogging,
 			DeniedLogsPerSec: conf.IPTablesDeniedLogsPerSec,
 			Conn:             outConn,
-			IPv6:             true,
+			DenyNetworks: netrules.DenyNetworks{
+				Always:  conf.DenyNetworksIPv6.Always,
+				Running: conf.DenyNetworksIPv6.Running,
+				Staging: conf.DenyNetworksIPv6.Staging,
+			},
+			IPv6: true,
 		}
 
 		ip6t, _ := iptables.NewWithProtocol(iptables.ProtocolIPv6)

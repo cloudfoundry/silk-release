@@ -38,8 +38,10 @@ type VxlanPolicyAgent struct {
 	IPTablesASGLogging            bool                      `json:"iptables_asg_logging"`
 	IPTablesDeniedLogsPerSec      int                       `json:"iptables_denied_logs_per_sec"`
 	DenyNetworks                  cnilib.DenyNetworksConfig `json:"deny_networks"`
+	DenyNetworksIPv6              cnilib.DenyNetworksConfig `json:"deny_networks_ipv6"`
 	OutConn                       cnilib.OutConnConfig      `json:"outbound_connections"`
 	LoggregatorConfig             loggingclient.Config      `json:"loggregator"`
+	EnableIPv6                    bool                      `json:"enable_ipv6"`
 }
 
 func (c *VxlanPolicyAgent) Validate() error {

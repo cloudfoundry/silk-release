@@ -101,6 +101,10 @@ properties:
     description: "WARNING!!! Disables network policy enforcement. Setting this property to true allows all app containers to access any other app container with no restrictions."
     default: false
 
+  ipv6.enable:
+    description: "Enable IPv6 support, the host must also support and be configured for IPv6"
+    default: false
+
   loggregator.use_v2_api:
     description: "True to use local metron agent gRPC v2 API. False to use UDP v1 API."
     default: false
