@@ -105,6 +105,7 @@ func (m *NetOut) Cleanup() error {
 func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 	inputChainName := m.ChainNamer.Prefix(prefixInput, m.ContainerHandle)
 	forwardChainName := m.ChainNamer.Prefix(prefixNetOut, m.ContainerHandle)
+	overlayChain := m.ChainNamer.Prefix(prefixOverlay, m.ContainerHandle)
 
 	args := []IpTablesFullChain{
 		{
@@ -127,26 +128,15 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 			rules.NewNetOutJumpConditions(m.HostInterfaceNames, m.ContainerIP, forwardChainName),
 			m.NetOutChain.DefaultRules(m.ContainerHandle),
 		},
-	}
-
-	// Overlay networking only for ipv4
-	if !m.IPv6 {
-		overlayChain := m.ChainNamer.Prefix(prefixOverlay, m.ContainerHandle)
-
-		args = append(args, m.addC2CLogging(IpTablesFullChain{
+		m.addC2CLogging(IpTablesFullChain{
 			"filter",
 			"FORWARD",
 			overlayChain,
 			[]rules.IPTablesRule{{
 				"--jump", overlayChain,
 			}},
-			[]rules.IPTablesRule{
-				rules.NewOverlayAllowEgress(m.VTEPName, m.ContainerIP),
-				rules.NewOverlayRelatedEstablishedRule(m.ContainerIP),
-				rules.NewOverlayTagAcceptRule(m.ContainerIP, m.IngressTag),
-				rules.NewOverlayDefaultRejectRule(m.ContainerIP, m.IPv6),
-			},
-		}))
+			m.getOverlayRules(),
+		}),
 	}
 
 	// This log chain is not connected to parent chains, it only gets used when asg logging is set
@@ -172,6 +162,22 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 	}
 
 	return args, nil
+}
+
+func (m *NetOut) getOverlayRules() []rules.IPTablesRule {
+	if !m.IPv6 {
+		return []rules.IPTablesRule{
+			rules.NewOverlayAllowEgress(m.VTEPName, m.ContainerIP),
+			rules.NewOverlayRelatedEstablishedRule(m.ContainerIP),
+			rules.NewOverlayTagAcceptRule(m.ContainerIP, m.IngressTag),
+			rules.NewOverlayDefaultRejectRule(m.ContainerIP, m.IPv6),
+		}
+	} else {
+		return []rules.IPTablesRule{
+			rules.NewOverlayRelatedEstablishedRule(m.ContainerIP),
+			rules.NewOverlayDefaultRejectRule(m.ContainerIP, m.IPv6),
+		}
+	}
 }
 
 func (m *NetOut) addC2CLogging(c IpTablesFullChain) IpTablesFullChain {
