@@ -306,7 +306,7 @@ func main() {
 	policyPoller := &poller.Poller{
 		Logger:       logger,
 		PollInterval: pollInterval,
-		// Policy cycle is not supported in IPv6?
+		// Policy cycle is not supported in IPv6
 		SingleCycleFunc: singlePollCycle.DoPolicyCycleWithLastUpdatedCheck,
 	}
 
@@ -320,7 +320,7 @@ func main() {
 
 	forceHandlers := map[string]http.Handler{
 		"/force-policy-poll-cycle": &handlers.ForcePolicyPollCycle{
-			// Policy cycle is not supported in IPv6?
+			// Policy cycle is not supported in IPv6
 			PollCycleFunc: singlePollCycle.DoPolicyCycle,
 		},
 		"/force-asgs-for-container": &handlers.ForceASGsForContainer{
