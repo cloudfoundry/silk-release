@@ -37,35 +37,6 @@ type metricsSender interface {
 	SendDuration(string, time.Duration)
 }
 
-type SinglePollCycle struct {
-	planners            []Planner
-	enforcer            ruleEnforcer
-	metricsSender       metricsSender
-	policyClient        policyClient
-	lastUpdated         int
-	logger              lager.Logger
-	policyRuleSets      map[enforcer.Chain]enforcer.RulesWithChain
-	asgRuleSets         map[enforcer.LiveChain]enforcer.RulesWithChain
-	asgChainToContainer map[enforcer.LiveChain]string
-	metronClient        loggingclient.IngressClient
-	policyMutex         sync.Locker
-	asgMutex            sync.Locker
-}
-
-func NewSinglePollCycle(planners []Planner, re ruleEnforcer, p policyClient, ms metricsSender, metronClient loggingclient.IngressClient, logger lager.Logger) *SinglePollCycle {
-	return &SinglePollCycle{
-		planners:      planners,
-		enforcer:      re,
-		policyClient:  p,
-		metricsSender: ms,
-		lastUpdated:   0,
-		logger:        logger,
-		metronClient:  metronClient,
-		policyMutex:   new(sync.Mutex),
-		asgMutex:      new(sync.Mutex),
-	}
-}
-
 type childAction func(singlePollCycle *SinglePollCycle) error
 
 type CompositePollCycle struct {
@@ -118,6 +89,35 @@ func (m *CompositePollCycle) runForEachChild(action childAction) error {
 	}
 
 	return multiError
+}
+
+type SinglePollCycle struct {
+	planners            []Planner
+	enforcer            ruleEnforcer
+	metricsSender       metricsSender
+	policyClient        policyClient
+	lastUpdated         int
+	logger              lager.Logger
+	policyRuleSets      map[enforcer.Chain]enforcer.RulesWithChain
+	asgRuleSets         map[enforcer.LiveChain]enforcer.RulesWithChain
+	asgChainToContainer map[enforcer.LiveChain]string
+	metronClient        loggingclient.IngressClient
+	policyMutex         sync.Locker
+	asgMutex            sync.Locker
+}
+
+func NewSinglePollCycle(planners []Planner, re ruleEnforcer, p policyClient, ms metricsSender, metronClient loggingclient.IngressClient, logger lager.Logger) *SinglePollCycle {
+	return &SinglePollCycle{
+		planners:      planners,
+		enforcer:      re,
+		policyClient:  p,
+		metricsSender: ms,
+		lastUpdated:   0,
+		logger:        logger,
+		metronClient:  metronClient,
+		policyMutex:   new(sync.Mutex),
+		asgMutex:      new(sync.Mutex),
+	}
 }
 
 const metricEnforceDuration = "iptablesEnforceTime"
