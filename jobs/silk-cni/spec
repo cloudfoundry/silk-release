@@ -22,6 +22,9 @@ provides:
   - deny_networks.always
   - deny_networks.running
   - deny_networks.staging
+  - deny_networks_ipv6.always
+  - deny_networks_ipv6.running
+  - deny_networks_ipv6.staging
   - outbound_connections.limit
   - outbound_connections.burst
   - outbound_connections.rate_per_sec
