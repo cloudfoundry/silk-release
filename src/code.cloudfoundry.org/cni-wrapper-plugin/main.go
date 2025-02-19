@@ -252,6 +252,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 			ChainNamer:            chainNamer,
 			IPTables:              pluginController.IP6Tables,
 			NetOutChain:           netOutChainIPv6,
+			C2CLogging:            cfg.IPTablesC2CLogging,
 			DeniedLogsPerSec:      cfg.IPTablesDeniedLogsPerSec,
 			AcceptedUDPLogsPerSec: cfg.IPTablesAcceptedUDPLogsPerSec,
 			IngressTag:            cfg.IngressTag,
