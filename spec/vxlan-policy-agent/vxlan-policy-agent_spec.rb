@@ -46,6 +46,11 @@ module Bosh::Template::Test
                 'running' => ['2.2.2.2/32'],
                 'staging' => ['3.3.3.3/32'],
               },
+              'deny_networks_ipv6' => {
+                'always' => ['2100::/80'],
+                'running' => ['2200::/80'],
+                'staging' => ['2300::/80'],
+              },
               'outbound_connections' => {
                 'limit' => true,
                 'burst' => 1000,
@@ -99,6 +104,11 @@ module Bosh::Template::Test
                 'running' => ['2.2.2.2/32'],
                 'staging' => ['3.3.3.3/32'],
               },
+              'deny_networks_ipv6' => {
+                'always' => ['2100::/80'],
+                'running' => ['2200::/80'],
+                'staging' => ['2300::/80'],
+              },
               'outbound_connections' => {
                 'limit' => true,
                 'logging' => true,
@@ -107,7 +117,8 @@ module Bosh::Template::Test
               },
               'loggregator' => {
                 'loggregator_use_v2_api' => false,
-              }
+              },
+              'enable_ipv6' => false
             })
           end
 
