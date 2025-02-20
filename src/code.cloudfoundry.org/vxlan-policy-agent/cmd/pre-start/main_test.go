@@ -31,7 +31,7 @@ var _ = Describe("Pre-Start", func() {
 		It("retries up to MAX_RETRIES times", func() {
 			err := main.PreStart(fakeIpTables)
 			Expect(err).To(HaveOccurred())
-			Expect(fakeIpTables.FlushAndRestoreCallCount()).To(Equal(main.MAX_RETRIES))
+			Expect(fakeIpTables.FlushAndRestoreCallCount()).To(Equal(main.MaxRetries))
 
 		})
 
