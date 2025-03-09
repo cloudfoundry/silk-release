@@ -111,6 +111,7 @@ files:
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/backoff/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/balancer/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/balancer/base/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/grpc/balancer/endpointsharding/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/balancer/grpclb/state/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/balancer/pickfirst/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/balancer/pickfirst/internal/*.go # gosub-main-module
@@ -142,7 +143,9 @@ files:
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/idle/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/metadata/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/pretty/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/proxyattributes/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/resolver/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/resolver/delegatingresolver/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/resolver/dns/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/resolver/dns/internal/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/resolver/passthrough/*.go # gosub-main-module
