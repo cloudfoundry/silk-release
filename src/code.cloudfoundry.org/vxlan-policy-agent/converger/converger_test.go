@@ -313,6 +313,7 @@ var _ = Describe("Single Poll Cycle", func() {
 			fakeASGPlanner    *fakes.Planner
 			fakeEnforcer      *fakes.RuleEnforcer
 			fakeMetronClient  *diegologgingclientfakes.FakeIngressClient
+			fakePolicyClient  *fakes.PolicyClient
 			metricsSender     *fakes.MetricsSender
 			ASGRulesWithChain []enforcer.RulesWithChain
 			logger            *lagertest.TestLogger
@@ -323,7 +324,7 @@ var _ = Describe("Single Poll Cycle", func() {
 			fakeEnforcer = &fakes.RuleEnforcer{}
 			metricsSender = &fakes.MetricsSender{}
 			fakeMetronClient = &diegologgingclientfakes.FakeIngressClient{}
-			fakePolicyClient := &fakes.PolicyClient{}
+			fakePolicyClient = &fakes.PolicyClient{}
 			logger = lagertest.NewTestLogger("test")
 
 			fakeEnforcer.EnforceRulesAndChainStub = func(chain enforcer.RulesWithChain) (string, error) {
@@ -383,6 +384,64 @@ var _ = Describe("Single Poll Cycle", func() {
 			}
 
 			fakeASGPlanner.GetASGRulesAndChainsReturns(ASGRulesWithChain, nil)
+		})
+
+		Describe("DoPolicyCycleWithLastUpdatedCheck", func() {
+			Context("when policy server returns an error getting last updated date", func() {
+				BeforeEach(func() {
+					fakePolicyClient.GetSecurityGroupsLastUpdatedReturns(0, errors.New("endpoint-does-not-exist"))
+				})
+
+				It("runs security-groups cycle", func() {
+					Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(0))
+					err := p.DoASGCycleWithLastUpdatedCheck()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(1))
+				})
+			})
+
+			Context("when never called before", func() {
+				It("runs security-groups cycle", func() {
+					Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(0))
+					err := p.DoASGCycleWithLastUpdatedCheck()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(1))
+				})
+			})
+
+			Context("when called before", func() {
+				BeforeEach(func() {
+					fakePolicyClient.GetSecurityGroupsLastUpdatedReturns(10, nil)
+					err := p.DoASGCycleWithLastUpdatedCheck()
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				Context("when policy server last updated is newer", func() {
+					BeforeEach(func() {
+						fakePolicyClient.GetSecurityGroupsLastUpdatedReturns(20, nil)
+					})
+
+					It("runs security-groups cycle", func() {
+						Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(1))
+						err := p.DoASGCycleWithLastUpdatedCheck()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(2))
+					})
+				})
+
+				Context("when policy server last updated is the same", func() {
+					BeforeEach(func() {
+						fakePolicyClient.GetSecurityGroupsLastUpdatedReturns(10, nil)
+					})
+
+					It("doesn't run security-groups cycle", func() {
+						Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(1))
+						err := p.DoASGCycleWithLastUpdatedCheck()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(1))
+					})
+				})
+			})
 		})
 
 		It("enforces ASG rules on configured interval", func() {

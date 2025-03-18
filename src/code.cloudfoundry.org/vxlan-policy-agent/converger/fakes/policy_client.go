@@ -18,6 +18,18 @@ type PolicyClient struct {
 		result1 int
 		result2 error
 	}
+	GetSecurityGroupsLastUpdatedStub        func() (int, error)
+	getSecurityGroupsLastUpdatedMutex       sync.RWMutex
+	getSecurityGroupsLastUpdatedArgsForCall []struct {
+	}
+	getSecurityGroupsLastUpdatedReturns struct {
+		result1 int
+		result2 error
+	}
+	getSecurityGroupsLastUpdatedReturnsOnCall map[int]struct {
+		result1 int
+		result2 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -78,11 +90,69 @@ func (fake *PolicyClient) GetPoliciesLastUpdatedReturnsOnCall(i int, result1 int
 	}{result1, result2}
 }
 
+func (fake *PolicyClient) GetSecurityGroupsLastUpdated() (int, error) {
+	fake.getSecurityGroupsLastUpdatedMutex.Lock()
+	ret, specificReturn := fake.getSecurityGroupsLastUpdatedReturnsOnCall[len(fake.getSecurityGroupsLastUpdatedArgsForCall)]
+	fake.getSecurityGroupsLastUpdatedArgsForCall = append(fake.getSecurityGroupsLastUpdatedArgsForCall, struct {
+	}{})
+	stub := fake.GetSecurityGroupsLastUpdatedStub
+	fakeReturns := fake.getSecurityGroupsLastUpdatedReturns
+	fake.recordInvocation("GetSecurityGroupsLastUpdated", []interface{}{})
+	fake.getSecurityGroupsLastUpdatedMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *PolicyClient) GetSecurityGroupsLastUpdatedCallCount() int {
+	fake.getSecurityGroupsLastUpdatedMutex.RLock()
+	defer fake.getSecurityGroupsLastUpdatedMutex.RUnlock()
+	return len(fake.getSecurityGroupsLastUpdatedArgsForCall)
+}
+
+func (fake *PolicyClient) GetSecurityGroupsLastUpdatedCalls(stub func() (int, error)) {
+	fake.getSecurityGroupsLastUpdatedMutex.Lock()
+	defer fake.getSecurityGroupsLastUpdatedMutex.Unlock()
+	fake.GetSecurityGroupsLastUpdatedStub = stub
+}
+
+func (fake *PolicyClient) GetSecurityGroupsLastUpdatedReturns(result1 int, result2 error) {
+	fake.getSecurityGroupsLastUpdatedMutex.Lock()
+	defer fake.getSecurityGroupsLastUpdatedMutex.Unlock()
+	fake.GetSecurityGroupsLastUpdatedStub = nil
+	fake.getSecurityGroupsLastUpdatedReturns = struct {
+		result1 int
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *PolicyClient) GetSecurityGroupsLastUpdatedReturnsOnCall(i int, result1 int, result2 error) {
+	fake.getSecurityGroupsLastUpdatedMutex.Lock()
+	defer fake.getSecurityGroupsLastUpdatedMutex.Unlock()
+	fake.GetSecurityGroupsLastUpdatedStub = nil
+	if fake.getSecurityGroupsLastUpdatedReturnsOnCall == nil {
+		fake.getSecurityGroupsLastUpdatedReturnsOnCall = make(map[int]struct {
+			result1 int
+			result2 error
+		})
+	}
+	fake.getSecurityGroupsLastUpdatedReturnsOnCall[i] = struct {
+		result1 int
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *PolicyClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.getPoliciesLastUpdatedMutex.RLock()
 	defer fake.getPoliciesLastUpdatedMutex.RUnlock()
+	fake.getSecurityGroupsLastUpdatedMutex.RLock()
+	defer fake.getSecurityGroupsLastUpdatedMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
