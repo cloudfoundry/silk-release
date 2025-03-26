@@ -151,7 +151,7 @@ func (m *SinglePollCycle) DoASGCycleWithLastUpdatedCheck() error {
 		return m.DoASGCycle()
 	}
 
-	m.logger.Debug("skipping-poll-cycle", lager.Data{"last-updated-remotely": asgLastUpdated, "last-updated-locally": m.asgLastUpdated})
+	m.logger.Debug("skipping-asg-poll-cycle", lager.Data{"last-updated-remotely": asgLastUpdated, "last-updated-locally": m.asgLastUpdated})
 
 	return nil
 }
