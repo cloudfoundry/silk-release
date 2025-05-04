@@ -9,15 +9,15 @@ replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimesche
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.43.0
-	code.cloudfoundry.org/debugserver v0.47.0
-	code.cloudfoundry.org/diego-logging-client v0.52.0
+	code.cloudfoundry.org/cf-networking-helpers v0.44.0
+	code.cloudfoundry.org/debugserver v0.48.0
+	code.cloudfoundry.org/diego-logging-client v0.53.0
 	code.cloudfoundry.org/executor v0.0.0-20241029001947-f0c9d0265505
-	code.cloudfoundry.org/filelock v0.34.0
-	code.cloudfoundry.org/garden v0.0.0-20250422223445-75bc73b534cf
+	code.cloudfoundry.org/filelock v0.35.0
+	code.cloudfoundry.org/garden v0.0.0-20250502134244-ecba9e3ce67c
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
-	code.cloudfoundry.org/lager/v3 v3.35.0
-	code.cloudfoundry.org/policy_client v0.52.0
+	code.cloudfoundry.org/lager/v3 v3.36.0
+	code.cloudfoundry.org/policy_client v0.53.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.3.0
@@ -49,7 +49,7 @@ require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20250417050917-333c2580673b // indirect
 	code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 // indirect
 	code.cloudfoundry.org/routing-info v0.0.0-20250117183711-d8d8d2ad4608 // indirect
-	code.cloudfoundry.org/tlsconfig v0.25.0 // indirect
+	code.cloudfoundry.org/tlsconfig v0.26.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/alexflint/go-filemutex v1.3.0 // indirect
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
@@ -60,7 +60,7 @@ require (
 	github.com/go-test/deep v1.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20250423184734-337e5dd93bb4 // indirect
+	github.com/google/pprof v0.0.0-20250501235452-c0086092b71a // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jackc/pgx/v5 v5.5.5 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
@@ -68,13 +68,13 @@ require (
 	github.com/safchain/ethtool v0.5.10 // indirect
 	github.com/square/certstrap v1.3.0 // indirect
 	github.com/vishvananda/netns v0.0.5 // indirect
-	go.step.sm/crypto v0.61.0 // indirect
+	go.step.sm/crypto v0.63.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/net v0.39.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 	golang.org/x/tools v0.32.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250425173222-7b384671a197 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250428153025-10db94c68c34 // indirect
 	google.golang.org/grpc v1.72.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
