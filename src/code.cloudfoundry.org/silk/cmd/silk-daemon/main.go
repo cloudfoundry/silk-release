@@ -69,9 +69,14 @@ func mainWithError() error {
 	logger, reconfigurableSink := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), getLagerConfig(logLevel))
 	logger.Info("starting")
 
-	if cfg.IPv6Prefix != "" && !isIPv6Enabled() {
-		logger.Info("The IPv6 prefix is supplied but the host is not IPv6 Enabled")
-		cfg.IPv6Prefix = ""
+	if cfg.EnableIPv6 && cfg.IPv6Prefix != "" {
+		if !hostSupportsIPv6(cfg) {
+			return fmt.Errorf("IPv6 is enabled in config but the host is not IPv6 enabled")
+		}
+
+		if !validateIPv6CIDR(cfg.IPv6Prefix) {
+			return fmt.Errorf("invalid IPv6 prefix: %s", cfg.IPv6Prefix)
+		}
 	}
 
 	tlsConfig, err := mutualtls.NewClientTLSConfig(cfg.ClientCertFile, cfg.ClientKeyFile, cfg.ServerCACertFile)
@@ -309,7 +314,7 @@ func getNetworkInfo(vtepFactory *vtep.Factory, clientConfig config.Config, lease
 		MTU:           mtu,
 	}
 
-	if clientConfig.IPv6Prefix != "" {
+	if clientConfig.EnableIPv6 {
 		if validateIPv6CIDR(clientConfig.IPv6Prefix) {
 			info.IPv6Prefix = clientConfig.IPv6Prefix
 		} else {
@@ -344,7 +349,8 @@ func validateIPv6CIDR(cidr string) bool {
 	return ip.To4() == nil && network.IP.To4() == nil
 }
 
-func isIPv6Enabled() bool {
+// TODO: use the function from common
+func hostSupportsIPv6(cfg config.Config) bool {
 	testAddress := "[::1]:0"
 
 	addr, err := net.ResolveUDPAddr("udp6", testAddress)

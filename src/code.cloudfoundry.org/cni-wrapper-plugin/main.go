@@ -33,7 +33,10 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	enableIPv6 := common.IsIPv6Enabled()
+	enableIPv6 := cfg.EnableIPv6
+	if enableIPv6 && !common.IsIPv6Enabled() {
+		return fmt.Errorf("ipv6 is enabled in the config but not supported on the host")
+	}
 
 	pluginController, err := newPluginController(cfg, enableIPv6)
 	if err != nil {
@@ -55,7 +58,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		ips = append(ips, ip.Address.IP)
 	}
 
-	containerIP, containerIPv6 := datastore.ValidatorIPConfig(ips)
+	containerIP, containerIPv6 := common.ParseIPConfig(ips)
 	enableIPv6 = enableIPv6 && containerIPv6 != nil
 
 	var containerWorkload string
@@ -424,6 +427,9 @@ func cmdDel(args *skel.CmdArgs) error {
 		NetlinkAdapter: &adapter.NetlinkAdapter{},
 	}
 
+	// TODO: The way cfg.UnderlayIPs is populated is from bosh spec.networks. This will be a problem if there are ipv6 networks there
+	// because we will not be able to find the interface name for ipv6 networks and error will be returned.
+	// Should be fixed in the future when theres a working bosh ipv6 implementation
 	var interfaceNames []string
 	if len(cfg.TemporaryUnderlayInterfaceNames) > 0 {
 		interfaceNames = cfg.TemporaryUnderlayInterfaceNames

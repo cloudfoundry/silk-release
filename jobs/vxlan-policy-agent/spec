@@ -102,7 +102,7 @@ properties:
     default: false
 
   ipv6.enable:
-    description: "Enable IPv6 support, the host must also support and be configured for IPv6"
+    description: "Experimental feature. Enable IPv6 support, the host must also support and be configured for IPv6"
     default: false
 
   loggregator.use_v2_api:

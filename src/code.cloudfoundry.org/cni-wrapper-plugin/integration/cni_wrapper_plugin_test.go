@@ -332,10 +332,12 @@ var _ = Describe("CniWrapperPlugin", func() {
 		Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(overlayChainName)))
 
 		// IPv6
-		By("checking that there are no more ipv6 netout rules for this container")
-		Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(inputChainName)))
-		Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutChainName)))
-		Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutLoggingChainName)))
+		if testIPv6 {
+			By("checking that there are no more ipv6 netout rules for this container")
+			Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(inputChainName)))
+			Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutChainName)))
+			Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutLoggingChainName)))
+		}
 
 		os.Remove(debugFileName)
 		os.Remove(datastorePath)
@@ -376,6 +378,9 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 		Context("when IPv6 is enabled", func() {
 			BeforeEach(func() {
+				skipIfIPv4()
+
+				inputStruct.EnableIPv6 = true
 				cniResult.IPs = append(cniResult.IPs, &current.IPConfig{
 					Address: net.IPNet{
 						IP:   net.ParseIP("2001:db8::1"),
@@ -1234,6 +1239,9 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 		Context("when IPv6 is enabled", func() {
 			BeforeEach(func() {
+				skipIfIPv4()
+
+				inputStruct.EnableIPv6 = true
 				cniResult.IPs = append(cniResult.IPs, &current.IPConfig{
 					Address: net.IPNet{
 						IP:   net.ParseIP("2001:db8::1"),

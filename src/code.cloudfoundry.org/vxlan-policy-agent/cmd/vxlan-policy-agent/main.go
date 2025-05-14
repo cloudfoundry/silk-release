@@ -91,8 +91,7 @@ func main() {
 		NetlinkAdapter: &adapter.NetlinkAdapter{},
 	}
 
-	ifAddressesv4 := filterInterfaceAddresses(conf.UnderlayIPs)
-	interfaceNames, err := interfaceNameLookup.GetNamesFromIPs(ifAddressesv4)
+	interfaceNames, err := lookupInterfaceNames(interfaceNameLookup, conf.UnderlayIPs)
 	if err != nil {
 		log.Fatalf("%s: looking up interface names: %s", logPrefix, err)
 	}
@@ -315,7 +314,7 @@ func main() {
 	asgPoller := &poller.Poller{
 		Logger:          logger,
 		PollInterval:    asgPollInterval,
-		SingleCycleFunc: policyCycleGroup.DoASGCycle,
+		SingleCycleFunc: policyCycleGroup.DoASGCycleWithLastUpdatedCheck,
 	}
 
 	forcePolicyPollCycleServerAddress := fmt.Sprintf("%s:%d", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort)
@@ -383,14 +382,22 @@ func createForceUpdateServer(listenAddress string, handlers map[string]http.Hand
 	return http_server.New(listenAddress, mux)
 }
 
-func filterInterfaceAddresses(ips []string) []string {
+func lookupInterfaceNames(lookup interfacelookup.InterfaceNameLookup, ips []string) ([]string, error) {
 	var ipsV4 []string
 	for _, ip := range ips {
 		parsed := net.ParseIP(ip)
+		if parsed == nil {
+			return nil, fmt.Errorf("invalid IP address: %s", ip)
+		}
 		if parsed.To4() != nil {
 			ipsV4 = append(ipsV4, ip)
 		}
 	}
 
-	return ipsV4
+	var v4names, err = lookup.GetNamesFromIPs(ipsV4)
+	if err != nil {
+		return nil, err
+	}
+
+	return v4names, nil
 }

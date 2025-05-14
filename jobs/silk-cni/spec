@@ -172,3 +172,7 @@ properties:
     default: false
     description: |
       EXPERIMENTAL: When set to true negates the effect of `outbound_connections.limit`. Enables the specific DENY_ORL entries to the kernel log.
+
+  ipv6.enable:
+    description: "Experimental feature. Enable IPv6 support, the host must also support and be configured for IPv6"
+    default: false

@@ -596,6 +596,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 
 		Context("when IPv6 is enabled", func() {
 			BeforeEach(func() {
+				skipIfIPv4()
 				conf.EnableIPv6 = true
 			})
 

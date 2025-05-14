@@ -58,6 +58,7 @@ type WrapperConfig struct {
 	RuntimeConfig                   RuntimeConfig          `json:"runtimeConfig,omitempty"`
 	PolicyAgentForcePollAddress     string                 `json:"policy_agent_force_poll_address" validate:"nonzero"`
 	OutConn                         OutConnConfig          `json:"outbound_connections"`
+	EnableIPv6                      bool                   `json:"enable_ipv6"`
 }
 
 func LoadWrapperConfig(bytes []byte) (*WrapperConfig, error) {

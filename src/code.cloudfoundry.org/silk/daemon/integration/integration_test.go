@@ -126,7 +126,11 @@ var _ = BeforeEach(func() {
 		MetronPort:                fakeMetron.Port(),
 		VTEPPort:                  vtepPort,
 		LogPrefix:                 "potato-prefix",
-		IPv6Prefix:                "2001:db8::/80",
+	}
+
+	if testIPv6 {
+		daemonConf.EnableIPv6 = true
+		daemonConf.IPv6Prefix = "2001:db8::/80"
 	}
 
 	vtepFactory = &vtep.Factory{NetlinkAdapter: &adapter.NetlinkAdapter{}, Logger: lagertest.NewTestLogger("test")}
@@ -720,18 +724,6 @@ var _ = Describe("Daemon Integration", func() {
 			})
 		})
 	})
-
-	Context("when IPv6 prefix is not configured", func() {
-		BeforeEach(func() {
-			stopDaemon()
-			daemonConf.IPv6Prefix = ""
-		})
-
-		It("does not return the prefix", func() {
-			startAndWaitForDaemon()
-			doHealthCheck()
-		})
-	})
 })
 
 func startAndWaitForDaemon() {
@@ -770,7 +762,7 @@ func doHealthCheckWithErr() error {
 	if response.OverlaySubnet != daemonLease.OverlaySubnet {
 		return fmt.Errorf("mismatched overlay subnet: %s vs %s", response.OverlaySubnet, daemonLease.OverlaySubnet)
 	}
-	if daemonConf.IPv6Prefix != "" && response.IPv6Prefix != daemonConf.IPv6Prefix {
+	if testIPv6 && daemonConf.EnableIPv6 && daemonConf.IPv6Prefix != "" && response.IPv6Prefix != daemonConf.IPv6Prefix {
 		return fmt.Errorf("mismatched IPv6 prefix: %s vs %s", response.IPv6Prefix, daemonConf.IPv6Prefix)
 	}
 	const vxlanEncapOverhead = 50 // bytes

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"os"
 	"path"
 
 	"github.com/containernetworking/plugins/pkg/ns"
@@ -23,12 +24,25 @@ var (
 	paths           testPaths
 	hostNS          ns.NetNS
 	randomGenerator *rand.Rand
+	testIPv6        bool
 )
 
 type testPaths struct {
 	PathToPlugin     string
 	CNIPath          string
 	PathToFakeDaemon string
+}
+
+func init() {
+	if os.Getenv("GINKGO_TEST_IPV6") == "true" {
+		testIPv6 = true
+	}
+}
+
+func skipIfIPv4() {
+	if !testIPv6 {
+		Skip("Skipping test because IPv6 is disabled")
+	}
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {

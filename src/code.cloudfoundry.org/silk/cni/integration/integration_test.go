@@ -471,6 +471,8 @@ var _ = Describe("Silk CNI Integration", func() {
 
 		Context("when the daemon returns IPv6 prefix", func() {
 			BeforeEach(func() {
+				skipIfIPv4()
+
 				fakeServer = startFakeDaemonInHost(daemonPort, http.StatusOK, `{"overlay_subnet": "10.255.30.0/24", "ipv6_prefix": "2600:bd18::/80", "mtu": 1472}`)
 			})
 
@@ -689,6 +691,8 @@ var _ = Describe("Silk CNI Integration", func() {
 
 		Context("when the daemon returns IPv6 prefix", func() {
 			BeforeEach(func() {
+				skipIfIPv4()
+
 				fakeServer = startFakeDaemonInHost(daemonPort, http.StatusOK, `{"overlay_subnet": "10.255.30.0/24", "ipv6_prefix": "2600:bd18::/80", "mtu": 1472}`)
 			})
 
@@ -810,6 +814,8 @@ var _ = Describe("Silk CNI Integration", func() {
 		)
 
 		BeforeEach(func() {
+			skipIfIPv4()
+
 			cniStdin = cniConfig(dataDir, datastorePath, daemonPort)
 			prefixSize := 125
 			fakeServer = startFakeDaemonInHost(daemonPort, http.StatusOK, fmt.Sprintf(`{"overlay_subnet": "10.255.30.0/24", "ipv6_prefix": "2600:bd18::/%d", "mtu": 1350}`, prefixSize))

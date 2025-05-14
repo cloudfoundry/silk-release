@@ -79,6 +79,12 @@ func (m *PollCycleGroup) DoPolicyCycleWithLastUpdatedCheck() error {
 	})
 }
 
+func (m *PollCycleGroup) DoASGCycleWithLastUpdatedCheck() error {
+	return m.runForEachChild(func(singlePollCycle *SinglePollCycle) error {
+		return singlePollCycle.DoASGCycleWithLastUpdatedCheck()
+	})
+}
+
 func (m *PollCycleGroup) runForEachChild(action childAction) error {
 	var multiError error
 	for _, child := range m.singlePollCycles {

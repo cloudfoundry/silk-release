@@ -314,23 +314,3 @@ func (c *Store) currentVersion() (int, error) {
 	}
 	return version, err
 }
-
-func ValidatorIPConfig(conf []net.IP) (net.IP, net.IP) {
-	var containerIP, containerIPv6 net.IP
-
-	for _, ip := range conf {
-		if containerIP == nil && ip.To4() != nil {
-			containerIP = ip
-		}
-
-		if containerIPv6 == nil && ip.To4() == nil && ip.To16() != nil {
-			containerIPv6 = ip
-		}
-
-		if containerIP != nil && containerIPv6 != nil {
-			break
-		}
-	}
-
-	return containerIP, containerIPv6
-}

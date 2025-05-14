@@ -348,13 +348,16 @@ var _ = Describe("error cases", func() {
 
 	Context("when the provided IPv6 prefix is invalid", func() {
 		BeforeEach(func() {
+			skipIfIPv4()
+
+			daemonConf.EnableIPv6 = true
 			daemonConf.IPv6Prefix = "invalid-ipv6-prefix"
 		})
 
 		It("exits with status 1", func() {
 			session = startDaemon(writeConfigFile(daemonConf))
 			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(1))
-			Expect(session.Err.Contents()).To(ContainSubstring("IPv6 prefix is set but not valid: invalid-ipv6-prefix"))
+			Expect(session.Err.Contents()).To(ContainSubstring("invalid IPv6 prefix"))
 		})
 	})
 })

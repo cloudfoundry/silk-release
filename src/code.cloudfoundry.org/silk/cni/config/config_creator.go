@@ -1,12 +1,12 @@
 package config
 
 import (
+	"code.cloudfoundry.org/lib/common"
 	"errors"
 	"fmt"
 	"net"
 
 	"code.cloudfoundry.org/lager/v3"
-	"code.cloudfoundry.org/lib/datastore"
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	current "github.com/containernetworking/cni/pkg/types/100"
@@ -74,7 +74,7 @@ func (c *ConfigCreator) Create(
 		ips = append(ips, ip.Address.IP)
 	}
 
-	ipv4, ipv6 := datastore.ValidatorIPConfig(ips)
+	ipv4, ipv6 := common.ParseIPConfig(ips)
 	if ipv6 != nil {
 		conf.ipv6Enabled = true
 	}
