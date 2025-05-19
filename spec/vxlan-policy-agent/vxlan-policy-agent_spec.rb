@@ -76,7 +76,7 @@ module Bosh::Template::Test
               'ca_cert_file' => '/var/vcap/jobs/vxlan-policy-agent/config/certs/ca.crt',
               'client_cert_file' => '/var/vcap/jobs/vxlan-policy-agent/config/certs/client.crt',
               'client_key_file' => '/var/vcap/jobs/vxlan-policy-agent/config/certs/client.key',
-              'client_timeout_seconds' => 5,
+              'client_timeout_seconds' => 30,
               'cni_datastore_path' => '/var/vcap/data/container-metadata/store.json',
               'debug_server_host' => '127.0.0.1',
               'debug_server_port' => 8721,
@@ -180,6 +180,17 @@ module Bosh::Template::Test
               expect(rendered_config['overlay_network']).to eq(['10.234.0.0/16'])
             end
           end 
+
+          context 'when client_timeout_seconds is provided' do
+            before do
+              merged_manifest_properties['client_timeout_seconds'] = 45
+            end
+
+            it 'overrides the default' do
+              rendered_config = JSON.parse(template.render(merged_manifest_properties, consumes: links))
+              expect(rendered_config['client_timeout_seconds']).to eq(45)
+            end
+          end
         end
       end
     end

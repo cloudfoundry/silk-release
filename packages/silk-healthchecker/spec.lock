@@ -1,4 +1,4 @@
 name: silk-healthchecker
-fingerprint: 0acffa42e64b852be588034fa8e1e7db700c5b56a89b6d9324078a25409b9e54
+fingerprint: 2cc0669e9e0bbd24e56a0213ee09df5172e6a1238450373f41326ed39ddce964
 dependencies:
-- silk-golang-1.23-linux
+- silk-golang-1.24-linux

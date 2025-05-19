@@ -51,7 +51,7 @@
       'cni_datastore_path' => '/var/vcap/data/container-metadata/store.json',
       'iptables_lock_file' => '/var/vcap/data/garden-cni/iptables.lock',
       'debug_server_host' => '127.0.0.1',
-      'client_timeout_seconds' => 5,
+      'client_timeout_seconds' => p("client_timeout_seconds"),
       'vni' => 1,
 
       'force_policy_poll_cycle_host' => '127.0.0.1',

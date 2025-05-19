@@ -52,6 +52,10 @@ properties:
     description: "The VXLAN policy agent queries the policy server on this interval in seconds and updates local policy rules."
     default: 5
 
+  client_timeout_seconds:
+    description: "Timeout to use for HTTP connections to policy_server"
+    default: 30
+
   enable_asg_syncing:
     description: "Enable dynamic updates to ASG rules for running containers"
     default: true

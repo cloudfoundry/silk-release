@@ -255,7 +255,7 @@ func (p *VxlanPolicyPlanner) getContainerSecurityGroups(allContainers []containe
 	spaceGuids := extractSpaceGUIDs(allContainers)
 	securityGroups, err := p.PolicyClient.GetSecurityGroupsForSpace(spaceGuids...)
 	if err != nil {
-		err = fmt.Errorf("failed to get ingress tags: %s", err)
+		err = fmt.Errorf("failed to get security groups: %s", err)
 		return []policy_client.SecurityGroup{}, err
 	}
 

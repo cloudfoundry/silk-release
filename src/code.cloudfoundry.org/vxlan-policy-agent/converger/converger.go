@@ -17,6 +17,7 @@ import (
 //go:generate counterfeiter -o fakes/policy_client.go --fake-name PolicyClient . policyClient
 type policyClient interface {
 	GetPoliciesLastUpdated() (int, error)
+	GetSecurityGroupsLastUpdated() (int, error)
 }
 
 //go:generate counterfeiter -o fakes/planner.go --fake-name Planner . Planner
@@ -103,6 +104,7 @@ type SinglePollCycle struct {
 	metricsSender       metricsSender
 	policyClient        policyClient
 	lastUpdated         int
+	asgLastUpdated      int
 	logger              lager.Logger
 	policyRuleSets      map[enforcer.Chain]enforcer.RulesWithChain
 	asgRuleSets         map[enforcer.LiveChain]enforcer.RulesWithChain
@@ -114,15 +116,16 @@ type SinglePollCycle struct {
 
 func NewSinglePollCycle(planners []Planner, re ruleEnforcer, p policyClient, ms metricsSender, metronClient loggingclient.IngressClient, logger lager.Logger) *SinglePollCycle {
 	return &SinglePollCycle{
-		planners:      planners,
-		enforcer:      re,
-		policyClient:  p,
-		metricsSender: ms,
-		lastUpdated:   0,
-		logger:        logger,
-		metronClient:  metronClient,
-		policyMutex:   new(sync.Mutex),
-		asgMutex:      new(sync.Mutex),
+		planners:       planners,
+		enforcer:       re,
+		policyClient:   p,
+		metricsSender:  ms,
+		lastUpdated:    0,
+		asgLastUpdated: 0,
+		logger:         logger,
+		metronClient:   metronClient,
+		policyMutex:    new(sync.Mutex),
+		asgMutex:       new(sync.Mutex),
 	}
 }
 
@@ -193,6 +196,23 @@ func (m *SinglePollCycle) DoPolicyCycle() error {
 	pollDuration := time.Since(pollStartTime)
 	m.metricsSender.SendDuration(metricEnforceDuration, enforceDuration)
 	m.metricsSender.SendDuration(metricPollDuration, pollDuration)
+
+	return nil
+}
+
+func (m *SinglePollCycle) DoASGCycleWithLastUpdatedCheck() error {
+	asgLastUpdated, err := m.policyClient.GetSecurityGroupsLastUpdated()
+	if err != nil {
+		m.logger.Error("error-getting-security-groups-last-updated", err)
+		return m.DoASGCycle()
+	}
+	if m.asgLastUpdated == 0 || asgLastUpdated > m.asgLastUpdated {
+		m.logger.Debug("running-poll-cycle-for-updated-security-groups", lager.Data{"last-updated-remotely": asgLastUpdated, "last-updated-locally": m.asgLastUpdated})
+		m.asgLastUpdated = asgLastUpdated
+		return m.DoASGCycle()
+	}
+
+	m.logger.Debug("skipping-asg-poll-cycle", lager.Data{"last-updated-remotely": asgLastUpdated, "last-updated-locally": m.asgLastUpdated})
 
 	return nil
 }
