@@ -50,25 +50,65 @@
       raise 'subnet_prefix_length must be a value between 1-30'
     end
 
-    network = p('network')
-    if IPAddr.new(network).prefix >= size
-      raise "subnet_prefix_length '#{size}' must be smaller than the network '#{network.to_s}'"
+    network = network_array
+
+    network.each do |entry|
+      if IPAddr.new(entry).prefix >= size
+        raise "subnet_prefix_length '#{size}' must be smaller than the network '#{entry.to_s}'"
+      end
     end
 
-    size
+    return size
   end
 
-  def parse_ip (ip, var_name)
-    unless ip.empty?
-        begin
-          parsed = IPAddr.new ip
-        rescue  => e
-          raise "Invalid #{var_name} '#{ip}': #{e}"
+  # parse_ips requres ips to be an array
+  def parse_ips (ips, var_name)
+    if ips.empty? == false
+
+      # first check that each ip in the array is valid
+      ips.each_with_index do |entry, i|
+          parse_ip(entry, var_name)
+      end
+
+      # then check that none of the cidrs overlap
+      ips.each_with_index do |ip1, i|
+        ips.each_with_index do |ip2, j|
+          next if i == j
+          overlap?(ip1, ip2)
         end
+      end
     end
   end
 
-  parse_ip(p('network'), 'network')
+  def parse_ip(ip, var_name)
+    begin
+      parsed = IPAddr.new(ip)
+    rescue  => e
+      raise "Invalid #{var_name} '#{ip}': #{e}"
+    end
+  end
+
+  def overlap?(a, b)
+    cidr1 = IPAddr.new(a)
+    cidr2 = IPAddr.new(b)
+
+    range = cidr2.to_range
+    starting_ip = range.first
+    ending_ip = range.last
+
+    if cidr1.include?(starting_ip) || cidr1.include?(ending_ip)
+      raise "'network' must not contain overlapping cidrs: '#{a}' and '#{b}'"
+    end
+  end
+
+  def network_array
+    network = p('network')
+    return [network] if network.class != Array
+    return network
+  end
+
+
+  parse_ips(network_array, 'network')
   parse_ip(p('listen_ip'), 'listen_ip')
 
   toRender = {
@@ -79,7 +119,7 @@
     'ca_cert_file' => '/var/vcap/jobs/silk-controller/config/certs/ca.crt',
     'server_cert_file' => '/var/vcap/jobs/silk-controller/config/certs/server.crt',
     'server_key_file' => '/var/vcap/jobs/silk-controller/config/certs/server.key',
-    'network' => p('network'),
+    'network' => network_array,
     'subnet_prefix_length' => subnet_prefix_length,
     'database' => {
       'type' => driver,

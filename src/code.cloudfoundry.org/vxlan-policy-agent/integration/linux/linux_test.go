@@ -37,15 +37,16 @@ import (
 
 var _ = Describe("VXLAN Policy Agent", func() {
 	var (
-		session          *gexec.Session
-		datastorePath    string
-		conf             config.VxlanPolicyAgent
-		configFilePath   string
-		fakeMetron       metrics.FakeMetron
-		mockPolicyServer ifrit.Process
-		serverListenPort int
-		serverListenAddr string
-		serverTLSConfig  *tls.Config
+		session                          *gexec.Session
+		datastorePath                    string
+		conf                             config.VxlanPolicyAgent
+		configFilePath                   string
+		fakeMetron                       metrics.FakeMetron
+		mockPolicyServer                 ifrit.Process
+		serverListenPort                 int
+		serverListenAddr                 string
+		serverTLSConfig                  *tls.Config
+		overlayNetwork1, overlayNetwork2 string
 	)
 
 	BeforeEach(func() {
@@ -83,6 +84,9 @@ var _ = Describe("VXLAN Policy Agent", func() {
 		Expect(os.WriteFile(containerMetadataFile.Name(), []byte(containerMetadata), os.ModePerm))
 		datastorePath = containerMetadataFile.Name()
 
+		overlayNetwork1 = "10.255.0.0/16"
+		overlayNetwork2 = "10.20.0.0/24"
+
 		conf = config.VxlanPolicyAgent{
 			PollInterval:                  1,
 			ASGPollInterval:               10,
@@ -107,6 +111,7 @@ var _ = Describe("VXLAN Policy Agent", func() {
 			IPTablesASGLogging:            false,
 			IPTablesDeniedLogsPerSec:      2,
 			DenyNetworks:                  cnilib.DenyNetworksConfig{},
+			OverlayNetwork:                []string{overlayNetwork1, overlayNetwork2},
 			OutConn: cnilib.OutConnConfig{
 				Burst:      900,
 				RatePerSec: 100,
@@ -234,6 +239,28 @@ var _ = Describe("VXLAN Policy Agent", func() {
 					Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(`-s 10.255.100.21/32 -m comment --comment "src:some-very-very-long-app-guid" -j MARK --set-xmark 0xa/0xffffffff`))
 					Expect(iptablesFilterRules()).To(ContainSubstring(`-d 10.255.100.21/32 -p tcp -m tcp --dport 9999 -m mark --mark 0xc -m comment --comment "src:another-app-guid_dst:some-very-very-long-app-guid" -j ACCEPT`))
 					Expect(iptablesFilterRules()).To(ContainSubstring(`-d 10.255.100.21/32 -p udp -m udp --dport 7000:8000 -m mark --mark 0xd -m comment --comment "src:yet-another-app-guid_dst:some-very-very-long-app-guid" -j ACCEPT`))
+				})
+
+				Context("when 'disable_container_network_policy' is false", func() {
+					It("does not write egress allow rules for c2c traffic", func() {
+						Eventually(iptablesFilterRules, "4s", "1s").ShouldNot(ContainSubstring(fmt.Sprintf("-s %s -d %s -j ACCEPT", overlayNetwork1, overlayNetwork1)))
+						Eventually(iptablesFilterRules, "4s", "1s").ShouldNot(ContainSubstring(fmt.Sprintf("-s %s -d %s -j ACCEPT", overlayNetwork1, overlayNetwork2)))
+						Eventually(iptablesFilterRules, "4s", "1s").ShouldNot(ContainSubstring(fmt.Sprintf("-s %s -d %s -j ACCEPT", overlayNetwork2, overlayNetwork1)))
+						Eventually(iptablesFilterRules, "4s", "1s").ShouldNot(ContainSubstring(fmt.Sprintf("-s %s -d %s -j ACCEPT", overlayNetwork2, overlayNetwork2)))
+					})
+				})
+
+				Context("when 'disable_container_network_policy' is true", func() {
+					BeforeEach(func() {
+						conf.DisableContainerNetworkPolicy = true
+					})
+
+					It("does write egress allow rules for c2c traffic", func() {
+						Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(fmt.Sprintf("-s %s -d %s -j ACCEPT", overlayNetwork1, overlayNetwork1)))
+						Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(fmt.Sprintf("-s %s -d %s -j ACCEPT", overlayNetwork1, overlayNetwork2)))
+						Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(fmt.Sprintf("-s %s -d %s -j ACCEPT", overlayNetwork2, overlayNetwork1)))
+						Eventually(iptablesFilterRules, "4s", "1s").Should(ContainSubstring(fmt.Sprintf("-s %s -d %s -j ACCEPT", overlayNetwork2, overlayNetwork2)))
+					})
 				})
 
 				Context("when the container is staging", func() {

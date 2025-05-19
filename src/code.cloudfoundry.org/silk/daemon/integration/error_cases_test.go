@@ -62,6 +62,38 @@ var _ = Describe("error cases", func() {
 		})
 	})
 
+	Context("OverlayNetworks errors", func() {
+		Context("when there are no OverlayNetworks", func() {
+			var configFilePath string
+			BeforeEach(func() {
+				clientConf := daemonConf
+				clientConf.OverlayNetworks = []string{}
+				configFilePath = writeConfigFile(clientConf)
+			})
+
+			It("exits with status 1", func() {
+				session = startDaemon(configFilePath)
+				Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(1))
+				Expect(string(session.Err.Contents())).To(ContainSubstring("OverlayNetworks: zero value"))
+			})
+		})
+
+		Context("when there is an invalid overlay network", func() {
+			var configFilePath string
+			BeforeEach(func() {
+				clientConf := daemonConf
+				clientConf.OverlayNetworks = []string{"10.255.0.0/16", "10.999.0.0/16"}
+				configFilePath = writeConfigFile(clientConf)
+			})
+
+			It("exits with status 1", func() {
+				session = startDaemon(configFilePath)
+				Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(1))
+				Expect(string(session.Err.Contents())).To(ContainSubstring("potato-prefix.silk-daemon error: parse overlay network CIDR: invalid CIDR address: 10.999.0.0/16"))
+			})
+		})
+	})
+
 	Describe("failures to acquire a new lease", func() {
 		Context("when acquire returns a 500", func() {
 			BeforeEach(func() {
@@ -248,7 +280,7 @@ var _ = Describe("error cases", func() {
 	      }`), os.FileMode(0600))
 				Expect(err).NotTo(HaveOccurred())
 
-				daemonConf.OverlayNetwork = "10.254.0.0/16"
+				daemonConf.OverlayNetworks = []string{"10.254.0.0/16"}
 				configFilePath := writeConfigFile(daemonConf)
 				writeConfigFile(daemonConf)
 				startDaemon(configFilePath)
@@ -268,7 +300,7 @@ var _ = Describe("error cases", func() {
 		Context("when reading the datastore fails", func() {
 			BeforeEach(func() {
 				daemonConf.Datastore = "/dev/urandom"
-				daemonConf.OverlayNetwork = "10.254.0.0/16"
+				daemonConf.OverlayNetworks = []string{"10.254.0.0/16"}
 				configFilePath := writeConfigFile(daemonConf)
 				startDaemon(configFilePath)
 			})
@@ -293,7 +325,7 @@ var _ = Describe("error cases", func() {
 			})
 
 			It("exits with status 1", func() {
-				daemonConf.OverlayNetwork = "10.254.0.0/16"
+				daemonConf.OverlayNetworks = []string{"10.254.0.0/16"}
 				configFilePath := writeConfigFile(daemonConf)
 				startDaemon(configFilePath)
 				Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(1))

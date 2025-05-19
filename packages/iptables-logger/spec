@@ -73,6 +73,7 @@ files:
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/impl/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/order/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/pragma/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/protolazy/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/set/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/strs/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/version/*.go # gosub-main-module

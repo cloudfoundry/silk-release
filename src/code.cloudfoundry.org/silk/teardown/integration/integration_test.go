@@ -9,6 +9,7 @@ import (
 
 	"code.cloudfoundry.org/cf-networking-helpers/mutualtls"
 	"code.cloudfoundry.org/lager/v3/lagertest"
+	mcn "code.cloudfoundry.org/lib/multiple-cidr-network"
 	"code.cloudfoundry.org/silk/client/config"
 	"code.cloudfoundry.org/silk/controller"
 	"code.cloudfoundry.org/silk/daemon/vtep"
@@ -33,12 +34,15 @@ var (
 
 var _ = BeforeEach(func() {
 	localIP := "127.0.0.1"
+	overlayNetworks, err := mcn.NewMultipleCIDRNetwork([]string{"10.255.0.0/16"})
+	Expect(err).NotTo(HaveOccurred())
 	vtepConfig = &vtep.Config{
 		VTEPName:            fmt.Sprintf("t-v-%d", GinkgoParallelProcess()),
 		UnderlayIP:          net.ParseIP(localIP),
-		OverlayIP:           net.IP{10, 255, byte(GinkgoParallelProcess()), 0},
+		LeaseIP:             net.IP{10, 255, byte(GinkgoParallelProcess()), 0},
 		OverlayHardwareAddr: net.HardwareAddr{0xee, 0xee, 0x0a, 0xff, byte(GinkgoParallelProcess()), 0x00},
 		VNI:                 GinkgoParallelProcess(),
+		OverlayNetworks:     overlayNetworks,
 	}
 
 	serverListenAddr = fmt.Sprintf("127.0.0.1:%d", 40000+GinkgoParallelProcess())
@@ -47,7 +51,7 @@ var _ = BeforeEach(func() {
 	clientConf = config.Config{
 		UnderlayIP:                localIP,
 		SubnetPrefixLength:        24,
-		OverlayNetwork:            "10.255.0.0/16", // unused by teardown, but config requires it
+		OverlayNetworks:           []string{"10.255.0.0/16"}, // unused by teardown, but config requires it
 		HealthCheckPort:           4000,
 		VTEPName:                  vtepConfig.VTEPName,
 		ConnectivityServerURL:     fmt.Sprintf("https://%s", serverListenAddr),

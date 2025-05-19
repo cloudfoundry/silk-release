@@ -23,6 +23,7 @@ files:
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/lager/v3/lagerflags/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/common/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/datastore/*.go # gosub-main-module
+  - code.cloudfoundry.org/lib/multiple-cidr-network/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/rules/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/serial/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/policy_client/*.go # gosub-main-module
@@ -97,6 +98,7 @@ files:
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/impl/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/order/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/pragma/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/protolazy/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/set/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/strs/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/protobuf/internal/version/*.go # gosub-main-module

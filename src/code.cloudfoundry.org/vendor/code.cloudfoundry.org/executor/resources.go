@@ -42,6 +42,7 @@ type Container struct {
 	RunInfo
 	Tags                                  Tags
 	State                                 State              `json:"state"`
+	Routable                              bool               `json:"routable"`
 	AllocatedAt                           int64              `json:"allocated_at"`
 	ExternalIP                            string             `json:"external_ip"`
 	InternalIP                            string             `json:"internal_ip"`
@@ -234,6 +235,8 @@ type ContainerMetrics struct {
 	TimeSpentInCPU                      time.Duration `json:"time_spent_in_cpu"`
 	AbsoluteCPUEntitlementInNanoseconds uint64        `json:"absolute_cpu_entitlement_in_ns"`
 	ContainerAgeInNanoseconds           uint64        `json:"container_age_in_ns"`
+	RxInBytes                           *uint64       `json:"rx_in_bytes"`
+	TxInBytes                           *uint64       `json:"tx_in_bytes"`
 }
 
 type MetricsConfig struct {
@@ -362,49 +365,59 @@ const (
 )
 
 type LifecycleEvent interface {
+	TraceID() string
 	Container() Container
 	lifecycleEvent()
 }
 
 type ContainerCompleteEvent struct {
 	RawContainer Container `json:"container"`
+	traceID      string
 }
 
-func NewContainerCompleteEvent(container Container) ContainerCompleteEvent {
+func NewContainerCompleteEvent(container Container, traceID string) ContainerCompleteEvent {
 	return ContainerCompleteEvent{
 		RawContainer: container,
+		traceID:      traceID,
 	}
 }
 
 func (ContainerCompleteEvent) EventType() EventType   { return EventTypeContainerComplete }
+func (e ContainerCompleteEvent) TraceID() string      { return e.traceID }
 func (e ContainerCompleteEvent) Container() Container { return e.RawContainer }
 func (ContainerCompleteEvent) lifecycleEvent()        {}
 
 type ContainerRunningEvent struct {
 	RawContainer Container `json:"container"`
+	traceID      string
 }
 
-func NewContainerRunningEvent(container Container) ContainerRunningEvent {
+func NewContainerRunningEvent(container Container, traceID string) ContainerRunningEvent {
 	return ContainerRunningEvent{
 		RawContainer: container,
+		traceID:      traceID,
 	}
 }
 
 func (ContainerRunningEvent) EventType() EventType   { return EventTypeContainerRunning }
+func (e ContainerRunningEvent) TraceID() string      { return e.traceID }
 func (e ContainerRunningEvent) Container() Container { return e.RawContainer }
 func (ContainerRunningEvent) lifecycleEvent()        {}
 
 type ContainerReservedEvent struct {
 	RawContainer Container `json:"container"`
+	traceID      string
 }
 
-func NewContainerReservedEvent(container Container) ContainerReservedEvent {
+func NewContainerReservedEvent(container Container, traceID string) ContainerReservedEvent {
 	return ContainerReservedEvent{
 		RawContainer: container,
+		traceID:      traceID,
 	}
 }
 
 func (ContainerReservedEvent) EventType() EventType   { return EventTypeContainerReserved }
+func (e ContainerReservedEvent) TraceID() string      { return e.traceID }
 func (e ContainerReservedEvent) Container() Container { return e.RawContainer }
 func (ContainerReservedEvent) lifecycleEvent()        {}
 
@@ -416,4 +429,28 @@ func truncateString(s string, length int) string {
 	delimeter := "\n... (truncated)\n"
 	last := len(s) - length/2 + len(delimeter)/2
 	return fmt.Sprintf("%s%s%s", s[:((length/2-1)-len(delimeter)/2)], delimeter, s[last:])
+}
+
+type HealthcheckType int
+
+const (
+	IsStartupCheck HealthcheckType = iota
+	IsLivenessCheck
+	IsUntilSuccessReadinessCheck
+	IsUntilFailureReadinessCheck
+)
+
+func (h HealthcheckType) String() string {
+	return [...]string{"Startup", "Liveness", "UntilSuccessReadiness", "UntilFailureReadiness"}[h]
+}
+
+type CheckProtocol int
+
+const (
+	HTTPCheck CheckProtocol = iota
+	TCPCheck
+)
+
+func (c CheckProtocol) String() string {
+	return [...]string{"HTTP", "TCP"}[c]
 }

@@ -17,6 +17,7 @@ import (
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics"
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport/ports"
 	"code.cloudfoundry.org/lager/v3/lagertest"
+	mcn "code.cloudfoundry.org/lib/multiple-cidr-network"
 	"code.cloudfoundry.org/silk/client/config"
 	"code.cloudfoundry.org/silk/controller"
 	"code.cloudfoundry.org/silk/daemon"
@@ -38,28 +39,32 @@ const (
 )
 
 var (
-	externalMTU           int
-	daemonConf            config.Config
-	daemonLease           controller.Lease
-	fakeServer            *testsupport.FakeController
-	serverListenPort      int
-	serverListenAddr      string
-	serverTLSConfig       *tls.Config
-	session               *gexec.Session
-	daemonHealthCheckURL  string
-	daemonDebugServerPort int
-	datastorePath         string
-	vtepFactory           *vtep.Factory
-	vtepName              string
-	vtepPort              int
-	vni                   int
-	fakeMetron            metrics.FakeMetron
-	overlaySubnet         string
-	overlayVtepIP         net.IP
-	remoteOverlaySubnet   string
-	remoteOverlayVtepIP   net.IP
-	remoteSingleIPSubnet  string
-	remoteSingleIP        net.IP
+	externalMTU                        int
+	daemonConf                         config.Config
+	daemonLease                        controller.Lease
+	fakeServer                         *testsupport.FakeController
+	serverListenPort                   int
+	serverListenAddr                   string
+	serverTLSConfig                    *tls.Config
+	session                            *gexec.Session
+	daemonHealthCheckURL               string
+	daemonDebugServerPort              int
+	datastorePath                      string
+	vtepFactory                        *vtep.Factory
+	vtepName                           string
+	vtepPort                           int
+	vni                                int
+	fakeMetron                         metrics.FakeMetron
+	localOverlayLeaseSubnet            string
+	localOverlayLeaseIP                net.IP
+	overlayNetworks                    mcn.MultipleCIDRNetwork
+	remoteOverlaySubnet                string
+	remoteOverlayVtepIP                net.IP
+	remoteSingleIPSubnet               string
+	remoteSingleIP                     net.IP
+	remoteOverlaySubnetOnSecondNetwork string
+	remoteOverlayVtepIPOnSecondNetwork net.IP
+	leases                             []controller.Lease
 )
 
 var _ = BeforeEach(func() {
@@ -69,18 +74,21 @@ var _ = BeforeEach(func() {
 	Expect(err).NotTo(HaveOccurred())
 	externalMTU = externalIface.MTU
 
-	overlaySubnet = fmt.Sprintf("10.255.%d.0/24", GinkgoParallelProcess()+100)
-	overlayVtepIP, _, _ = net.ParseCIDR(overlaySubnet)
+	localOverlayLeaseSubnet = fmt.Sprintf("10.255.%d.0/24", GinkgoParallelProcess()+100)
+	localOverlayLeaseIP, _, _ = net.ParseCIDR(localOverlayLeaseSubnet)
 
 	remoteOverlaySubnet = fmt.Sprintf("10.255.%d.0/24", GinkgoParallelProcess()+2)
 	remoteOverlayVtepIP, _, _ = net.ParseCIDR(remoteOverlaySubnet)
+
+	remoteOverlaySubnetOnSecondNetwork = fmt.Sprintf("10.250.%d.0/24", GinkgoParallelProcess()+2)
+	remoteOverlayVtepIPOnSecondNetwork, _, _ = net.ParseCIDR(remoteOverlaySubnetOnSecondNetwork)
 
 	remoteSingleIPSubnet = fmt.Sprintf("10.255.0.%d/32", GinkgoParallelProcess()+20)
 	remoteSingleIP, _, _ = net.ParseCIDR(remoteSingleIPSubnet)
 
 	daemonLease = controller.Lease{
 		UnderlayIP:          localIP,
-		OverlaySubnet:       overlaySubnet,
+		OverlaySubnet:       localOverlayLeaseSubnet,
 		OverlayHardwareAddr: "ee:ee:0a:ff:1e:00",
 	}
 	vni = GinkgoParallelProcess()
@@ -94,10 +102,15 @@ var _ = BeforeEach(func() {
 	datastoreDir, err := os.MkdirTemp("", "")
 	Expect(err).NotTo(HaveOccurred())
 	datastorePath = filepath.Join(datastoreDir, "container-metadata.json")
+
+	overlayNetworksString := []string{"10.255.0.0/16", "10.250.0.0/16"}
+	overlayNetworks, err = mcn.NewMultipleCIDRNetwork(overlayNetworksString)
+	Expect(err).NotTo(HaveOccurred())
+
 	daemonConf = config.Config{
 		UnderlayIP:                localIP,
 		SubnetPrefixLength:        24,
-		OverlayNetwork:            "10.255.0.0/16",
+		OverlayNetworks:           overlayNetworksString,
 		HealthCheckPort:           uint16(daemonHealthCheckPort),
 		VTEPName:                  vtepName,
 		ConnectivityServerURL:     fmt.Sprintf("https://%s", serverListenAddr),
@@ -125,31 +138,34 @@ var _ = BeforeEach(func() {
 		ResponseCode: 200,
 		ResponseBody: &controller.Lease{
 			UnderlayIP:          localIP,
-			OverlaySubnet:       overlaySubnet,
+			OverlaySubnet:       localOverlayLeaseSubnet,
 			OverlayHardwareAddr: "ee:ee:0a:ff:1e:00",
 		},
 	}
 
-	leases := map[string][]controller.Lease{
-		"leases": []controller.Lease{
-			{
-				UnderlayIP:          localIP,
-				OverlaySubnet:       overlaySubnet,
-				OverlayHardwareAddr: "ee:ee:0a:ff:1e:00",
-			}, {
-				UnderlayIP:          "172.17.0.5",
-				OverlaySubnet:       remoteOverlaySubnet,
-				OverlayHardwareAddr: "ee:ee:0a:ff:28:00",
-			}, {
-				UnderlayIP:          "172.17.0.6",
-				OverlaySubnet:       remoteSingleIPSubnet,
-				OverlayHardwareAddr: "ee:ee:0a:ff:28:20",
-			},
+	leases = []controller.Lease{
+		{
+			UnderlayIP:          localIP,
+			OverlaySubnet:       localOverlayLeaseSubnet,
+			OverlayHardwareAddr: "ee:ee:0a:ff:1e:00",
+		}, {
+			UnderlayIP:          "172.17.0.5",
+			OverlaySubnet:       remoteOverlaySubnet,
+			OverlayHardwareAddr: "ee:ee:0a:ff:28:00",
+		}, {
+			UnderlayIP:          "172.17.0.6",
+			OverlaySubnet:       remoteSingleIPSubnet,
+			OverlayHardwareAddr: "ee:ee:0a:ff:28:ff",
+		}, {
+			UnderlayIP:          "172.17.0.9",
+			OverlaySubnet:       remoteOverlaySubnetOnSecondNetwork,
+			OverlayHardwareAddr: "cc:cc:cc:cc:cc:cc",
 		},
 	}
+	leasesResponse := map[string][]controller.Lease{"leases": leases}
 	indexHandler := &testsupport.FakeHandler{
 		ResponseCode: 200,
-		ResponseBody: leases,
+		ResponseBody: leasesResponse,
 	}
 
 	fakeServer.SetHandler("/leases/acquire", acquireHandler)
@@ -207,13 +223,14 @@ var _ = Describe("Daemon Integration", func() {
 		By("getting the addresses on the device")
 		addresses, err := netlink.AddrList(vtep, netlink.FAMILY_V4)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(addresses).To(HaveLen(1))
-		Expect(addresses[0].IP.String()).To(Equal(overlayVtepIP.String()))
+		Expect(addresses).To(HaveLen(len(daemonConf.OverlayNetworks)))
+		Expect(addresses[0].IP.String()).To(Equal(localOverlayLeaseIP.String()))
+		Expect(addresses[1].IP.String()).To(Equal("10.250.0.0"))
 		By("checking the daemon's healthcheck")
 		doHealthCheck()
 
 		By("inspecting the daemon's log to see that it acquired a new lease")
-		Expect(session.Out).To(gbytes.Say(`potato-prefix\.silk-daemon.*acquired-lease.*overlay_subnet.*` + overlaySubnet + `.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`))
+		Expect(session.Out).To(gbytes.Say(`potato-prefix\.silk-daemon.*acquired-lease.*overlay_subnet.*` + localOverlayLeaseSubnet + `.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`))
 
 		By("stopping the daemon")
 		stopDaemon()
@@ -237,7 +254,7 @@ var _ = Describe("Daemon Integration", func() {
 		doHealthCheck()
 
 		By("inspecting the daemon's log to see that it renewed a new lease")
-		Expect(session.Out).To(gbytes.Say(`renewed-lease.*overlay_subnet.*` + overlaySubnet + `.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`))
+		Expect(session.Out).To(gbytes.Say(`renewed-lease.*overlay_subnet.*` + localOverlayLeaseSubnet + `.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`))
 
 		By("checking that a renew-success metric was emitted")
 		Eventually(fakeMetron.AllEvents, "5s").Should(ContainElement(withName("renewSuccess")))
@@ -254,7 +271,21 @@ var _ = Describe("Daemon Integration", func() {
 	})
 
 	Context("when single ip only is true", func() {
-		BeforeEach(func() {
+		var (
+			localSingleIPLease     controller.Lease
+			localSingleIPOverlayIP string
+		)
+
+		JustBeforeEach(func() {
+			By("defining a local singleIP lease")
+			localSingleIPOverlayIP = "10.255.0.32"
+			localSingleIPLease = controller.Lease{
+				UnderlayIP:          "10.244.64.65",
+				OverlaySubnet:       fmt.Sprintf("%s/32", localSingleIPOverlayIP),
+				OverlayHardwareAddr: "ee:ee:0a:ff:00:20",
+			}
+
+			By("setting the acquire endpoint to return the singleIP lease")
 			fakeServer.SetHandlerFunc("/leases/acquire", func(w http.ResponseWriter, req *http.Request) {
 				contents, err := io.ReadAll(req.Body)
 				Expect(err).NotTo(HaveOccurred())
@@ -263,24 +294,48 @@ var _ = Describe("Daemon Integration", func() {
 				err = json.Unmarshal(contents, &acquireRequest)
 				Expect(err).NotTo(HaveOccurred())
 				if acquireRequest.SingleOverlayIP {
-					contents, err := json.Marshal(controller.Lease{
-						UnderlayIP:          "10.244.64.65",
-						OverlaySubnet:       "10.255.0.32/32",
-						OverlayHardwareAddr: "ee:ee:0a:ff:00:20",
-					})
+					contents, err := json.Marshal(localSingleIPLease)
 					Expect(err).NotTo(HaveOccurred())
 					w.WriteHeader(http.StatusOK)
 					w.Write(contents)
 					return
 				}
 
+				By("failing if the daemon ever tries to claim a non-SingleIP lease")
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte("{}"))
 			})
 
+			fakeServer.SetHandlerFunc("/leases/renew", func(w http.ResponseWriter, req *http.Request) {
+				var renewLease controller.Lease
+				err := json.NewDecoder(req.Body).Decode(&renewLease)
+				Expect(err).NotTo(HaveOccurred())
+
+				if strings.Contains(renewLease.OverlaySubnet, "/32") {
+					By("Making the renew handler return a 200 only if the lease is a singleIP")
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte("{}"))
+				} else {
+					By("Making the renew handler return a 500 initially so it will re-request a lease")
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			})
+
+			By("adding the new localSingleIPLease to the list of all other leases used in other tests")
+			leases = append(leases, localSingleIPLease)
+			leasesResponse := map[string][]controller.Lease{"leases": leases}
+			indexHandler := &testsupport.FakeHandler{
+				ResponseCode: 200,
+				ResponseBody: leasesResponse,
+			}
+			fakeServer.SetHandler("/leases", indexHandler)
+
+			By("restarting the daemon so it becomes SingleIP")
 			daemonConf.SingleIPOnly = true
 			stopDaemon()
 			startAndWaitForDaemon()
+			By("checking that the lease renewal is logged")
+			Eventually(session.Out, 2).Should(gbytes.Say(`silk-daemon.renewed-lease.*"lease".*overlay_subnet.*` + "10.255.0.32/32" + `.*overlay_hardware_addr.*ee:ee:0a:ff:00:20`))
 		})
 
 		It("updates the local networking stack", func() {
@@ -292,8 +347,41 @@ var _ = Describe("Daemon Integration", func() {
 
 			addresses, err := netlink.AddrList(vtep, netlink.FAMILY_V4)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(addresses).To(HaveLen(1))
+			Expect(addresses).To(HaveLen(len(daemonConf.OverlayNetworks)))
 			Expect(addresses[0].IP.String()).To(Equal("10.255.0.32"))
+			Expect(addresses[1].IP.String()).To(Equal("10.250.0.0"))
+		})
+
+		It("updates the local routing stack", func() {
+			By("checking that it emits a metric for the number of leases it sees")
+			Eventually(fakeMetron.AllEvents, "5s").Should(ContainElement(hasMetricWithValue("numberLeases", 5)))
+
+			By("turning on debug logging")
+			setLogLevel("DEBUG", daemonDebugServerPort)
+
+			By("checking that the correct leases are logged")
+			Eventually(session.Out, 2).Should(gbytes.Say(`level.*debug.*silk-daemon.converge-leases`))
+			Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`underlay_ip.*%s.*overlay_subnet.*`+localOverlayLeaseSubnet+`.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`, localIP)))
+			Eventually(session.Out, 2).Should(gbytes.Say(`underlay_ip.*172.17.0.5.*overlay_subnet.*` + remoteOverlaySubnet + `.*overlay_hardware_addr.*ee:ee:0a:ff:28:00`))
+			Eventually(session.Out, 2).Should(gbytes.Say(`underlay_ip.*172.17.0.9.*overlay_subnet.*` + remoteOverlaySubnetOnSecondNetwork + `.*overlay_hardware_addr.*cc:cc:cc:cc:cc:cc`))
+			Eventually(session.Out, 2).Should(gbytes.Say(`underlay_ip.*172.17.0.6.*overlay_subnet.*` + remoteSingleIPSubnet + `.*overlay_hardware_addr.*ee:ee:0a:ff:28:ff`))
+			Eventually(session.Out, 2).Should(gbytes.Say(`underlay_ip.*10.244.64.65.*overlay_subnet.*` + "10.255.0.32/32" + `.*overlay_hardware_addr.*ee:ee:0a:ff:00:20`))
+
+			By("checking the routing is correct")
+			routes := mustSucceed("ip", "route", "list", "dev", vtepName)
+			routeFields := strings.Fields(routes)
+			Expect(routeFields).To(matchers.ContainSequence([]string{"10.255.0.0/16", "proto", "kernel", "scope", "link", "src", localSingleIPOverlayIP}))
+			Expect(routeFields).To(matchers.ContainSequence([]string{"10.250.0.0/16", "proto", "kernel", "scope", "link", "src", "10.250.0.0"}))
+
+			By("checking that leases in the same overlay CIDR as this lease include a src with my lease IP")
+			Expect(routeFields).To(matchers.ContainSequence([]string{localOverlayLeaseSubnet, "via", localOverlayLeaseIP.String(), "src", localSingleIPOverlayIP}))
+			Expect(routeFields).To(matchers.ContainSequence([]string{remoteOverlaySubnet, "via", remoteOverlayVtepIP.String(), "src", localSingleIPOverlayIP}))
+
+			By("checking that leases in a different overlay CIDR as the local lease include a src with the overlay CIDR IP")
+			Expect(routeFields).To(matchers.ContainSequence([]string{remoteOverlaySubnetOnSecondNetwork, "via", remoteOverlayVtepIPOnSecondNetwork.String(), "src", "10.250.0.0"}))
+
+			By("checking that singleIP VMs are not given a route")
+			Expect(routeFields).NotTo(matchers.ContainSequence([]string{remoteSingleIP.String(), "via", remoteSingleIP.String()}))
 		})
 	})
 
@@ -346,7 +434,7 @@ var _ = Describe("Daemon Integration", func() {
 
 		It("polls to renew the lease and logs at debug level", func() {
 			By("checking that the lease renewal is logged")
-			Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`silk-daemon.renew-lease.*"lease".*overlay_subnet.*` + overlaySubnet + `.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`)))
+			Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`silk-daemon.renew-lease.*"lease".*overlay_subnet.*` + localOverlayLeaseSubnet + `.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`)))
 
 			By("stopping the controller")
 			handler := &testsupport.FakeHandler{
@@ -363,24 +451,31 @@ var _ = Describe("Daemon Integration", func() {
 		It("polls for other leases and logs at debug level", func() {
 			By("checking that the correct leases are logged")
 			Eventually(session.Out, 2).Should(gbytes.Say(`level.*debug.*silk-daemon.converge-leases`))
-			Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`underlay_ip.*%s.*overlay_subnet.*`+overlaySubnet+`.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`, localIP)))
+			Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`underlay_ip.*%s.*overlay_subnet.*`+localOverlayLeaseSubnet+`.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`, localIP)))
 			Eventually(session.Out, 2).Should(gbytes.Say(`underlay_ip.*172.17.0.5.*overlay_subnet.*` + remoteOverlaySubnet + `.*overlay_hardware_addr.*ee:ee:0a:ff:28:00`))
+			Eventually(session.Out, 2).Should(gbytes.Say(`underlay_ip.*172.17.0.9.*overlay_subnet.*` + remoteOverlaySubnetOnSecondNetwork + `.*overlay_hardware_addr.*cc:cc:cc:cc:cc:cc`))
+			Eventually(session.Out, 2).Should(gbytes.Say(`underlay_ip.*172.17.0.6.*overlay_subnet.*` + remoteSingleIPSubnet + `.*overlay_hardware_addr.*ee:ee:0a:ff:28:ff`))
 
 			By("checking the arp fdb and routing are correct")
 			routes := mustSucceed("ip", "route", "list", "dev", vtepName)
 			routeFields := strings.Fields(routes)
-			Expect(routeFields).To(matchers.ContainSequence([]string{"10.255.0.0/16", "proto", "kernel", "scope", "link", "src", overlayVtepIP.String()}))
-			Expect(routeFields).To(matchers.ContainSequence([]string{remoteOverlaySubnet, "via", remoteOverlayVtepIP.String(), "src", overlayVtepIP.String()}))
-			Expect(routeFields).To(matchers.ContainSequence([]string{remoteSingleIP.String(), "via", remoteSingleIP.String(), "src", overlayVtepIP.String()}))
+			Expect(routeFields).To(matchers.ContainSequence([]string{"10.255.0.0/16", "proto", "kernel", "scope", "link", "src", localOverlayLeaseIP.String()}))
+			Expect(routeFields).To(matchers.ContainSequence([]string{remoteOverlaySubnet, "via", remoteOverlayVtepIP.String(), "src", localOverlayLeaseIP.String()}))
+			Expect(routeFields).To(matchers.ContainSequence([]string{remoteOverlaySubnetOnSecondNetwork, "via", remoteOverlayVtepIPOnSecondNetwork.String(), "src", overlayNetworks.Networks[1].IP.String()}))
+			Expect(routeFields).NotTo(matchers.ContainSequence([]string{remoteSingleIP.String(), "via", remoteSingleIP.String()}))
 
 			arpEntries := mustSucceed("ip", "neigh", "list", "dev", vtepName)
 			Expect(arpEntries).To(ContainSubstring(remoteOverlayVtepIP.String() + " lladdr ee:ee:0a:ff:28:00 PERMANENT"))
+			Expect(arpEntries).To(ContainSubstring(remoteOverlayVtepIPOnSecondNetwork.String() + " lladdr cc:cc:cc:cc:cc:cc PERMANENT"))
+			Expect(arpEntries).To(ContainSubstring(remoteSingleIP.String() + " lladdr ee:ee:0a:ff:28:ff PERMANENT"))
 
 			fdbEntries := mustSucceed("bridge", "fdb", "list", "dev", vtepName)
 			Expect(fdbEntries).To(ContainSubstring("ee:ee:0a:ff:28:00 dst 172.17.0.5 self permanent"))
+			Expect(fdbEntries).To(ContainSubstring("cc:cc:cc:cc:cc:cc dst 172.17.0.9 self permanent"))
+			Expect(fdbEntries).To(ContainSubstring("ee:ee:0a:ff:28:ff dst 172.17.0.6 self permanent"))
 
 			By("checking that it emits a metric for the number of leases it sees")
-			Eventually(fakeMetron.AllEvents, "5s").Should(ContainElement(hasMetricWithValue("numberLeases", 3)))
+			Eventually(fakeMetron.AllEvents, "5s").Should(ContainElement(hasMetricWithValue("numberLeases", 4)))
 
 			By("removing the leases from the controller")
 			fakeServer.SetHandler("/leases", &testsupport.FakeHandler{
@@ -399,31 +494,49 @@ var _ = Describe("Daemon Integration", func() {
 			It("polls and updates the leases accordingly", func() {
 				By("checking that the correct leases are logged")
 				Eventually(session.Out, 2).Should(gbytes.Say(`level.*debug.*silk-daemon.converge-leases`))
-				Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`underlay_ip.*%s.*overlay_subnet.*`+overlaySubnet+`.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`, localIP)))
+				Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`underlay_ip.*%s.*overlay_subnet.*`+localOverlayLeaseSubnet+`.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`, localIP)))
 				Eventually(session.Out, 2).Should(gbytes.Say(`underlay_ip.*172.17.0.5.*overlay_subnet.*` + remoteOverlaySubnet + `.*overlay_hardware_addr.*ee:ee:0a:ff:28:00`))
+				Eventually(session.Out, 2).Should(gbytes.Say(`underlay_ip.*172.17.0.9.*overlay_subnet.*` + remoteOverlaySubnetOnSecondNetwork + `.*overlay_hardware_addr.*cc:cc:cc:cc:cc:cc`))
+				Eventually(session.Out, 2).Should(gbytes.Say(`underlay_ip.*172.17.0.6.*overlay_subnet.*` + remoteSingleIPSubnet + `.*overlay_hardware_addr.*ee:ee:0a:ff:28:ff`))
 
 				By("checking the arp fdb and routing are correct")
 
-				Eventually(string(session.Out.Contents()), "5s").Should(ContainSubstring(`"level":"debug","source":"potato-prefix.silk-daemon","message":"potato-prefix.silk-daemon.converge-leases","data":{"leases":[{"underlay_ip":"127.0.0.1","overlay_subnet":"` + overlaySubnet + `","overlay_hardware_addr":"ee:ee:0a:ff:1e:00"},{"underlay_ip":"172.17.0.5","overlay_subnet":"` + remoteOverlaySubnet + `","overlay_hardware_addr":"ee:ee:0a:ff:28:00"},{"underlay_ip":"172.17.0.6","overlay_subnet":"` + remoteSingleIPSubnet + `","overlay_hardware_addr":"ee:ee:0a:ff:28:20"}]}}`))
+				part1 := `"level":"debug","source":"potato-prefix.silk-daemon","message":"potato-prefix.silk-daemon.converge-leases","data":{`
+				part2 := `"leases":[{"underlay_ip":"127.0.0.1","overlay_subnet":"` + localOverlayLeaseSubnet + `","overlay_hardware_addr":"ee:ee:0a:ff:1e:00"},`
+				part3 := `{"underlay_ip":"172.17.0.5","overlay_subnet":"` + remoteOverlaySubnet + `","overlay_hardware_addr":"ee:ee:0a:ff:28:00"},`
+				part4 := `{"underlay_ip":"172.17.0.6","overlay_subnet":"` + remoteSingleIPSubnet + `","overlay_hardware_addr":"ee:ee:0a:ff:28:ff"},`
+				part5 := `{"underlay_ip":"172.17.0.9","overlay_subnet":"` + remoteOverlaySubnetOnSecondNetwork + `","overlay_hardware_addr":"cc:cc:cc:cc:cc:cc"}]}}`
+
+				expectedConvergeLeaseLog := fmt.Sprintf("%s%s%s%s%s", part1, part2, part3, part4, part5)
+
+				Eventually(string(session.Out.Contents()), "5s").Should(ContainSubstring(expectedConvergeLeaseLog))
 
 				routes := mustSucceed("ip", "route", "list", "dev", vtepName)
 				routeFields := strings.Fields(routes)
-				Expect(routeFields).To(matchers.ContainSequence([]string{"10.255.0.0/16", "proto", "kernel", "scope", "link", "src", overlayVtepIP.String()}))
-				Expect(routeFields).To(matchers.ContainSequence([]string{remoteOverlaySubnet, "via", remoteOverlayVtepIP.String(), "src", overlayVtepIP.String()}))
+				Expect(routeFields).To(matchers.ContainSequence([]string{"10.255.0.0/16", "proto", "kernel", "scope", "link", "src", localOverlayLeaseIP.String()}))
+				Expect(routeFields).To(matchers.ContainSequence([]string{remoteOverlaySubnet, "via", remoteOverlayVtepIP.String()}))
+				Expect(routeFields).To(matchers.ContainSequence([]string{remoteOverlaySubnet, "via", remoteOverlayVtepIP.String()}))
+				Expect(routeFields).NotTo(matchers.ContainSequence([]string{remoteSingleIPSubnet, "via", remoteSingleIP.String()}))
+				Expect(routeFields).NotTo(matchers.ContainSequence([]string{remoteOverlaySubnetOnSecondNetwork, "via", remoteOverlayVtepIPOnSecondNetwork.String(), "src", localOverlayLeaseIP.String()}))
+				Expect(routeFields).NotTo(matchers.ContainSequence([]string{remoteOverlaySubnetOnSecondNetwork, "via", remoteOverlayVtepIPOnSecondNetwork.String(), "src", localOverlayLeaseIP.String()}))
 
 				arpEntries := mustSucceed("ip", "neigh", "list", "dev", vtepName)
 				Expect(arpEntries).To(ContainSubstring(remoteOverlayVtepIP.String() + " lladdr ee:ee:0a:ff:28:00 PERMANENT"))
+				Expect(arpEntries).To(ContainSubstring(remoteOverlayVtepIPOnSecondNetwork.String() + " lladdr cc:cc:cc:cc:cc:cc PERMANENT"))
+				Expect(arpEntries).To(ContainSubstring(remoteSingleIP.String() + " lladdr ee:ee:0a:ff:28:ff PERMANENT"))
 
 				fdbEntries := mustSucceed("bridge", "fdb", "list", "dev", vtepName)
 				Expect(fdbEntries).To(ContainSubstring("ee:ee:0a:ff:28:00 dst 172.17.0.5 self permanent"))
+				Expect(fdbEntries).To(ContainSubstring("cc:cc:cc:cc:cc:cc dst 172.17.0.9 self permanent"))
+				Expect(fdbEntries).To(ContainSubstring("ee:ee:0a:ff:28:ff dst 172.17.0.6 self permanent"))
 
-				By("simulating a cell shutdown by removing a lease from the controller")
+				By("simulating a cell shutdown by removing leases from the controller")
 				fakeServer.SetHandler("/leases", &testsupport.FakeHandler{
 					ResponseCode: 200,
 					ResponseBody: map[string][]controller.Lease{"leases": []controller.Lease{
 						{
 							UnderlayIP:          localIP,
-							OverlaySubnet:       overlaySubnet,
+							OverlaySubnet:       localOverlayLeaseSubnet,
 							OverlayHardwareAddr: "ee:ee:0a:ff:1e:00",
 						},
 					}}},
@@ -431,20 +544,28 @@ var _ = Describe("Daemon Integration", func() {
 
 				By("checking that updated leases are logged")
 				Eventually(session.Out, 2).Should(gbytes.Say(`level.*debug.*silk-daemon.converge-leases`))
-				Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`underlay_ip.*%s.*overlay_subnet.*`+overlaySubnet+`.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`, localIP)))
+				Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`underlay_ip.*%s.*overlay_subnet.*`+localOverlayLeaseSubnet+`.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`, localIP)))
 				Eventually(session.Out, 2).ShouldNot(gbytes.Say(`underlay_ip.*172.17.0.5.*overlay_subnet.*` + remoteOverlaySubnet + `.*overlay_hardware_addr.*ee:ee:0a:ff:28:00`))
+				Eventually(session.Out, 2).ShouldNot(gbytes.Say(`underlay_ip.*172.17.0.9.*overlay_subnet.*` + remoteOverlaySubnetOnSecondNetwork + `.*overlay_hardware_addr.*cc:cc:cc:cc:cc:cc`))
 
 				By("checking the arp fdb and routing are updated correctly")
-				routes = mustSucceed("ip", "route", "list", "dev", vtepName)
-				routeFields = strings.Fields(routes)
-				Expect(routeFields).To(matchers.ContainSequence([]string{"10.255.0.0/16", "proto", "kernel", "scope", "link", "src", overlayVtepIP.String()}))
-				Expect(routeFields).NotTo(matchers.ContainSequence([]string{remoteOverlaySubnet, "via", remoteOverlayVtepIP.String(), "src", overlayVtepIP.String()}))
+				getRouteFields := func() []string {
+					routes = mustSucceed("ip", "route", "list", "dev", vtepName)
+					return strings.Fields(routes)
+				}
+				Eventually(getRouteFields).Should(matchers.ContainSequence([]string{"10.255.0.0/16", "proto", "kernel", "scope", "link", "src", localOverlayLeaseIP.String()}))
+				Eventually(getRouteFields).ShouldNot(matchers.ContainSequence([]string{remoteOverlaySubnet, "via", remoteOverlayVtepIP.String()}))
+				Expect(getRouteFields()).NotTo(matchers.ContainSequence([]string{remoteOverlaySubnetOnSecondNetwork, "via", remoteOverlayVtepIPOnSecondNetwork.String()}))
 
 				arpEntries = mustSucceed("ip", "neigh", "list", "dev", vtepName)
 				Expect(arpEntries).NotTo(ContainSubstring(remoteOverlayVtepIP.String() + " lladdr ee:ee:0a:ff:28:00 PERMANENT"))
+				Expect(arpEntries).NotTo(ContainSubstring(remoteOverlayVtepIPOnSecondNetwork.String() + " lladdr cc:cc:cc:cc:cc:cc PERMANENT"))
+				Expect(arpEntries).NotTo(ContainSubstring(remoteSingleIP.String() + " lladdr ee:ee:0a:ff:28:ff PERMANENT"))
 
 				fdbEntries = mustSucceed("bridge", "fdb", "list", "dev", vtepName)
 				Expect(fdbEntries).NotTo(ContainSubstring("ee:ee:0a:ff:28:00 dst 172.17.0.5 self permanent"))
+				Expect(fdbEntries).NotTo(ContainSubstring("cc:cc:cc:cc:cc:cc dst 172.17.0.9 self permanent"))
+				Expect(fdbEntries).NotTo(ContainSubstring("ee:ee:0a:ff:28:ff dst 172.17.0.6 self permanent"))
 			})
 		})
 
@@ -456,7 +577,7 @@ var _ = Describe("Daemon Integration", func() {
 						"leases": []controller.Lease{
 							{ // in our overlay
 								UnderlayIP:          localIP,
-								OverlaySubnet:       overlaySubnet,
+								OverlaySubnet:       localOverlayLeaseSubnet,
 								OverlayHardwareAddr: "ee:ee:0a:ff:1e:00",
 							},
 							{ // not in our overlay
@@ -468,6 +589,11 @@ var _ = Describe("Daemon Integration", func() {
 								UnderlayIP:          "172.17.0.5",
 								OverlaySubnet:       remoteOverlaySubnet,
 								OverlayHardwareAddr: "ee:ee:0a:ff:28:00",
+							},
+							{ // in our overlay
+								UnderlayIP:          "172.17.0.9",
+								OverlaySubnet:       remoteOverlaySubnetOnSecondNetwork,
+								OverlayHardwareAddr: "cc:cc:cc:cc:cc:cc",
 							},
 						},
 					},
@@ -481,25 +607,37 @@ var _ = Describe("Daemon Integration", func() {
 
 				By("checking that the correct leases are logged")
 				Eventually(session.Out, 2).Should(gbytes.Say(`level.*debug.*silk-daemon.converge-leases`))
-				Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`underlay_ip.*%s.*overlay_subnet.*`+overlaySubnet+`.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`, localIP)))
+				Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`underlay_ip.*%s.*overlay_subnet.*`+localOverlayLeaseSubnet+`.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`, localIP)))
 				Eventually(session.Out, 2).Should(gbytes.Say(`underlay_ip.*172.17.0.5.*overlay_subnet.*` + remoteOverlaySubnet + `.*overlay_hardware_addr.*ee:ee:0a:ff:28:00`))
+				Eventually(session.Out, 2).Should(gbytes.Say(`underlay_ip.*172.17.0.9.*overlay_subnet.*` + remoteOverlaySubnetOnSecondNetwork + `.*overlay_hardware_addr.*cc:cc:cc:cc:cc:cc`))
 
-				Eventually(session.Out, "5s").Should(gbytes.Say(`level.*debug.*silk-daemon.converge-leases.*data":\{"leases":\[\{"underlay_ip":"127.0.0.1","overlay_subnet":"` + overlaySubnet + `","overlay_hardware_addr":"ee:ee:0a:ff:1e:00"\},\{"underlay_ip":"172.17.0.4","overlay_subnet":"10.123.40.0/24","overlay_hardware_addr":"ee:ee:0a:fe:28:00"\},\{"underlay_ip":"172.17.0.5","overlay_subnet":"` + remoteOverlaySubnet + `","overlay_hardware_addr":"ee:ee:0a:ff:28:00"`))
+				part1 := `"level":"debug","source":"potato-prefix.silk-daemon","message":"potato-prefix.silk-daemon.converge-leases","data":{`
+				part2 := `"leases":[{"underlay_ip":"127.0.0.1","overlay_subnet":"` + localOverlayLeaseSubnet + `","overlay_hardware_addr":"ee:ee:0a:ff:1e:00"},`
+				part3 := `{"underlay_ip":"172.17.0.4","overlay_subnet":"10.123.40.0/24","overlay_hardware_addr":"ee:ee:0a:fe:28:00"},`
+				part4 := `{"underlay_ip":"172.17.0.5","overlay_subnet":"` + remoteOverlaySubnet + `","overlay_hardware_addr":"ee:ee:0a:ff:28:00"},`
+				part5 := `{"underlay_ip":"172.17.0.9","overlay_subnet":"` + remoteOverlaySubnetOnSecondNetwork + `","overlay_hardware_addr":"cc:cc:cc:cc:cc:cc"}]}}`
+				expectedConvergeLeaseLog := fmt.Sprintf("%s%s%s%s%s", part1, part2, part3, part4, part5)
+
+				Eventually(string(session.Out.Contents()), "5s").Should(ContainSubstring(expectedConvergeLeaseLog))
 
 				By("checking the arp fdb and routing are correct")
 				routes := mustSucceed("ip", "route", "list", "dev", vtepName)
 				routeFields := strings.Fields(routes)
-				Expect(routeFields).To(matchers.ContainSequence([]string{"10.255.0.0/16", "proto", "kernel", "scope", "link", "src", overlayVtepIP.String()}))
-				Expect(routeFields).To(matchers.ContainSequence([]string{remoteOverlaySubnet, "via", remoteOverlayVtepIP.String(), "src", overlayVtepIP.String()}))
+				Expect(routeFields).To(matchers.ContainSequence([]string{"10.255.0.0/16", "proto", "kernel", "scope", "link", "src", localOverlayLeaseIP.String()}))
+
+				Expect(routeFields).To(matchers.ContainSequence([]string{remoteOverlaySubnet, "via", remoteOverlayVtepIP.String(), "src", localOverlayLeaseIP.String()}))
+				Expect(routeFields).To(matchers.ContainSequence([]string{remoteOverlaySubnetOnSecondNetwork, "via", remoteOverlayVtepIPOnSecondNetwork.String(), "src", overlayNetworks.Networks[1].IP.String()}))
 
 				arpEntries := mustSucceed("ip", "neigh", "list", "dev", vtepName)
 				Expect(arpEntries).To(ContainSubstring(remoteOverlayVtepIP.String() + " lladdr ee:ee:0a:ff:28:00 PERMANENT"))
+				Expect(arpEntries).To(ContainSubstring(remoteOverlayVtepIPOnSecondNetwork.String() + " lladdr cc:cc:cc:cc:cc:cc PERMANENT"))
 
 				fdbEntries := mustSucceed("bridge", "fdb", "list", "dev", vtepName)
 				Expect(fdbEntries).To(ContainSubstring("ee:ee:0a:ff:28:00 dst 172.17.0.5 self permanent"))
+				Expect(fdbEntries).To(ContainSubstring("cc:cc:cc:cc:cc:cc dst 172.17.0.9 self permanent"))
 
 				By("checking that routes do not exist for the nonroutable lease")
-				Expect(routeFields).NotTo(matchers.ContainSequence([]string{"10.123.40.0/24", "via", "10.123.40.0", "src", overlayVtepIP.String()}))
+				Expect(routeFields).NotTo(matchers.ContainSequence([]string{"10.123.40.0/24", "via", "10.123.40.0"}))
 				Expect(arpEntries).NotTo(ContainSubstring("10.123.40.0 lladdr ee:ee:0a:fe:28:00 PERMANENT"))
 				Expect(fdbEntries).NotTo(ContainSubstring("ee:ee:0a:fe:28:00 dst 172.17.0.4 self permanent"))
 			})
@@ -561,11 +699,20 @@ var _ = Describe("Daemon Integration", func() {
 	Context("when the discovered lease is not in the overlay network", func() {
 		BeforeEach(func() {
 			stopDaemon()
-			daemonConf.OverlayNetwork = "10.254.0.0/16"
+			daemonConf.OverlayNetworks = []string{"10.254.0.0/16"}
 		})
 
 		Context("when no containers are running", func() {
 			It("logs an error message and acquires a new lease", func() {
+				acquireHandler := &testsupport.FakeHandler{
+					ResponseCode: 200,
+					ResponseBody: &controller.Lease{
+						UnderlayIP:          localIP,
+						OverlaySubnet:       "10.254.10.0/24",
+						OverlayHardwareAddr: "ee:ee:0a:ff:1e:00",
+					},
+				}
+				fakeServer.SetHandler("/leases/acquire", acquireHandler)
 				startAndWaitForDaemon()
 				Expect(session.Out).To(gbytes.Say(`network-contains-lease.*"error":"discovered lease is not in overlay network"`))
 				Expect(session.Out).To(gbytes.Say(`acquired-lease.*`))

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 
+	mcn "code.cloudfoundry.org/lib/multiple-cidr-network"
 	clientConfig "code.cloudfoundry.org/silk/client/config"
 	"code.cloudfoundry.org/silk/controller"
 )
@@ -20,14 +21,14 @@ type ConfigCreator struct {
 }
 
 type Config struct {
-	VTEPName                   string
-	UnderlayInterface          net.Interface
-	UnderlayIP                 net.IP
-	OverlayIP                  net.IP
-	OverlayHardwareAddr        net.HardwareAddr
-	VNI                        int
-	OverlayNetworkPrefixLength int
-	VTEPPort                   int
+	VTEPName            string
+	UnderlayInterface   net.Interface
+	UnderlayIP          net.IP
+	LeaseIP             net.IP
+	OverlayHardwareAddr net.HardwareAddr
+	VNI                 int
+	VTEPPort            int
+	OverlayNetworks     mcn.MultipleCIDRNetwork
 }
 
 func (c *ConfigCreator) Create(clientConf clientConfig.Config, lease controller.Lease) (*Config, error) {
@@ -60,7 +61,7 @@ func (c *ConfigCreator) Create(clientConf clientConfig.Config, lease controller.
 		}
 	}
 
-	overlayIP, _, err := net.ParseCIDR(lease.OverlaySubnet)
+	leaseIP, _, err := net.ParseCIDR(lease.OverlaySubnet)
 	if err != nil {
 		return nil, fmt.Errorf("determine vtep overlay ip: %s", err)
 	}
@@ -70,27 +71,29 @@ func (c *ConfigCreator) Create(clientConf clientConfig.Config, lease controller.
 		return nil, fmt.Errorf("parsing hardware address: %s", err)
 	}
 
-	_, overlayNetwork, err := net.ParseCIDR(clientConf.OverlayNetwork)
-	if err != nil {
-		return nil, fmt.Errorf("determine overlay network: %s", err)
+	if len(clientConf.OverlayNetworks) == 0 {
+		return nil, fmt.Errorf("no overlay networks specified")
 	}
 
-	overlayNetworkPrefixLength, _ := overlayNetwork.Mask.Size()
+	overlayNetworks, err := mcn.NewMultipleCIDRNetwork(clientConf.OverlayNetworks)
+	if err != nil {
+		return nil, fmt.Errorf("creating multiple CIDR Network: %s", err)
+	}
 
-	if overlayNetworkPrefixLength >= clientConf.SubnetPrefixLength {
+	if overlayNetworks.SmallestMask >= clientConf.SubnetPrefixLength {
 		return nil, fmt.Errorf("overlay prefix %d must be smaller than subnet prefix %d",
-			overlayNetworkPrefixLength, clientConf.SubnetPrefixLength)
+			overlayNetworks.SmallestMask, clientConf.SubnetPrefixLength)
 	}
 
 	return &Config{
-		VTEPName:                   clientConf.VTEPName,
-		UnderlayInterface:          underlayInterface,
-		UnderlayIP:                 underlayIP,
-		OverlayIP:                  overlayIP,
-		OverlayHardwareAddr:        overlayHardwareAddr,
-		VNI:                        clientConf.VNI,
-		OverlayNetworkPrefixLength: overlayNetworkPrefixLength,
-		VTEPPort:                   clientConf.VTEPPort,
+		VTEPName:            clientConf.VTEPName,
+		UnderlayInterface:   underlayInterface,
+		UnderlayIP:          underlayIP,
+		LeaseIP:             leaseIP,
+		OverlayNetworks:     overlayNetworks,
+		OverlayHardwareAddr: overlayHardwareAddr,
+		VNI:                 clientConf.VNI,
+		VTEPPort:            clientConf.VTEPPort,
 	}, nil
 }
 

@@ -29,8 +29,12 @@ provides:
 
 properties:
   network:
-    description: "CIDR address block for overlay network.  Subnets for each diego cell are allocated out of this network."
-    default: "10.255.0.0/16"
+    description: |
+      A single CIDR address block as a string, or an array of CIDR address
+      blocks for overlay network as an array of strings. Subnets for each diego
+      cell are allocated out of this network. The "subnet_prefix_length"
+      property must be smaller than the smallest CIDR address block.
+    default: ["10.255.0.0/16"]
 
   subnet_prefix_length:
     description: "Length, in bits, of the prefix for subnets allocated per Diego cell, e.g. '24' for a '/24' subnet."

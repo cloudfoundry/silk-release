@@ -14,19 +14,22 @@ import (
 var _ = Describe("Config", func() {
 	Describe("New", func() {
 		var (
-			file *os.File
-			err  error
+			file               *os.File
+			err                error
+			overlayNetworkCIDR string
 		)
 
 		BeforeEach(func() {
 			file, err = os.CreateTemp(os.TempDir(), "config-")
 			Expect(err).NotTo(HaveOccurred())
+			overlayNetworkCIDR = "10.255.0.0/16"
 		})
 
 		Context("when config file is valid", func() {
 			It("returns the config", func() {
 				file.WriteString(`{
 					"poll_interval": 1234,
+					"overlay_network": ["10.255.0.0/16"],
 					"asg_poll_interval": 5678,
 					"cni_datastore_path": "/some/datastore/path",
 					"policy_server_url": "https://some-url:1234",
@@ -95,6 +98,7 @@ var _ = Describe("Config", func() {
 				Expect(c.OutConn.Logging).To(BeTrue())
 				Expect(c.OutConn.Burst).To(Equal(900))
 				Expect(c.OutConn.RatePerSec).To(Equal(100))
+				Expect(c.OverlayNetwork).To(Equal([]string{overlayNetworkCIDR}))
 			})
 		})
 
@@ -124,6 +128,7 @@ var _ = Describe("Config", func() {
 			func(missingFlag, errorMsg string) {
 				allData := map[string]interface{}{
 					"poll_interval":                      1234,
+					"overlay_network":                    []string{"255.0.0.0/16"},
 					"asg_poll_interval":                  5678,
 					"cni_datastore_path":                 "/some/datastore/path",
 					"policy_server_url":                  "https://some-url:1234",
@@ -177,6 +182,7 @@ var _ = Describe("Config", func() {
 			Entry("missing iptables accepted udp logs per sec", "iptables_accepted_udp_logs_per_sec", "IPTablesAcceptedUDPLogsPerSec: less than min"),
 			Entry("missing force policy poll cycle host", "force_policy_poll_cycle_host", "ForcePolicyPollCycleHost: zero value"),
 			Entry("missing force policy poll cycle port", "force_policy_poll_cycle_port", "ForcePolicyPollCyclePort: zero value"),
+			Entry("missing overlay_network", "overlay_network", "OverlayNetwork: zero value"),
 		)
 	})
 })
