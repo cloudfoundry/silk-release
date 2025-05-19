@@ -73,6 +73,7 @@ module Bosh::Template::Test
               'log_level' => 'error',
               'vxlan_interface_name' => '',
               'single_ip_only' => true,
+              'enable_ipv6' => false,
               'ipv6_prefix' => '2600:1f18:27b3:881e:53b7::/80'
             })
           end
@@ -89,6 +90,19 @@ module Bosh::Template::Test
               expect {
                 template.render(merged_manifest_properties, consumes: links)
               }.to raise_error("Cannot specify both 'temporary_vxlan_interface' and 'vxlan_network' properties.")
+            end
+          end
+
+          context 'when ipv6.enable is set' do
+            let(:merged_manifest_properties) do
+              {
+                'ipv6' => {'enable' => true }
+              }
+            end
+
+            it 'sets enable_ipv6' do
+              clientConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links))
+              expect(clientConfig['enable_ipv6']).to eq(true)
             end
           end
 

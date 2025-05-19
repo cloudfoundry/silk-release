@@ -96,6 +96,7 @@ module Bosh::Template::Test
               'running' => ['2001::2/128'],
               'staging' => ['2001::3/128'],
             },
+            'enable_ipv6' => false,
             'delegate' => {
               'cniVersion' => '1.0.0',
               'name' => 'silk',
@@ -227,6 +228,17 @@ module Bosh::Template::Test
           expect {
             template.render(contents, spec: spec, consumes: links)
           }.not_to raise_error
+        end
+      end
+
+      context 'when ipv6.enable is set' do
+        it 'sets enable_ipv6' do
+          contents = merged_manifest_properties.merge(
+            'ipv6' => { 'enable' => true }
+          )
+
+          clientConfig = JSON.parse(template.render(contents, spec: spec, consumes: links))
+          expect(clientConfig['plugins'][0]['enable_ipv6']).to eq(true)
         end
       end
     end
