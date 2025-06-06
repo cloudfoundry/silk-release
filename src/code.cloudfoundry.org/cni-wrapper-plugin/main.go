@@ -19,6 +19,7 @@ import (
 	"code.cloudfoundry.org/lib/common"
 	"code.cloudfoundry.org/lib/datastore"
 	"code.cloudfoundry.org/lib/interfacelookup"
+	"code.cloudfoundry.org/lib/iputil"
 	"code.cloudfoundry.org/lib/rules"
 	"code.cloudfoundry.org/lib/serial"
 	"github.com/containernetworking/cni/pkg/skel"
@@ -149,7 +150,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 	if len(cfg.TemporaryUnderlayInterfaceNames) > 0 {
 		interfaceNames = cfg.TemporaryUnderlayInterfaceNames
 	} else {
-		interfaceNames, err = interfaceNameLookup.GetNamesFromIPs(cfg.UnderlayIPs)
+		v4UnderlayIps, _ := iputil.FilterIPsByVersion(cfg.UnderlayIPs, iputil.IPVersion4)
+		interfaceNames, err = interfaceNameLookup.GetNamesFromIPs(v4UnderlayIps)
 		if err != nil {
 			return fmt.Errorf("looking up interface names: %s", err) // not tested
 		}
@@ -427,14 +429,12 @@ func cmdDel(args *skel.CmdArgs) error {
 		NetlinkAdapter: &adapter.NetlinkAdapter{},
 	}
 
-	// TODO: The way cfg.UnderlayIPs is populated is from bosh spec.networks. This will be a problem if there are ipv6 networks there
-	// because we will not be able to find the interface name for ipv6 networks and error will be returned.
-	// Should be fixed in the future when theres a working bosh ipv6 implementation
 	var interfaceNames []string
 	if len(cfg.TemporaryUnderlayInterfaceNames) > 0 {
 		interfaceNames = cfg.TemporaryUnderlayInterfaceNames
 	} else {
-		interfaceNames, err = interfaceNameLookup.GetNamesFromIPs(cfg.UnderlayIPs)
+		v4UnderlayIps, _ := iputil.FilterIPsByVersion(cfg.UnderlayIPs, iputil.IPVersion4)
+		interfaceNames, err = interfaceNameLookup.GetNamesFromIPs(v4UnderlayIps)
 		if err != nil {
 			return fmt.Errorf("looking up interface names: %s", err) // not tested
 		}

@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -18,6 +17,7 @@ import (
 	"code.cloudfoundry.org/lib/common"
 	"code.cloudfoundry.org/lib/datastore"
 	"code.cloudfoundry.org/lib/interfacelookup"
+	"code.cloudfoundry.org/lib/iputil"
 	"code.cloudfoundry.org/lib/rules"
 	"code.cloudfoundry.org/lib/serial"
 	"code.cloudfoundry.org/policy_client"
@@ -383,17 +383,7 @@ func createForceUpdateServer(listenAddress string, handlers map[string]http.Hand
 }
 
 func lookupInterfaceNames(lookup interfacelookup.InterfaceNameLookup, ips []string) ([]string, error) {
-	var ipsV4 []string
-	for _, ip := range ips {
-		parsed := net.ParseIP(ip)
-		if parsed == nil {
-			return nil, fmt.Errorf("invalid IP address: %s", ip)
-		}
-		if parsed.To4() != nil {
-			ipsV4 = append(ipsV4, ip)
-		}
-	}
-
+	ipsV4, _ := iputil.FilterIPsByVersion(ips, iputil.IPVersion4)
 	var v4names, err = lookup.GetNamesFromIPs(ipsV4)
 	if err != nil {
 		return nil, err
