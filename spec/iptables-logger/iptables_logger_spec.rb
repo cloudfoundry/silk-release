@@ -14,7 +14,6 @@ module Bosh::Template::Test
           'kernel_log_file' => 'mylog.file',
           'metron_port' => 12345,
           'disable' => false,
-          'logging' => { 'format' => { 'timestamp' => 'rfc3339' }},
         }
       end
       let(:spec) do
@@ -34,21 +33,7 @@ module Bosh::Template::Test
               'metron_address' => '127.0.0.1:12345',
               'host_ip' => '1.2.3.4',
               'host_guid' => 'some-guid',
-              'log_timestamp_format' => 'rfc3339',
             })
-          end
-
-          context 'when logging.format.timestamp is set to an invalid value' do
-            let(:merged_manifest_properties) do
-              {
-                'logging' => {'format' => {'timestamp' => 'meow' }}
-              }
-            end
-            it 'throws a helpful error' do
-              expect {
-                template.render(merged_manifest_properties, spec: spec)
-              }.to raise_error("'meow' is not a valid timestamp format for the property 'logging.format.timestamp'. Valid options are: 'rfc3339' and 'deprecated'.")
-            end
           end
         end
       end

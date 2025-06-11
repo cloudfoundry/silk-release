@@ -44,7 +44,6 @@ var _ = Describe("Config", func() {
 				Expect(c.MetronAddress).To(Equal("http://1.2.3.4:1234"))
 				Expect(c.HostIp).To(Equal("1.2.3.4"))
 				Expect(c.HostGuid).To(Equal("some-guid"))
-				Expect(c.LogTimestampFormat).To(Equal("rfc3339"))
 			})
 		})
 

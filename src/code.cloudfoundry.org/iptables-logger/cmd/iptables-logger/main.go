@@ -65,9 +65,7 @@ func main() {
 		ReOpen:    true,
 	}
 
-	if conf.LogTimestampFormat == "rfc3339" {
-		tailConfig.Logger = taillogger.Shim{Logger: logger}
-	}
+	tailConfig.Logger = taillogger.Shim{Logger: logger}
 
 	t, err := tail.TailFile(conf.KernelLogFile, tailConfig)
 	if err != nil {
@@ -109,7 +107,6 @@ func main() {
 		rotatablesink.DefaultFileWriterFunc(rotatablesink.DefaultFileWriter),
 		rotatablesink.DefaultDestinationFileInfo{},
 		logger,
-		conf.LogTimestampFormat == "rfc3339",
 	)
 
 	if err != nil {

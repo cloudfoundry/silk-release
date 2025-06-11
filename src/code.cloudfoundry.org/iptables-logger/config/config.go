@@ -15,8 +15,6 @@ type Config struct {
 	MetronAddress         string `json:"metron_address" validate:"nonzero"`
 	HostIp                string `json:"host_ip" validate:"nonzero"`
 	HostGuid              string `json:"host_guid" validate:"nonzero"`
-
-	LogTimestampFormat string `json:"log_timestamp_format"`
 }
 
 func New(path string) (*Config, error) {
