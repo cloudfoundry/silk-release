@@ -49,7 +49,7 @@ var _ = Describe("Integration", func() {
 			"timestamp": "some-timestamp",
 			"source": "cfnetworking.iptables",
 			"message": "cfnetworking.iptables.egress-denied",
-			"log_level": 1,
+			"level": "info",
 			"data": {
 				"source": {
 					"container_id": "container-handle-1-longer-than-29-chars",
@@ -77,7 +77,7 @@ var _ = Describe("Integration", func() {
 			"timestamp": "some-timestamp",
 			"source": "cfnetworking.iptables",
 			"message": "cfnetworking.iptables.egress-allowed",
-			"log_level": 1,
+			"level": "info",
 			"data": {
 				"source": {
 					"container_id": "container-handle-1-longer-than-29-chars",
@@ -105,7 +105,7 @@ var _ = Describe("Integration", func() {
 			"timestamp": "some-timestamp",
 			"source": "cfnetworking.iptables",
 			"message": "cfnetworking.iptables.egress-allowed",
-			"log_level": 1,
+			"level": "info",
 			"data": {
 				"source": {
 					"container_id": "container-handle-3-longer-than-29-chars",

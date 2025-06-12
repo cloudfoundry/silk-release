@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -39,7 +40,7 @@ var _ = Describe("Rotatewatcher", func() {
 		fakeTestWriterFactory = NewTestWriterFactory(fileToWatch, nil)
 		fakeDestinationFileInfo = &fakes.DestinationFileInfo{}
 		fakeLogger = lagertest.NewTestLogger("test")
-		rotatableSink, err = rotatablesink.NewRotatableSink(fileToWatchName, lager.DEBUG, fakeTestWriterFactory, fakeDestinationFileInfo, fakeLogger, false)
+		rotatableSink, err = rotatablesink.NewRotatableSink(fileToWatchName, lager.DEBUG, fakeTestWriterFactory, fakeDestinationFileInfo, fakeLogger)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -55,7 +56,7 @@ var _ = Describe("Rotatewatcher", func() {
 
 			It("returns an sensible error", func() {
 				var err error
-				rotatableSink, err = rotatablesink.NewRotatableSink(fileToWatchName, lager.DEBUG, fakeTestWriterFactory, fakeDestinationFileInfo, fakeLogger, false)
+				rotatableSink, err = rotatablesink.NewRotatableSink(fileToWatchName, lager.DEBUG, fakeTestWriterFactory, fakeDestinationFileInfo, fakeLogger)
 				Expect(err).To(MatchError("register file sink: rotate file sink: create file writer: banana"))
 			})
 		})
@@ -64,35 +65,32 @@ var _ = Describe("Rotatewatcher", func() {
 	Describe("Log", func() {
 		It("writes to output log file", func() {
 			rotatableSink.Log(lager.LogFormat{
-				Timestamp: "some-timestamp",
-				Message:   "hello",
+				Message: "hello",
 			})
 
 			Expect(fakeTestWriterFactory.InvocationCount()).To(Equal(1))
 
-			Expect(ReadLines(fileToWatch.Name())).To(ContainElement(MatchJSON(`{"timestamp":"some-timestamp","source":"","message":"hello","log_level":0,"data":null}`)))
+			matchLogOutput(ReadLines(fileToWatch.Name()))
 		})
 
 		It("should only open the file when it has been rotated", func() {
 			rotatableSink.Log(lager.LogFormat{
-				Timestamp: "some-timestamp",
-				Message:   "hello",
+				Message: "hello",
 			})
 			Expect(fakeTestWriterFactory.InvocationCount()).To(Equal(1))
 
 			rotatableSink.Log(lager.LogFormat{
-				Timestamp: "some-timestamp",
-				Message:   "hello",
+				Message: "hello",
 			})
 			Expect(fakeTestWriterFactory.InvocationCount()).To(Equal(1))
 
-			Expect(ReadLines(fileToWatch.Name())).To(ContainElement(MatchJSON(`{"timestamp":"some-timestamp","source":"","message":"hello","log_level":0,"data":null}`)))
+			matchLogOutput(ReadLines(fileToWatch.Name()))
 		})
 
 		Context("when rfc3339 timestamp logging has been enabled", func() {
 			BeforeEach(func() {
 				var err error
-				rotatableSink, err = rotatablesink.NewRotatableSink(fileToWatchName, lager.DEBUG, fakeTestWriterFactory, fakeDestinationFileInfo, fakeLogger, true)
+				rotatableSink, err = rotatablesink.NewRotatableSink(fileToWatchName, lager.DEBUG, fakeTestWriterFactory, fakeDestinationFileInfo, fakeLogger)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -123,11 +121,10 @@ var _ = Describe("Rotatewatcher", func() {
 
 				time.Sleep(2 * time.Second)
 				rotatableSink.Log(lager.LogFormat{
-					Timestamp: "some-timestamp",
-					Message:   "hello2",
+					Message: "hello",
 				})
 
-				Expect(ReadLines(fileToWatch.Name())).To(ContainElement(MatchJSON(`{"timestamp":"some-timestamp","source":"","message":"hello2","log_level":0,"data":null}`)))
+				matchLogOutput(ReadLines(fileToWatch.Name()))
 			})
 
 			Context("when unable to open the destination file that was rotated", func() {
@@ -153,7 +150,7 @@ var _ = Describe("Rotatewatcher", func() {
 					fakeDestinationFileInfo.FileInodeReturns(1, errors.New("get file inode: watermelon"))
 					fakeTestWriterFactory = NewTestWriterFactory(fileToWatch, nil)
 					var err error
-					rotatableSink, err = rotatablesink.NewRotatableSink(fileToWatchName, lager.DEBUG, fakeTestWriterFactory, fakeDestinationFileInfo, fakeLogger, false)
+					rotatableSink, err = rotatablesink.NewRotatableSink(fileToWatchName, lager.DEBUG, fakeTestWriterFactory, fakeDestinationFileInfo, fakeLogger)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
@@ -348,4 +345,25 @@ func ReadOutput(outputFile string) string {
 		return "{}"
 	}
 	return string(bytes)
+}
+
+func matchLogOutput(lines []string) {
+	// RFC3339 namno timestamp regex match
+	timestampRegex := regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{9}Z$`)
+	for _, line := range lines {
+		var parsed map[string]interface{}
+		err := json.Unmarshal([]byte(line), &parsed)
+		Expect(err).To(BeNil(), "log line should be valid JSON")
+
+		// Assert field values
+		Expect(parsed["message"]).To(Equal("hello"))
+		Expect(parsed["level"]).To(Equal("debug"))
+		Expect(parsed["source"]).To(Equal(""))
+		Expect(parsed["data"]).To(BeNil())
+
+		// Match timestamp using regex
+		ts, ok := parsed["timestamp"].(string)
+		Expect(ok).To(BeTrue(), "timestamp should be a string")
+		Expect(timestampRegex.MatchString(ts)).To(BeTrue(), "timestamp should match expected format")
+	}
 }
