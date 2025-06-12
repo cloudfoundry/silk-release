@@ -80,7 +80,12 @@ func main() {
 
 	logger.Info("parsed-config", lager.Data{"config": conf})
 
-	enableIPv6 := conf.EnableIPv6 && common.IsIPv6Enabled()
+	enableIPv6 := conf.EnableIPv6
+	hostSupportsIPv6 := common.IsIPv6Enabled()
+	if conf.EnableIPv6 && !hostSupportsIPv6 {
+		logger.Info("IPv6 is enabled in config but the host is not IPv6 enabled. Running in IPv4 only mode.")
+		enableIPv6 = false
+	}
 
 	_, err = os.Stat(filepath.Dir(conf.Datastore))
 	if err != nil {

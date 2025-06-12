@@ -69,15 +69,7 @@ func mainWithError() error {
 	logger, reconfigurableSink := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), getLagerConfig(logLevel))
 	logger.Info("starting")
 
-	if cfg.EnableIPv6 && cfg.IPv6Prefix != "" {
-		if !hostSupportsIPv6(cfg) {
-			return fmt.Errorf("IPv6 is enabled in config but the host is not IPv6 enabled")
-		}
-
-		if !validateIPv6CIDR(cfg.IPv6Prefix) {
-			return fmt.Errorf("invalid IPv6 prefix: %s", cfg.IPv6Prefix)
-		}
-	}
+	cfg.EnableIPv6 = isIPv6Enabled(cfg, logger)
 
 	tlsConfig, err := mutualtls.NewClientTLSConfig(cfg.ClientCertFile, cfg.ClientKeyFile, cfg.ServerCACertFile)
 	if err != nil {
@@ -363,6 +355,29 @@ func hostSupportsIPv6(cfg config.Config) bool {
 		return false
 	}
 	defer conn.Close()
+
+	return true
+}
+
+func isIPv6Enabled(cfg config.Config, logger lager.Logger) bool {
+	if !cfg.EnableIPv6 {
+		return false
+	}
+
+	if cfg.IPv6Prefix == "" {
+		logger.Info("IPv6 is enabled but no prefix is configured. Running in IPv4-only mode")
+		return false
+	}
+
+	if !hostSupportsIPv6(cfg) {
+		logger.Info("IPv6 is enabled in config but the host is not IPv6 enabled")
+		return false
+	}
+
+	if !validateIPv6CIDR(cfg.IPv6Prefix) {
+		logger.Info(fmt.Sprintf("invalid IPv6 prefix: %s", cfg.IPv6Prefix))
+		return false
+	}
 
 	return true
 }
