@@ -165,7 +165,6 @@ module Bosh::Template::Test
 
             networks = {
               'wrong_prefix_network_name' => {
-                'ipv6-prefix-network-settings' => {},
                 'ip' => "2006:2::",
                 'prefix' => "80"
               }
@@ -177,6 +176,23 @@ module Bosh::Template::Test
               expect {
                 template.render(merged_manifest_properties, consumes: links, spec: spec)
               }.to raise_error("requested ipv6.prefix_network 'ipv6-prefix-network' not found in available networks [wrong_prefix_network_name]")
+            end
+          end
+
+          context 'when ipv6 prefix network does not contain a valid prefix' do
+            let(:merged_manifest_properties) do
+              {
+                'ipv6' => { 'prefix_network' => 'ipv6-prefix-network' }
+              }
+            end
+
+            networks = { 'ipv6-prefix-network' => {} }
+            spec = InstanceSpec.new(address: 'cloudfoundry.org', bootstrap: true, networks: networks)
+
+            it 'throws an error indicating that network does not contain a valid prefix' do
+              expect {
+                template.render(merged_manifest_properties, consumes: links, spec: spec)
+              }.to raise_error("requested ipv6.prefix_network 'ipv6-prefix-network' does not contain a valid prefix")
             end
           end
 

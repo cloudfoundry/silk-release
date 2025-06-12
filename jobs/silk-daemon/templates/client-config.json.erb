@@ -13,7 +13,7 @@
       raise "requested ipv6.prefix_network '#{net_name}' not found in available networks [#{networks.keys.join(', ')}]" unless networks.key?(net_name.to_sym)
 
       ip, prefix = spec.networks[net_name.to_sym].ip, spec.networks[net_name.to_sym].prefix
-      return nil if ip.nil? || prefix.nil? || prefix.to_s == "128"
+      raise "requested ipv6.prefix_network '#{net_name}' does not contain a valid prefix" if ip.nil? || prefix.nil? || prefix.to_s == "128"
 
       return "#{ip}/#{prefix}"
     end
