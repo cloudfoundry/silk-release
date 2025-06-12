@@ -120,3 +120,6 @@ properties:
   ipv6.enable:
     description: "Experimental feature. Enable IPv6 support, the host must also support and be configured for IPv6"
     default: false
+
+  ipv6.prefix_network:
+    description: "Experimental feature. The network to use for getting the prefix for container IPv6 addresses"

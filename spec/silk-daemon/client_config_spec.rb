@@ -74,7 +74,7 @@ module Bosh::Template::Test
               'vxlan_interface_name' => '',
               'single_ip_only' => true,
               'enable_ipv6' => false,
-              'ipv6_prefix' => '2600:1f18:27b3:881e:53b7::/80'
+              'ipv6_prefix' => nil,
             })
           end
 
@@ -131,6 +131,59 @@ module Bosh::Template::Test
             it 'sets the underlay_ip to the ip associated with vxlan_network' do
               clientConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links, spec: spec))
               expect(clientConfig['underlay_ip']).to eq("192.74.65.4")
+            end
+          end
+
+          context 'when ipv6 prefix exists in networks' do
+            let(:merged_manifest_properties) do
+              {
+                'ipv6' => { 'prefix_network' => 'ipv6-prefix-network' }
+              }
+            end
+
+            networks = {
+              'ipv6-prefix-network' => {
+                'ip' => "2006:2::",
+                'prefix' => "80"
+              }
+            }
+
+            spec = InstanceSpec.new(address: 'cloudfoundry.org', bootstrap: true, networks: networks)
+
+            it 'sets the ipv6_prefix to the prefix defined in ipv6_prefix_network' do
+              clientConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links, spec: spec))
+              expect(clientConfig['ipv6_prefix']).to eq("2006:2::/80")
+            end
+          end
+
+          context 'when ipv6 prefix does not exist in networks' do
+            let(:merged_manifest_properties) do
+              {
+                'ipv6' => { 'prefix_network' => 'ipv6-prefix-network' }
+              }
+            end
+
+            networks = {
+              'wrong_prefix_network_name' => {
+                'ipv6-prefix-network-settings' => {},
+                'ip' => "2006:2::",
+                'prefix' => "80"
+              }
+            }
+
+            spec = InstanceSpec.new(address: 'cloudfoundry.org', bootstrap: true, networks: networks)
+
+            it 'throws an error indicating that network name is not found in networks' do
+              expect {
+                template.render(merged_manifest_properties, consumes: links, spec: spec)
+              }.to raise_error("requested ipv6.prefix_network 'ipv6-prefix-network' not found in available networks [wrong_prefix_network_name]")
+            end
+          end
+
+          context 'when ipv6.prefix_network is not set' do
+            it 'does not set the prefix' do
+              clientConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links))
+              expect(clientConfig['ipv6_prefix']).to eq(nil)
             end
           end
 
