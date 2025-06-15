@@ -9,21 +9,21 @@ replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimesche
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.46.0
-	code.cloudfoundry.org/debugserver v0.51.0
-	code.cloudfoundry.org/diego-logging-client v0.56.0
+	code.cloudfoundry.org/cf-networking-helpers v0.47.0
+	code.cloudfoundry.org/debugserver v0.52.0
+	code.cloudfoundry.org/diego-logging-client v0.57.0
 	code.cloudfoundry.org/executor v0.0.0-20241029001947-f0c9d0265505
-	code.cloudfoundry.org/filelock v0.37.0
-	code.cloudfoundry.org/garden v0.0.0-20250604020255-2f07acb6e208
+	code.cloudfoundry.org/filelock v0.38.0
+	code.cloudfoundry.org/garden v0.0.0-20250611020234-e214b0859579
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
-	code.cloudfoundry.org/lager/v3 v3.38.0
-	code.cloudfoundry.org/policy_client v0.55.0
+	code.cloudfoundry.org/lager/v3 v3.39.0
+	code.cloudfoundry.org/policy_client v0.56.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.3.0
 	github.com/containernetworking/plugins v1.7.1
 	github.com/coreos/go-iptables v0.8.0
-	github.com/go-sql-driver/mysql v1.9.2
+	github.com/go-sql-driver/mysql v1.9.3
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
@@ -49,7 +49,7 @@ require (
 	code.cloudfoundry.org/go-diodes v0.0.0-20250505082646-e4c2d772c2ec // indirect
 	code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 // indirect
 	code.cloudfoundry.org/routing-info v0.0.0-20250117183711-d8d8d2ad4608 // indirect
-	code.cloudfoundry.org/tlsconfig v0.28.0 // indirect
+	code.cloudfoundry.org/tlsconfig v0.29.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/alexflint/go-filemutex v1.3.0 // indirect
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
