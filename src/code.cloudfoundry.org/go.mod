@@ -9,15 +9,15 @@ replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimesche
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.47.0
-	code.cloudfoundry.org/debugserver v0.52.0
-	code.cloudfoundry.org/diego-logging-client v0.57.0
+	code.cloudfoundry.org/cf-networking-helpers v0.48.0
+	code.cloudfoundry.org/debugserver v0.53.0
+	code.cloudfoundry.org/diego-logging-client v0.58.0
 	code.cloudfoundry.org/executor v0.0.0-20241029001947-f0c9d0265505
 	code.cloudfoundry.org/filelock v0.38.0
 	code.cloudfoundry.org/garden v0.0.0-20250611020234-e214b0859579
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.39.0
-	code.cloudfoundry.org/policy_client v0.56.0
+	code.cloudfoundry.org/policy_client v0.57.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.3.0
@@ -68,7 +68,7 @@ require (
 	github.com/safchain/ethtool v0.6.1 // indirect
 	github.com/square/certstrap v1.3.0 // indirect
 	github.com/vishvananda/netns v0.0.5 // indirect
-	go.step.sm/crypto v0.66.0 // indirect
+	go.step.sm/crypto v0.67.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	golang.org/x/crypto v0.39.0 // indirect
 	golang.org/x/net v0.41.0 // indirect
