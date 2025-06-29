@@ -17,7 +17,7 @@ require (
 	code.cloudfoundry.org/garden v0.0.0-20250611020234-e214b0859579
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.39.0
-	code.cloudfoundry.org/policy_client v0.57.0
+	code.cloudfoundry.org/policy_client v0.58.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.3.0
@@ -44,12 +44,12 @@ require (
 )
 
 require (
-	code.cloudfoundry.org/bbs v0.0.0-20250414163106-a163a3b524d2 // indirect
+	code.cloudfoundry.org/bbs v0.0.0-20250627143703-e88b3ec8cd1e // indirect
 	code.cloudfoundry.org/clock v1.1.0 // indirect
 	code.cloudfoundry.org/go-diodes v0.0.0-20250505082646-e4c2d772c2ec // indirect
 	code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 // indirect
 	code.cloudfoundry.org/routing-info v0.0.0-20250117183711-d8d8d2ad4608 // indirect
-	code.cloudfoundry.org/tlsconfig v0.29.0 // indirect
+	code.cloudfoundry.org/tlsconfig v0.30.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/alexflint/go-filemutex v1.3.0 // indirect
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
