@@ -388,8 +388,12 @@ func createForceUpdateServer(listenAddress string, handlers map[string]http.Hand
 }
 
 func lookupInterfaceNames(lookup interfacelookup.InterfaceNameLookup, ips []string) ([]string, error) {
-	ipsV4, _ := iputil.FilterIPsByVersion(ips, iputil.IPVersion4)
-	var v4names, err = lookup.GetNamesFromIPs(ipsV4)
+	ipsV4, err := iputil.FilterIPsByVersion(ips, iputil.IPVersion4)
+	if err != nil {
+		return nil, err
+	}
+
+	v4names, err := lookup.GetNamesFromIPs(ipsV4)
 	if err != nil {
 		return nil, err
 	}

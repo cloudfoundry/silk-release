@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -69,7 +70,13 @@ func mainWithError() error {
 	logger, reconfigurableSink := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), getLagerConfig(logLevel))
 	logger.Info("starting")
 
-	cfg.EnableIPv6 = isIPv6Enabled(cfg, logger)
+	if cfg.EnableIPv6 {
+		err = validateIPv6Config(cfg)
+
+		if err != nil {
+			return err
+		}
+	}
 
 	tlsConfig, err := mutualtls.NewClientTLSConfig(cfg.ClientCertFile, cfg.ClientKeyFile, cfg.ServerCACertFile)
 	if err != nil {
@@ -342,7 +349,7 @@ func validateIPv6CIDR(cidr string) bool {
 }
 
 // TODO: use the function from common
-func hostSupportsIPv6(cfg config.Config) bool {
+func hostSupportsIPv6() bool {
 	testAddress := "[::1]:0"
 
 	addr, err := net.ResolveUDPAddr("udp6", testAddress)
@@ -359,25 +366,18 @@ func hostSupportsIPv6(cfg config.Config) bool {
 	return true
 }
 
-func isIPv6Enabled(cfg config.Config, logger lager.Logger) bool {
-	if !cfg.EnableIPv6 {
-		return false
-	}
-
+func validateIPv6Config(cfg config.Config) error {
 	if cfg.IPv6Prefix == "" {
-		logger.Info("IPv6 is enabled but no prefix is configured. Running in IPv4-only mode")
-		return false
+		return errors.New("IPv6 is enabled but no prefix is configured")
 	}
 
-	if !hostSupportsIPv6(cfg) {
-		logger.Info("IPv6 is enabled in config but the host is not IPv6 enabled")
-		return false
+	if !hostSupportsIPv6() {
+		return errors.New("IPv6 is enabled in config but the host is not IPv6 enabled")
 	}
 
 	if !validateIPv6CIDR(cfg.IPv6Prefix) {
-		logger.Info(fmt.Sprintf("invalid IPv6 prefix: %s", cfg.IPv6Prefix))
-		return false
+		return fmt.Errorf("invalid IPv6 prefix: %s", cfg.IPv6Prefix)
 	}
 
-	return true
+	return nil
 }
