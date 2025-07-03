@@ -439,7 +439,7 @@ var _ = Describe("Daemon Integration", func() {
 
 		It("polls to renew the lease and logs at debug level", func() {
 			By("checking that the lease renewal is logged")
-			Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`silk-daemon.renew-lease.*"lease".*overlay_subnet.*` + localOverlayLeaseSubnet + `.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`)))
+			Eventually(session.Out, 2).Should(gbytes.Say(fmt.Sprintf(`silk-daemon.renew-lease.*"lease".*overlay_subnet.*%s.*overlay_hardware_addr.*ee:ee:0a:ff:1e:00`, localOverlayLeaseSubnet)))
 
 			By("stopping the controller")
 			handler := &testsupport.FakeHandler{

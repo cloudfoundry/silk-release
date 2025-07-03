@@ -97,6 +97,8 @@ builds:
     version: 2.0.0
   65d7d823-a491-441e-52a8-ab7e2ff51e3f:
     version: 3.69.0
+  65fb8307-10b6-43cf-473f-d2eb2f434da1:
+    version: 3.71.0
   6c5f4429-9bcd-450f-650f-775b5e49b578:
     version: 2.29.0
   74f9cc6c-50d9-44f7-4cb3-8074883b539a:
@@ -147,6 +149,8 @@ builds:
     version: 2.24.0
   acdeaf0a-0ed3-42e8-5bab-0ef4a9eeaa4d:
     version: 2.22.0
+  ad812a5b-8b8b-4a45-6073-90d60ee50fd1:
+    version: 3.72.0
   af0e8982-9af7-457b-553a-7fdbe184c982:
     version: 2.11.0
   b08d18e4-78e9-4abb-7eb3-cbc69abd1892:

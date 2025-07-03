@@ -1,10 +1,6 @@
 <%=
   require 'json'
 
-  if !['rfc3339', 'deprecated'].include?(p('logging.format.timestamp'))
-    raise "'#{p('logging.format.timestamp')}' is not a valid timestamp format for the property 'logging.format.timestamp'. Valid options are: 'rfc3339' and 'deprecated'."
-  end
-
   toRender = {
     "kernel_log_file" => p("kernel_log_file"),
     "container_metadata_file" => "/var/vcap/data/container-metadata/store.json",
@@ -12,7 +8,6 @@
     "metron_address" => "127.0.0.1:#{p("metron_port")}",
     "host_ip" => spec.ip,
     "host_guid" => spec.id,
-    "log_timestamp_format" => p("logging.format.timestamp"),
   }
 
   JSON.pretty_generate(toRender)
