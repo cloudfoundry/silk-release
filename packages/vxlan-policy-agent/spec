@@ -36,6 +36,7 @@ files:
   - code.cloudfoundry.org/lib/common/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/datastore/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/interfacelookup/*.go # gosub-main-module
+  - code.cloudfoundry.org/lib/iputil/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/rules/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/serial/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/policy_client/*.go # gosub-main-module
