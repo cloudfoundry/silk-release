@@ -589,7 +589,6 @@ var _ = Describe("Silk CNI Integration", func() {
 			})
 
 			It("allows the container to reach IP addresses on the internet", func() {
-				Skip("can't get this test to run, needs further investigation")
 				// NOTE: unlike all other tests in this suite
 				// this one uses the REAL host namespace in order to
 				// test proper packet forwarding to the internet
@@ -607,6 +606,18 @@ var _ = Describe("Silk CNI Integration", func() {
 				By("discovering the container IP")
 				var cniResult current.Result
 				Expect(json.Unmarshal(sess.Out.Contents(), &cniResult)).To(Succeed())
+				sourceIPv4 := fmt.Sprintf("%s/32", cniResult.IPs[0].Address.IP.String())
+				sourceIPv6 := fmt.Sprintf("%s/128", cniResult.IPs[1].Address.IP.String())
+
+				By("installing the requisite iptables rules")
+				iptablesRuleV4 := func(action string) []string {
+					return []string{"-t", "nat", action, "POSTROUTING", "-s", sourceIPv4, "!", "-d", "10.255.30.0/24", "-j", "MASQUERADE"}
+				}
+				iptablesRuleV6 := func(action string) []string {
+					return []string{"-t", "nat", action, "POSTROUTING", "-s", sourceIPv6, "-j", "MASQUERADE"}
+				}
+				mustSucceed("iptables", iptablesRuleV4("-A")...)
+				mustSucceed("ip6tables", iptablesRuleV6("-A")...)
 
 				By("attempting to reach the internet from the container")
 				mustSucceedInContainer("curl", "-6", "-f", "example.com")
