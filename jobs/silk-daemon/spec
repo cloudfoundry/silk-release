@@ -114,4 +114,12 @@ properties:
     default: false
 
   ipv6.prefix_network:
-    description: "Experimental feature. The network to use for getting the prefix for container IPv6 addresses"
+    description: |
+     Experimental feature.
+     The network to use for getting the prefix for container IPv6 addresses.
+     The network must be configured on the bosh deployment and have a valid prefix value(!= nil and < 128).
+     Example:
+      `networks:
+       - name: diego-cells
+         default: [dns, gateway]
+       - name: diego-cells-ipv6-prefix`

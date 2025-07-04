@@ -59,7 +59,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		ips = append(ips, ip.Address.IP)
 	}
 
-	containerIP, containerIPv6 := common.ParseIPConfig(ips)
+	containerIPv4, containerIPv6 := common.ParseIPConfig(ips)
 	enableIPv6 = enableIPv6 && containerIPv6 != nil
 
 	var containerWorkload string
@@ -95,7 +95,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		PluginController:            pluginController,
 		VTEPName:                    cfg.VTEPName,
 		DaemonPort:                  fmt.Sprintf("%v", cfg.Delegate["daemonPort"]),
-		ContainerIP:                 containerIP.String(),
+		ContainerIP:                 containerIPv4.String(),
 		CustomNoMasqueradeCIDRRange: cfg.NoMasqueradeCIDRRange,
 	}
 
@@ -106,7 +106,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	err = store.Add(
 		args.ContainerID,
-		containerIP.String(),
+		containerIPv4.String(),
 		cniAddData.Metadata,
 		storeOpts...,
 	)
@@ -198,7 +198,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		HostInterfaceNames:    interfaceNames,
 		ContainerHandle:       args.ContainerID,
 		ContainerWorkload:     containerWorkload,
-		ContainerIP:           containerIP.String(),
+		ContainerIP:           containerIPv4.String(),
 		HostTCPServices:       cfg.HostTCPServices,
 		HostUDPServices:       cfg.HostUDPServices,
 		DNSServers:            localDNSServers,
@@ -230,7 +230,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 			return fmt.Errorf("cannot allocate port %d", netIn.HostPort)
 		}
 
-		if err := netinProvider.AddRule(args.ContainerID, int(netIn.HostPort), int(netIn.ContainerPort), cfg.InstanceAddress, containerIP.String()); err != nil {
+		if err := netinProvider.AddRule(args.ContainerID, int(netIn.HostPort), int(netIn.ContainerPort), cfg.InstanceAddress, containerIPv4.String()); err != nil {
 			return fmt.Errorf("adding netin rule: %s", err)
 		}
 	}
@@ -358,7 +358,8 @@ func groupRulesByProtocolVersion(rules []garden.NetOutRule) ([]garden.NetOutRule
 // isIPVersionMatch checks if the given IPRange matches the desired IP version.
 func isIPVersionMatch(ipRange garden.IPRange, isIPv6 bool) bool {
 	// Check if both start and end IPs match the desired version
-	return (ipRange.Start.To4() == nil) == isIPv6 && (ipRange.End.To4() == nil) == isIPv6
+	return (iputil.GetFamily(ipRange.Start) == iputil.IPVersion6) == isIPv6 &&
+		(iputil.GetFamily(ipRange.End) == iputil.IPVersion6) == isIPv6
 }
 
 func cmdCheck(args *skel.CmdArgs) error {

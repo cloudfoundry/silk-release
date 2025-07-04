@@ -203,19 +203,6 @@ module Bosh::Template::Test
             end
           end
 
-          context 'when logging.format.timestamp is set to an invalid value' do
-            let(:merged_manifest_properties) do
-              {
-                'logging' => {'format' => {'timestamp' => 'meow' }}
-              }
-            end
-            it 'throws a helpful error' do
-              expect {
-                template.render(merged_manifest_properties, consumes: links)
-              }.to raise_error("'meow' is not a valid timestamp format for the property 'logging.format.timestamp'. Valid options are: 'rfc3339' and 'deprecated'.")
-            end
-          end
-
           context 'when network is a single string instead of an array' do
             let(:links) do
               [

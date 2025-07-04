@@ -106,7 +106,7 @@ properties:
     default: false
 
   ipv6.enable:
-    description: "Experimental feature. Enable IPv6 support, the host must also support and be configured for IPv6"
+    description: "Experimental feature. Enable IPv6 support, the host must also support and be configured for IPv6. The `ipv6.enable` property must be set to `true` on the silk-cni job as well."
     default: false
 
   loggregator.use_v2_api:

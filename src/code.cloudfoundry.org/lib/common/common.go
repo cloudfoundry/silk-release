@@ -79,21 +79,21 @@ func IsIPv6Enabled() bool {
 }
 
 func ParseIPConfig(conf []net.IP) (net.IP, net.IP) {
-	var containerIP, containerIPv6 net.IP
+	var containerIPv4, containerIPv6 net.IP
 
 	for _, ip := range conf {
-		if containerIP == nil && ip.To4() != nil {
-			containerIP = ip
+		if containerIPv4 == nil && ip.To4() != nil {
+			containerIPv4 = ip
 		}
 
 		if containerIPv6 == nil && ip.To4() == nil && ip.To16() != nil {
 			containerIPv6 = ip
 		}
 
-		if containerIP != nil && containerIPv6 != nil {
+		if containerIPv4 != nil && containerIPv6 != nil {
 			break
 		}
 	}
 
-	return containerIP, containerIPv6
+	return containerIPv4, containerIPv6
 }
