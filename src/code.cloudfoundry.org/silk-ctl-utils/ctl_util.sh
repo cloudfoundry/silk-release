@@ -8,10 +8,12 @@ function log() {
 function wait_for_server_to_become_healthy() {
   local url=$1
   local timeout=$2
-  local curl_opts="${3:-}"
+  shift 2
+  local curl_opts=("$@")
   for _ in $(seq "${timeout}"); do
     set +e
-    curl -f --connect-timeout 1 "${curl_opts}" "${url}" > /dev/null 2>&1
+    curl_cmd=("curl -f --connect-timeout 1 "${curl_opts[*]}" "${url}" > /dev/null 2>&1")
+    eval "${curl_cmd}"
     if [ $? -eq 0 ]; then
       echo 0
       return
