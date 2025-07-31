@@ -12,7 +12,7 @@ function wait_for_server_to_become_healthy() {
   local curl_opts=("$@")
   for _ in $(seq "${timeout}"); do
     set +e
-    curl_cmd=("curl -f --connect-timeout 1 "${curl_opts[*]}" "${url}" > /dev/null 2>&1")
+    curl_cmd=("curl -f --connect-timeout 1 ${curl_opts[*]} ${url} > /dev/null 2>&1")
     eval "${curl_cmd}"
     if [ $? -eq 0 ]; then
       echo 0
