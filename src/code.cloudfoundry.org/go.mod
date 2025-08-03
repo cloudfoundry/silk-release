@@ -9,7 +9,7 @@ replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimesche
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.52.0
+	code.cloudfoundry.org/cf-networking-helpers v0.53.0
 	code.cloudfoundry.org/debugserver v0.60.0
 	code.cloudfoundry.org/diego-logging-client v0.63.0
 	code.cloudfoundry.org/executor v0.0.0-20241029001947-f0c9d0265505
@@ -17,7 +17,7 @@ require (
 	code.cloudfoundry.org/garden v0.0.0-20250730020702-3c607f063fc6
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.42.0
-	code.cloudfoundry.org/policy_client v0.62.0
+	code.cloudfoundry.org/policy_client v0.63.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.3.0
@@ -44,7 +44,7 @@ require (
 )
 
 require (
-	code.cloudfoundry.org/bbs v0.0.0-20250729211627-0ed7f355630e // indirect
+	code.cloudfoundry.org/bbs v0.0.0-20250731191341-d1ca59879d2a // indirect
 	code.cloudfoundry.org/clock v1.1.0 // indirect
 	code.cloudfoundry.org/go-diodes v0.0.0-20250728062316-2a591619c2ae // indirect
 	code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 // indirect
