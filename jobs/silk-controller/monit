@@ -4,6 +4,12 @@ check process silk-controller
   start program "/var/vcap/jobs/bpm/bin/bpm start silk-controller"
   stop program "/var/vcap/jobs/bpm/bin/bpm stop silk-controller"
   group vcap
-check program silk-loglevel-check with path "/var/vcap/jobs/silk-controller/bin/check_log_health"
-  every 1 cycles
-  if status != 0 then restart silk-controller
+  if failed
+    host 127.0.0.1
+    port <%= p("debug_port") %>
+    send "POST /log-level HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type:
+    application/x-www-form-urlencoded\r\nContent-Length: 5\r\n\r\nerror"
+    expect "HTTP/[0-9\.]+ 200.*"
+    with timeout 10 seconds for 6 cycles
+    then restart
+<% end %>

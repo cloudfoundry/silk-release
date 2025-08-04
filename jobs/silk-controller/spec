@@ -4,7 +4,6 @@ name: silk-controller
 templates:
   bpm.yml.erb: config/bpm.yml
   post-start.erb: bin/post-start
-  check_log_health.erb: bin/check_log_health
   silk-controller.json.erb: config/silk-controller.json
   ca.crt.erb: config/certs/ca.crt
   server.crt.erb: config/certs/server.crt
