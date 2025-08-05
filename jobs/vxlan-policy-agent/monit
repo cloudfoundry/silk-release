@@ -5,10 +5,11 @@ check process vxlan-policy-agent
   stop program "/var/vcap/jobs/bpm/bin/bpm stop vxlan-policy-agent"
   group vcap
   if failed
-     host 127.0.0.1
-     port <%= p("debug_server_port") %>
-     protocol HTTP
-     request "/log-level"
-     with timeout 10 seconds for 6 cycles
-     then restart
+    host 127.0.0.1
+    port <%= p("debug_port") %>
+    send "POST /log-level HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type:
+    application/x-www-form-urlencoded\r\nContent-Length: 5\r\n\r\nerror"
+    expect "HTTP/[0-9\.]+ 200.*"
+    with timeout 10 seconds for 6 cycles
+    then restart
 <% end %>
