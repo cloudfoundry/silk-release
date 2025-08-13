@@ -1,6 +1,7 @@
 package config
 
 import (
+	"code.cloudfoundry.org/lib/common"
 	"errors"
 	"fmt"
 	"net"
@@ -11,6 +12,8 @@ import (
 	current "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/plugins/pkg/ns"
 )
+
+const ipv6gateway = "fe80::1"
 
 //go:generate counterfeiter -o fakes/hardwareAddressGenerator.go --fake-name HardwareAddressGenerator . hardwareAddressGenerator
 type hardwareAddressGenerator interface {
@@ -37,7 +40,12 @@ type ConfigCreator struct {
 	Logger                   lager.Logger
 }
 
-func (c *ConfigCreator) Create(hostNS netNS, addCmdArgs *skel.CmdArgs, ipamResult *current.Result, mtu int) (*Config, error) {
+func (c *ConfigCreator) Create(
+	hostNS netNS,
+	addCmdArgs *skel.CmdArgs,
+	ipamResult *current.Result,
+	mtu int,
+) (*Config, error) {
 	var conf Config
 	var err error
 
@@ -60,7 +68,18 @@ func (c *ConfigCreator) Create(hostNS netNS, addCmdArgs *skel.CmdArgs, ipamResul
 	if len(ipamResult.IPs) == 0 {
 		return nil, errors.New("no IP address in IPAM result")
 	}
-	conf.Container.Address.IP = ipamResult.IPs[0].Address.IP
+
+	var ips []net.IP
+	for _, ip := range ipamResult.IPs {
+		ips = append(ips, ip.Address.IP)
+	}
+
+	ipv4, ipv6 := common.ParseIPConfig(ips)
+	if ipv6 != nil {
+		conf.ipv6Enabled = true
+	}
+
+	conf.Container.Address.IP = ipv4
 
 	conf.Container.TemporaryDeviceName, err = c.DeviceNameGenerator.GenerateTemporaryForContainer(conf.Container.Address.IP)
 	if err != nil {
@@ -80,6 +99,7 @@ func (c *ConfigCreator) Create(hostNS netNS, addCmdArgs *skel.CmdArgs, ipamResul
 
 	conf.Host.Namespace = hostNS
 	conf.Host.Address.IP = net.IP{169, 254, 0, 1}
+
 	conf.Host.Address.Hardware, err = c.HardwareAddressGenerator.GenerateForHost(conf.Container.Address.IP)
 	if err != nil {
 		return nil, fmt.Errorf("generating host veth hardware address: %s", err)
@@ -93,6 +113,23 @@ func (c *ConfigCreator) Create(hostNS netNS, addCmdArgs *skel.CmdArgs, ipamResul
 			},
 			GW: []byte{169, 254, 0, 1},
 		},
+	}
+
+	if conf.ipv6Enabled {
+		conf.Host.AddressIPv6.IP = net.ParseIP(ipv6gateway)
+		conf.Host.AddressIPv6.Hardware = conf.Host.Address.Hardware
+
+		conf.Container.AddressIPv6.IP = ipv6
+		conf.Container.AddressIPv6.Hardware = conf.Container.Address.Hardware
+
+		conf.Container.RoutesIPv6 = []*types.Route{
+			{
+				Dst: net.IPNet{
+					IP:   net.IPv6zero,
+					Mask: net.CIDRMask(0, 128),
+				},
+				GW: conf.Host.AddressIPv6.IP,
+			}}
 	}
 
 	return &conf, nil

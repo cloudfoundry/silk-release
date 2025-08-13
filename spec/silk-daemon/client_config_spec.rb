@@ -72,7 +72,9 @@ module Bosh::Template::Test
               'log_prefix' => 'cfnetworking',
               'log_level' => 'error',
               'vxlan_interface_name' => '',
-              'single_ip_only' => true
+              'single_ip_only' => true,
+              'enable_ipv6' => false,
+              'ipv6_prefix' => nil
             })
           end
 
@@ -88,6 +90,19 @@ module Bosh::Template::Test
               expect {
                 template.render(merged_manifest_properties, consumes: links)
               }.to raise_error("Cannot specify both 'temporary_vxlan_interface' and 'vxlan_network' properties.")
+            end
+          end
+
+          context 'when ipv6.enable is set' do
+            let(:merged_manifest_properties) do
+              {
+                'ipv6' => {'enable' => true }
+              }
+            end
+
+            it 'sets enable_ipv6' do
+              clientConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links))
+              expect(clientConfig['enable_ipv6']).to eq(true)
             end
           end
 
@@ -116,6 +131,75 @@ module Bosh::Template::Test
             it 'sets the underlay_ip to the ip associated with vxlan_network' do
               clientConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links, spec: spec))
               expect(clientConfig['underlay_ip']).to eq("192.74.65.4")
+            end
+          end
+
+          context 'when ipv6 prefix exists in networks' do
+            let(:merged_manifest_properties) do
+              {
+                'ipv6' => { 'prefix_network' => 'ipv6-prefix-network' }
+              }
+            end
+
+            networks = {
+              'ipv6-prefix-network' => {
+                'ip' => "2006:2::",
+                'prefix' => "80"
+              }
+            }
+
+            spec = InstanceSpec.new(address: 'cloudfoundry.org', bootstrap: true, networks: networks)
+
+            it 'sets the ipv6_prefix to the prefix defined in ipv6_prefix_network' do
+              clientConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links, spec: spec))
+              expect(clientConfig['ipv6_prefix']).to eq("2006:2::/80")
+            end
+          end
+
+          context 'when ipv6 prefix does not exist in networks' do
+            let(:merged_manifest_properties) do
+              {
+                'ipv6' => { 'prefix_network' => 'ipv6-prefix-network' }
+              }
+            end
+
+            networks = {
+              'wrong_prefix_network_name' => {
+                'ip' => "2006:2::",
+                'prefix' => "80"
+              }
+            }
+
+            spec = InstanceSpec.new(address: 'cloudfoundry.org', bootstrap: true, networks: networks)
+
+            it 'throws an error indicating that network name is not found in networks' do
+              expect {
+                template.render(merged_manifest_properties, consumes: links, spec: spec)
+              }.to raise_error("requested ipv6.prefix_network 'ipv6-prefix-network' not found in available networks [wrong_prefix_network_name]")
+            end
+          end
+
+          context 'when ipv6 prefix network does not contain a valid prefix' do
+            let(:merged_manifest_properties) do
+              {
+                'ipv6' => { 'prefix_network' => 'ipv6-prefix-network' }
+              }
+            end
+
+            networks = { 'ipv6-prefix-network' => {} }
+            spec = InstanceSpec.new(address: 'cloudfoundry.org', bootstrap: true, networks: networks)
+
+            it 'throws an error indicating that network does not contain a valid prefix' do
+              expect {
+                template.render(merged_manifest_properties, consumes: links, spec: spec)
+              }.to raise_error("requested ipv6.prefix_network 'ipv6-prefix-network' does not contain a valid prefix")
+            end
+          end
+
+          context 'when ipv6.prefix_network is not set' do
+            it 'does not set the prefix' do
+              clientConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links))
+              expect(clientConfig['ipv6_prefix']).to eq(nil)
             end
           end
 

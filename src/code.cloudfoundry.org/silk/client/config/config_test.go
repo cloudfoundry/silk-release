@@ -123,4 +123,35 @@ var _ = Describe("Config.LoadConfig", func() {
 			Expect(loadedConfig.OverlayNetworks).To(Equal(overlayNets))
 		})
 	})
+
+	Context("when ipv6 is enabled", func() {
+		It("sets the flag", func() {
+			cfg := cloneMap(requiredFields)
+			cfg["enable_ipv6"] = true
+
+			file, err := os.CreateTemp(os.TempDir(), "config-")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(json.NewEncoder(file).Encode(cfg)).To(Succeed())
+
+			loadedConfig, err := config.LoadConfig(file.Name())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(loadedConfig.EnableIPv6).To(Equal(true))
+		})
+
+		It("sets the prefix", func() {
+			cfg := cloneMap(requiredFields)
+			cfg["ipv6_prefix"] = "2001::1/80"
+
+			file, err := os.CreateTemp(os.TempDir(), "config-")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(json.NewEncoder(file).Encode(cfg)).To(Succeed())
+
+			loadedConfig, err := config.LoadConfig(file.Name())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(loadedConfig.IPv6Prefix).To(Equal("2001::1/80"))
+		})
+	})
+
 })

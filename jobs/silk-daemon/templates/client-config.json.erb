@@ -7,6 +7,20 @@
     return network
   end
 
+  def ipv6_prefix
+    if_p('ipv6.prefix_network') do |net_name|
+      networks = spec.networks.to_h
+      raise "requested ipv6.prefix_network '#{net_name}' not found in available networks [#{networks.keys.join(', ')}]" unless networks.key?(net_name.to_sym)
+
+      ip, prefix = spec.networks[net_name.to_sym].ip, spec.networks[net_name.to_sym].prefix
+      raise "requested ipv6.prefix_network '#{net_name}' does not contain a valid prefix" if ip.nil? || prefix.nil? || prefix.to_s == "128"
+
+      return "#{ip}/#{prefix}"
+    end
+
+    nil
+  end
+
   def subnet_prefix_length
     size = link('cf_network').p('subnet_prefix_length')
     if size < 1 || size > 30
@@ -56,7 +70,9 @@
     'log_prefix' => 'cfnetworking',
     'log_level' => p('logging.level'),
     'vxlan_interface_name' => p('temporary_vxlan_interface', ''),
-    'single_ip_only' => p('single_ip_only')
+    'single_ip_only' => p('single_ip_only'),
+    'enable_ipv6' => p('ipv6.enable'),
+    'ipv6_prefix' => ipv6_prefix
   }
 
   JSON.pretty_generate(toRender)

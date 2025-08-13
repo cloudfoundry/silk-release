@@ -20,4 +20,7 @@ var _ = SynchronizedAfterSuite(func() {
 	// runs only on node #1 after all parallel ones are finished
 	iptablesCmd := exec.Command("iptables", "-F", "FORWARD")
 	Expect(iptablesCmd.Run()).To(Succeed())
+
+	ip6tablesCmd := exec.Command("ip6tables", "-F", "FORWARD")
+	Expect(ip6tablesCmd.Run()).To(Succeed())
 })

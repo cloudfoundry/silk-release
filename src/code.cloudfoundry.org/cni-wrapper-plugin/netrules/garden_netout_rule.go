@@ -32,6 +32,8 @@ func (r *gardenNetOutRule) Protocol() Protocol {
 		return ProtocolUDP
 	case garden.ProtocolICMP:
 		return ProtocolICMP
+	case garden.ProtocolICMPv6:
+		return ProtocolICMPv6
 	default:
 		return ProtocolAll
 	}

@@ -6,6 +6,16 @@ import (
 )
 
 type Restorer struct {
+	IsIPv6Stub        func() bool
+	isIPv6Mutex       sync.RWMutex
+	isIPv6ArgsForCall []struct {
+	}
+	isIPv6Returns struct {
+		result1 bool
+	}
+	isIPv6ReturnsOnCall map[int]struct {
+		result1 bool
+	}
 	RestoreStub        func(string) error
 	restoreMutex       sync.RWMutex
 	restoreArgsForCall []struct {
@@ -31,6 +41,59 @@ type Restorer struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *Restorer) IsIPv6() bool {
+	fake.isIPv6Mutex.Lock()
+	ret, specificReturn := fake.isIPv6ReturnsOnCall[len(fake.isIPv6ArgsForCall)]
+	fake.isIPv6ArgsForCall = append(fake.isIPv6ArgsForCall, struct {
+	}{})
+	stub := fake.IsIPv6Stub
+	fakeReturns := fake.isIPv6Returns
+	fake.recordInvocation("IsIPv6", []interface{}{})
+	fake.isIPv6Mutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *Restorer) IsIPv6CallCount() int {
+	fake.isIPv6Mutex.RLock()
+	defer fake.isIPv6Mutex.RUnlock()
+	return len(fake.isIPv6ArgsForCall)
+}
+
+func (fake *Restorer) IsIPv6Calls(stub func() bool) {
+	fake.isIPv6Mutex.Lock()
+	defer fake.isIPv6Mutex.Unlock()
+	fake.IsIPv6Stub = stub
+}
+
+func (fake *Restorer) IsIPv6Returns(result1 bool) {
+	fake.isIPv6Mutex.Lock()
+	defer fake.isIPv6Mutex.Unlock()
+	fake.IsIPv6Stub = nil
+	fake.isIPv6Returns = struct {
+		result1 bool
+	}{result1}
+}
+
+func (fake *Restorer) IsIPv6ReturnsOnCall(i int, result1 bool) {
+	fake.isIPv6Mutex.Lock()
+	defer fake.isIPv6Mutex.Unlock()
+	fake.IsIPv6Stub = nil
+	if fake.isIPv6ReturnsOnCall == nil {
+		fake.isIPv6ReturnsOnCall = make(map[int]struct {
+			result1 bool
+		})
+	}
+	fake.isIPv6ReturnsOnCall[i] = struct {
+		result1 bool
+	}{result1}
 }
 
 func (fake *Restorer) Restore(arg1 string) error {
@@ -159,6 +222,8 @@ func (fake *Restorer) RestoreWithFlagsReturnsOnCall(i int, result1 error) {
 func (fake *Restorer) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.isIPv6Mutex.RLock()
+	defer fake.isIPv6Mutex.RUnlock()
 	fake.restoreMutex.RLock()
 	defer fake.restoreMutex.RUnlock()
 	fake.restoreWithFlagsMutex.RLock()

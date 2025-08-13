@@ -58,21 +58,33 @@ type locker interface {
 type restorer interface {
 	Restore(ruleState string) error
 	RestoreWithFlags(ruleState string, iptablesFlags ...string) error
+	IsIPv6() bool
 }
 
-type Restorer struct{}
+type Restorer struct {
+	IPv6 bool
+}
 
 func (r *Restorer) Restore(input string) error {
 	return r.RestoreWithFlags(input, "--noflush")
 }
 
+func (r *Restorer) IsIPv6() bool {
+	return r.IPv6
+}
+
 func (r *Restorer) RestoreWithFlags(input string, iptablesFlags ...string) error {
-	cmd := exec.Command("iptables-restore", iptablesFlags...)
+	command := "iptables-restore"
+	if r.IPv6 {
+		command = "ip6tables-restore"
+	}
+
+	cmd := exec.Command(command, iptablesFlags...)
 	cmd.Stdin = strings.NewReader(input)
 
 	bytes, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("iptables-restore error: %s combined output: %s", err, string(bytes))
+		return fmt.Errorf("%s error: %s combined output: %s", command, err, string(bytes))
 	}
 	return nil
 }
@@ -214,7 +226,8 @@ func (l *LockedIPTables) DeleteAfterRuleNumKeepReject(table, chain string, ruleN
 			return handleIPTablesError(err, l.Locker.Unlock())
 		}
 	}
-	err = l.IPTables.AppendUnique(table, chain, NewInputDefaultRejectRule()...)
+
+	err = l.IPTables.AppendUnique(table, chain, NewInputDefaultRejectRule(l.Restorer.IsIPv6())...)
 	if err != nil {
 		return handleIPTablesError(err, l.Locker.Unlock())
 	}

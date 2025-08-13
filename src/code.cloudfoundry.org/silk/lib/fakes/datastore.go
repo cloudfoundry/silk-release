@@ -8,12 +8,14 @@ import (
 )
 
 type Datastore struct {
-	AddStub        func(string, string, map[string]interface{}) error
+	AddStub        func(string, string, string, string, map[string]interface{}) error
 	addMutex       sync.RWMutex
 	addArgsForCall []struct {
 		arg1 string
 		arg2 string
-		arg3 map[string]interface{}
+		arg3 string
+		arg4 string
+		arg5 map[string]interface{}
 	}
 	addReturns struct {
 		result1 error
@@ -21,10 +23,11 @@ type Datastore struct {
 	addReturnsOnCall map[int]struct {
 		result1 error
 	}
-	DeleteStub        func(string) (datastore.Container, error)
+	DeleteStub        func(string, string) (datastore.Container, error)
 	deleteMutex       sync.RWMutex
 	deleteArgsForCall []struct {
 		arg1 string
+		arg2 string
 	}
 	deleteReturns struct {
 		result1 datastore.Container
@@ -34,9 +37,10 @@ type Datastore struct {
 		result1 datastore.Container
 		result2 error
 	}
-	ReadAllStub        func() (map[string]datastore.Container, error)
+	ReadAllStub        func(string) (map[string]datastore.Container, error)
 	readAllMutex       sync.RWMutex
 	readAllArgsForCall []struct {
+		arg1 string
 	}
 	readAllReturns struct {
 		result1 map[string]datastore.Container
@@ -50,20 +54,22 @@ type Datastore struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *Datastore) Add(arg1 string, arg2 string, arg3 map[string]interface{}) error {
+func (fake *Datastore) Add(arg1 string, arg2 string, arg3 string, arg4 string, arg5 map[string]interface{}) error {
 	fake.addMutex.Lock()
 	ret, specificReturn := fake.addReturnsOnCall[len(fake.addArgsForCall)]
 	fake.addArgsForCall = append(fake.addArgsForCall, struct {
 		arg1 string
 		arg2 string
-		arg3 map[string]interface{}
-	}{arg1, arg2, arg3})
+		arg3 string
+		arg4 string
+		arg5 map[string]interface{}
+	}{arg1, arg2, arg3, arg4, arg5})
 	stub := fake.AddStub
 	fakeReturns := fake.addReturns
-	fake.recordInvocation("Add", []interface{}{arg1, arg2, arg3})
+	fake.recordInvocation("Add", []interface{}{arg1, arg2, arg3, arg4, arg5})
 	fake.addMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3)
+		return stub(arg1, arg2, arg3, arg4, arg5)
 	}
 	if specificReturn {
 		return ret.result1
@@ -77,17 +83,17 @@ func (fake *Datastore) AddCallCount() int {
 	return len(fake.addArgsForCall)
 }
 
-func (fake *Datastore) AddCalls(stub func(string, string, map[string]interface{}) error) {
+func (fake *Datastore) AddCalls(stub func(string, string, string, string, map[string]interface{}) error) {
 	fake.addMutex.Lock()
 	defer fake.addMutex.Unlock()
 	fake.AddStub = stub
 }
 
-func (fake *Datastore) AddArgsForCall(i int) (string, string, map[string]interface{}) {
+func (fake *Datastore) AddArgsForCall(i int) (string, string, string, string, map[string]interface{}) {
 	fake.addMutex.RLock()
 	defer fake.addMutex.RUnlock()
 	argsForCall := fake.addArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4, argsForCall.arg5
 }
 
 func (fake *Datastore) AddReturns(result1 error) {
@@ -113,18 +119,19 @@ func (fake *Datastore) AddReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *Datastore) Delete(arg1 string) (datastore.Container, error) {
+func (fake *Datastore) Delete(arg1 string, arg2 string) (datastore.Container, error) {
 	fake.deleteMutex.Lock()
 	ret, specificReturn := fake.deleteReturnsOnCall[len(fake.deleteArgsForCall)]
 	fake.deleteArgsForCall = append(fake.deleteArgsForCall, struct {
 		arg1 string
-	}{arg1})
+		arg2 string
+	}{arg1, arg2})
 	stub := fake.DeleteStub
 	fakeReturns := fake.deleteReturns
-	fake.recordInvocation("Delete", []interface{}{arg1})
+	fake.recordInvocation("Delete", []interface{}{arg1, arg2})
 	fake.deleteMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -138,17 +145,17 @@ func (fake *Datastore) DeleteCallCount() int {
 	return len(fake.deleteArgsForCall)
 }
 
-func (fake *Datastore) DeleteCalls(stub func(string) (datastore.Container, error)) {
+func (fake *Datastore) DeleteCalls(stub func(string, string) (datastore.Container, error)) {
 	fake.deleteMutex.Lock()
 	defer fake.deleteMutex.Unlock()
 	fake.DeleteStub = stub
 }
 
-func (fake *Datastore) DeleteArgsForCall(i int) string {
+func (fake *Datastore) DeleteArgsForCall(i int) (string, string) {
 	fake.deleteMutex.RLock()
 	defer fake.deleteMutex.RUnlock()
 	argsForCall := fake.deleteArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *Datastore) DeleteReturns(result1 datastore.Container, result2 error) {
@@ -177,17 +184,18 @@ func (fake *Datastore) DeleteReturnsOnCall(i int, result1 datastore.Container, r
 	}{result1, result2}
 }
 
-func (fake *Datastore) ReadAll() (map[string]datastore.Container, error) {
+func (fake *Datastore) ReadAll(arg1 string) (map[string]datastore.Container, error) {
 	fake.readAllMutex.Lock()
 	ret, specificReturn := fake.readAllReturnsOnCall[len(fake.readAllArgsForCall)]
 	fake.readAllArgsForCall = append(fake.readAllArgsForCall, struct {
-	}{})
+		arg1 string
+	}{arg1})
 	stub := fake.ReadAllStub
 	fakeReturns := fake.readAllReturns
-	fake.recordInvocation("ReadAll", []interface{}{})
+	fake.recordInvocation("ReadAll", []interface{}{arg1})
 	fake.readAllMutex.Unlock()
 	if stub != nil {
-		return stub()
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -201,10 +209,17 @@ func (fake *Datastore) ReadAllCallCount() int {
 	return len(fake.readAllArgsForCall)
 }
 
-func (fake *Datastore) ReadAllCalls(stub func() (map[string]datastore.Container, error)) {
+func (fake *Datastore) ReadAllCalls(stub func(string) (map[string]datastore.Container, error)) {
 	fake.readAllMutex.Lock()
 	defer fake.readAllMutex.Unlock()
 	fake.ReadAllStub = stub
+}
+
+func (fake *Datastore) ReadAllArgsForCall(i int) string {
+	fake.readAllMutex.RLock()
+	defer fake.readAllMutex.RUnlock()
+	argsForCall := fake.readAllArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *Datastore) ReadAllReturns(result1 map[string]datastore.Container, result2 error) {

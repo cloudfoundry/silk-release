@@ -21,6 +21,19 @@ type Common struct {
 	basicSetupReturnsOnCall map[int]struct {
 		result1 error
 	}
+	BasicSetupIPv6Stub        func(string, config.DualAddress, config.DualAddress) error
+	basicSetupIPv6Mutex       sync.RWMutex
+	basicSetupIPv6ArgsForCall []struct {
+		arg1 string
+		arg2 config.DualAddress
+		arg3 config.DualAddress
+	}
+	basicSetupIPv6Returns struct {
+		result1 error
+	}
+	basicSetupIPv6ReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -88,11 +101,76 @@ func (fake *Common) BasicSetupReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *Common) BasicSetupIPv6(arg1 string, arg2 config.DualAddress, arg3 config.DualAddress) error {
+	fake.basicSetupIPv6Mutex.Lock()
+	ret, specificReturn := fake.basicSetupIPv6ReturnsOnCall[len(fake.basicSetupIPv6ArgsForCall)]
+	fake.basicSetupIPv6ArgsForCall = append(fake.basicSetupIPv6ArgsForCall, struct {
+		arg1 string
+		arg2 config.DualAddress
+		arg3 config.DualAddress
+	}{arg1, arg2, arg3})
+	stub := fake.BasicSetupIPv6Stub
+	fakeReturns := fake.basicSetupIPv6Returns
+	fake.recordInvocation("BasicSetupIPv6", []interface{}{arg1, arg2, arg3})
+	fake.basicSetupIPv6Mutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *Common) BasicSetupIPv6CallCount() int {
+	fake.basicSetupIPv6Mutex.RLock()
+	defer fake.basicSetupIPv6Mutex.RUnlock()
+	return len(fake.basicSetupIPv6ArgsForCall)
+}
+
+func (fake *Common) BasicSetupIPv6Calls(stub func(string, config.DualAddress, config.DualAddress) error) {
+	fake.basicSetupIPv6Mutex.Lock()
+	defer fake.basicSetupIPv6Mutex.Unlock()
+	fake.BasicSetupIPv6Stub = stub
+}
+
+func (fake *Common) BasicSetupIPv6ArgsForCall(i int) (string, config.DualAddress, config.DualAddress) {
+	fake.basicSetupIPv6Mutex.RLock()
+	defer fake.basicSetupIPv6Mutex.RUnlock()
+	argsForCall := fake.basicSetupIPv6ArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *Common) BasicSetupIPv6Returns(result1 error) {
+	fake.basicSetupIPv6Mutex.Lock()
+	defer fake.basicSetupIPv6Mutex.Unlock()
+	fake.BasicSetupIPv6Stub = nil
+	fake.basicSetupIPv6Returns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *Common) BasicSetupIPv6ReturnsOnCall(i int, result1 error) {
+	fake.basicSetupIPv6Mutex.Lock()
+	defer fake.basicSetupIPv6Mutex.Unlock()
+	fake.BasicSetupIPv6Stub = nil
+	if fake.basicSetupIPv6ReturnsOnCall == nil {
+		fake.basicSetupIPv6ReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.basicSetupIPv6ReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *Common) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.basicSetupMutex.RLock()
 	defer fake.basicSetupMutex.RUnlock()
+	fake.basicSetupIPv6Mutex.RLock()
+	defer fake.basicSetupIPv6Mutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

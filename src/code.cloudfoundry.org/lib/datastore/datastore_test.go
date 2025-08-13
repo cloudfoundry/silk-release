@@ -83,8 +83,8 @@ var _ = Describe("Datastore", func() {
 			Expect(file.(*os.File).Name()).To(Equal(dataFile.Name()))
 
 			_, actual := serializer.EncodeAndOverwriteArgsForCall(0)
-			expected := map[string]datastore.Container{
-				handle: datastore.Container{
+			expected := map[string]*datastore.Container{
+				handle: {
 					Handle:   handle,
 					IP:       ip,
 					Metadata: metadata,
@@ -173,14 +173,107 @@ var _ = Describe("Datastore", func() {
 			})
 		})
 
+		Context("when options are provided", func() {
+			var (
+				option          datastore.Option
+				optionCallCount int
+			)
+
+			BeforeEach(func() {
+				option = func(c *datastore.Container) error {
+					optionCallCount++
+					return nil
+				}
+			})
+
+			It("applies multiple options", func() {
+				err := store.Add(handle, ip, metadata, option, option, option)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(optionCallCount).To(Equal(3))
+			})
+
+			Context("and the option fails", func() {
+				BeforeEach(func() {
+					option = func(c *datastore.Container) error {
+						return errors.New("potato")
+					}
+				})
+
+				It("wraps and returns the error", func() {
+					err := store.Add(handle, ip, metadata, option)
+					Expect(err).To(MatchError("applying option: potato"))
+				})
+			})
+
+			Context("and the option is IPv6 option", func() {
+				var ipv6 string
+
+				BeforeEach(func() {
+					ipv6 = fmt.Sprintf("2001:db8::%d", 100+GinkgoParallelProcess())
+				})
+
+				JustBeforeEach(func() {
+					option = datastore.WithIPv6(ipv6)
+				})
+
+				It("applies the option", func() {
+					err := store.Add(handle, ip, metadata, option)
+					Expect(err).NotTo(HaveOccurred())
+
+					_, actual := serializer.EncodeAndOverwriteArgsForCall(0)
+					expected := map[string]*datastore.Container{
+						handle: {
+							Handle:   handle,
+							IP:       ip,
+							IPv6:     ipv6,
+							Metadata: metadata,
+						},
+					}
+					Expect(actual).To(Equal(expected))
+				})
+
+				Context("when the IPv6 is empty string", func() {
+					BeforeEach(func() {
+						ipv6 = ""
+					})
+
+					It("does not set the IPv6", func() {
+						err := store.Add(handle, ip, metadata, option)
+						Expect(err).NotTo(HaveOccurred())
+
+						_, actual := serializer.EncodeAndOverwriteArgsForCall(0)
+						expected := map[string]*datastore.Container{
+							handle: {
+								Handle:   handle,
+								IP:       ip,
+								IPv6:     "",
+								Metadata: metadata,
+							},
+						}
+						Expect(actual).To(Equal(expected))
+					})
+				})
+
+				Context("when the IPv6 is invalid", func() {
+					BeforeEach(func() {
+						ipv6 = "invalid-ip"
+					})
+
+					It("wraps and returns the error", func() {
+						err := store.Add(handle, ip, metadata, option)
+						Expect(err).To(MatchError("applying option: invalid ip: invalid-ip"))
+					})
+				})
+			})
+		})
 	})
 
 	Context("when updating an entry to store", func() {
 		It("updates the entry", func() {
 			serializer.DecodeAllStub = func(_ io.ReadSeeker, a interface{}) error {
-				b := a.(*map[string]datastore.Container)
-				*b = map[string]datastore.Container{
-					handle: datastore.Container{
+				b := a.(*map[string]*datastore.Container)
+				*b = map[string]*datastore.Container{
+					handle: {
 						Handle:   handle,
 						IP:       ip,
 						Metadata: metadata,
@@ -207,8 +300,8 @@ var _ = Describe("Datastore", func() {
 			Expect(file.(*os.File).Name()).To(Equal(dataFile.Name()))
 
 			_, actual := serializer.EncodeAndOverwriteArgsForCall(0)
-			expected := map[string]datastore.Container{
-				handle: datastore.Container{
+			expected := map[string]*datastore.Container{
+				handle: {
 					Handle:   handle,
 					IP:       ip,
 					Metadata: metadata2,

@@ -73,3 +73,36 @@ func (s *Common) BasicSetup(deviceName string, local, peer config.DualAddress) e
 
 	return nil
 }
+
+func (s *Common) BasicSetupIPv6(deviceName string, local, peer config.DualAddress) error {
+	s.Logger.Debug("basic-device-setup-ipv6", lager.Data{"deviceName": deviceName, "local": local.Hardware.String(), "peer": peer.Hardware.String()})
+	defer s.Logger.Debug("done")
+
+	link, err := s.NetlinkAdapter.LinkByName(deviceName)
+	if err != nil {
+		return fmt.Errorf("failed to find link %q: %s for ipv6", deviceName, err)
+	}
+
+	if err := s.LinkOperations.EnableIPv6(deviceName); err != nil {
+		return fmt.Errorf("failed to enable IPv6: %s", err)
+	}
+
+	if err := s.LinkOperations.StaticNeighborIPv6(link, peer.IP, peer.Hardware); err != nil {
+		return fmt.Errorf("set permanent neighbor rule for ipv6: %s", err)
+	}
+
+	if err := s.LinkOperations.SetPointToPointAddress(link, local.IP, peer.IP); err != nil {
+		return fmt.Errorf("setting point to point address for ipv6: %s", err)
+	}
+
+	err = s.LinkOperations.SysctlIPv6Security(deviceName)
+	if err != nil {
+		return fmt.Errorf("setting security sysctls for ipv6: %s", err)
+	}
+
+	if err := s.NetlinkAdapter.LinkSetUp(link); err != nil {
+		return fmt.Errorf("setting link %s up: %s", deviceName, err)
+	}
+
+	return nil
+}

@@ -128,6 +128,11 @@ var _ = BeforeEach(func() {
 		LogPrefix:                 "potato-prefix",
 	}
 
+	if testIPv6 {
+		daemonConf.EnableIPv6 = true
+		daemonConf.IPv6Prefix = "2001:db8::/80"
+	}
+
 	vtepFactory = &vtep.Factory{NetlinkAdapter: &adapter.NetlinkAdapter{}, Logger: lagertest.NewTestLogger("test")}
 
 	serverTLSConfig, err = mutualtls.NewServerTLSConfig(paths.ServerCertFile, paths.ServerKeyFile, paths.ClientCACertFile)
@@ -756,6 +761,9 @@ func doHealthCheckWithErr() error {
 	}
 	if response.OverlaySubnet != daemonLease.OverlaySubnet {
 		return fmt.Errorf("mismatched overlay subnet: %s vs %s", response.OverlaySubnet, daemonLease.OverlaySubnet)
+	}
+	if testIPv6 && daemonConf.EnableIPv6 && daemonConf.IPv6Prefix != "" && response.IPv6Prefix != daemonConf.IPv6Prefix {
+		return fmt.Errorf("mismatched IPv6 prefix: %s vs %s", response.IPv6Prefix, daemonConf.IPv6Prefix)
 	}
 	const vxlanEncapOverhead = 50 // bytes
 	Expect(response.MTU).To(Equal(externalMTU - vxlanEncapOverhead))

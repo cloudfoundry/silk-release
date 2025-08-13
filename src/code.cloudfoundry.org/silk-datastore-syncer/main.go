@@ -112,7 +112,8 @@ func main() {
 				sc.Metadata = make(map[string]interface{})
 			}
 			sc.Metadata["log_config"] = string(b)
-			err = store.Update(sc.Handle, sc.IP, sc.Metadata)
+
+			err = store.Update(sc.Handle, sc.IP, sc.Metadata, datastore.WithIPv6(sc.IPv6))
 			if err != nil {
 				logger.Error("Error updating log config", err)
 			}

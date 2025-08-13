@@ -913,6 +913,37 @@ var _ = Describe("Planner", func() {
 					Expect(receivedStagingContainerWorkload).To(Equal("staging"))
 				})
 
+				Context("when there are IPv6 rules", func() {
+					BeforeEach(func() {
+						securityGroups = append(securityGroups, policy_client.SecurityGroup{
+							Name:              "running-security-group2",
+							RunningSpaceGuids: []string{"some-space-guid"},
+							Rules: policy_client.SecurityGroupRules{
+								{Protocol: "all", Destination: "3000::1"},
+								{Protocol: "tcp", Destination: "3000::2", Ports: "8080"},
+							},
+						})
+
+						policyClient.GetSecurityGroupsForSpaceReturns(securityGroups, nil)
+					})
+
+					It("ignores the IPv6 rules", func() {
+						rulesWithChains, err := policyPlanner.GetASGRulesAndChains()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(rulesWithChains).To(HaveLen(2))
+
+						Expect(netOutChain.IPTablesRulesCallCount()).To(Equal(2))
+						_, _, ruleSpec1 := netOutChain.IPTablesRulesArgsForCall(0)
+						_, _, ruleSpec2 := netOutChain.IPTablesRulesArgsForCall(1)
+
+						By("ensuring the IPv6 rules are not included")
+						expectedSpecs, _ := netrules.NewRulesFromSecurityGroupRules(append(expectedRunningRules, expectedStagingRules...))
+						allSpecs := append(ruleSpec1, ruleSpec2...)
+						Expect(allSpecs).To(HaveLen(2))
+						Expect(allSpecs).To(ConsistOf(expectedSpecs))
+					})
+				})
+
 				Context("and there are also global security groups for staging and running", func() {
 					var (
 						expectedGlobalRunningRules policy_client.SecurityGroupRules
@@ -1052,7 +1083,6 @@ var _ = Describe("Planner", func() {
 				Expect(netOutChain.DefaultRulesCallCount()).To(Equal(2))
 				Expect(netOutChain.IPTablesRulesCallCount()).To(Equal(2))
 			})
-
 		})
 
 		Context("when getting containers from datastore fails", func() {
@@ -1064,6 +1094,81 @@ var _ = Describe("Planner", func() {
 				_, err := policyPlanner.GetASGRulesAndChains()
 				Expect(err).To(MatchError("banana"))
 				Expect(logger).To(gbytes.Say("datastore.*banana"))
+			})
+		})
+
+		Context("when IPv6 is enabled", func() {
+			BeforeEach(func() {
+				policyPlanner.IPv6 = true
+
+				data = make(map[string]datastore.Container)
+				data["container-id-1"] = datastore.Container{
+					Handle: "container-id-1",
+					IP:     "10.255.1.2",
+					IPv6:   "2001:c::1",
+					Metadata: map[string]interface{}{
+						"policy_group_id":    "some-app-guid",
+						"space_id":           "some-space-guid",
+						"ports":              "8080",
+						"container_workload": "app",
+					},
+				}
+
+				store.ReadAllReturns(data, nil)
+			})
+
+			Context("when there is 1 container in datastore", func() {
+				Context("when there are security groups for running with both IPv4 and IPv6 destinations", func() {
+					var (
+						runningRules   policy_client.SecurityGroupRules
+						expectedRules  policy_client.SecurityGroupRules
+						securityGroups []policy_client.SecurityGroup
+					)
+
+					BeforeEach(func() {
+						runningRules = policy_client.SecurityGroupRules{
+							{Protocol: "all", Destination: "2001::42"},
+							{Protocol: "icmpv6", Type: 1, Code: 2, Destination: "2002::42"},
+							{Protocol: "tcp", Ports: "8080, 80", Destination: "2003::42"},
+							{Protocol: "udp", Ports: "52", Destination: "2004::42"},
+							{Protocol: "udp", Ports: "53", Destination: "1.2.3.4"},
+						}
+
+						expectedRules = policy_client.SecurityGroupRules{
+							{Protocol: "all", Destination: "2001::42"},
+							{Protocol: "icmpv6", Type: 1, Code: 2, Destination: "2002::42"},
+							{Protocol: "tcp", Ports: "8080, 80", Destination: "2003::42"},
+							{Protocol: "udp", Ports: "52", Destination: "2004::42"},
+						}
+
+						securityGroups = []policy_client.SecurityGroup{
+							{
+								Name:              "running-security-group",
+								RunningSpaceGuids: []string{"some-space-guid"},
+								Rules:             runningRules,
+							},
+						}
+
+						policyClient.GetSecurityGroupsForSpaceReturns(securityGroups, nil)
+					})
+
+					It("only uses the IPv6 SG rules", func() {
+						rulesWithChains, err := policyPlanner.GetASGRulesAndChains()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(rulesWithChains).To(HaveLen(1))
+
+						Expect(netOutChain.IPTablesRulesCallCount()).To(Equal(1))
+						handle, containerWorkload, ruleSpec := netOutChain.IPTablesRulesArgsForCall(0)
+						Expect(handle).To(Equal("container-id-1"))
+
+						By("only returning IPv6 rules")
+						expected, err := netrules.NewRulesFromSecurityGroupRules(expectedRules)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(ruleSpec).To(Equal(expected))
+						Expect(containerWorkload).To(Equal("app"))
+
+					})
+				})
 			})
 		})
 	})

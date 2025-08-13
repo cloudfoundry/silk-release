@@ -25,8 +25,9 @@ var DEFAULT_TIMEOUT = "5s"
 const GlobalIPTablesLockFile = "/tmp/netman/iptables.lock"
 
 var (
-	certDir string
-	paths   testPaths
+	certDir  string
+	paths    testPaths
+	testIPv6 bool
 )
 
 type testPaths struct {
@@ -37,6 +38,18 @@ type testPaths struct {
 	ClientCertFile       string
 	ClientKeyFile        string
 	VxlanPolicyAgentPath string
+}
+
+func init() {
+	if os.Getenv("GINKGO_TEST_IPV6") == "true" {
+		testIPv6 = true
+	}
+}
+
+func skipIfIPv4() {
+	if !testIPv6 {
+		Skip("Skipping test because IPv6 is disabled")
+	}
 }
 
 func TestIntegration(t *testing.T) {

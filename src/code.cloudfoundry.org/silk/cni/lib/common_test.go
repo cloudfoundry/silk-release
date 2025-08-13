@@ -219,4 +219,115 @@ var _ = Describe("Common", func() {
 		})
 
 	})
+
+	Describe("BasicSetupIPv6", func() {
+		var (
+			fakeNetlinkAdapter *fakes.NetlinkAdapter
+			fakeLinkOperations *fakes.LinkOperations
+			fakeLink           netlink.Link
+			deviceName         string
+			local              config.DualAddress
+			peer               config.DualAddress
+			common             *lib.Common
+			fakeLogger         *lagertest.TestLogger
+		)
+
+		BeforeEach(func() {
+			localMAC, _ := net.ParseMAC("aa:aa:12:34:56:78")
+			peerMAC, _ := net.ParseMAC("ee:ee:12:34:56:78")
+			local = config.DualAddress{
+				IP:       net.ParseIP("2001:db8::1"),
+				Hardware: localMAC,
+			}
+			peer = config.DualAddress{
+				IP:       net.ParseIP("fe80::1"),
+				Hardware: peerMAC,
+			}
+
+			fakeLogger = lagertest.NewTestLogger("test")
+			fakeNetlinkAdapter = &fakes.NetlinkAdapter{}
+			fakeLinkOperations = &fakes.LinkOperations{}
+			fakeLink = &netlink.Bridge{
+				LinkAttrs: netlink.LinkAttrs{
+					Name:         "my-fake-bridge",
+					HardwareAddr: local.Hardware,
+				},
+			}
+			fakeNetlinkAdapter.LinkByNameReturns(fakeLink, nil)
+
+			common = &lib.Common{
+				NetlinkAdapter: fakeNetlinkAdapter,
+				LinkOperations: fakeLinkOperations,
+				Logger:         fakeLogger,
+			}
+			deviceName = "myDeviceName"
+		})
+
+		Context("when the link cannot be found", func() {
+			BeforeEach(func() {
+				fakeNetlinkAdapter.LinkByNameReturns(nil, errors.New("strawberry"))
+			})
+
+			It("wraps and returns the error", func() {
+				err := common.BasicSetupIPv6(deviceName, local, peer)
+				Expect(err).To(Equal(errors.New("failed to find link \"myDeviceName\": strawberry for ipv6")))
+
+			})
+		})
+
+		Context("when enabling IPv6 fails", func() {
+			BeforeEach(func() {
+				fakeLinkOperations.EnableIPv6Returns(errors.New("kiwi"))
+			})
+
+			It("wraps and returns the error", func() {
+				err := common.BasicSetupIPv6(deviceName, local, peer)
+				Expect(err).To(Equal(errors.New("failed to enable IPv6: kiwi")))
+			})
+		})
+
+		Context("when setting static neighbour fails", func() {
+			BeforeEach(func() {
+				fakeLinkOperations.StaticNeighborIPv6Returns(errors.New("raspberry"))
+			})
+
+			It("wraps and returns the error", func() {
+				err := common.BasicSetupIPv6(deviceName, local, peer)
+				Expect(err).To(Equal(errors.New("set permanent neighbor rule for ipv6: raspberry")))
+			})
+		})
+
+		Context("when setting the point to point address fails", func() {
+			BeforeEach(func() {
+				fakeLinkOperations.SetPointToPointAddressReturns(errors.New("dragonfruit"))
+			})
+
+			It("wraps and returns the error", func() {
+				err := common.BasicSetupIPv6(deviceName, local, peer)
+				Expect(err).To(Equal(errors.New("setting point to point address for ipv6: dragonfruit")))
+			})
+		})
+
+		Context("when setting IPv6 security settings fails", func() {
+			BeforeEach(func() {
+				fakeLinkOperations.SysctlIPv6SecurityReturns(errors.New("dragonfruit"))
+			})
+
+			It("wraps and returns the error", func() {
+				err := common.BasicSetupIPv6(deviceName, local, peer)
+				Expect(err).To(Equal(errors.New("setting security sysctls for ipv6: dragonfruit")))
+			})
+		})
+
+		Context("when setting link up fails", func() {
+			BeforeEach(func() {
+				fakeNetlinkAdapter.LinkSetUpReturns(errors.New("cantaloupe"))
+			})
+
+			It("wraps and returns the error", func() {
+				err := common.BasicSetupIPv6(deviceName, local, peer)
+				Expect(err).To(Equal(errors.New("setting link myDeviceName up: cantaloupe")))
+			})
+		})
+	})
 })

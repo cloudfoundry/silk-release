@@ -36,6 +36,7 @@ type VxlanPolicyPlanner struct {
 	EnableOverlayIngressRules     bool
 	HostInterfaceNames            []string
 	NetOutChain                   netOutChain
+	IPv6                          bool
 }
 
 //go:generate counterfeiter -o fakes/dstore.go --fake-name Dstore . dstore

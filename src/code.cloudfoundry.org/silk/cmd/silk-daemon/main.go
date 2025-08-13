@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -68,6 +69,14 @@ func mainWithError() error {
 
 	logger, reconfigurableSink := lagerflags.NewFromConfig(fmt.Sprintf("%s.%s", logPrefix, jobPrefix), getLagerConfig(logLevel))
 	logger.Info("starting")
+
+	if cfg.EnableIPv6 {
+		err = validateIPv6Config(cfg)
+
+		if err != nil {
+			return err
+		}
+	}
 
 	tlsConfig, err := mutualtls.NewClientTLSConfig(cfg.ClientCertFile, cfg.ClientKeyFile, cfg.ServerCACertFile)
 	if err != nil {
@@ -299,10 +308,20 @@ func getNetworkInfo(vtepFactory *vtep.Factory, clientConfig config.Config, lease
 		return daemon.NetworkInfo{}, fmt.Errorf("get vtep mtu: %s", err) // not tested
 	}
 
-	return daemon.NetworkInfo{
+	info := daemon.NetworkInfo{
 		OverlaySubnet: lease.OverlaySubnet,
 		MTU:           mtu,
-	}, nil
+	}
+
+	if clientConfig.EnableIPv6 {
+		if validateIPv6CIDR(clientConfig.IPv6Prefix) {
+			info.IPv6Prefix = clientConfig.IPv6Prefix
+		} else {
+			return daemon.NetworkInfo{}, fmt.Errorf("IPv6 prefix is set but not valid: %s", clientConfig.IPv6Prefix)
+		}
+	}
+
+	return info, nil
 }
 
 func deleteAndAcquire(cfg config.Config, logger lager.Logger, client *controller.Client, vtepConfigCreator *vtep.ConfigCreator, vtepFactory *vtep.Factory) (controller.Lease, error) {
@@ -318,4 +337,47 @@ func getLagerConfig(level string) lagerflags.LagerConfig {
 	lagerConfig.TimeFormat = lagerflags.FormatRFC3339
 	lagerConfig.LogLevel = level
 	return lagerConfig
+}
+
+func validateIPv6CIDR(cidr string) bool {
+	ip, network, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return false
+	}
+
+	return ip.To4() == nil && network.IP.To4() == nil
+}
+
+// TODO: use the function from common
+func hostSupportsIPv6() bool {
+	testAddress := "[::1]:0"
+
+	addr, err := net.ResolveUDPAddr("udp6", testAddress)
+	if err != nil {
+		return false
+	}
+
+	conn, err := net.ListenUDP("udp6", addr)
+	if err != nil {
+		return false
+	}
+	defer conn.Close()
+
+	return true
+}
+
+func validateIPv6Config(cfg config.Config) error {
+	if cfg.IPv6Prefix == "" {
+		return errors.New("IPv6 is enabled but no prefix is configured")
+	}
+
+	if !hostSupportsIPv6() {
+		return errors.New("IPv6 is enabled in config but the host is not IPv6 enabled")
+	}
+
+	if !validateIPv6CIDR(cfg.IPv6Prefix) {
+		return fmt.Errorf("invalid IPv6 prefix: %s", cfg.IPv6Prefix)
+	}
+
+	return nil
 }

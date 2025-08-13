@@ -36,13 +36,13 @@ type HostLocalIPAM struct {
 
 type IPAMConfigGenerator struct{}
 
-func (IPAMConfigGenerator) GenerateConfig(subnet, network, dataDirPath string) (*HostLocalIPAM, error) {
+func (IPAMConfigGenerator) GenerateConfig(subnet, subnet6, network, dataDirPath string) (*HostLocalIPAM, error) {
 	subnetAsIPNet, err := types.ParseCIDR(subnet)
 	if err != nil {
 		return nil, fmt.Errorf("invalid subnet: %s", err)
 	}
 
-	return &HostLocalIPAM{
+	ipam := &HostLocalIPAM{
 		CNIVersion: "1.0.0",
 		Name:       network,
 		IPAM: IPAMConfig{
@@ -55,5 +55,16 @@ func (IPAMConfigGenerator) GenerateConfig(subnet, network, dataDirPath string) (
 			Routes:  []*types.Route{},
 			DataDir: filepath.Join(dataDirPath, "ipam"),
 		},
-	}, nil
+	}
+
+	if subnet6 != "" {
+		subnet6AsIPNet, err := types.ParseCIDR(subnet6)
+		if err != nil {
+			return nil, fmt.Errorf("invalid subnet6: %s", err)
+		}
+
+		ipam.IPAM.Ranges = append(ipam.IPAM.Ranges, []Range{{Subnet: types.IPNet(*subnet6AsIPNet)}})
+	}
+
+	return ipam, nil
 }

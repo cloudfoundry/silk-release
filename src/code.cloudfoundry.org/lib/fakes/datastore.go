@@ -8,12 +8,13 @@ import (
 )
 
 type Datastore struct {
-	AddStub        func(string, string, map[string]interface{}) error
+	AddStub        func(string, string, map[string]interface{}, ...datastore.Option) error
 	addMutex       sync.RWMutex
 	addArgsForCall []struct {
 		arg1 string
 		arg2 string
 		arg3 map[string]interface{}
+		arg4 []datastore.Option
 	}
 	addReturns struct {
 		result1 error
@@ -50,20 +51,21 @@ type Datastore struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *Datastore) Add(arg1 string, arg2 string, arg3 map[string]interface{}) error {
+func (fake *Datastore) Add(arg1 string, arg2 string, arg3 map[string]interface{}, arg4 ...datastore.Option) error {
 	fake.addMutex.Lock()
 	ret, specificReturn := fake.addReturnsOnCall[len(fake.addArgsForCall)]
 	fake.addArgsForCall = append(fake.addArgsForCall, struct {
 		arg1 string
 		arg2 string
 		arg3 map[string]interface{}
-	}{arg1, arg2, arg3})
+		arg4 []datastore.Option
+	}{arg1, arg2, arg3, arg4})
 	stub := fake.AddStub
 	fakeReturns := fake.addReturns
-	fake.recordInvocation("Add", []interface{}{arg1, arg2, arg3})
+	fake.recordInvocation("Add", []interface{}{arg1, arg2, arg3, arg4})
 	fake.addMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3)
+		return stub(arg1, arg2, arg3, arg4...)
 	}
 	if specificReturn {
 		return ret.result1
@@ -77,17 +79,17 @@ func (fake *Datastore) AddCallCount() int {
 	return len(fake.addArgsForCall)
 }
 
-func (fake *Datastore) AddCalls(stub func(string, string, map[string]interface{}) error) {
+func (fake *Datastore) AddCalls(stub func(string, string, map[string]interface{}, ...datastore.Option) error) {
 	fake.addMutex.Lock()
 	defer fake.addMutex.Unlock()
 	fake.AddStub = stub
 }
 
-func (fake *Datastore) AddArgsForCall(i int) (string, string, map[string]interface{}) {
+func (fake *Datastore) AddArgsForCall(i int) (string, string, map[string]interface{}, []datastore.Option) {
 	fake.addMutex.RLock()
 	defer fake.addMutex.RUnlock()
 	argsForCall := fake.addArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
 func (fake *Datastore) AddReturns(result1 error) {

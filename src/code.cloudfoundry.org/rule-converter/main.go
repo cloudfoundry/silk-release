@@ -51,7 +51,6 @@ type SecurityGroupRule struct {
 }
 
 func netoutToASGRule(rule garden.NetOutRule) SecurityGroupRule {
-
 	sg := SecurityGroupRule{}
 
 	switch rule.Protocol {
@@ -61,6 +60,10 @@ func netoutToASGRule(rule garden.NetOutRule) SecurityGroupRule {
 		sg.Protocol = string(netrules.ProtocolUDP)
 	case garden.ProtocolICMP:
 		sg.Protocol = string(netrules.ProtocolICMP)
+		sg.Type = &rule.ICMPs.Type
+		sg.Code = rule.ICMPs.Code
+	case garden.ProtocolICMPv6:
+		sg.Protocol = string(netrules.ProtocolICMPv6)
 		sg.Type = &rule.ICMPs.Type
 		sg.Code = rule.ICMPs.Code
 	case garden.ProtocolAll:

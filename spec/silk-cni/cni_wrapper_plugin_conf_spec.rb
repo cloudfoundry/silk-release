@@ -31,10 +31,17 @@ module Bosh::Template::Test
         'iptables_accepted_udp_logs_per_sec' => 3,
         'host_tcp_services' => ['169.254.0.2:9001', '169.254.0.2:9002'],
         'host_udp_services' => ['169.254.0.2:9003', '169.254.0.2:9004'],
+        'host_tcp_services_ipv6' => ['[2001::1]:9001', '[2001::1]:9002'],
+        'host_udp_services_ipv6' => ['[2001::1]:9003', '[2001::1]:9004'],
         'deny_networks' => {
           'always' => ['1.1.1.1/32'],
           'running' => ['2.2.2.2/32'],
           'staging' => ['3.3.3.3/32'],
+        },
+        'deny_networks_ipv6' => {
+          'always' => ['2001::1/128'],
+          'running' => ['2001::2/128'],
+          'staging' => ['2001::3/128'],
         },
         'outbound_connections' => {
           'limit' => true,
@@ -77,11 +84,19 @@ module Bosh::Template::Test
             'policy_agent_force_poll_address' => '127.0.0.1:5555',
             'host_tcp_services' => ['169.254.0.2:9001', '169.254.0.2:9002'],
             'host_udp_services' => ['169.254.0.2:9003', '169.254.0.2:9004'],
+            'host_tcp_services_ipv6' => ['[2001::1]:9001', '[2001::1]:9002'],
+            'host_udp_services_ipv6' => ['[2001::1]:9003', '[2001::1]:9004'],
             'deny_networks' => {
               'always' => ['1.1.1.1/32'],
               'running' => ['2.2.2.2/32'],
               'staging' => ['3.3.3.3/32'],
             },
+            'deny_networks_ipv6' => {
+              'always' => ['2001::1/128'],
+              'running' => ['2001::2/128'],
+              'staging' => ['2001::3/128'],
+            },
+            'enable_ipv6' => false,
             'delegate' => {
               'cniVersion' => '1.0.0',
               'name' => 'silk',
@@ -213,6 +228,17 @@ module Bosh::Template::Test
           expect {
             template.render(contents, spec: spec, consumes: links)
           }.not_to raise_error
+        end
+      end
+
+      context 'when ipv6.enable is set' do
+        it 'sets enable_ipv6' do
+          contents = merged_manifest_properties.merge(
+            'ipv6' => { 'enable' => true }
+          )
+
+          clientConfig = JSON.parse(template.render(contents, spec: spec, consumes: links))
+          expect(clientConfig['plugins'][0]['enable_ipv6']).to eq(true)
         end
       end
     end

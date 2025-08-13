@@ -55,3 +55,25 @@ func (c *Container) Setup(cfg *config.Config) error {
 		return nil
 	})
 }
+
+func (c *Container) SetupIPv6(cfg *config.Config) error {
+	c.Logger.Debug("start")
+	defer c.Logger.Debug("done")
+
+	deviceName := cfg.Container.DeviceName
+
+	local := cfg.Container.AddressIPv6
+	peer := cfg.Host.AddressIPv6
+
+	return cfg.Container.Namespace.Do(func(_ ns.NetNS) error {
+		if err := c.Common.BasicSetupIPv6(deviceName, local, peer); err != nil {
+			return fmt.Errorf("setting up IPv6 device in container: %s", err)
+		}
+
+		if err := c.LinkOperations.Route6AddAll(cfg.Container.RoutesIPv6, deviceName); err != nil {
+			return fmt.Errorf("adding IPv6 route in container: %s", err)
+		}
+
+		return nil
+	})
+}

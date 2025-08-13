@@ -23,6 +23,7 @@ type InterfaceNameLookup struct {
 	NetlinkAdapter netlinkAdapter
 }
 
+// GetNameFromIP Only works for IPv4 addresses
 func (i InterfaceNameLookup) GetNameFromIP(ip string) (string, error) {
 	links, err := common.RetryWithBackoff(retryInterval, maxRetries, func() ([]netlink.Link, error) {
 		return i.NetlinkAdapter.LinkList()

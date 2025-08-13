@@ -17,6 +17,7 @@ import (
 	"code.cloudfoundry.org/lib/common"
 	"code.cloudfoundry.org/lib/datastore"
 	"code.cloudfoundry.org/lib/interfacelookup"
+	"code.cloudfoundry.org/lib/iputil"
 	"code.cloudfoundry.org/lib/rules"
 	"code.cloudfoundry.org/lib/serial"
 	"code.cloudfoundry.org/policy_client"
@@ -79,6 +80,13 @@ func main() {
 
 	logger.Info("parsed-config", lager.Data{"config": conf})
 
+	enableIPv6 := conf.EnableIPv6
+	hostSupportsIPv6 := common.IsIPv6Enabled()
+	if conf.EnableIPv6 && !hostSupportsIPv6 {
+		logger.Info("IPv6 is enabled in config but the host is not IPv6 enabled. Running in IPv4 only mode.")
+		enableIPv6 = false
+	}
+
 	_, err = os.Stat(filepath.Dir(conf.Datastore))
 	if err != nil {
 		die(logger, "datastore-directory-stat", err)
@@ -88,7 +96,7 @@ func main() {
 		NetlinkAdapter: &adapter.NetlinkAdapter{},
 	}
 
-	interfaceNames, err := interfaceNameLookup.GetNamesFromIPs(conf.UnderlayIPs)
+	interfaceNames, err := lookupInterfaceNames(interfaceNameLookup, conf.UnderlayIPs)
 	if err != nil {
 		log.Fatalf("%s: looking up interface names: %s", logPrefix, err)
 	}
@@ -233,33 +241,100 @@ func main() {
 		policyClient,
 		metricsSender,
 		metronClient,
-		logger,
+		logger.Session("policy-cycle"),
 	)
 
+	pollCycles := []*converger.SinglePollCycle{
+		singlePollCycle,
+	}
+
+	if enableIPv6 {
+		netOutChainIPv6 := &netrules.NetOutChain{
+			ChainNamer:       chainNamer,
+			Converter:        &netrules.RuleConverter{Logger: logger},
+			ASGLogging:       conf.IPTablesASGLogging,
+			DeniedLogsPerSec: conf.IPTablesDeniedLogsPerSec,
+			Conn:             outConn,
+			DenyNetworks: netrules.DenyNetworks{
+				Always:  conf.DenyNetworksIPv6.Always,
+				Running: conf.DenyNetworksIPv6.Running,
+				Staging: conf.DenyNetworksIPv6.Staging,
+			},
+			IPv6: true,
+		}
+
+		ip6t, _ := iptables.NewWithProtocol(iptables.ProtocolIPv6)
+		restorerIPv6 := &rules.Restorer{
+			IPv6: true,
+		}
+		lockedIPv6Tables := &rules.LockedIPTables{
+			IPTables: ip6t,
+			Locker:   iptLocker,
+			Restorer: restorerIPv6,
+		}
+
+		ruleEnforcerIPv6 := enforcer.NewEnforcer(
+			logger.Session("rules-enforcer-ipv6"),
+			&enforcer.Timestamper{},
+			lockedIPv6Tables,
+			enforcer.EnforcerConfig{},
+		)
+
+		dynamicPlannerV6 := &planner.VxlanPolicyPlanner{
+			Datastore:                     store,
+			PolicyClient:                  policyClient,
+			Logger:                        logger.Session("rules-updater-ipv6"),
+			VNI:                           conf.VNI,
+			MetricsSender:                 metricsSender,
+			Chain:                         enforcer.NewPolicyChain(),
+			LoggingState:                  iptablesLoggingState,
+			IPTablesAcceptedUDPLogsPerSec: conf.IPTablesAcceptedUDPLogsPerSec,
+			EnableOverlayIngressRules:     false, // IPv6 does not support overlay network
+			HostInterfaceNames:            interfaceNames,
+			NetOutChain:                   netOutChainIPv6,
+			IPv6:                          true,
+		}
+
+		singlePollCycleIPv6 := converger.NewSinglePollCycle(
+			[]converger.Planner{dynamicPlannerV6},
+			ruleEnforcerIPv6,
+			policyClient,
+			metricsSender,
+			metronClient,
+			logger.Session("policy-cycle-ipv6"),
+		)
+
+		pollCycles = append(pollCycles, singlePollCycleIPv6)
+	}
+
+	policyCycleGroup := converger.NewPollCycleGroup(pollCycles...)
+
 	policyPoller := &poller.Poller{
-		Logger:          logger,
-		PollInterval:    pollInterval,
+		Logger:       logger,
+		PollInterval: pollInterval,
+		// Policy cycle is not supported in IPv6
 		SingleCycleFunc: singlePollCycle.DoPolicyCycleWithLastUpdatedCheck,
 	}
 
 	asgPoller := &poller.Poller{
 		Logger:          logger,
 		PollInterval:    asgPollInterval,
-		SingleCycleFunc: singlePollCycle.DoASGCycleWithLastUpdatedCheck,
+		SingleCycleFunc: policyCycleGroup.DoASGCycleWithLastUpdatedCheck,
 	}
 
 	forcePolicyPollCycleServerAddress := fmt.Sprintf("%s:%d", conf.ForcePolicyPollCycleHost, conf.ForcePolicyPollCyclePort)
 
 	forceHandlers := map[string]http.Handler{
 		"/force-policy-poll-cycle": &handlers.ForcePolicyPollCycle{
+			// Policy cycle is not supported in IPv6
 			PollCycleFunc: singlePollCycle.DoPolicyCycle,
 		},
 		"/force-asgs-for-container": &handlers.ForceASGsForContainer{
-			ASGUpdateFunc:    singlePollCycle.SyncASGsForContainers,
+			ASGUpdateFunc:    policyCycleGroup.SyncASGsForContainers,
 			EnableASGSyncing: conf.EnableASGSyncing,
 		},
 		"/force-orphaned-asgs-cleanup": &handlers.ForceOrphanedASGsCleanup{
-			ASGCleanupFunc:   singlePollCycle.CleanupOrphanedASGsChains,
+			ASGCleanupFunc:   policyCycleGroup.CleanupOrphanedASGsChains,
 			EnableASGSyncing: conf.EnableASGSyncing,
 		},
 	}
@@ -310,4 +385,18 @@ func createForceUpdateServer(listenAddress string, handlers map[string]http.Hand
 	}
 
 	return http_server.New(listenAddress, mux)
+}
+
+func lookupInterfaceNames(lookup interfacelookup.InterfaceNameLookup, ips []string) ([]string, error) {
+	ipsV4, err := iputil.FilterIPsByVersion(ips, iputil.IPVersion4)
+	if err != nil {
+		return nil, err
+	}
+
+	v4names, err := lookup.GetNamesFromIPs(ipsV4)
+	if err != nil {
+		return nil, err
+	}
+
+	return v4names, nil
 }

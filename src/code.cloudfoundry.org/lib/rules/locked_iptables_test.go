@@ -384,6 +384,53 @@ var _ = Describe("LockedIptables", func() {
 				Expect(err).To(MatchError("iptables call: patato and unlock: banana"))
 			})
 		})
+
+		Context("when IPv6 is enabled", func() {
+			BeforeEach(func() {
+				ipt.ListReturns([]string{
+					"-N some-chain",
+					"-A some-chain rule-1",
+					"-A some-chain rule-2",
+					"-A some-chain -j REJECT --reject-with icmp6-port-unreachable",
+					"-A some-chain rule-3",
+				}, nil)
+
+				restorer.IsIPv6Returns(true)
+			})
+
+			It("locks and passes the correct parameters to iptables", func() {
+				err := lockedIPT.DeleteAfterRuleNumKeepReject("some-table", "some-chain", 2)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(lock.LockCallCount()).To(Equal(1))
+				Expect(lock.UnlockCallCount()).To(Equal(1))
+				Expect(ipt.DeleteCallCount()).To(Equal(3))
+				Expect(ipt.ListCallCount()).To(Equal(1))
+
+				table, chain := ipt.ListArgsForCall(0)
+				Expect(table).To(Equal("some-table"))
+				Expect(chain).To(Equal("some-chain"))
+
+				table, chain, ruleNum := ipt.DeleteArgsForCall(0)
+				Expect(table).To(Equal("some-table"))
+				Expect(chain).To(Equal("some-chain"))
+				Expect(ruleNum).To(Equal([]string{"2", "--wait"}))
+				table, chain, ruleNum = ipt.DeleteArgsForCall(1)
+				Expect(table).To(Equal("some-table"))
+				Expect(chain).To(Equal("some-chain"))
+				Expect(ruleNum).To(Equal([]string{"2", "--wait"}))
+				table, chain, ruleNum = ipt.DeleteArgsForCall(2)
+				Expect(table).To(Equal("some-table"))
+				Expect(chain).To(Equal("some-chain"))
+				Expect(ruleNum).To(Equal([]string{"2", "--wait"}))
+
+				Expect(ipt.AppendUniqueCallCount()).To(Equal(1))
+				table, chain, rules := ipt.AppendUniqueArgsForCall(0)
+				Expect(table).To(Equal("some-table"))
+				Expect(chain).To(Equal("some-chain"))
+				Expect(rules).To(Equal([]string{"--jump", "REJECT", "--reject-with", "icmp6-port-unreachable"}))
+			})
+		})
 	})
 
 	Describe("Delete", func() {

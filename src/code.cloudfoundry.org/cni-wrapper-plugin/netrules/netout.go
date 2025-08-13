@@ -47,6 +47,7 @@ type NetOut struct {
 	DNSServers            []string
 	Conn                  OutConn
 	NetOutChain           *NetOutChain
+	IPv6                  bool
 }
 
 func (m *NetOut) Initialize() error {
@@ -56,6 +57,11 @@ func (m *NetOut) Initialize() error {
 	}
 
 	err = m.NetOutChain.Validate()
+	if err != nil {
+		return err
+	}
+
+	err = m.validateDnsServers()
 	if err != nil {
 		return err
 	}
@@ -117,7 +123,7 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 			}},
 			[]rules.IPTablesRule{
 				rules.NewInputRelatedEstablishedRule(),
-				rules.NewInputDefaultRejectRule(),
+				rules.NewInputDefaultRejectRule(m.IPv6),
 			},
 		},
 		{
@@ -134,12 +140,7 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 			[]rules.IPTablesRule{{
 				"--jump", overlayChain,
 			}},
-			[]rules.IPTablesRule{
-				rules.NewOverlayAllowEgress(m.VTEPName, m.ContainerIP),
-				rules.NewOverlayRelatedEstablishedRule(m.ContainerIP),
-				rules.NewOverlayTagAcceptRule(m.ContainerIP, m.IngressTag),
-				rules.NewOverlayDefaultRejectRule(m.ContainerIP),
-			},
+			m.getOverlayRules(),
 		}),
 	}
 
@@ -166,6 +167,22 @@ func (m *NetOut) defaultNetOutRules() ([]IpTablesFullChain, error) {
 	}
 
 	return args, nil
+}
+
+func (m *NetOut) getOverlayRules() []rules.IPTablesRule {
+	if !m.IPv6 {
+		return []rules.IPTablesRule{
+			rules.NewOverlayAllowEgress(m.VTEPName, m.ContainerIP),
+			rules.NewOverlayRelatedEstablishedRule(m.ContainerIP),
+			rules.NewOverlayTagAcceptRule(m.ContainerIP, m.IngressTag),
+			rules.NewOverlayDefaultRejectRule(m.ContainerIP, m.IPv6),
+		}
+	} else {
+		return []rules.IPTablesRule{
+			rules.NewOverlayRelatedEstablishedRule(m.ContainerIP),
+			rules.NewOverlayDefaultRejectRule(m.ContainerIP, m.IPv6),
+		}
+	}
 }
 
 func (m *NetOut) addC2CLogging(c IpTablesFullChain) IpTablesFullChain {
@@ -197,34 +214,24 @@ func (m *NetOut) appendInputRules(
 	}
 
 	for _, hostService := range hostTCPServices {
-		host, port, err := net.SplitHostPort(hostService)
+		host, port, err := m.splitHostPort(hostService)
 		if err != nil {
 			return nil, fmt.Errorf("host tcp services: %s", err)
 		}
 
-		portInt, err := strconv.Atoi(port)
-		if err != nil {
-			return nil, fmt.Errorf("host tcp services: %s", err)
-		}
-
-		args[0].Rules = append(args[0].Rules, rules.NewInputAllowRule("tcp", host, portInt))
+		args[0].Rules = append(args[0].Rules, rules.NewInputAllowRule("tcp", host, port))
 	}
 
 	for _, hostService := range hostUDPServices {
-		host, port, err := net.SplitHostPort(hostService)
+		host, port, err := m.splitHostPort(hostService)
 		if err != nil {
 			return nil, fmt.Errorf("host udp services: %s", err)
 		}
 
-		portInt, err := strconv.Atoi(port)
-		if err != nil {
-			return nil, fmt.Errorf("host udp services: %s", err)
-		}
-
-		args[0].Rules = append(args[0].Rules, rules.NewInputAllowRule("udp", host, portInt))
+		args[0].Rules = append(args[0].Rules, rules.NewInputAllowRule("udp", host, port))
 	}
 
-	args[0].Rules = append(args[0].Rules, rules.NewInputDefaultRejectRule())
+	args[0].Rules = append(args[0].Rules, rules.NewInputDefaultRejectRule(m.IPv6))
 
 	return args, nil
 }
@@ -237,7 +244,7 @@ func (m *NetOut) connRateLimitLogChain(forwardChainName string) (IpTablesFullCha
 	}
 
 	if !m.Conn.DryRun {
-		logRules = append(logRules, rules.NewNetOutDefaultRejectRule())
+		logRules = append(logRules, rules.NewNetOutDefaultRejectRule(m.IPv6))
 	}
 
 	return m.netOutLogChain(forwardChainName, suffixNetOutRateLimitLog, logRules)
@@ -251,4 +258,51 @@ func (m *NetOut) netOutLogChain(forwardChainName, suffix string, logRules []rule
 
 	jumpConditions := []rules.IPTablesRule{{"--jump", logChainName}}
 	return IpTablesFullChain{"filter", "", logChainName, jumpConditions, logRules}, nil
+}
+
+func (m *NetOut) validateDnsServers() error {
+	for _, dns := range m.DNSServers {
+		err := m.validateAddressAndVersion(dns)
+		if err != nil {
+			return fmt.Errorf("invalid dns server: %s", dns)
+		}
+	}
+
+	return nil
+}
+
+func (m *NetOut) splitHostPort(hostport string) (string, int, error) {
+	host, port, err := net.SplitHostPort(hostport)
+	if err != nil {
+		return "", 0, err
+	}
+
+	err = m.validateAddressAndVersion(host)
+	if err != nil {
+		return "", 0, err
+	}
+
+	portInt, err := strconv.Atoi(port)
+	if err != nil {
+		return "", 0, err
+	}
+
+	return host, portInt, nil
+}
+
+func (m *NetOut) validateAddressAndVersion(address string) error {
+	ip := net.ParseIP(address)
+	if ip == nil {
+		return fmt.Errorf("invalid ip address")
+	}
+
+	isIpv4Address := ip.To4() != nil
+
+	if m.IPv6 && isIpv4Address {
+		return fmt.Errorf("network is ipv4 in ipv6 mode: %s", ip)
+	} else if !m.IPv6 && !isIpv4Address {
+		return fmt.Errorf("network is ipv6 in ipv4 mode: %s", ip)
+	}
+
+	return nil
 }
