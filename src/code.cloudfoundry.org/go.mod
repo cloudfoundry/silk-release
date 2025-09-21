@@ -9,15 +9,15 @@ replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimesche
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.58.0
-	code.cloudfoundry.org/debugserver v0.66.0
-	code.cloudfoundry.org/diego-logging-client v0.67.0
+	code.cloudfoundry.org/cf-networking-helpers v0.60.0
+	code.cloudfoundry.org/debugserver v0.67.0
+	code.cloudfoundry.org/diego-logging-client v0.69.0
 	code.cloudfoundry.org/executor v0.0.0-20241029001947-f0c9d0265505
 	code.cloudfoundry.org/filelock v0.46.0
-	code.cloudfoundry.org/garden v0.0.0-20250910021241-ba9233db87fe
+	code.cloudfoundry.org/garden v0.0.0-20250916215733-c693739b5ca4
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
-	code.cloudfoundry.org/lager/v3 v3.47.0
-	code.cloudfoundry.org/policy_client v0.69.0
+	code.cloudfoundry.org/lager/v3 v3.48.0
+	code.cloudfoundry.org/policy_client v0.70.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.3.0
@@ -54,14 +54,14 @@ require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/alexflint/go-filemutex v1.3.0 // indirect
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
-	github.com/cloudfoundry/sonde-go v0.0.0-20250909082137-fc1b731b62ac // indirect
+	github.com/cloudfoundry/sonde-go v0.0.0-20250915135239-ebea5d8dc26e // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-test/deep v1.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20250903194437-c28834ac2320 // indirect
+	github.com/google/pprof v0.0.0-20250919162441-8b542baf5bcf // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jackc/pgx/v5 v5.5.5 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
@@ -82,5 +82,5 @@ require (
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	sigs.k8s.io/knftables v0.0.18 // indirect
+	sigs.k8s.io/knftables v0.0.19 // indirect
 )
