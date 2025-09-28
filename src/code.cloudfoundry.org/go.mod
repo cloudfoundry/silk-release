@@ -9,15 +9,15 @@ replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimesche
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.60.0
-	code.cloudfoundry.org/debugserver v0.67.0
-	code.cloudfoundry.org/diego-logging-client v0.69.0
+	code.cloudfoundry.org/cf-networking-helpers v0.61.0
+	code.cloudfoundry.org/debugserver v0.68.0
+	code.cloudfoundry.org/diego-logging-client v0.70.0
 	code.cloudfoundry.org/executor v0.0.0-20241029001947-f0c9d0265505
-	code.cloudfoundry.org/filelock v0.46.0
-	code.cloudfoundry.org/garden v0.0.0-20250916215733-c693739b5ca4
+	code.cloudfoundry.org/filelock v0.48.0
+	code.cloudfoundry.org/garden v0.0.0-20250924021457-81a82acd3d4b
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
-	code.cloudfoundry.org/lager/v3 v3.48.0
-	code.cloudfoundry.org/policy_client v0.70.0
+	code.cloudfoundry.org/lager/v3 v3.49.0
+	code.cloudfoundry.org/policy_client v0.71.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.3.0
@@ -61,7 +61,7 @@ require (
 	github.com/go-test/deep v1.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20250919162441-8b542baf5bcf // indirect
+	github.com/google/pprof v0.0.0-20250923004556-9e5a51aed1e8 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jackc/pgx/v5 v5.5.5 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
@@ -76,7 +76,7 @@ require (
 	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 	golang.org/x/tools v0.37.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250922171735-9219d122eba9 // indirect
 	google.golang.org/grpc v1.75.1 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
