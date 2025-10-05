@@ -3,7 +3,7 @@
 code.cloudfoundry.org/bbs/encryption
 code.cloudfoundry.org/bbs/format
 code.cloudfoundry.org/bbs/models
-# code.cloudfoundry.org/cf-networking-helpers v0.61.0
+# code.cloudfoundry.org/cf-networking-helpers v0.62.0
 ## explicit; go 1.24.0
 code.cloudfoundry.org/cf-networking-helpers/db
 code.cloudfoundry.org/cf-networking-helpers/db/monitor
@@ -21,10 +21,10 @@ code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics
 code.cloudfoundry.org/cf-networking-helpers/testsupport/ports
 # code.cloudfoundry.org/clock v1.1.0
 ## explicit; go 1.20
-# code.cloudfoundry.org/debugserver v0.68.0
+# code.cloudfoundry.org/debugserver v0.69.0
 ## explicit; go 1.24.0
 code.cloudfoundry.org/debugserver
-# code.cloudfoundry.org/diego-logging-client v0.70.0
+# code.cloudfoundry.org/diego-logging-client v0.71.0
 ## explicit; go 1.24.0
 code.cloudfoundry.org/diego-logging-client
 code.cloudfoundry.org/diego-logging-client/testhelpers
@@ -34,7 +34,7 @@ code.cloudfoundry.org/executor
 # code.cloudfoundry.org/filelock v0.48.0
 ## explicit; go 1.24.0
 code.cloudfoundry.org/filelock
-# code.cloudfoundry.org/garden v0.0.0-20250924021457-81a82acd3d4b
+# code.cloudfoundry.org/garden v0.0.0-20250930202639-e70ce4d3bcd2
 ## explicit; go 1.24.0
 code.cloudfoundry.org/garden
 code.cloudfoundry.org/garden/client
@@ -49,7 +49,7 @@ code.cloudfoundry.org/go-diodes
 code.cloudfoundry.org/go-loggregator/v9
 code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2
 code.cloudfoundry.org/go-loggregator/v9/runtimeemitter
-# code.cloudfoundry.org/lager/v3 v3.49.0
+# code.cloudfoundry.org/lager/v3 v3.50.0
 ## explicit; go 1.24.0
 code.cloudfoundry.org/lager/v3
 code.cloudfoundry.org/lager/v3/internal/truncate
@@ -58,7 +58,7 @@ code.cloudfoundry.org/lager/v3/lagerflags
 code.cloudfoundry.org/lager/v3/lagertest
 # code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2
 ## explicit
-# code.cloudfoundry.org/policy_client v0.71.0
+# code.cloudfoundry.org/policy_client v0.72.0
 ## explicit; go 1.24.0
 code.cloudfoundry.org/policy_client
 # code.cloudfoundry.org/routing-info v0.0.0-20250117183711-d8d8d2ad4608
@@ -161,7 +161,7 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/pprof v0.0.0-20250923004556-9e5a51aed1e8
+# github.com/google/pprof v0.0.0-20251002213607-436353cc1ee6
 ## explicit; go 1.24.0
 github.com/google/pprof/profile
 # github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
@@ -197,7 +197,7 @@ github.com/lib/pq/scram
 # github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
 ## explicit
 github.com/nu7hatch/gouuid
-# github.com/onsi/ginkgo/v2 v2.25.3
+# github.com/onsi/ginkgo/v2 v2.26.0
 ## explicit; go 1.23.0
 github.com/onsi/ginkgo/v2
 github.com/onsi/ginkgo/v2/config
@@ -216,6 +216,7 @@ github.com/onsi/ginkgo/v2/internal
 github.com/onsi/ginkgo/v2/internal/global
 github.com/onsi/ginkgo/v2/internal/interrupt_handler
 github.com/onsi/ginkgo/v2/internal/parallel_support
+github.com/onsi/ginkgo/v2/internal/reporters
 github.com/onsi/ginkgo/v2/internal/testingtproxy
 github.com/onsi/ginkgo/v2/reporters
 github.com/onsi/ginkgo/v2/types
@@ -311,6 +312,9 @@ golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/scrypt
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
+# golang.org/x/mod v0.28.0
+## explicit; go 1.24.0
+golang.org/x/mod/semver
 # golang.org/x/net v0.44.0
 ## explicit; go 1.24.0
 golang.org/x/net/context
@@ -324,6 +328,9 @@ golang.org/x/net/idna
 golang.org/x/net/internal/httpcommon
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
+# golang.org/x/sync v0.17.0
+## explicit; go 1.24.0
+golang.org/x/sync/errgroup
 # golang.org/x/sys v0.36.0
 ## explicit; go 1.24.0
 golang.org/x/sys/cpu
@@ -356,7 +363,24 @@ golang.org/x/text/unicode/norm
 golang.org/x/tools/cover
 golang.org/x/tools/go/ast/edge
 golang.org/x/tools/go/ast/inspector
-# google.golang.org/genproto/googleapis/rpc v0.0.0-20250922171735-9219d122eba9
+golang.org/x/tools/go/gcexportdata
+golang.org/x/tools/go/packages
+golang.org/x/tools/go/types/objectpath
+golang.org/x/tools/go/types/typeutil
+golang.org/x/tools/internal/aliases
+golang.org/x/tools/internal/event
+golang.org/x/tools/internal/event/core
+golang.org/x/tools/internal/event/keys
+golang.org/x/tools/internal/event/label
+golang.org/x/tools/internal/gcimporter
+golang.org/x/tools/internal/gocommand
+golang.org/x/tools/internal/packagesinternal
+golang.org/x/tools/internal/pkgbits
+golang.org/x/tools/internal/stdlib
+golang.org/x/tools/internal/typeparams
+golang.org/x/tools/internal/typesinternal
+golang.org/x/tools/internal/versions
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20251002232023-7c0ddcbb5797
 ## explicit; go 1.24.0
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.75.1
@@ -421,7 +445,7 @@ google.golang.org/grpc/serviceconfig
 google.golang.org/grpc/stats
 google.golang.org/grpc/status
 google.golang.org/grpc/tap
-# google.golang.org/protobuf v1.36.9
+# google.golang.org/protobuf v1.36.10
 ## explicit; go 1.23
 google.golang.org/protobuf/encoding/protojson
 google.golang.org/protobuf/encoding/prototext
