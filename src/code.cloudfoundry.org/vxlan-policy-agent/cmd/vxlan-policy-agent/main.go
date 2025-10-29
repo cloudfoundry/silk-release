@@ -230,10 +230,8 @@ func main() {
 		log.Fatalf("%s: initializing ingress client: %s", logPrefix, err)
 	}
 
-	if conf.LoggregatorConfig.UseV2API {
-		emitter := runtimeemitter.NewV1(metronClient)
-		go emitter.Run()
-	}
+	emitter := runtimeemitter.NewV1(metronClient)
+	go emitter.Run()
 
 	singlePollCycle := converger.NewSinglePollCycle(
 		[]converger.Planner{dynamicPlanner},
