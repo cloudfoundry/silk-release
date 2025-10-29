@@ -71,7 +71,7 @@ module Bosh::Template::Test
           let(:template) {job.template('config/vxlan-policy-agent.json')}
 
           it 'renders the template with the provided manifest properties' do
-            renderedConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links))
+            renderedConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links, spec: spec))
             expect(renderedConfig).to eq({
               'ca_cert_file' => '/var/vcap/jobs/vxlan-policy-agent/config/certs/ca.crt',
               'client_cert_file' => '/var/vcap/jobs/vxlan-policy-agent/config/certs/client.crt',
@@ -116,30 +116,6 @@ module Bosh::Template::Test
                 'rate_per_sec' => 100,
               },
               'loggregator' => {
-                'loggregator_use_v2_api' => false,
-              },
-              'enable_ipv6' => false
-            })
-          end
-
-          context 'when loggregator.use_v2_api is true' do
-            let(:ca_cert_template) {job.template('config/certs/loggregator/ca.crt')}
-            let(:client_cert_template) {job.template('config/certs/loggregator/client.crt')}
-            let(:client_key_template) {job.template('config/certs/loggregator/client.key')}
-
-            before do
-              merged_manifest_properties['loggregator'] = {
-                'use_v2_api' => true,
-                'ca_cert' => 'some-ca-cert',
-                'cert' => 'some-client-cert',
-                'key' => 'some-client-key'
-              }
-            end
-
-            it 'renders the loggregator config as well' do
-              renderedConfig = JSON.parse(template.render(merged_manifest_properties, consumes: links, spec: spec))
-              expect(renderedConfig['loggregator']).to eq({
-                'loggregator_use_v2_api' => true,
                 'loggregator_api_port' => 3458,
                 'loggregator_ca_path' => '/var/vcap/jobs/vxlan-policy-agent/config/certs/loggregator/ca.crt',
                 'loggregator_cert_path' => '/var/vcap/jobs/vxlan-policy-agent/config/certs/loggregator/client.crt',
@@ -151,25 +127,39 @@ module Bosh::Template::Test
                 'loggregator_job_origin' => "vxlan-policy-agent",
                 'loggregator_source_id' => "vxlan-policy-agent",
                 'loggregator_instance_id' => 'some-guid'
-              })
-            end
-
-            it 'renders the ca cert' do
-              rendered_ca_cert = ca_cert_template.render(merged_manifest_properties)
-              expect(rendered_ca_cert).to eq("\nsome-ca-cert\n\n")
-            end
-
-            it 'renders the client cert' do
-              rendered_client_cert = client_cert_template.render(merged_manifest_properties)
-              expect(rendered_client_cert).to eq("\nsome-client-cert\n\n")
-            end
-
-            it 'renders the ca cert' do
-              rendered_client_key = client_key_template.render(merged_manifest_properties)
-              expect(rendered_client_key).to eq("\nsome-client-key\n\n")
-            end
+              },
+              'enable_ipv6' => false
+            })
           end
-          
+      
+
+      let(:ca_cert_template) {job.template('config/certs/loggregator/ca.crt')}
+      let(:client_cert_template) {job.template('config/certs/loggregator/client.crt')}
+      let(:client_key_template) {job.template('config/certs/loggregator/client.key')}
+
+      before do
+        merged_manifest_properties['loggregator'] = {
+          'ca_cert' => 'some-ca-cert',
+          'cert' => 'some-client-cert',
+          'key' => 'some-client-key'
+        }
+      end
+
+      it 'renders the ca cert' do
+        rendered_ca_cert = ca_cert_template.render(merged_manifest_properties)
+        expect(rendered_ca_cert).to eq("\nsome-ca-cert\n\n")
+      end
+
+      it 'renders the client cert' do
+        rendered_client_cert = client_cert_template.render(merged_manifest_properties)
+        expect(rendered_client_cert).to eq("\nsome-client-cert\n\n")
+      end
+
+      it 'renders the ca cert' do
+        rendered_client_key = client_key_template.render(merged_manifest_properties)
+        expect(rendered_client_key).to eq("\nsome-client-key\n\n")
+      end
+
           context 'when the network is a single IP and not an array' do
             before do
               links.first.properties['network'] = '10.234.0.0/16'
