@@ -11,9 +11,11 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"strconv"
 	"strings"
 
+	"code.cloudfoundry.org/diego-logging-client/testhelpers"
 	"code.cloudfoundry.org/vxlan-policy-agent/config"
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
 
@@ -21,6 +23,7 @@ import (
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics"
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport/ports"
 	cnilib "code.cloudfoundry.org/cni-wrapper-plugin/lib"
+	loggingclient "code.cloudfoundry.org/diego-logging-client"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -37,20 +40,34 @@ import (
 
 var _ = Describe("VXLAN Policy Agent", func() {
 	var (
-		session                          *gexec.Session
-		datastorePath                    string
-		conf                             config.VxlanPolicyAgent
-		configFilePath                   string
-		fakeMetron                       metrics.FakeMetron
-		mockPolicyServer                 ifrit.Process
-		serverListenPort                 int
-		serverListenAddr                 string
-		serverTLSConfig                  *tls.Config
-		overlayNetwork1, overlayNetwork2 string
+		session                                                 *gexec.Session
+		datastorePath                                           string
+		conf                                                    config.VxlanPolicyAgent
+		configFilePath                                          string
+		fakeMetron                                              metrics.FakeMetron
+		mockPolicyServer                                        ifrit.Process
+		serverListenPort                                        int
+		serverListenAddr                                        string
+		serverTLSConfig                                         *tls.Config
+		overlayNetwork1, overlayNetwork2                        string
+		testIngressServer                                       *testhelpers.TestIngressServer
+		signalMetricsChan                                       chan struct{}
+		metronCAFile, metronServerCertFile, metronServerKeyFile string
 	)
 
 	BeforeEach(func() {
 		var err error
+		fixturesPath := "fixtures"
+		metronCAFile = path.Join(fixturesPath, "metron", "CA.crt")
+		metronServerCertFile = path.Join(fixturesPath, "metron", "metron.crt")
+		metronServerKeyFile = path.Join(fixturesPath, "metron", "metron.key")
+		testIngressServer, err = testhelpers.NewTestIngressServer(metronServerCertFile, metronServerKeyFile, metronCAFile)
+		Expect(err).NotTo(HaveOccurred())
+		receiversChan := testIngressServer.Receivers()
+		testIngressServer.Start()
+
+		_, signalMetricsChan = testhelpers.TestMetricChan(receiversChan)
+		metricsPort, _ := testIngressServer.Port()
 		fakeMetron = metrics.NewFakeMetron()
 
 		serverTLSConfig, err = mutualtls.NewServerTLSConfig(paths.ServerCertFile, paths.ServerKeyFile, paths.ClientCACertFile)
@@ -116,6 +133,12 @@ var _ = Describe("VXLAN Policy Agent", func() {
 				Burst:      900,
 				RatePerSec: 100,
 			},
+			LoggregatorConfig: loggingclient.Config{
+				APIPort:    metricsPort,
+				CACertPath: path.Join(fixturesPath, "metron", "CA.crt"),
+				CertPath:   path.Join(fixturesPath, "metron", "client.crt"),
+				KeyPath:    path.Join(fixturesPath, "metron", "client.key"),
+			},
 		}
 
 	})
@@ -140,6 +163,8 @@ var _ = Describe("VXLAN Policy Agent", func() {
 		runIp6tablesCommandOnTable("nat", "X")
 
 		Expect(fakeMetron.Close()).To(Succeed())
+		testIngressServer.Stop()
+		close(signalMetricsChan)
 	})
 
 	setIPTablesLogging := func(enabled bool) {
