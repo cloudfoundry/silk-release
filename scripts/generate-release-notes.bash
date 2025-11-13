@@ -18,5 +18,5 @@ local_end_ref=$(get_end_ref_from_range "${version_range}")
 
 GO_MOD_LOCATION="src/code.cloudfoundry.org/go.mod";
 
-get_non_bot_commits "${local_start_ref}" "${local_end_ref}"
+display_non_bot_commits "${local_start_ref}" "${local_end_ref}"
 display_go_mod_diff "${local_start_ref}" "${local_end_ref}" "${GO_MOD_LOCATION}"
