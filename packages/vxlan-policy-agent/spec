@@ -116,7 +116,6 @@ files:
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/balancer/grpclb/state/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/balancer/pickfirst/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/balancer/pickfirst/internal/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/google.golang.org/grpc/balancer/pickfirst/pickfirstleaf/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/balancer/roundrobin/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/binarylog/grpc_binarylog_v1/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/channelz/*.go # gosub-main-module
@@ -125,6 +124,7 @@ files:
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/credentials/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/credentials/insecure/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/encoding/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/grpc/encoding/internal/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/encoding/proto/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/experimental/stats/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/grpclog/*.go # gosub-main-module
