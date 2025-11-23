@@ -9,7 +9,7 @@ replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimesche
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.66.0
+	code.cloudfoundry.org/cf-networking-helpers v0.67.0
 	code.cloudfoundry.org/debugserver v0.76.0
 	code.cloudfoundry.org/diego-logging-client v0.79.0
 	code.cloudfoundry.org/executor v0.0.0-20241029001947-f0c9d0265505
@@ -17,7 +17,7 @@ require (
 	code.cloudfoundry.org/garden v0.0.0-20251119022154-f0775181931d
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.55.0
-	code.cloudfoundry.org/policy_client v0.78.0
+	code.cloudfoundry.org/policy_client v0.79.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.3.0
@@ -34,7 +34,7 @@ require (
 	github.com/onsi/gomega v1.38.2
 	github.com/pivotal-cf-experimental/gomegamatchers v0.0.0-20180326192815-e36bfcc98c3a
 	github.com/pkg/errors v0.9.1
-	github.com/rubenv/sql-migrate v1.8.0
+	github.com/rubenv/sql-migrate v1.8.1
 	github.com/tedsuo/ifrit v0.0.0-20230516164442-7862c310ad26
 	github.com/tedsuo/rata v1.0.0
 	github.com/vishvananda/netlink v1.3.1
@@ -71,7 +71,7 @@ require (
 	github.com/vishvananda/netns v0.0.5 // indirect
 	go.step.sm/crypto v0.74.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.44.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/mod v0.30.0 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/sync v0.18.0 // indirect
