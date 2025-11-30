@@ -10,14 +10,14 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
 require (
 	code.cloudfoundry.org/cf-networking-helpers v0.67.0
-	code.cloudfoundry.org/debugserver v0.76.0
-	code.cloudfoundry.org/diego-logging-client v0.79.0
+	code.cloudfoundry.org/debugserver v0.77.0
+	code.cloudfoundry.org/diego-logging-client v0.81.0
 	code.cloudfoundry.org/executor v0.0.0-20241029001947-f0c9d0265505
 	code.cloudfoundry.org/filelock v0.52.0
 	code.cloudfoundry.org/garden v0.0.0-20251119022154-f0775181931d
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.55.0
-	code.cloudfoundry.org/policy_client v0.79.0
+	code.cloudfoundry.org/policy_client v0.80.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.3.0
@@ -46,15 +46,15 @@ require (
 require (
 	code.cloudfoundry.org/bbs v0.0.0-20251117222647-2ba9ab4f8077 // indirect
 	code.cloudfoundry.org/clock v1.1.0 // indirect
-	code.cloudfoundry.org/go-diodes v0.0.0-20251110090230-86c716268a29 // indirect
+	code.cloudfoundry.org/go-diodes v0.0.0-20251124091730-becfb70ab838 // indirect
 	code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 // indirect
 	code.cloudfoundry.org/routing-info v0.0.0-20250117183711-d8d8d2ad4608 // indirect
-	code.cloudfoundry.org/tlsconfig v0.40.0 // indirect
+	code.cloudfoundry.org/tlsconfig v0.41.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/alexflint/go-filemutex v1.3.0 // indirect
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
-	github.com/cloudfoundry/sonde-go v0.0.0-20251117143420-d83918042e9c // indirect
+	github.com/cloudfoundry/sonde-go v0.0.0-20251124090431-33e3494ff82b // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
@@ -77,7 +77,7 @@ require (
 	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/tools v0.39.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20251111163417-95abcf5c77ba // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251124214823-79d6a2a48846 // indirect
 	google.golang.org/grpc v1.77.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
