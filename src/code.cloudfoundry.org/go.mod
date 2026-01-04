@@ -9,7 +9,7 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 require (
 	code.cloudfoundry.org/cf-networking-helpers v0.70.0
 	code.cloudfoundry.org/debugserver v0.79.0
-	code.cloudfoundry.org/diego-logging-client v0.84.0
+	code.cloudfoundry.org/diego-logging-client v0.85.0
 	code.cloudfoundry.org/executor v0.0.0-20241029001947-f0c9d0265505
 	code.cloudfoundry.org/filelock v0.54.0
 	code.cloudfoundry.org/garden v0.0.0-20251217022801-f5e0d83c4fa9
