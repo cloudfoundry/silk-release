@@ -48,6 +48,10 @@ properties:
     description: "The silk daemon queries the silk controller on this interval in seconds to renew its lease and get all routable leases."
     default: 30
 
+  disable_checksum_offloading:
+    description: "Disable TCP checksum offloading by setting to true if C2C is breaking in a recent versions of Linux in vsphere"
+    default: false
+
   ca_cert:
     description: "Trusted CA certificate that was used to sign the silk controller server cert and key."
 
