@@ -63,6 +63,10 @@ files:
   - code.cloudfoundry.org/vendor/github.com/hashicorp/errwrap/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/hashicorp/go-multierror/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/lib/pq/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/lib/pq/internal/pgpass/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/lib/pq/internal/pqsql/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/lib/pq/internal/pqutil/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/lib/pq/internal/proto/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/lib/pq/oid/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/lib/pq/scram/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/nu7hatch/gouuid/*.go # gosub-main-module
