@@ -1,21 +1,21 @@
 module code.cloudfoundry.org
 
-go 1.24.9
+go 1.25.0
 
 replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.75.0
-	code.cloudfoundry.org/debugserver v0.85.0
-	code.cloudfoundry.org/diego-logging-client v0.91.0
+	code.cloudfoundry.org/cf-networking-helpers v0.76.0
+	code.cloudfoundry.org/debugserver v0.86.0
+	code.cloudfoundry.org/diego-logging-client v0.92.0
 	code.cloudfoundry.org/executor v0.0.0-20241029001947-f0c9d0265505
 	code.cloudfoundry.org/filelock v0.58.0
 	code.cloudfoundry.org/garden v0.0.0-20260211023825-fb202bdd1b27
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.61.0
-	code.cloudfoundry.org/policy_client v0.89.0
+	code.cloudfoundry.org/policy_client v0.90.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.3.0
@@ -42,13 +42,13 @@ require (
 )
 
 require (
-	code.cloudfoundry.org/bbs v0.0.0-20260205173459-a0e418cacd76 // indirect
+	code.cloudfoundry.org/bbs v0.0.0-20260218135931-a998cae3b567 // indirect
 	code.cloudfoundry.org/clock v1.1.0 // indirect
 	code.cloudfoundry.org/go-diodes v0.0.0-20260209061029-a81ffbc46978 // indirect
 	code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 // indirect
 	code.cloudfoundry.org/routing-info v0.0.0-20250117183711-d8d8d2ad4608 // indirect
 	code.cloudfoundry.org/tlsconfig v0.45.0 // indirect
-	filippo.io/edwards25519 v1.1.0 // indirect
+	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/alexflint/go-filemutex v1.3.0 // indirect
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
@@ -67,7 +67,7 @@ require (
 	github.com/safchain/ethtool v0.7.0 // indirect
 	github.com/square/certstrap v1.3.0 // indirect
 	github.com/vishvananda/netns v0.0.5 // indirect
-	go.step.sm/crypto v0.76.0 // indirect
+	go.step.sm/crypto v0.76.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/mod v0.33.0 // indirect
@@ -75,7 +75,7 @@ require (
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
 	golang.org/x/tools v0.42.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260209200024-4cfbd4190f57 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260217215200-42d3e9bedb6d // indirect
 	google.golang.org/grpc v1.79.1 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect

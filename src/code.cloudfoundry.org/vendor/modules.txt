@@ -1,9 +1,9 @@
-# code.cloudfoundry.org/bbs v0.0.0-20260205173459-a0e418cacd76
+# code.cloudfoundry.org/bbs v0.0.0-20260218135931-a998cae3b567
 ## explicit
 code.cloudfoundry.org/bbs/encryption
 code.cloudfoundry.org/bbs/format
 code.cloudfoundry.org/bbs/models
-# code.cloudfoundry.org/cf-networking-helpers v0.75.0
+# code.cloudfoundry.org/cf-networking-helpers v0.76.0
 ## explicit; go 1.24.9
 code.cloudfoundry.org/cf-networking-helpers/db
 code.cloudfoundry.org/cf-networking-helpers/db/monitor
@@ -21,10 +21,10 @@ code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics
 code.cloudfoundry.org/cf-networking-helpers/testsupport/ports
 # code.cloudfoundry.org/clock v1.1.0
 ## explicit; go 1.20
-# code.cloudfoundry.org/debugserver v0.85.0
+# code.cloudfoundry.org/debugserver v0.86.0
 ## explicit; go 1.24.9
 code.cloudfoundry.org/debugserver
-# code.cloudfoundry.org/diego-logging-client v0.91.0
+# code.cloudfoundry.org/diego-logging-client v0.92.0
 ## explicit; go 1.24.9
 code.cloudfoundry.org/diego-logging-client
 code.cloudfoundry.org/diego-logging-client/testhelpers
@@ -58,7 +58,7 @@ code.cloudfoundry.org/lager/v3/lagerflags
 code.cloudfoundry.org/lager/v3/lagertest
 # code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2
 ## explicit
-# code.cloudfoundry.org/policy_client v0.89.0
+# code.cloudfoundry.org/policy_client v0.90.0
 ## explicit; go 1.24.9
 code.cloudfoundry.org/policy_client
 # code.cloudfoundry.org/routing-info v0.0.0-20250117183711-d8d8d2ad4608
@@ -70,8 +70,8 @@ code.cloudfoundry.org/runtimeschema/metric
 # code.cloudfoundry.org/tlsconfig v0.45.0
 ## explicit; go 1.24.0
 code.cloudfoundry.org/tlsconfig
-# filippo.io/edwards25519 v1.1.0
-## explicit; go 1.20
+# filippo.io/edwards25519 v1.2.0
+## explicit; go 1.24.0
 filippo.io/edwards25519
 filippo.io/edwards25519/field
 # github.com/Masterminds/semver/v3 v3.4.0
@@ -284,7 +284,7 @@ github.com/vishvananda/netns
 # github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c
 ## explicit
 github.com/ziutek/utils/netaddr
-# go.step.sm/crypto v0.76.0
+# go.step.sm/crypto v0.76.2
 ## explicit; go 1.24.0
 go.step.sm/crypto/fingerprint
 go.step.sm/crypto/internal/bcrypt_pbkdf
@@ -380,8 +380,8 @@ golang.org/x/tools/internal/stdlib
 golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
 golang.org/x/tools/internal/versions
-# google.golang.org/genproto/googleapis/rpc v0.0.0-20260209200024-4cfbd4190f57
-## explicit; go 1.24.0
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20260217215200-42d3e9bedb6d
+## explicit; go 1.25.0
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.79.1
 ## explicit; go 1.24.0
