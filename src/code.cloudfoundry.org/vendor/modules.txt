@@ -21,10 +21,10 @@ code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics
 code.cloudfoundry.org/cf-networking-helpers/testsupport/ports
 # code.cloudfoundry.org/clock v1.1.0
 ## explicit; go 1.20
-# code.cloudfoundry.org/debugserver v0.87.0
+# code.cloudfoundry.org/debugserver v0.88.0
 ## explicit; go 1.25.0
 code.cloudfoundry.org/debugserver
-# code.cloudfoundry.org/diego-logging-client v0.94.0
+# code.cloudfoundry.org/diego-logging-client v0.96.0
 ## explicit; go 1.25.0
 code.cloudfoundry.org/diego-logging-client
 code.cloudfoundry.org/diego-logging-client/testhelpers
@@ -34,7 +34,7 @@ code.cloudfoundry.org/executor
 # code.cloudfoundry.org/filelock v0.59.0
 ## explicit; go 1.25.0
 code.cloudfoundry.org/filelock
-# code.cloudfoundry.org/garden v0.0.0-20260304024058-46dd12e5cd10
+# code.cloudfoundry.org/garden v0.0.0-20260311024225-613a89da1275
 ## explicit; go 1.25.0
 code.cloudfoundry.org/garden
 code.cloudfoundry.org/garden/client
@@ -49,7 +49,7 @@ code.cloudfoundry.org/go-diodes
 code.cloudfoundry.org/go-loggregator/v9
 code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2
 code.cloudfoundry.org/go-loggregator/v9/runtimeemitter
-# code.cloudfoundry.org/lager/v3 v3.62.0
+# code.cloudfoundry.org/lager/v3 v3.63.0
 ## explicit; go 1.25.0
 code.cloudfoundry.org/lager/v3
 code.cloudfoundry.org/lager/v3/internal/truncate
@@ -58,7 +58,7 @@ code.cloudfoundry.org/lager/v3/lagerflags
 code.cloudfoundry.org/lager/v3/lagertest
 # code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2
 ## explicit
-# code.cloudfoundry.org/policy_client v0.92.0
+# code.cloudfoundry.org/policy_client v0.93.0
 ## explicit; go 1.25.0
 code.cloudfoundry.org/policy_client
 # code.cloudfoundry.org/routing-info v0.0.0-20250117183711-d8d8d2ad4608
@@ -67,8 +67,8 @@ code.cloudfoundry.org/routing-info/internalroutes
 # code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 ## explicit
 code.cloudfoundry.org/runtimeschema/metric
-# code.cloudfoundry.org/tlsconfig v0.46.0
-## explicit; go 1.24.0
+# code.cloudfoundry.org/tlsconfig v0.47.0
+## explicit; go 1.25.0
 code.cloudfoundry.org/tlsconfig
 # filippo.io/edwards25519 v1.2.0
 ## explicit; go 1.24.0
@@ -298,8 +298,8 @@ go.step.sm/crypto/x25519
 # go.yaml.in/yaml/v3 v3.0.4
 ## explicit; go 1.16
 go.yaml.in/yaml/v3
-# golang.org/x/crypto v0.48.0
-## explicit; go 1.24.0
+# golang.org/x/crypto v0.49.0
+## explicit; go 1.25.0
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
 golang.org/x/crypto/curve25519
@@ -311,10 +311,10 @@ golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/scrypt
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/mod v0.33.0
-## explicit; go 1.24.0
+# golang.org/x/mod v0.34.0
+## explicit; go 1.25.0
 golang.org/x/mod/semver
-# golang.org/x/net v0.51.0
+# golang.org/x/net v0.52.0
 ## explicit; go 1.25.0
 golang.org/x/net/context
 golang.org/x/net/html
@@ -328,16 +328,16 @@ golang.org/x/net/internal/httpcommon
 golang.org/x/net/internal/httpsfv
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
-# golang.org/x/sync v0.19.0
-## explicit; go 1.24.0
+# golang.org/x/sync v0.20.0
+## explicit; go 1.25.0
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.41.0
-## explicit; go 1.24.0
+# golang.org/x/sys v0.42.0
+## explicit; go 1.25.0
 golang.org/x/sys/cpu
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.34.0
-## explicit; go 1.24.0
+# golang.org/x/text v0.35.0
+## explicit; go 1.25.0
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/htmlindex
@@ -358,8 +358,8 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# golang.org/x/tools v0.42.0
-## explicit; go 1.24.0
+# golang.org/x/tools v0.43.0
+## explicit; go 1.25.0
 golang.org/x/tools/cover
 golang.org/x/tools/go/ast/edge
 golang.org/x/tools/go/ast/inspector
@@ -380,7 +380,7 @@ golang.org/x/tools/internal/stdlib
 golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
 golang.org/x/tools/internal/versions
-# google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20260311181403-84a4fc48630c
 ## explicit; go 1.25.0
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.79.2
@@ -493,7 +493,7 @@ gopkg.in/validator.v2
 # gopkg.in/yaml.v2 v2.4.0
 ## explicit; go 1.15
 gopkg.in/yaml.v2
-# sigs.k8s.io/knftables v0.0.20
+# sigs.k8s.io/knftables v0.0.21
 ## explicit; go 1.20
 sigs.k8s.io/knftables
 # code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
