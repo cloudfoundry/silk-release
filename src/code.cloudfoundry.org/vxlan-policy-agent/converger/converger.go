@@ -260,16 +260,23 @@ func (m *SinglePollCycle) SyncASGsForContainers(containers ...string) error {
 				})
 				chain, err := m.enforcer.EnforceRulesAndChain(ruleset)
 				if err != nil {
+					if _, ok := err.(*enforcer.ParentChainNotReadyErr); ok {
+						continue
+					}
 					if _, ok := err.(*enforcer.CleanupErr); ok {
 						m.updateRuleSet(chainKey, chain, ruleset)
 					}
-
 					errors = multierror.Append(errors, fmt.Errorf("enforce-asg: %s", err))
 				} else {
 					m.updateRuleSet(chainKey, chain, ruleset)
 				}
 			}
-			desiredChains = append(desiredChains, enforcer.LiveChain{Table: ruleset.Chain.Table, Name: m.asgChainToContainer[chainKey]})
+			// chainName is empty when EnforceRulesAndChain returned ParentChainNotReadyErr and
+			// we continued without calling updateRuleSet — skip those to avoid adding empty
+			// chain names to the desired set.
+			if chainName := m.asgChainToContainer[chainKey]; chainName != "" {
+				desiredChains = append(desiredChains, enforcer.LiveChain{Table: ruleset.Chain.Table, Name: chainName})
+			}
 		}
 		enforceDuration += time.Since(enforceStartTime)
 	}
@@ -308,8 +315,13 @@ func (m *SinglePollCycle) CleanupOrphanedASGsChains(containerHandle string) erro
 		return fmt.Errorf("clean-up-orphaned-asg-chains: %s", err)
 	}
 
-	delete(m.asgChainToContainer, chain)
-	delete(m.asgRuleSets, chain)
+	for key, chainName := range m.asgChainToContainer {
+		if chainName == chain.Name {
+			delete(m.asgChainToContainer, key)
+			delete(m.asgRuleSets, key)
+			break
+		}
+	}
 	return nil
 }
 

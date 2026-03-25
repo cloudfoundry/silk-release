@@ -18,6 +18,7 @@ const (
 	ASGChainRegex          = `^c?asg-[A-Za-z0-9]+`
 	ContainerPrefixToStrip = `check-`
 	JumpRuleRegex          = `-A\s+%s\s+.*-[gj]\s+([^\s]+)`
+	chainAlreadyExistsMsg  = "chain already exists"
 )
 
 type Timestamper struct{}
@@ -107,6 +108,14 @@ type CleanupErr struct {
 
 func (e *CleanupErr) Error() string {
 	return fmt.Sprintf("cleaning up: %s", e.Err)
+}
+
+type ParentChainNotReadyErr struct {
+	ParentChain string
+}
+
+func (e *ParentChainNotReadyErr) Error() string {
+	return fmt.Sprintf("parent chain not ready: %s", e.ParentChain)
 }
 
 func (r *RulesWithChain) Equals(other RulesWithChain) bool {
@@ -230,6 +239,10 @@ func (e *Enforcer) EnforceOnChain(c Chain, rulesSpec []rules.IPTablesRule) (stri
 
 	err := e.replaceChainRules(logger, c, rulesSpec)
 	if err != nil {
+		if _, ok := err.(*ParentChainNotReadyErr); ok {
+			logger.Info("skipping-asg-enforcement", lager.Data{"chain": c.Name, "reason": err.Error()})
+			return "", err
+		}
 		logger.Error("replace-chain", err)
 		return "", err
 	}
@@ -249,10 +262,27 @@ func (e *Enforcer) EnforceOnChain(c Chain, rulesSpec []rules.IPTablesRule) (stri
 func (e *Enforcer) enforce(logger lager.Logger, table string, parentChain string, chainName string, rulespec ...rules.IPTablesRule) error {
 	logger.Debug("create-chain", lager.Data{"chain": chainName, "table": table})
 
+	chainPreExisted := false
 	err := e.iptables.NewChain(table, chainName)
 	if err != nil {
-		logger.Error("create-chain", err)
-		return fmt.Errorf("creating chain: %s", err)
+		// Prefer checking iptables directly over string-matching the error, since error
+		// message casing can vary across iptables versions. Fall back to the constant if
+		// ChainExists itself errors.
+		chainExists, chainExistsErr := e.iptables.ChainExists(table, chainName)
+		if chainExistsErr != nil {
+			chainExists = strings.Contains(strings.ToLower(err.Error()), chainAlreadyExistsMsg)
+		}
+		if chainExists {
+			logger.Info("chain-exists-flushing", lager.Data{"chain": chainName, "table": table})
+			if clearErr := e.iptables.ClearChain(table, chainName); clearErr != nil {
+				logger.Error("clear-existing-chain", clearErr)
+				return fmt.Errorf("clearing existing chain %s: %s", chainName, clearErr)
+			}
+			chainPreExisted = true
+		} else {
+			logger.Error("create-chain", err)
+			return fmt.Errorf("creating chain: %s", err)
+		}
 	}
 
 	if e.conf.DisableContainerNetworkPolicy {
@@ -270,15 +300,20 @@ func (e *Enforcer) enforce(logger lager.Logger, table string, parentChain string
 		}
 	}
 
-	logger.Debug("insert-chain", lager.Data{"parent-chain": parentChain, "table": table, "index": 1, "rule": rules.IPTablesRule{"-j", chainName}})
-	err = e.iptables.BulkInsert(table, parentChain, 1, rules.IPTablesRule{"-j", chainName})
-	if err != nil {
-		logger.Error("insert-chain", err)
-		delErr := e.deleteChain(logger, LiveChain{Table: table, Name: chainName}, "")
-		if delErr != nil {
-			logger.Error("cleanup-failed-insert", delErr)
+	// Skip inserting the jump rule when the chain pre-existed: BulkInsert uses
+	// iptables-restore --noflush with -I (insert), which is additive and would create
+	// a duplicate jump rule in the parent chain.
+	if !chainPreExisted {
+		logger.Debug("insert-chain", lager.Data{"parent-chain": parentChain, "table": table, "index": 1, "rule": rules.IPTablesRule{"-j", chainName}})
+		err = e.iptables.BulkInsert(table, parentChain, 1, rules.IPTablesRule{"-j", chainName})
+		if err != nil {
+			logger.Error("insert-chain", err)
+			delErr := e.deleteChain(logger, LiveChain{Table: table, Name: chainName}, "")
+			if delErr != nil {
+				logger.Error("cleanup-failed-insert", delErr)
+			}
+			return fmt.Errorf("inserting chain: %s", err)
 		}
-		return fmt.Errorf("inserting chain: %s", err)
 	}
 
 	logger.Debug("bulk-append", lager.Data{"chain": chainName, "table": table, "rules": rulespec})
@@ -304,8 +339,22 @@ func (e *Enforcer) replaceChainRules(logger lager.Logger, c Chain, rulesSpec []r
 	logger.Debug("replace-chain", lager.Data{"chain": c.Name, "table": c.Table, "rulesSpec": rulesSpec})
 
 	candidateName := e.candidateChainName(c.Name)
-	originalChainJumpExists, _ := e.iptables.Exists(c.Table, c.ParentChain, rules.IPTablesRule{"-j", c.Name})
-	candidateChainJumpExists, _ := e.iptables.Exists(c.Table, c.ParentChain, rules.IPTablesRule{"-j", candidateName})
+	originalChainJumpExists, err := e.iptables.Exists(c.Table, c.ParentChain, rules.IPTablesRule{"-j", c.Name})
+	if err != nil {
+		if parentReady, _ := e.iptables.ChainExists(c.Table, c.ParentChain); !parentReady {
+			logger.Info("parent-chain-not-ready", lager.Data{"parent": c.ParentChain, "error": err.Error()})
+			return &ParentChainNotReadyErr{ParentChain: c.ParentChain}
+		}
+		originalChainJumpExists = false
+	}
+	candidateChainJumpExists, err := e.iptables.Exists(c.Table, c.ParentChain, rules.IPTablesRule{"-j", candidateName})
+	if err != nil {
+		if parentReady, _ := e.iptables.ChainExists(c.Table, c.ParentChain); !parentReady {
+			logger.Info("parent-chain-not-ready", lager.Data{"parent": c.ParentChain, "error": err.Error()})
+			return &ParentChainNotReadyErr{ParentChain: c.ParentChain}
+		}
+		candidateChainJumpExists = false
+	}
 
 	logger.Debug("replace-chain-exists", lager.Data{"original": originalChainJumpExists, "candidate": candidateChainJumpExists})
 	if !originalChainJumpExists && !candidateChainJumpExists {
@@ -327,8 +376,7 @@ func (e *Enforcer) replaceChainRules(logger lager.Logger, c Chain, rulesSpec []r
 		}
 	}
 
-	err := e.enforce(logger, c.Table, c.ParentChain, candidateName, rulesSpec...)
-
+	err = e.enforce(logger, c.Table, c.ParentChain, candidateName, rulesSpec...)
 	if err != nil {
 		return err
 	}

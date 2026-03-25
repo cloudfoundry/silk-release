@@ -410,6 +410,134 @@ var _ = Describe("Datastore", func() {
 
 	})
 
+	Context("when marking an entry for delete", func() {
+		BeforeEach(func() {
+			serializer.DecodeAllStub = func(_ io.ReadSeeker, a interface{}) error {
+				b := a.(*map[string]*datastore.Container)
+				*b = map[string]*datastore.Container{
+					handle: {
+						Handle:   handle,
+						IP:       ip,
+						Metadata: metadata,
+					},
+				}
+				return nil
+			}
+		})
+
+		It("marks the container as deleting and returns it", func() {
+			container, err := store.MarkForDelete(handle)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(container.Handle).To(Equal(handle))
+			Expect(container.IP).To(Equal(ip))
+			Expect(container.Metadata).To(Equal(metadata))
+			Expect(container.Deleting).To(BeTrue())
+
+			Expect(locker.LockCallCount()).To(Equal(1))
+			Expect(locker.UnlockCallCount()).To(Equal(1))
+			Expect(serializer.DecodeAllCallCount()).To(Equal(1))
+			Expect(serializer.EncodeAndOverwriteCallCount()).To(Equal(1))
+
+			_, actual := serializer.EncodeAndOverwriteArgsForCall(0)
+			pool := actual.(map[string]*datastore.Container)
+			Expect(pool[handle].Deleting).To(BeTrue())
+		})
+
+		It("updates the version", func() {
+			_, err := store.MarkForDelete(handle)
+			Expect(err).NotTo(HaveOccurred())
+
+			versionContents, err := os.ReadFile(versionFile.Name())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(versionContents)).To(Equal("2"))
+		})
+
+		Context("when handle is empty", func() {
+			It("returns an error", func() {
+				_, err := store.MarkForDelete("")
+				Expect(err).To(MatchError("invalid handle"))
+			})
+		})
+
+		Context("when handle does not exist", func() {
+			BeforeEach(func() {
+				serializer.DecodeAllStub = func(_ io.ReadSeeker, a interface{}) error {
+					b := a.(*map[string]*datastore.Container)
+					*b = map[string]*datastore.Container{}
+					return nil
+				}
+			})
+
+			It("returns an error", func() {
+				_, err := store.MarkForDelete("potato")
+				Expect(err).To(MatchError("entry does not exist"))
+			})
+		})
+
+		Context("when the locker fails to lock", func() {
+			BeforeEach(func() {
+				locker.LockReturns(errors.New("potato"))
+			})
+			It("wraps and returns the error", func() {
+				_, err := store.MarkForDelete(handle)
+				Expect(err).To(MatchError("lock: potato"))
+			})
+		})
+
+		Context("when the container is already marked for deletion", func() {
+			BeforeEach(func() {
+				serializer.DecodeAllStub = func(_ io.ReadSeeker, a interface{}) error {
+					b := a.(*map[string]*datastore.Container)
+					*b = map[string]*datastore.Container{
+						handle: {
+							Handle:   handle,
+							IP:       ip,
+							Metadata: metadata,
+							Deleting: true,
+						},
+					}
+					return nil
+				}
+			})
+
+			It("succeeds idempotently", func() {
+				container, err := store.MarkForDelete(handle)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(container.Deleting).To(BeTrue())
+			})
+		})
+
+		Context("when the data file fails to open", func() {
+			BeforeEach(func() {
+				store.DataFilePath = "/some/bad/path"
+			})
+			It("wraps and returns the error", func() {
+				_, err := store.MarkForDelete(handle)
+				Expect(err).To(MatchError("open data file: open /some/bad/path: no such file or directory"))
+			})
+		})
+
+		Context("when serializer fails to decode", func() {
+			BeforeEach(func() {
+				serializer.DecodeAllReturns(errors.New("potato"))
+			})
+			It("wraps and returns the error", func() {
+				_, err := store.MarkForDelete(handle)
+				Expect(err).To(MatchError("decoding file: potato"))
+			})
+		})
+
+		Context("when serializer fails to encode", func() {
+			BeforeEach(func() {
+				serializer.EncodeAndOverwriteReturns(errors.New("potato"))
+			})
+			It("wraps and returns the error", func() {
+				_, err := store.MarkForDelete(handle)
+				Expect(err).To(MatchError("encode and overwrite: potato"))
+			})
+		})
+	})
+
 	Context("when reading from datastore", func() {
 		It("deserializes the data from the file", func() {
 			data, err := store.ReadAll()

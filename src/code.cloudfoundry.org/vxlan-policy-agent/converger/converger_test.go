@@ -685,12 +685,42 @@ var _ = Describe("Single Poll Cycle", func() {
 			})
 		})
 
+		Context("when the enforcer returns ParentChainNotReadyErr", func() {
+			BeforeEach(func() {
+				i := 0
+				fakeEnforcer.EnforceRulesAndChainStub = func(e enforcer.RulesWithChain) (string, error) {
+					i++
+					if i == 2 {
+						return "", &enforcer.ParentChainNotReadyErr{ParentChain: "netout-2"}
+					}
+					return e.Chain.Name, nil
+				}
+			})
+
+			It("skips that container without accumulating an error", func() {
+				err := p.DoASGCycle()
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("still enforces other containers", func() {
+				err := p.DoASGCycle()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeEnforcer.EnforceRulesAndChainCallCount()).To(Equal(3))
+			})
+
+			It("does not include the skipped container in desired chains", func() {
+				err := p.DoASGCycle()
+				Expect(err).NotTo(HaveOccurred())
+				_, desiredChains := fakeEnforcer.CleanChainsMatchingArgsForCall(0)
+				Expect(desiredChains).To(Equal([]enforcer.LiveChain{
+					{Table: "filter", Name: "asg-1234"},
+					{Table: "filter", Name: "asg-3456"},
+				}))
+			})
+		})
+
 		Context("when the enforcer errors", func() {
 			BeforeEach(func() {
-				// set up an initial successful cycle to create the cache of container to asg mappings
-				// fakeEnforcer.EnforceRulesAndChainStub = func(chain enforcer.RulesWithChain) (string, error) {
-				// 	return fmt.Sprintf("%s-with-suffix", chain.Chain.Name), nil
-				// }
 				err := p.DoASGCycle()
 				Expect(err).ToNot(HaveOccurred())
 
@@ -965,6 +995,21 @@ var _ = Describe("Single Poll Cycle", func() {
 				chain := fakeEnforcer.CleanupChainArgsForCall(0)
 				Expect(chain.Name).To(Equal("asg-b6259c4829b649dd739c"))
 				Expect(chain.Table).To(Equal(enforcer.FilterTable))
+			})
+
+			Context("after a successful DoASGCycle", func() {
+				BeforeEach(func() {
+					err := p.DoASGCycle()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(p.CurrentlyAppliedChainNames()).To(ConsistOf("asg-1234", "asg-2345", "asg-3456"))
+				})
+
+				It("removes the chain from CurrentlyAppliedChainNames using the correct map key", func() {
+					err := p.CleanupOrphanedASGsChains("3456")
+					Expect(err).ToNot(HaveOccurred())
+					Expect(p.CurrentlyAppliedChainNames()).To(ConsistOf("asg-1234", "asg-2345"))
+					Expect(p.CurrentlyAppliedChainNames()).NotTo(ContainElement("asg-3456"))
+				})
 			})
 
 			Context("the enforcer returns an error", func() {

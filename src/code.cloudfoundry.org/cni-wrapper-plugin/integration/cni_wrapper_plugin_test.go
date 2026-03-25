@@ -536,16 +536,38 @@ var _ = Describe("CniWrapperPlugin", func() {
 		})
 
 		Context("when the policy agent poller returns an error", func() {
-			It("returns an error", func() {
+			BeforeEach(func() {
 				policyAgentServer.ReturnCode = 500
 				policyAgentServer.ReturnErrorMessage = "an error occurred in the vpa"
+			})
 
+			It("returns an error", func() {
 				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1))
 				Expect(session.Out).Should(gbytes.Say(".*vpa response code: 500 with message: an error occurred in the vpa.*"))
 
 				Expect(policyAgentServer.PolicyPollEndpointCallCount).To(Equal(1))
+			})
+
+			It("cleans up iptables chains after store.Add succeeds", func() {
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(1))
+
+				Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(inputChainName)))
+				Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutChainName)))
+				Expect(AllIPTablesRules("nat")).ToNot(ContainElement(ContainSubstring(netinChainName)))
+			})
+
+			It("removes the container from the datastore after store.Add succeeds", func() {
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(1))
+
+				stateFileBytes, err := os.ReadFile(datastorePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(stateFileBytes)).NotTo(ContainSubstring(containerID))
 			})
 		})
 
@@ -1202,6 +1224,29 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Eventually(session).Should(gexec.Exit(1))
 
 				Expect(AllIPTablesRules("nat")).NotTo(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.30.0/24 ! -o some-device -j MASQUERADE"))
+				Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(inputChainName)))
+				Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutChainName)))
+				Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutLoggingChainName)))
+				Expect(AllIPTablesRules("nat")).ToNot(ContainElement(ContainSubstring(netinChainName)))
+			})
+		})
+
+		Context("when netOutProvider.Initialize fails", func() {
+			BeforeEach(func() {
+				inputStruct.HostTCPServices = []string{"invalid-host-port"}
+				input = GetInput(inputStruct)
+				cmd = cniCommand("ADD", input)
+			})
+
+			It("returns an error and does not leave iptables rules behind", func() {
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(1))
+
+				Expect(session.Out.Contents()).To(ContainSubstring("initialize net out: input rules: host tcp services: address invalid-host-port: missing port in address"))
+
+				Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(inputChainName)))
+				Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutChainName)))
 			})
 		})
 
@@ -1848,7 +1893,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			})
 		})
 
-		Context("when the datastore delete fails", func() {
+		Context("when the datastore is corrupt (MarkForDelete and Delete both fail)", func() {
 			BeforeEach(func() {
 				file, err := os.OpenFile(datastorePath, os.O_RDWR, 0600)
 				Expect(err).ToNot(HaveOccurred())
@@ -1856,11 +1901,12 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(err).ToNot(HaveOccurred())
 			})
 
-			It("wraps and logs the error, and returns the success status code (for idempotency)", func() {
+			It("logs both store errors and returns success (DEL is idempotent)", func() {
 				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(0))
 
+				Expect(string(session.Err.Contents())).To(ContainSubstring("store mark for delete: decoding file: invalid character"))
 				Expect(string(session.Err.Contents())).To(ContainSubstring("store delete: decoding file: invalid character"))
 			})
 
