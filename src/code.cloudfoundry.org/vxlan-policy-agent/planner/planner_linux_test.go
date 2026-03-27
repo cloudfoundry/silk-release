@@ -1171,5 +1171,42 @@ var _ = Describe("Planner", func() {
 				})
 			})
 		})
+
+		Context("when a container is marked for deletion", func() {
+			BeforeEach(func() {
+				data["container-id-deleting"] = datastore.Container{
+					Handle: "container-id-deleting",
+					IP:     "10.255.1.99",
+					Metadata: map[string]interface{}{
+						"policy_group_id":    "some-app-guid",
+						"space_id":           "some-space-guid",
+						"ports":              "8080",
+						"container_workload": "app",
+					},
+					Deleting: true,
+				}
+				store.ReadAllReturns(data, nil)
+			})
+
+			It("skips the deleting container", func() {
+				rulesWithChains, err := policyPlanner.GetASGRulesAndChains()
+				Expect(err).NotTo(HaveOccurred())
+
+				for _, rwc := range rulesWithChains {
+					Expect(rwc.Chain.ParentChain).NotTo(ContainSubstring("container-id-deleting"))
+				}
+			})
+
+			It("still processes non-deleting containers", func() {
+				rulesWithChains, err := policyPlanner.GetASGRulesAndChains()
+				Expect(err).NotTo(HaveOccurred())
+
+				parentChains := []string{}
+				for _, rwc := range rulesWithChains {
+					parentChains = append(parentChains, rwc.Chain.ParentChain)
+				}
+				Expect(parentChains).To(ConsistOf("netout-container-id-1", "netout-container-id-2"))
+			})
+		})
 	})
 })

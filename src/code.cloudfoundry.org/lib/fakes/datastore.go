@@ -35,6 +35,19 @@ type Datastore struct {
 		result1 datastore.Container
 		result2 error
 	}
+	MarkForDeleteStub        func(string) (datastore.Container, error)
+	markForDeleteMutex       sync.RWMutex
+	markForDeleteArgsForCall []struct {
+		arg1 string
+	}
+	markForDeleteReturns struct {
+		result1 datastore.Container
+		result2 error
+	}
+	markForDeleteReturnsOnCall map[int]struct {
+		result1 datastore.Container
+		result2 error
+	}
 	ReadAllStub        func() (map[string]datastore.Container, error)
 	readAllMutex       sync.RWMutex
 	readAllArgsForCall []struct {
@@ -179,6 +192,70 @@ func (fake *Datastore) DeleteReturnsOnCall(i int, result1 datastore.Container, r
 	}{result1, result2}
 }
 
+func (fake *Datastore) MarkForDelete(arg1 string) (datastore.Container, error) {
+	fake.markForDeleteMutex.Lock()
+	ret, specificReturn := fake.markForDeleteReturnsOnCall[len(fake.markForDeleteArgsForCall)]
+	fake.markForDeleteArgsForCall = append(fake.markForDeleteArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.MarkForDeleteStub
+	fakeReturns := fake.markForDeleteReturns
+	fake.recordInvocation("MarkForDelete", []interface{}{arg1})
+	fake.markForDeleteMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *Datastore) MarkForDeleteCallCount() int {
+	fake.markForDeleteMutex.RLock()
+	defer fake.markForDeleteMutex.RUnlock()
+	return len(fake.markForDeleteArgsForCall)
+}
+
+func (fake *Datastore) MarkForDeleteCalls(stub func(string) (datastore.Container, error)) {
+	fake.markForDeleteMutex.Lock()
+	defer fake.markForDeleteMutex.Unlock()
+	fake.MarkForDeleteStub = stub
+}
+
+func (fake *Datastore) MarkForDeleteArgsForCall(i int) string {
+	fake.markForDeleteMutex.RLock()
+	defer fake.markForDeleteMutex.RUnlock()
+	argsForCall := fake.markForDeleteArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *Datastore) MarkForDeleteReturns(result1 datastore.Container, result2 error) {
+	fake.markForDeleteMutex.Lock()
+	defer fake.markForDeleteMutex.Unlock()
+	fake.MarkForDeleteStub = nil
+	fake.markForDeleteReturns = struct {
+		result1 datastore.Container
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *Datastore) MarkForDeleteReturnsOnCall(i int, result1 datastore.Container, result2 error) {
+	fake.markForDeleteMutex.Lock()
+	defer fake.markForDeleteMutex.Unlock()
+	fake.MarkForDeleteStub = nil
+	if fake.markForDeleteReturnsOnCall == nil {
+		fake.markForDeleteReturnsOnCall = make(map[int]struct {
+			result1 datastore.Container
+			result2 error
+		})
+	}
+	fake.markForDeleteReturnsOnCall[i] = struct {
+		result1 datastore.Container
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *Datastore) ReadAll() (map[string]datastore.Container, error) {
 	fake.readAllMutex.Lock()
 	ret, specificReturn := fake.readAllReturnsOnCall[len(fake.readAllArgsForCall)]
@@ -238,12 +315,6 @@ func (fake *Datastore) ReadAllReturnsOnCall(i int, result1 map[string]datastore.
 func (fake *Datastore) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.addMutex.RLock()
-	defer fake.addMutex.RUnlock()
-	fake.deleteMutex.RLock()
-	defer fake.deleteMutex.RUnlock()
-	fake.readAllMutex.RLock()
-	defer fake.readAllMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

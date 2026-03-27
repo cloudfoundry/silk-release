@@ -25,6 +25,7 @@ type Datastore interface {
 	Add(handle, ip string, metadata map[string]interface{}, options ...Option) error
 	Delete(handle string) (Container, error)
 	ReadAll() (map[string]Container, error)
+	MarkForDelete(handle string) (Container, error)
 }
 
 type Container struct {
@@ -32,6 +33,7 @@ type Container struct {
 	IP       string                 `json:"ip"`
 	IPv6     string                 `json:"ipv6"`
 	Metadata map[string]interface{} `json:"metadata"`
+	Deleting bool                   `json:"deleting,omitempty"`
 }
 
 type Store struct {
@@ -188,6 +190,49 @@ func (c *Store) lookupFileOwnerUIDandGID() (int, int, error) {
 	}
 
 	return uid, gid, nil
+}
+
+func (c *Store) MarkForDelete(handle string) (Container, error) {
+	if handle == "" {
+		return Container{}, fmt.Errorf("invalid handle")
+	}
+
+	err := c.Locker.Lock()
+	if err != nil {
+		return Container{}, fmt.Errorf("lock: %s", err)
+	}
+	defer c.Locker.Unlock()
+
+	dataFile, err := os.OpenFile(c.DataFilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
+	if err != nil {
+		return Container{}, fmt.Errorf("open data file: %s", err)
+	}
+	defer dataFile.Close()
+
+	pool := make(map[string]*Container)
+	err = c.Serializer.DecodeAll(dataFile, &pool)
+	if err != nil {
+		return Container{}, fmt.Errorf("decoding file: %s", err)
+	}
+
+	existing, ok := pool[handle]
+	if !ok {
+		return Container{}, fmt.Errorf("entry does not exist")
+	}
+
+	existing.Deleting = true
+
+	err = c.Serializer.EncodeAndOverwrite(dataFile, pool)
+	if err != nil {
+		return *existing, fmt.Errorf("encode and overwrite: %s", err)
+	}
+
+	err = c.updateVersion()
+	if err != nil {
+		return *existing, err
+	}
+
+	return *existing, c.ensureFileOwnership()
 }
 
 func (c *Store) Delete(handle string) (Container, error) {

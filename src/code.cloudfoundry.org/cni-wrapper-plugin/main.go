@@ -433,9 +433,9 @@ func cmdDel(args *skel.CmdArgs) error {
 		CacheMutex:      new(sync.RWMutex),
 	}
 
-	container, err := store.Delete(args.ContainerID)
+	container, err := store.MarkForDelete(args.ContainerID)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "store delete: %s", err)
+		fmt.Fprintf(os.Stderr, "store mark for delete: %s", err)
 	}
 
 	enableIPv6 = enableIPv6 && container.IPv6 != ""
@@ -541,6 +541,12 @@ func cmdDel(args *skel.CmdArgs) error {
 	err = masquerader.DelIPMasq()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "removing IP masq: %s", err)
+	}
+
+	// Error is intentionally not returned: DEL must be idempotent, and iptables cleanup above
+	// already succeeded. A stale datastore entry is harmless at this point.
+	if _, err := store.Delete(args.ContainerID); err != nil {
+		fmt.Fprintf(os.Stderr, "store delete: %s", err)
 	}
 
 	resp, err := http.DefaultClient.Get(fmt.Sprintf("http://%s/force-orphaned-asgs-cleanup?container=%s", cfg.PolicyAgentForcePollAddress, args.ContainerID))
