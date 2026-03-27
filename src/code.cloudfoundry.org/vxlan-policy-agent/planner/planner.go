@@ -90,6 +90,10 @@ func (p *VxlanPolicyPlanner) readFile(specifiedContainers ...string) ([]containe
 
 	var allContainers []container
 	for handle, containerMeta := range specifiedContainerMetadata {
+		if containerMeta.Deleting {
+			continue
+		}
+
 		ports, ok := containerMeta.Metadata["ports"].(string)
 		if !ok || ports == "" {
 			message := "Container metadata is missing key ports. CloudController version may be out of date or apps may need to be restaged."

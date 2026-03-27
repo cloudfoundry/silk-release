@@ -1893,7 +1893,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			})
 		})
 
-		Context("when the datastore delete fails", func() {
+		Context("when the datastore is corrupt (MarkForDelete and Delete both fail)", func() {
 			BeforeEach(func() {
 				file, err := os.OpenFile(datastorePath, os.O_RDWR, 0600)
 				Expect(err).ToNot(HaveOccurred())
@@ -1901,11 +1901,12 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(err).ToNot(HaveOccurred())
 			})
 
-			It("wraps and logs the error, and returns the success status code (for idempotency)", func() {
+			It("logs both store errors and returns success (DEL is idempotent)", func() {
 				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(0))
 
+				Expect(string(session.Err.Contents())).To(ContainSubstring("store mark for delete: decoding file: invalid character"))
 				Expect(string(session.Err.Contents())).To(ContainSubstring("store delete: decoding file: invalid character"))
 			})
 
