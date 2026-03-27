@@ -62,31 +62,14 @@ func cmdAdd(args *skel.CmdArgs) error {
 	containerIPv4, containerIPv6 := common.ParseIPConfig(ips)
 	enableIPv6 = enableIPv6 && containerIPv6 != nil
 
-	var containerWorkload string
-
-	// Add container metadata info
-	store := &datastore.Store{
-		Serializer: &serial.Serial{},
-		Locker: &filelock.Locker{
-			FileLocker: filelock.NewLocker(cfg.Datastore + "_lock"),
-			Mutex:      new(sync.Mutex),
-		},
-		DataFilePath:    cfg.Datastore,
-		VersionFilePath: cfg.Datastore + "_version",
-		LockedFilePath:  cfg.Datastore + "_lock",
-		FileOwner:       cfg.DatastoreFileOwner,
-		FileGroup:       cfg.DatastoreFileGroup,
-		CacheMutex:      new(sync.RWMutex),
-	}
-
 	var cniAddData struct {
 		Metadata map[string]interface{}
 	}
-
 	if err := json.Unmarshal(args.StdinData, &cniAddData); err != nil {
 		return err // not tested, this should be impossible
 	}
 
+	var containerWorkload string
 	if workload, present := cniAddData.Metadata["container_workload"]; present {
 		containerWorkload, _ = workload.(string)
 	}
@@ -97,44 +80,6 @@ func cmdAdd(args *skel.CmdArgs) error {
 		DaemonPort:                  fmt.Sprintf("%v", cfg.Delegate["daemonPort"]),
 		ContainerIP:                 containerIPv4.String(),
 		CustomNoMasqueradeCIDRRange: cfg.NoMasqueradeCIDRRange,
-	}
-
-	var storeOpts []datastore.Option
-	if enableIPv6 {
-		storeOpts = append(storeOpts, datastore.WithIPv6(containerIPv6.String()))
-	}
-
-	err = store.Add(
-		args.ContainerID,
-		containerIPv4.String(),
-		cniAddData.Metadata,
-		storeOpts...,
-	)
-
-	if err != nil {
-		storeErr := fmt.Errorf("store add: %s", err)
-		fmt.Fprintf(os.Stderr, "%s", storeErr)
-		fmt.Fprint(os.Stderr, "cleaning up from error")
-
-		err := masquerader.DelIPMasq()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "during cleanup: removing IP masq: %s", err)
-		}
-
-		return storeErr
-	}
-
-	resp, err := http.DefaultClient.Get(fmt.Sprintf("http://%s/force-policy-poll-cycle", cfg.PolicyAgentForcePollAddress))
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		// #nosec G104 - don't capture this error, as the one we generate below is more important to return
-		resp.Body.Close()
-
-		return fmt.Errorf("vpa response code: %v with message: %s", resp.StatusCode, body)
 	}
 
 	localDNSServers, err := getLocalDNSServers(cfg.DNSServers)
@@ -210,6 +155,9 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return fmt.Errorf("initialize net out: %s", err)
 	}
 
+	var netOutProviderIPv6 *netrules.NetOut
+	var netinInitialized bool
+
 	netinProvider := netrules.NetIn{
 		ChainNamer: &netrules.ChainNamer{
 			MaxLength: 28,
@@ -219,24 +167,45 @@ func cmdAdd(args *skel.CmdArgs) error {
 		HostInterfaceNames: interfaceNames,
 	}
 
+	// netinInitialized and netOutProviderIPv6 are captured by reference intentionally:
+	// cleanupChains is defined before they are set, so it reads their final values at call time.
+	cleanupChains := func() {
+		if cleanupErr := netOutProvider.Cleanup(); cleanupErr != nil {
+			fmt.Fprintf(os.Stderr, "during cleanup: net out: %s", cleanupErr)
+		}
+		if netinInitialized {
+			if cleanupErr := netinProvider.Cleanup(args.ContainerID); cleanupErr != nil {
+				fmt.Fprintf(os.Stderr, "during cleanup: net in: %s", cleanupErr)
+			}
+		}
+		if enableIPv6 && netOutProviderIPv6 != nil {
+			if cleanupErr := netOutProviderIPv6.Cleanup(); cleanupErr != nil {
+				fmt.Fprintf(os.Stderr, "during cleanup: net out ipv6: %s", cleanupErr)
+			}
+		}
+	}
+
 	err = netinProvider.Initialize(args.ContainerID)
 	if err != nil {
+		cleanupChains()
 		return fmt.Errorf("initializing net in: %s", err)
 	}
+	netinInitialized = true
 
 	portMappings := cfg.RuntimeConfig.PortMappings
 	for _, netIn := range portMappings {
 		if netIn.HostPort <= 0 {
+			cleanupChains()
 			return fmt.Errorf("cannot allocate port %d", netIn.HostPort)
 		}
 
 		if err := netinProvider.AddRule(args.ContainerID, int(netIn.HostPort), int(netIn.ContainerPort), cfg.InstanceAddress, containerIPv4.String()); err != nil {
+			cleanupChains()
 			return fmt.Errorf("adding netin rule: %s", err)
 		}
 	}
 
 	var netOutChainIPv6 *netrules.NetOutChain
-	var netOutProviderIPv6 *netrules.NetOut
 
 	if enableIPv6 {
 		netOutChainIPv6 = &netrules.NetOutChain{
@@ -274,14 +243,81 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 		err = netOutProviderIPv6.Initialize()
 		if err != nil {
+			cleanupChains()
 			return fmt.Errorf("initialize net out ipv6: %s", err)
 		}
 	}
 
-	resp, err = http.DefaultClient.Get(fmt.Sprintf("http://%s/force-asgs-for-container?container=%s", cfg.PolicyAgentForcePollAddress, args.ContainerID))
+	// Add container metadata info - AFTER chains exist so VPA poller can't race
+	store := &datastore.Store{
+		Serializer: &serial.Serial{},
+		Locker: &filelock.Locker{
+			FileLocker: filelock.NewLocker(cfg.Datastore + "_lock"),
+			Mutex:      new(sync.Mutex),
+		},
+		DataFilePath:    cfg.Datastore,
+		VersionFilePath: cfg.Datastore + "_version",
+		LockedFilePath:  cfg.Datastore + "_lock",
+		FileOwner:       cfg.DatastoreFileOwner,
+		FileGroup:       cfg.DatastoreFileGroup,
+		CacheMutex:      new(sync.RWMutex),
+	}
+
+	var storeOpts []datastore.Option
+	if enableIPv6 {
+		storeOpts = append(storeOpts, datastore.WithIPv6(containerIPv6.String()))
+	}
+
+	err = store.Add(
+		args.ContainerID,
+		containerIPv4.String(),
+		cniAddData.Metadata,
+		storeOpts...,
+	)
+
 	if err != nil {
+		storeErr := fmt.Errorf("store add: %s", err)
+		fmt.Fprintf(os.Stderr, "%s", storeErr)
+		fmt.Fprint(os.Stderr, "cleaning up from error")
+
+		cleanupChains()
+		if cleanupErr := masquerader.DelIPMasq(); cleanupErr != nil {
+			fmt.Fprintf(os.Stderr, "during cleanup: removing IP masq: %s", cleanupErr)
+		}
+
+		return storeErr
+	}
+
+	cleanupStore := func() {
+		if _, cleanupErr := store.Delete(args.ContainerID); cleanupErr != nil {
+			fmt.Fprintf(os.Stderr, "during cleanup: store delete: %s", cleanupErr)
+		}
+	}
+
+	pollResp, err := http.DefaultClient.Get(fmt.Sprintf("http://%s/force-policy-poll-cycle", cfg.PolicyAgentForcePollAddress))
+	if err != nil {
+		cleanupChains()
+		cleanupStore()
 		return err
 	}
+	// #nosec G104 - don't capture this error, as the one we generate below is more important to return
+	defer pollResp.Body.Close()
+
+	if pollResp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(pollResp.Body)
+		cleanupChains()
+		cleanupStore()
+		return fmt.Errorf("vpa response code: %v with message: %s", pollResp.StatusCode, body)
+	}
+
+	resp, err := http.DefaultClient.Get(fmt.Sprintf("http://%s/force-asgs-for-container?container=%s", cfg.PolicyAgentForcePollAddress, args.ContainerID))
+	if err != nil {
+		cleanupChains()
+		cleanupStore()
+		return err
+	}
+	// #nosec G104 - don't capture this error, as the one we generate below is more important to return
+	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusMethodNotAllowed {
 		netOutRules := cfg.RuntimeConfig.NetOutRules
@@ -302,9 +338,8 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusMethodNotAllowed {
 		body, _ := io.ReadAll(resp.Body)
-		// #nosec G104 - don't capture this error, as the one we generate below is more important to return
-		resp.Body.Close()
-
+		cleanupChains()
+		cleanupStore()
 		return fmt.Errorf("asg sync returned %v with message: %s", resp.StatusCode, body)
 	}
 
@@ -512,11 +547,11 @@ func cmdDel(args *skel.CmdArgs) error {
 	if err != nil {
 		return err
 	}
+	// #nosec G104 - don't capture this error, as the one we generate below is more important to return
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusMethodNotAllowed {
 		body, _ := io.ReadAll(resp.Body)
-		// #nosec G104 - don't capture this error, as the one we generate below is more important to return
-		resp.Body.Close()
 		return fmt.Errorf("asg cleanup returned %v with message: %s", resp.StatusCode, body)
 	}
 
