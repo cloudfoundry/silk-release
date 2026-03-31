@@ -341,7 +341,11 @@ func (e *Enforcer) replaceChainRules(logger lager.Logger, c Chain, rulesSpec []r
 	candidateName := e.candidateChainName(c.Name)
 	originalChainJumpExists, err := e.iptables.Exists(c.Table, c.ParentChain, rules.IPTablesRule{"-j", c.Name})
 	if err != nil {
-		if parentReady, _ := e.iptables.ChainExists(c.Table, c.ParentChain); !parentReady {
+		parentReady, chainErr := e.iptables.ChainExists(c.Table, c.ParentChain)
+		if chainErr != nil {
+			return chainErr
+		}
+		if !parentReady {
 			logger.Info("parent-chain-not-ready", lager.Data{"parent": c.ParentChain, "error": err.Error()})
 			return &ParentChainNotReadyErr{ParentChain: c.ParentChain}
 		}
@@ -349,7 +353,11 @@ func (e *Enforcer) replaceChainRules(logger lager.Logger, c Chain, rulesSpec []r
 	}
 	candidateChainJumpExists, err := e.iptables.Exists(c.Table, c.ParentChain, rules.IPTablesRule{"-j", candidateName})
 	if err != nil {
-		if parentReady, _ := e.iptables.ChainExists(c.Table, c.ParentChain); !parentReady {
+		parentReady, chainErr := e.iptables.ChainExists(c.Table, c.ParentChain)
+		if chainErr != nil {
+			return chainErr
+		}
+		if !parentReady {
 			logger.Info("parent-chain-not-ready", lager.Data{"parent": c.ParentChain, "error": err.Error()})
 			return &ParentChainNotReadyErr{ParentChain: c.ParentChain}
 		}

@@ -327,6 +327,88 @@ var _ = Describe("Enforcer", func() {
 				})
 			})
 
+			Context("when Exists check for original chain returns an error", func() {
+				BeforeEach(func() {
+					iptables.ExistsStub = func(table string, parentChan string, ruleSpec rules.IPTablesRule) (bool, error) {
+						if ruleSpec[1] == "asg-handle" {
+							return false, errors.New("parent chain missing")
+						}
+						return false, nil
+					}
+				})
+
+				Context("when parent chain does not exist", func() {
+					BeforeEach(func() {
+						iptables.ChainExistsReturns(false, nil)
+					})
+
+					It("returns a ParentChainNotReadyErr", func() {
+						Expect(enforceErr).To(HaveOccurred())
+						_, ok := enforceErr.(*enforcer.ParentChainNotReadyErr)
+						Expect(ok).To(BeTrue())
+						Expect(enforceErr).To(MatchError("parent chain not ready: some-chain"))
+						Expect(iptables.NewChainCallCount()).To(Equal(0))
+					})
+				})
+
+				Context("when parent chain exists", func() {
+					BeforeEach(func() {
+						iptables.ChainExistsReturns(true, nil)
+					})
+
+					It("treats the jump as non-existent and proceeds to enforce", func() {
+						Expect(enforceErr).NotTo(HaveOccurred())
+						Expect(iptables.NewChainCallCount()).To(Equal(1))
+						table, chain := iptables.NewChainArgsForCall(0)
+						Expect(table).To(Equal("some-table"))
+						Expect(chain).To(Equal("asg-handle"))
+					})
+				})
+			})
+
+			Context("when Exists check for candidate chain returns an error", func() {
+				BeforeEach(func() {
+					iptables.ExistsStub = func(table string, parentChan string, ruleSpec rules.IPTablesRule) (bool, error) {
+						switch ruleSpec[1] {
+						case "asg-handle":
+							return true, nil
+						case "casg-handle":
+							return false, errors.New("parent chain missing")
+						default:
+							return false, errors.New("unexpected Exists call")
+						}
+					}
+				})
+
+				Context("when parent chain does not exist", func() {
+					BeforeEach(func() {
+						iptables.ChainExistsReturns(false, nil)
+					})
+
+					It("returns a ParentChainNotReadyErr", func() {
+						Expect(enforceErr).To(HaveOccurred())
+						_, ok := enforceErr.(*enforcer.ParentChainNotReadyErr)
+						Expect(ok).To(BeTrue())
+						Expect(enforceErr).To(MatchError("parent chain not ready: some-chain"))
+						Expect(iptables.NewChainCallCount()).To(Equal(0))
+					})
+				})
+
+				Context("when parent chain exists", func() {
+					BeforeEach(func() {
+						iptables.ChainExistsReturns(true, nil)
+					})
+
+					It("treats the candidate jump as non-existent and proceeds to enforce with candidate", func() {
+						Expect(enforceErr).NotTo(HaveOccurred())
+						Expect(iptables.NewChainCallCount()).To(Equal(1))
+						table, chain := iptables.NewChainArgsForCall(0)
+						Expect(table).To(Equal("some-table"))
+						Expect(chain).To(Equal("casg-handle"))
+					})
+				})
+			})
+
 			Context("when parent chain does not have candidate nor original chain", func() {
 				BeforeEach(func() {
 					iptables.ExistsStub = func(table string, parentChan string, ruleSpec rules.IPTablesRule) (bool, error) {
