@@ -1943,6 +1943,31 @@ var _ = Describe("CniWrapperPlugin", func() {
 			})
 
 		})
+
+		Context("when the policy agent force-cleanup fails", func() {
+			BeforeEach(func() {
+				policyAgentServer.CleanupOrphanedASGsReturnCode = 500
+				policyAgentServer.CleanupOrphanedASGsReturnErrorMessage = "internal error"
+			})
+
+			// Stale Deleting entries block silk-daemon shutdown and IP allocation for new containers.
+			// Verify that store.Delete is always called, even when cleanup fails, by using defer.
+			It("still removes the container from the datastore even when cleanup fails", func() {
+				By("ensuring the container is in the datastore before DEL")
+				stateFileBytes, err := os.ReadFile(datastorePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(stateFileBytes)).To(ContainSubstring(containerID))
+
+				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(1))
+
+				By("verifying the container was removed from the datastore")
+				stateFileBytes, err = os.ReadFile(datastorePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(stateFileBytes)).NotTo(ContainSubstring(containerID))
+			})
+		})
 	})
 
 })

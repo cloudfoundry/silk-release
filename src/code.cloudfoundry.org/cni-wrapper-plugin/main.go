@@ -438,6 +438,14 @@ func cmdDel(args *skel.CmdArgs) error {
 		fmt.Fprintf(os.Stderr, "store mark for delete: %s", err)
 	}
 
+	// Ensure the container is always deleted from the store, even if cleanup fails.
+	// This prevents stale Deleting entries from blocking silk-daemon shutdown or IP allocation.
+	defer func() {
+		if _, delErr := store.Delete(args.ContainerID); delErr != nil {
+			fmt.Fprintf(os.Stderr, "store delete: %s", delErr)
+		}
+	}()
+
 	enableIPv6 = enableIPv6 && container.IPv6 != ""
 
 	pluginController, err := newPluginController(cfg, enableIPv6)
