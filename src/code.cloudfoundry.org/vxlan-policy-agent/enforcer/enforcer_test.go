@@ -1056,7 +1056,7 @@ var _ = Describe("Enforcer", func() {
 		It("deletes orphaned chains on filter table", func() {
 			deletedChains, err := ruleEnforcer.CleanChainsMatching(regexp.MustCompile(enforcer.ASGChainRegex), desiredChains)
 
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 			Expect(iptables.ListChainsCallCount()).To(Equal(1))
 
 			Expect(iptables.ListChainsArgsForCall(0)).To(Equal("filter"))
@@ -1072,16 +1072,16 @@ var _ = Describe("Enforcer", func() {
 			By("not deleting desired chains", func() {
 				for i := 0; i < iptables.DeleteCallCount(); i++ {
 					_, chain := iptables.DeleteChainArgsForCall(i)
-					Expect(chain).ToNot(BeElementOf([]string{"asg-aaaaa01645708469990518", "asg-bbbbb01645708469990518", "casg-ddddd01645708469990518"}))
+					Expect(chain).NotTo(BeElementOf([]string{"asg-aaaaa01645708469990518", "asg-bbbbb01645708469990518", "casg-ddddd01645708469990518"}))
 				}
-				Expect(deletedChains).ToNot(ContainElements([]string{"asg-aaaaa01645708469990518", "asg-bbbbb01645708469990518", "casg-ddddd01645708469990518"}))
+				Expect(deletedChains).NotTo(ContainElements([]string{"asg-aaaaa01645708469990518", "asg-bbbbb01645708469990518", "casg-ddddd01645708469990518"}))
 			})
 			By("not deleting chains outside the scope of our regex", func() {
 				for i := 0; i < iptables.DeleteCallCount(); i++ {
 					_, chain := iptables.DeleteChainArgsForCall(i)
-					Expect(chain).ToNot(BeElementOf([]string{"donttouchme", "reallydonttouchme"}))
+					Expect(chain).NotTo(BeElementOf([]string{"donttouchme", "reallydonttouchme"}))
 				}
-				Expect(deletedChains).ToNot(ContainElements([]string{"donttouchme", "reallydonttouchme"}))
+				Expect(deletedChains).NotTo(ContainElements([]string{"donttouchme", "reallydonttouchme"}))
 			})
 			By("deleting target chains that the orphan jumps to", func() {
 				table, chain1 := iptables.DeleteChainArgsForCall(1)
@@ -1096,7 +1096,7 @@ var _ = Describe("Enforcer", func() {
 		Context("when there are no desired chains", func() {
 			It("deletes alls chains on filter table matching pattern", func() {
 				deletedChains, err := ruleEnforcer.CleanChainsMatching(regexp.MustCompile(enforcer.ASGChainRegex), []enforcer.LiveChain{})
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				Expect(deletedChains).To(ConsistOf([]enforcer.LiveChain{
 					{Table: "filter", Name: "asg-bbbbb01645708469990518"},
 					{Table: "filter", Name: "asg-ccccc01645708469990518"},

@@ -59,30 +59,30 @@ func TestIntegration(t *testing.T) {
 
 func createDummyInterface(interfaceName, ipAddress string) {
 	err := netlink.LinkAdd(&netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Name: interfaceName}})
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	link, err := netlink.LinkByName(interfaceName)
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	addr, err := netlink.ParseAddr(ipAddress + "/32")
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	err = netlink.AddrAdd(link, addr)
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func removeDummyInterface(interfaceName, ipAddress string) {
 	link, err := netlink.LinkByName(interfaceName)
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	addr, err := netlink.ParseAddr(ipAddress + "/32")
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	err = netlink.AddrDel(link, addr)
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	err = netlink.LinkDel(link)
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {

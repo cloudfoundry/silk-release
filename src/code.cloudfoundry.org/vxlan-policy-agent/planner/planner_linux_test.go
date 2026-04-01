@@ -817,7 +817,7 @@ var _ = Describe("Planner", func() {
 			Context("when only one container was specified", func() {
 				It("only gets security groups for the specified container", func() {
 					_, err := policyPlanner.GetASGRulesAndChains("container-id-1")
-					Expect(err).ToNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 					Expect(policyClient.GetSecurityGroupsForSpaceCallCount()).To(Equal(1))
 					Expect(policyClient.GetSecurityGroupsForSpaceArgsForCall(0)).To(ConsistOf("some-space-guid"))
 				})

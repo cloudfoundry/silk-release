@@ -196,7 +196,7 @@ var _ = Describe("Datastore", func() {
 			Expect(file).To(Equal(lockedFile))
 
 			_, actual := serializer.EncodeAndOverwriteArgsForCall(0)
-			Expect(actual).ToNot(HaveKey(handle))
+			Expect(actual).NotTo(HaveKey(handle))
 		})
 
 		It("is idempotent", func() {

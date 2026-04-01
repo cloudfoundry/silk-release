@@ -94,7 +94,7 @@ var _ = Describe("errors", func() {
 
 				cniError := &cniDatabaseError{}
 				err := json.Unmarshal(session.Out.Contents(), cniError)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cniError.Code).To(Equal(100))
 				Expect(cniError.Msg).To(Equal("discover network info"))

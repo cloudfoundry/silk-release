@@ -19,7 +19,7 @@ var _ = Describe("Pre-Start", func() {
 
 	It("clears the iptables rules for filter/nat tables", func() {
 		err := main.PreStart(fakeIpTables)
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 		Expect(fakeIpTables.FlushAndRestoreCallCount()).To(Equal(1))
 		Expect(fakeIpTables.FlushAndRestoreArgsForCall(0)).To(Equal("*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\nCOMMIT\n*nat\n:PREROUTING ACCEPT [0:0]\n:INPUT ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n:POSTROUTING ACCEPT [0:0]\nCOMMIT\n"))
 	})
@@ -52,7 +52,7 @@ var _ = Describe("Pre-Start", func() {
 			It("retries and then clears the iptables rules", func() {
 				err := main.PreStart(fakeIpTables)
 				Expect(fakeIpTables.FlushAndRestoreCallCount()).To(Equal(4))
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 	})

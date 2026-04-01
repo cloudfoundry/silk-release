@@ -118,7 +118,7 @@ var _ = Describe("Masquerader", func() {
 						thisShouldPanic := func() {
 							fakeSilkDaemonServer.GetHandler(1)
 						}
-						Expect(thisShouldNotPanic).ToNot(Panic())
+						Expect(thisShouldNotPanic).NotTo(Panic())
 						Expect(thisShouldPanic).To(Panic())
 					})
 				})
@@ -182,7 +182,7 @@ var _ = Describe("Masquerader", func() {
 			It("makes a masq rule with the customNoMasqueradeCIDRRange", func() {
 				expectedRule := rules.IPTablesRule{"--source", containerIP, "!", "-o", vtepName, "!", "--destination", customNoMasqueradeCIDRRange, "--jump", "MASQUERADE"}
 				err := masquerader.AddIPMasq()
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeIPTables.BulkAppendCallCount()).To(Equal(1))
 				table, chain, rules := fakeIPTables.BulkAppendArgsForCall(0)
 				Expect(table).To(Equal("nat"))
@@ -306,7 +306,7 @@ var _ = Describe("Masquerader", func() {
 			It("makes a masq rule with the customNoMasqueradeCIDRRange", func() {
 				expectedRule := rules.IPTablesRule{"--source", containerIP, "!", "-o", vtepName, "!", "--destination", customNoMasqueradeCIDRRange, "--jump", "MASQUERADE"}
 				err := masquerader.DelIPMasq()
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeIPTables.DeleteCallCount()).To(Equal(1))
 				table, chain, rule := fakeIPTables.DeleteArgsForCall(0)
 				Expect(table).To(Equal("nat"))

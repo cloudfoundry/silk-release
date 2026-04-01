@@ -111,7 +111,7 @@ var _ = Describe("SecurityGroupRule", func() {
 				Code:        3,
 			}
 			rule, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 			Expect(fmt.Sprintf("%d/%d", rule.ICMPInfo().Type, rule.ICMPInfo().Code)).To(Equal("0/3"))
 		})
 		It("parses -1 as all types", func() {
@@ -121,7 +121,7 @@ var _ = Describe("SecurityGroupRule", func() {
 				Code:        3,
 			}
 			rule, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 			Expect(fmt.Sprintf("%d/%d", rule.ICMPInfo().Type, rule.ICMPInfo().Code)).To(Equal("255/3"))
 		})
 		It("parses -1 as all codes", func() {
@@ -131,7 +131,7 @@ var _ = Describe("SecurityGroupRule", func() {
 				Code:        -1,
 			}
 			rule, err := netrules.NewRuleFromSecurityGroupRule(securityGroupRule)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 			Expect(fmt.Sprintf("%d/%d", rule.ICMPInfo().Type, rule.ICMPInfo().Code)).To(Equal("0/255"))
 		})
 	})

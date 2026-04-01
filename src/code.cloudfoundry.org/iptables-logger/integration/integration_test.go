@@ -140,13 +140,13 @@ var _ = Describe("Integration", func() {
 		fakeMetron = metrics.NewFakeMetron(suiteConfig.ParallelProcess)
 
 		kernelLogFile, err = os.CreateTemp("", "")
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 
 		containerMetadataFile, err = os.CreateTemp("", "")
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 
 		outputDir, err := os.MkdirTemp("", "")
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 
 		outputFile = filepath.Join(outputDir, "iptables.log")
 		conf = config.Config{
@@ -258,7 +258,7 @@ var _ = Describe("Integration", func() {
 			var err error
 			Expect(os.Rename(kernelLogFile.Name(), filepath.Join(os.TempDir(), "kernel.log.backup"))).To(Succeed())
 			kernelLogFile, err = os.Create(kernelLogFilename)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			By("logging denied egress packets")
 			go AddToKernelLog(EGRESS_DENIED_KERNEL_LOG, kernelLogFile)
@@ -279,7 +279,7 @@ var _ = Describe("Integration", func() {
 			var err error
 			Expect(os.Remove(kernelLogFile.Name())).To(Succeed())
 			kernelLogFile, err = os.Create(kernelLogFilename)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			By("logging denied egress packets")
 			go AddToKernelLog(EGRESS_DENIED_KERNEL_LOG, kernelLogFile)
@@ -298,7 +298,7 @@ var _ = Describe("Integration", func() {
 			By("rotate destination file")
 			Expect(os.Rename(outputFile, filepath.Join(os.TempDir(), "destination.log.backup"))).To(Succeed())
 			_, err := os.Create(outputFile)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			By("waiting for the rotatable sink to pickup the new file")
 			time.Sleep(2 * time.Second)

@@ -153,7 +153,7 @@ var _ = Describe("CIDRPool", func() {
 			for i := 1; i <= expectedNumBlockLeases; i++ {
 				By("testing that there are still leases left")
 				lease := cidrPool.GetAvailableBlock(taken)
-				Expect(lease).ToNot(Equal(""))
+				Expect(lease).NotTo(Equal(""))
 
 				By("testing that the lease is a valid subnet")
 				leaseIP, leaseSubnet, err := net.ParseCIDR(lease)
@@ -187,7 +187,7 @@ var _ = Describe("CIDRPool", func() {
 					if index1 == index2 {
 						continue
 					}
-					Expect(i).ToNot(Equal(j))
+					Expect(i).NotTo(Equal(j))
 				}
 			}
 		},
@@ -213,7 +213,7 @@ var _ = Describe("CIDRPool", func() {
 			for i := 1; i <= expectedNumSingleIPLeases; i++ {
 				By("testing that there are still leases left")
 				lease := cidrPool.GetAvailableSingleIP(taken)
-				Expect(lease).ToNot(Equal(""))
+				Expect(lease).NotTo(Equal(""))
 
 				By("testing that the lease is a valid subnet")
 				leaseIP, leaseSubnet, err := net.ParseCIDR(lease)
@@ -247,7 +247,7 @@ var _ = Describe("CIDRPool", func() {
 					if index1 == index2 {
 						continue
 					}
-					Expect(i).ToNot(Equal(j))
+					Expect(i).NotTo(Equal(j))
 				}
 			}
 		},

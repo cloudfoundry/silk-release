@@ -722,7 +722,7 @@ var _ = Describe("Single Poll Cycle", func() {
 		Context("when the enforcer errors", func() {
 			BeforeEach(func() {
 				err := p.DoASGCycle()
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				//simulate changes to rules, so enforcer will get called again
 				newFakeASGs := []enforcer.RulesWithChain{
@@ -967,13 +967,13 @@ var _ = Describe("Single Poll Cycle", func() {
 		Describe("SyncASGsForContainer", func() {
 			It("passes specified containers to the planner", func() {
 				err := p.SyncASGsForContainers("container-1", "container-2")
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeASGPlanner.GetASGRulesAndChainsArgsForCall(0)).To(Equal([]string{"container-1", "container-2"}))
 			})
 
 			It("does not clean up orphans when syncing specific containers", func() {
 				err := p.SyncASGsForContainers("container-1", "container-2")
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeEnforcer.CleanChainsMatchingCallCount()).To(Equal(0))
 			})
 		})
@@ -981,7 +981,7 @@ var _ = Describe("Single Poll Cycle", func() {
 		Describe("CleanupOrphanedASGsChains", func() {
 			It("cleans up asg chains with no desired chains", func() {
 				err := p.CleanupOrphanedASGsChains("some-container-handle")
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeEnforcer.CleanupChainCallCount()).To(Equal(1))
 				chain := fakeEnforcer.CleanupChainArgsForCall(0)
 				Expect(chain.Name).To(Equal("asg-somecontainerhandle"))
@@ -990,7 +990,7 @@ var _ = Describe("Single Poll Cycle", func() {
 
 			It("cleans up asg chains for check container", func() {
 				err := p.CleanupOrphanedASGsChains("check-b6259c48-29b6-49dd-739c-2a4418fd137c")
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeEnforcer.CleanupChainCallCount()).To(Equal(1))
 				chain := fakeEnforcer.CleanupChainArgsForCall(0)
 				Expect(chain.Name).To(Equal("asg-b6259c4829b649dd739c"))
@@ -1000,13 +1000,13 @@ var _ = Describe("Single Poll Cycle", func() {
 			Context("after a successful DoASGCycle", func() {
 				BeforeEach(func() {
 					err := p.DoASGCycle()
-					Expect(err).ToNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 					Expect(p.CurrentlyAppliedChainNames()).To(ConsistOf("asg-1234", "asg-2345", "asg-3456"))
 				})
 
 				It("removes the chain from CurrentlyAppliedChainNames using the correct map key", func() {
 					err := p.CleanupOrphanedASGsChains("3456")
-					Expect(err).ToNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 					Expect(p.CurrentlyAppliedChainNames()).To(ConsistOf("asg-1234", "asg-2345"))
 					Expect(p.CurrentlyAppliedChainNames()).NotTo(ContainElement("asg-3456"))
 				})

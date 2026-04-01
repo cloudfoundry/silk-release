@@ -308,35 +308,35 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 	AfterEach(func() {
 		By("checking that ip masquerade rule is removed")
-		Expect(AllIPTablesRules("nat")).ToNot(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.30.0/24 ! -o some-device -j MASQUERADE"))
+		Expect(AllIPTablesRules("nat")).NotTo(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.30.0/24 ! -o some-device -j MASQUERADE"))
 
 		By("checking that iptables netin rules are removed")
-		Expect(AllIPTablesRules("nat")).ToNot(ContainElement(`-N ` + netinChainName))
-		Expect(AllIPTablesRules("nat")).ToNot(ContainElement(`-A PREROUTING -j ` + netinChainName))
-		Expect(AllIPTablesRules("mangle")).ToNot(ContainElement(`-N ` + netinChainName))
-		Expect(AllIPTablesRules("mangle")).ToNot(ContainElement(`-A PREROUTING -j ` + netinChainName))
+		Expect(AllIPTablesRules("nat")).NotTo(ContainElement(`-N ` + netinChainName))
+		Expect(AllIPTablesRules("nat")).NotTo(ContainElement(`-A PREROUTING -j ` + netinChainName))
+		Expect(AllIPTablesRules("mangle")).NotTo(ContainElement(`-N ` + netinChainName))
+		Expect(AllIPTablesRules("mangle")).NotTo(ContainElement(`-A PREROUTING -j ` + netinChainName))
 
 		By("checking that all port forwarding rules were removed from the netin chain")
-		Expect(AllIPTablesRules("nat")).ToNot(ContainElement(ContainSubstring(netinChainName)))
-		Expect(AllIPTablesRules("nat")).ToNot(ContainElement(ContainSubstring(netinChainName)))
+		Expect(AllIPTablesRules("nat")).NotTo(ContainElement(ContainSubstring(netinChainName)))
+		Expect(AllIPTablesRules("nat")).NotTo(ContainElement(ContainSubstring(netinChainName)))
 
 		By("checking that all mark rules were removed from the netin chain")
-		Expect(AllIPTablesRules("mangle")).ToNot(ContainElement(ContainSubstring(netinChainName)))
+		Expect(AllIPTablesRules("mangle")).NotTo(ContainElement(ContainSubstring(netinChainName)))
 
 		By("checking that there are no more netout rules for this container")
-		Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(inputChainName)))
-		Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutChainName)))
-		Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutLoggingChainName)))
+		Expect(AllIPTablesRules("filter")).NotTo(ContainElement(ContainSubstring(inputChainName)))
+		Expect(AllIPTablesRules("filter")).NotTo(ContainElement(ContainSubstring(netoutChainName)))
+		Expect(AllIPTablesRules("filter")).NotTo(ContainElement(ContainSubstring(netoutLoggingChainName)))
 
 		By("checking that there are no more overlay rules for this container")
-		Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(overlayChainName)))
+		Expect(AllIPTablesRules("filter")).NotTo(ContainElement(ContainSubstring(overlayChainName)))
 
 		// IPv6
 		if testIPv6 {
 			By("checking that there are no more ipv6 netout rules for this container")
-			Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(inputChainName)))
-			Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutChainName)))
-			Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutLoggingChainName)))
+			Expect(AllIP6TablesRules("filter")).NotTo(ContainElement(ContainSubstring(inputChainName)))
+			Expect(AllIP6TablesRules("filter")).NotTo(ContainElement(ContainSubstring(netoutChainName)))
+			Expect(AllIP6TablesRules("filter")).NotTo(ContainElement(ContainSubstring(netoutLoggingChainName)))
 		}
 
 		os.Remove(debugFileName)
@@ -514,7 +514,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 		It("calls the policy agent asg updater", func() {
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
 			Expect(policyAgentServer.SyncASGEndpointCallCount).To(Equal(1))
 			Expect(policyAgentServer.SyncASGEndpointContainerRequested).To(Equal("some-container-id-that-is-long"))
@@ -555,9 +555,9 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1))
 
-				Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(inputChainName)))
-				Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutChainName)))
-				Expect(AllIPTablesRules("nat")).ToNot(ContainElement(ContainSubstring(netinChainName)))
+				Expect(AllIPTablesRules("filter")).NotTo(ContainElement(ContainSubstring(inputChainName)))
+				Expect(AllIPTablesRules("filter")).NotTo(ContainElement(ContainSubstring(netoutChainName)))
+				Expect(AllIPTablesRules("nat")).NotTo(ContainElement(ContainSubstring(netinChainName)))
 			})
 
 			It("removes the container from the datastore after store.Add succeeds", func() {
@@ -575,7 +575,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			It("ignores and moves on, since dynamic asgs have been disabled", func() {
 				policyAgentServer.ASGReturnCode = 405
 				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(0))
 				Expect(policyAgentServer.SyncASGEndpointCallCount).To(Equal(1))
 				Expect(policyAgentServer.SyncASGEndpointContainerRequested).To(Equal("some-container-id-that-is-long"))
@@ -586,11 +586,11 @@ var _ = Describe("CniWrapperPlugin", func() {
 			It("does not add additional iptables rules to the netout-chain", func() {
 				policyAgentServer.ASGReturnCode = 200
 				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(0))
 				Expect(policyAgentServer.SyncASGEndpointCallCount).To(Equal(1))
 				Expect(policyAgentServer.SyncASGEndpointContainerRequested).To(Equal("some-container-id-that-is-long"))
-				Expect(strings.Join(AllIPTablesRules("filter"), "\n")).ToNot(ContainSubstring("11.11.11.11-22.22.22.22"))
+				Expect(strings.Join(AllIPTablesRules("filter"), "\n")).NotTo(ContainSubstring("11.11.11.11-22.22.22.22"))
 			})
 		})
 
@@ -598,7 +598,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			It("adds additional iptables rules to the netout-chain", func() {
 				policyAgentServer.ASGReturnCode = 405
 				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(0))
 				Expect(policyAgentServer.SyncASGEndpointCallCount).To(Equal(1))
 				Expect(policyAgentServer.SyncASGEndpointContainerRequested).To(Equal("some-container-id-that-is-long"))
@@ -1224,10 +1224,10 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Eventually(session).Should(gexec.Exit(1))
 
 				Expect(AllIPTablesRules("nat")).NotTo(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.30.0/24 ! -o some-device -j MASQUERADE"))
-				Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(inputChainName)))
-				Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutChainName)))
-				Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutLoggingChainName)))
-				Expect(AllIPTablesRules("nat")).ToNot(ContainElement(ContainSubstring(netinChainName)))
+				Expect(AllIPTablesRules("filter")).NotTo(ContainElement(ContainSubstring(inputChainName)))
+				Expect(AllIPTablesRules("filter")).NotTo(ContainElement(ContainSubstring(netoutChainName)))
+				Expect(AllIPTablesRules("filter")).NotTo(ContainElement(ContainSubstring(netoutLoggingChainName)))
+				Expect(AllIPTablesRules("nat")).NotTo(ContainElement(ContainSubstring(netinChainName)))
 			})
 		})
 
@@ -1245,8 +1245,8 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 				Expect(session.Out.Contents()).To(ContainSubstring("initialize net out: input rules: host tcp services: address invalid-host-port: missing port in address"))
 
-				Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(inputChainName)))
-				Expect(AllIPTablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutChainName)))
+				Expect(AllIPTablesRules("filter")).NotTo(ContainElement(ContainSubstring(inputChainName)))
+				Expect(AllIPTablesRules("filter")).NotTo(ContainElement(ContainSubstring(netoutChainName)))
 			})
 		})
 
@@ -1394,11 +1394,11 @@ var _ = Describe("CniWrapperPlugin", func() {
 				It("does not add additional iptables rules to the netout-chain", func() {
 					policyAgentServer.ASGReturnCode = 200
 					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-					Expect(err).ToNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 					Eventually(session).Should(gexec.Exit(0))
 					Expect(policyAgentServer.SyncASGEndpointCallCount).To(Equal(1))
 					Expect(policyAgentServer.SyncASGEndpointContainerRequested).To(Equal("some-container-id-that-is-long"))
-					Expect(strings.Join(AllIP6TablesRules("filter"), "\n")).ToNot(ContainSubstring("2333:3::3-2444:4::4"))
+					Expect(strings.Join(AllIP6TablesRules("filter"), "\n")).NotTo(ContainSubstring("2333:3::3-2444:4::4"))
 				})
 			})
 
@@ -1406,7 +1406,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 				It("adds additional iptables rules to the netout-chain", func() {
 					policyAgentServer.ASGReturnCode = 405
 					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-					Expect(err).ToNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 					Eventually(session).Should(gexec.Exit(0))
 					Expect(policyAgentServer.SyncASGEndpointCallCount).To(Equal(1))
 					Expect(policyAgentServer.SyncASGEndpointContainerRequested).To(Equal("some-container-id-that-is-long"))
@@ -1525,9 +1525,9 @@ var _ = Describe("CniWrapperPlugin", func() {
 					Eventually(session).Should(gexec.Exit(0))
 
 					By("checking that there are no rules for this container")
-					Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(inputChainName)))
-					Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutChainName)))
-					Expect(AllIP6TablesRules("filter")).ToNot(ContainElement(ContainSubstring(netoutLoggingChainName)))
+					Expect(AllIP6TablesRules("filter")).NotTo(ContainElement(ContainSubstring(inputChainName)))
+					Expect(AllIP6TablesRules("filter")).NotTo(ContainElement(ContainSubstring(netoutChainName)))
+					Expect(AllIP6TablesRules("filter")).NotTo(ContainElement(ContainSubstring(netoutLoggingChainName)))
 				})
 			})
 
@@ -1843,7 +1843,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 		It("calls the policy agent orphaned asg cleanup", func() {
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
 			Expect(policyAgentServer.CleanupOrphanedASGsEndpointCallCount).To(Equal(1))
 			Expect(policyAgentServer.CleanupOrphanedASGsEndpointContainerRequested).To(Equal(containerID))
@@ -1853,7 +1853,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			It("ignores and moves on, since dynamic asgs have been disabled", func() {
 				policyAgentServer.CleanupOrphanedASGsReturnCode = 405
 				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(0))
 				Expect(policyAgentServer.CleanupOrphanedASGsEndpointCallCount).To(Equal(1))
 			})
@@ -1896,9 +1896,9 @@ var _ = Describe("CniWrapperPlugin", func() {
 		Context("when the datastore is corrupt (MarkForDelete and Delete both fail)", func() {
 			BeforeEach(func() {
 				file, err := os.OpenFile(datastorePath, os.O_RDWR, 0600)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				_, err = io.WriteString(file, "}{blarg")
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("logs both store errors and returns success (DEL is idempotent)", func() {
@@ -2031,30 +2031,30 @@ func (a *mockPolicyAgentServer) stop() error {
 
 func createDummyInterface(interfaceName, ipAddress string) {
 	err := netlink.LinkAdd(&netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Name: interfaceName}})
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	link, err := netlink.LinkByName(interfaceName)
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	addr, err := netlink.ParseAddr(ipAddress + "/32")
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	err = netlink.AddrAdd(link, addr)
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func removeDummyInterface(interfaceName, ipAddress string) {
 	link, err := netlink.LinkByName(interfaceName)
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	addr, err := netlink.ParseAddr(ipAddress + "/32")
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	err = netlink.AddrDel(link, addr)
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	err = netlink.LinkDel(link)
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 func intPtr(val int) *int {

@@ -151,7 +151,7 @@ var _ = Describe("Rotatewatcher", func() {
 					fakeTestWriterFactory = NewTestWriterFactory(fileToWatch, nil)
 					var err error
 					rotatableSink, err = rotatablesink.NewRotatableSink(fileToWatchName, lager.DEBUG, fakeTestWriterFactory, fakeDestinationFileInfo, fakeLogger)
-					Expect(err).ToNot(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("returns a sensible error and does not update the file sink", func() {
@@ -249,15 +249,15 @@ var _ = Describe("Rotatewatcher", func() {
 
 			It("should return true when file exists", func() {
 				fileExists, err := defaultDestinationFileInfo.FileExists(fileToWatchName)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				Expect(fileExists).To(BeTrue())
 			})
 
 			Context("when the file does not exist", func() {
 				It("returns false", func() {
 					fileExists, err := defaultDestinationFileInfo.FileExists(fmt.Sprintf("%s_does_not_exist", fileToWatchName))
-					Expect(err).ToNot(HaveOccurred())
-					Expect(fileExists).ToNot(BeTrue())
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fileExists).NotTo(BeTrue())
 				})
 			})
 
@@ -272,7 +272,7 @@ var _ = Describe("Rotatewatcher", func() {
 		Describe("FileInode", func() {
 			It("should return the file to watch inode", func() {
 				inode, err := defaultDestinationFileInfo.FileInode(fileToWatchName)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				Expect(inode).To(BeNumerically(">", 0))
 			})
 
