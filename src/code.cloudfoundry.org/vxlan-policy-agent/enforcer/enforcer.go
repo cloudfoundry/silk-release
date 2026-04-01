@@ -371,11 +371,23 @@ func (e *Enforcer) replaceChainRules(logger lager.Logger, c Chain, rulesSpec []r
 
 	if candidateChainJumpExists {
 		if originalChainJumpExists {
-			err := e.cleanupOldChain(e.Logger, LiveChain{Table: c.Table, Name: candidateName}, c.ParentChain, "")
+			logger.Debug("replace-chain-rename-candidate-recovery", lager.Data{"chain": c.Name, "table": c.Table})
+			err := e.cleanupOldChain(e.Logger, LiveChain{Table: c.Table, Name: c.Name}, c.ParentChain, "")
+			if err != nil {
+				return err
+			}
+			err = e.iptables.RenameChain(c.Table, candidateName, c.Name)
 			if err != nil {
 				return err
 			}
 		} else {
+			originalChainExists, _ := e.iptables.ChainExists(c.Table, c.Name)
+			if originalChainExists {
+				logger.Debug("cleanup-orphaned-original-chain", lager.Data{"chain": c.Name, "table": c.Table})
+				e.iptables.ClearChain(c.Table, c.Name)
+				e.iptables.DeleteChain(c.Table, c.Name)
+			}
+
 			logger.Debug("replace-chain-rename-original", lager.Data{"chain": c.Name, "table": c.Table})
 			err := e.iptables.RenameChain(c.Table, candidateName, c.Name)
 			if err != nil {
