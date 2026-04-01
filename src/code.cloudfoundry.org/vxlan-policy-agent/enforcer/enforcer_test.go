@@ -83,6 +83,36 @@ var _ = Describe("Enforcer", func() {
 					Expect(newChain).To(Equal("asg-handle"))
 				})
 
+				Context("when orphaned original chain exists", func() {
+					BeforeEach(func() {
+						iptables.ChainExistsStub = func(table, chain string) (bool, error) {
+							if chain == "asg-handle" {
+								return true, nil
+							}
+							return false, nil
+						}
+					})
+
+					It("clears and deletes the orphaned original chain before renaming", func() {
+						Expect(enforceErr).NotTo(HaveOccurred())
+						Expect(iptables.ClearChainCallCount()).To(Equal(2))
+						table, chain := iptables.ClearChainArgsForCall(0)
+						Expect(table).To(Equal("some-table"))
+						Expect(chain).To(Equal("asg-handle"))
+
+						Expect(iptables.DeleteChainCallCount()).To(Equal(2))
+						table, chain = iptables.DeleteChainArgsForCall(0)
+						Expect(table).To(Equal("some-table"))
+						Expect(chain).To(Equal("asg-handle"))
+
+						Expect(iptables.RenameChainCallCount()).To(Equal(2))
+						table, oldChain, newChain := iptables.RenameChainArgsForCall(0)
+						Expect(table).To(Equal("some-table"))
+						Expect(oldChain).To(Equal("casg-handle"))
+						Expect(newChain).To(Equal("asg-handle"))
+					})
+				})
+
 				Context("when renaming candidate chain fails", func() {
 					BeforeEach(func() {
 						iptables.RenameChainReturns(errors.New("failed-to-rename"))
@@ -113,18 +143,24 @@ var _ = Describe("Enforcer", func() {
 					}
 				})
 
-				It("deletes candidate chain", func() {
+				It("deletes original chain and renames candidate chain", func() {
 					Expect(iptables.ClearChainCallCount()).To(Equal(2))
 					table, chain := iptables.ClearChainArgsForCall(0)
 					Expect(table).To(Equal("some-table"))
-					Expect(chain).To(Equal("casg-handle"))
+					Expect(chain).To(Equal("asg-handle"))
 					Expect(iptables.DeleteChainCallCount()).To(Equal(2))
 					table, chain = iptables.DeleteChainArgsForCall(0)
 					Expect(table).To(Equal("some-table"))
-					Expect(chain).To(Equal("casg-handle"))
+					Expect(chain).To(Equal("asg-handle"))
+
+					Expect(iptables.RenameChainCallCount()).To(Equal(2))
+					table, oldChain, newChain := iptables.RenameChainArgsForCall(0)
+					Expect(table).To(Equal("some-table"))
+					Expect(oldChain).To(Equal("casg-handle"))
+					Expect(newChain).To(Equal("asg-handle"))
 				})
 
-				Context("when deleting candidate chain fails", func() {
+				Context("when deleting original chain fails", func() {
 					BeforeEach(func() {
 						iptables.DeleteReturns(errors.New("failed-to-delete"))
 					})
