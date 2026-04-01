@@ -39,7 +39,7 @@ var _ = Describe("MultipleCIDRNetwork", func() {
 				cidr2 := "10.50.50.0/24" // 10.50.50.0 - 10.50.50.255
 				cidr3 := "10.255.0.0/16" // 10.255.0.0 - 10.255.255.255
 				network, err = NewMultipleCIDRNetwork([]string{cidr1, cidr2, cidr3})
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("creates an array of net.IPNet's", func() {
@@ -58,7 +58,7 @@ var _ = Describe("MultipleCIDRNetwork", func() {
 		DescribeTable("it returns the size of the smallest mask",
 			func(cidrs []string, expectedSize int) {
 				n, err := NewMultipleCIDRNetwork(cidrs)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 				Expect(n.SmallestMask).To(Equal(expectedSize))
 			},
 			Entry("When the cidrs have different masks", []string{"10.255.0.0/16", "10.255.0.0/24", "10.255.0.0/32"}, 32),
@@ -70,14 +70,14 @@ var _ = Describe("MultipleCIDRNetwork", func() {
 		BeforeEach(func() {
 			var err error
 			network, err = NewMultipleCIDRNetwork([]string{validCIDR1, validCIDR2, validCIDR3})
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("when the IP is contained in a network", func() {
 			DescribeTable("it returns true",
 				func(check string) {
 					ip := net.ParseIP(check)
-					Expect(ip).ToNot(BeNil())
+					Expect(ip).NotTo(BeNil())
 
 					found := network.Contains(ip)
 					Expect(found).To(BeTrue())
@@ -92,7 +92,7 @@ var _ = Describe("MultipleCIDRNetwork", func() {
 			DescribeTable("it returns false",
 				func(check string) {
 					ip := net.ParseIP(check)
-					Expect(ip).ToNot(BeNil())
+					Expect(ip).NotTo(BeNil())
 
 					found := network.Contains(ip)
 					Expect(found).To(BeFalse())
@@ -108,17 +108,17 @@ var _ = Describe("MultipleCIDRNetwork", func() {
 		BeforeEach(func() {
 			var err error
 			network, err = NewMultipleCIDRNetwork([]string{validCIDR1, validCIDR2, validCIDR3})
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("when the IP is contained in a network", func() {
 			DescribeTable("it returns the single network it is in",
 				func(check string, firstIPOfExpectedNetwork net.IP) {
 					ip := net.ParseIP(check)
-					Expect(ip).ToNot(BeNil())
+					Expect(ip).NotTo(BeNil())
 
 					n := network.WhichNetworkContains(ip)
-					Expect(n).ToNot(BeNil())
+					Expect(n).NotTo(BeNil())
 					Expect(n.IP).To(Equal(firstIPOfExpectedNetwork))
 
 				},
@@ -132,7 +132,7 @@ var _ = Describe("MultipleCIDRNetwork", func() {
 			DescribeTable("it returns nil",
 				func(check string) {
 					ip := net.ParseIP(check)
-					Expect(ip).ToNot(BeNil())
+					Expect(ip).NotTo(BeNil())
 
 					network := network.WhichNetworkContains(ip)
 					Expect(network).To(BeNil())

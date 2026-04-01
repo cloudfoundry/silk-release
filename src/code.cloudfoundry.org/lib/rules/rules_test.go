@@ -14,7 +14,7 @@ var _ = Describe("Rules", func() {
 	Describe("NewIPTablesRuleFromIPTablesLine", func() {
 		It("parses rules properly", func() {
 			rule, err := rules.NewIPTablesRuleFromIPTablesLine(`-D netout--ee8fd40b-55f6-4522-5 -m limit --limit 1/sec --limit-burst 1 -j LOG --log-prefix "DENY_ee8fd40b-55f6-4522-51d9 "`)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 			Expect(rule).To(Equal(rules.IPTablesRule{
 				"-D", "netout--ee8fd40b-55f6-4522-5", "-m", "limit",
 				"--limit", "1/sec", "--limit-burst", "1", "-j", "LOG",

@@ -28,13 +28,13 @@ var _ = Describe("Datastore syncer", func() {
 	BeforeEach(func() {
 		var err error
 		silkFile, err = os.CreateTemp(GinkgoT().TempDir(), "silkfile")
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 		u, err := user.Current()
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 		groups, err := u.GroupIds()
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 		group, err := user.LookupGroupId(groups[0])
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 		store = &datastore.Store{
 			Serializer: &serial.Serial{},
 			Locker: &filelock.Locker{
@@ -56,7 +56,7 @@ var _ = Describe("Datastore syncer", func() {
 
 		cmd := exec.Command(binaryPath, "-n", "1", "--gardenNetwork", "tcp", "--gardenAddr", fakeGarden.Addr(), "--silkFile", silkFile.Name(), "--silkFileOwner", u.Name, "--silkFileGroup", group.Name)
 		session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
@@ -68,7 +68,7 @@ var _ = Describe("Datastore syncer", func() {
 
 	It("updates the log config", func() {
 		err := store.Add("test", "127.0.0.1", map[string]interface{}{"log_config": `{"guid":"test","index":0,"source_name":"test","tags":{"test":"value"}}`})
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 		containers := struct {
 			Handles []string
 		}{
@@ -80,7 +80,7 @@ var _ = Describe("Datastore syncer", func() {
 
 		Eventually(func() datastore.Container {
 			readContainers, err := store.ReadAll()
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 			return readContainers["test"]
 		}, 10).Should(Equal(datastore.Container{
 			Handle:   "test",
@@ -91,7 +91,7 @@ var _ = Describe("Datastore syncer", func() {
 
 	It("updates the log config when the container has IPv6 address", func() {
 		err := store.Add("test", "127.0.0.1", map[string]interface{}{"log_config": `{"guid":"test","index":0,"source_name":"test","tags":{"test":"value"}}`}, datastore.WithIPv6("2600::1"))
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 		containers := struct {
 			Handles []string
 		}{
@@ -103,7 +103,7 @@ var _ = Describe("Datastore syncer", func() {
 
 		Eventually(func() datastore.Container {
 			readContainers, err := store.ReadAll()
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 			return readContainers["test"]
 		}, 10).Should(Equal(datastore.Container{
 			Handle:   "test",
@@ -115,7 +115,7 @@ var _ = Describe("Datastore syncer", func() {
 
 	It("doesn't add new entries, or remove old entries in the log config", func() {
 		err := store.Add("test", "127.0.0.1", map[string]interface{}{"log_config": `{"guid":"test","index":0,"source_name":"test","tags":{"test":"value"}}`})
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 		containers := struct {
 			Handles []string
 		}{
@@ -128,7 +128,7 @@ var _ = Describe("Datastore syncer", func() {
 		Consistently(session, 3).ShouldNot(gexec.Exit())
 		Eventually(func() datastore.Container {
 			readContainers, err := store.ReadAll()
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 			return readContainers["test"]
 		}, 10).Should(Equal(datastore.Container{
 			Handle:   "test",
@@ -153,7 +153,7 @@ var _ = Describe("Datastore syncer", func() {
 	})
 	It("doesn't crash when container has no metadata", func() {
 		err := store.Add("test", "127.0.0.1", nil)
-		Expect(err).ToNot(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 		containers := struct {
 			Handles []string
 		}{
@@ -165,7 +165,7 @@ var _ = Describe("Datastore syncer", func() {
 
 		Eventually(func() datastore.Container {
 			readContainers, err := store.ReadAll()
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 			return readContainers["test"]
 		}, 10).Should(Equal(datastore.Container{
 			Handle:   "test",

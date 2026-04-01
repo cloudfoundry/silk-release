@@ -76,7 +76,7 @@ var _ = Describe("Teardown", func() {
 		BeforeEach(func() {
 			cmd := exec.Command("lsmod")
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 			session.Wait(5 * time.Second)
 			if !strings.Contains(string(session.Out.Contents()), "ifb") {
 				Skip("Docker for Mac does not contain IFB kernel module")

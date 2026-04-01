@@ -406,11 +406,11 @@ var _ = Describe("VXLAN Policy Agent", func() {
 
 					It("cleans up the parent asg keeping the reject rule", func() {
 						Eventually(iptablesFilterRules, "4s", "1s").ShouldNot(MatchRegexp(`-A netout--some-handle -m state --state RELATED,ESTABLISHED -j ACCEPT`))
-						Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -p tcp -m state --state INVALID -j DROP`))
+						Expect(iptablesFilterRules()).NotTo(MatchRegexp(`-A netout--some-handle -p tcp -m state --state INVALID -j DROP`))
 						Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j asg-.+`))
-						Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT`))
-						Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
-						Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
+						Expect(iptablesFilterRules()).NotTo(MatchRegexp(`-A netout--some-handle -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT`))
+						Expect(iptablesFilterRules()).NotTo(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
+						Expect(iptablesFilterRules()).NotTo(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
 						Expect(iptablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j REJECT --reject-with icmp-port-unreachable`))
 					})
 
@@ -475,12 +475,12 @@ var _ = Describe("VXLAN Policy Agent", func() {
 								}).Should(Equal(http.StatusOK))
 
 								Eventually(iptablesFilterRules, "1s", "100ms").ShouldNot(MatchRegexp(`-A asg-.+ -m state --state RELATED,ESTABLISHED -j ACCEPT`))
-								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A asg-.+ -p tcp -m state --state INVALID -j DROP`))
-								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -j asg-.+`))
-								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A asg-.+ -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT`))
-								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A asg-.+ -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
-								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A asg-.+ -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
-								Expect(iptablesFilterRules()).ToNot(MatchRegexp(`-A asg-.+ -j REJECT --reject-with icmp-port-unreachable`))
+								Expect(iptablesFilterRules()).NotTo(MatchRegexp(`-A asg-.+ -p tcp -m state --state INVALID -j DROP`))
+								Expect(iptablesFilterRules()).NotTo(MatchRegexp(`-A netout--some-handle -j asg-.+`))
+								Expect(iptablesFilterRules()).NotTo(MatchRegexp(`-A asg-.+ -p icmp -m iprange --dst-range 0.0.0.0-255.255.255.255 -m icmp --icmp-type 0/0 -j ACCEPT`))
+								Expect(iptablesFilterRules()).NotTo(MatchRegexp(`-A asg-.+ -m iprange --dst-range 11.0.0.0-169.253.255.255 -j ACCEPT`))
+								Expect(iptablesFilterRules()).NotTo(MatchRegexp(`-A asg-.+ -m iprange --dst-range 0.0.0.0-9.255.255.255 -j ACCEPT`))
+								Expect(iptablesFilterRules()).NotTo(MatchRegexp(`-A asg-.+ -j REJECT --reject-with icmp-port-unreachable`))
 
 							})
 						})
@@ -724,12 +724,12 @@ var _ = Describe("VXLAN Policy Agent", func() {
 
 						It("cleans up the parent asg keeping the reject rule", func() {
 							Eventually(ip6tablesFilterRules, "4s", "1s").ShouldNot(MatchRegexp(`-A netout--some-handle -m state --state RELATED,ESTABLISHED -j ACCEPT`))
-							Expect(ip6tablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -p tcp -m state --state INVALID -j DROP`))
+							Expect(ip6tablesFilterRules()).NotTo(MatchRegexp(`-A netout--some-handle -p tcp -m state --state INVALID -j DROP`))
 							Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j asg-.+`))
-							Expect(ip6tablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -p ipv6-icmp -m iprange --dst-range 2000::-2999:: -m icmp6 --icmpv6-type 255/255 -j ACCEPT`))
-							Expect(ip6tablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -p ipv6-icmp -m iprange --dst-range 2001::-2001::ff -m icmp6 --icmpv6-type 0/0 -j ACCEPT`))
-							Expect(ip6tablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 2006::-2007:: -j ACCEPT`))
-							Expect(ip6tablesFilterRules()).ToNot(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 2005::-2006:: -j ACCEPT`))
+							Expect(ip6tablesFilterRules()).NotTo(MatchRegexp(`-A netout--some-handle -p ipv6-icmp -m iprange --dst-range 2000::-2999:: -m icmp6 --icmpv6-type 255/255 -j ACCEPT`))
+							Expect(ip6tablesFilterRules()).NotTo(MatchRegexp(`-A netout--some-handle -p ipv6-icmp -m iprange --dst-range 2001::-2001::ff -m icmp6 --icmpv6-type 0/0 -j ACCEPT`))
+							Expect(ip6tablesFilterRules()).NotTo(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 2006::-2007:: -j ACCEPT`))
+							Expect(ip6tablesFilterRules()).NotTo(MatchRegexp(`-A netout--some-handle -m iprange --dst-range 2005::-2006:: -j ACCEPT`))
 							Expect(ip6tablesFilterRules()).To(MatchRegexp(`-A netout--some-handle -j REJECT --reject-with icmp6-port-unreachable`))
 						})
 

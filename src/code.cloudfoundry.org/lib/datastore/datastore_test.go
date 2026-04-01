@@ -332,7 +332,7 @@ var _ = Describe("Datastore", func() {
 			Expect(file.(*os.File).Name()).To(Equal(dataFile.Name()))
 
 			_, actual := serializer.EncodeAndOverwriteArgsForCall(0)
-			Expect(actual).ToNot(HaveKey(handle))
+			Expect(actual).NotTo(HaveKey(handle))
 		})
 
 		It("updates the version", func() {

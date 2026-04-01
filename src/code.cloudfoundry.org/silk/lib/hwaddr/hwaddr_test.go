@@ -33,7 +33,7 @@ var _ = Describe("Hwaddr", func() {
 		)
 		It("returns a MAC addr with the given prefix, based on the provided IP", func() {
 			addr, err := hwaddr.GenerateHardwareAddr4(ipV4Addr, validPrefix)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 			// IP variables are []byte types, with len 16. IPv4 addrs only use the last 4 bytes for addr info
 			Expect(addr.String()).To(Equal(fmt.Sprintf("aa:bb:%02x:%02x:%02x:%02x", ipV4Addr[12], ipV4Addr[13], ipV4Addr[14], ipV4Addr[15])))
 		})

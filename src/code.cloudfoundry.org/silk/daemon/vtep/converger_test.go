@@ -41,7 +41,7 @@ var _ = Describe("Converger", func() {
 			fakeNetlink = &fakes.NetlinkAdapter{}
 
 			overlayNetworks, err = mcn.NewMultipleCIDRNetwork([]string{"10.255.0.0/16", "10.250.0.0/16"})
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			logger = lagertest.NewTestLogger("test")
 			localVTEP = net.Interface{

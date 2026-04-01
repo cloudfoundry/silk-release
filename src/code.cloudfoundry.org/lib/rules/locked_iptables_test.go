@@ -217,7 +217,7 @@ var _ = Describe("LockedIptables", func() {
 		})
 		It("locks and passes the correct parameters to iptables", func() {
 			err := lockedIPT.DeleteAfterRuleNum("some-table", "some-chain", 2)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			Expect(lock.LockCallCount()).To(Equal(1))
 			Expect(lock.UnlockCallCount()).To(Equal(1))
@@ -302,7 +302,7 @@ var _ = Describe("LockedIptables", func() {
 
 		It("locks and passes the correct parameters to iptables", func() {
 			err := lockedIPT.DeleteAfterRuleNumKeepReject("some-table", "some-chain", 2)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			Expect(lock.LockCallCount()).To(Equal(1))
 			Expect(lock.UnlockCallCount()).To(Equal(1))
@@ -400,7 +400,7 @@ var _ = Describe("LockedIptables", func() {
 
 			It("locks and passes the correct parameters to iptables", func() {
 				err := lockedIPT.DeleteAfterRuleNumKeepReject("some-table", "some-chain", 2)
-				Expect(err).ToNot(HaveOccurred())
+				Expect(err).NotTo(HaveOccurred())
 
 				Expect(lock.LockCallCount()).To(Equal(1))
 				Expect(lock.UnlockCallCount()).To(Equal(1))
@@ -493,7 +493,7 @@ var _ = Describe("LockedIptables", func() {
 			Expect(ipt.ListChainsCallCount()).To(Equal(1))
 			table := ipt.ListChainsArgsForCall(0)
 			Expect(table).To(Equal("some-table"))
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 		})
 		Context("when locking fails", func() {
 			BeforeEach(func() {

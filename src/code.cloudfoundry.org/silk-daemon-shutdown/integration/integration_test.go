@@ -130,10 +130,10 @@ var _ = Describe("Teardown", func() {
 			Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit(0))
 
 			rules := AllIPTablesRules("filter")
-			Expect(rules).ToNot(ContainElement(ContainSubstring("-N istio-ingress")))
-			Expect(rules).ToNot(ContainElement(ContainSubstring("-A OUTPUT -j istio-ingress")))
-			Expect(rules).ToNot(ContainElement(ContainSubstring(fmt.Sprintf("-A istio-ingress -o silk-vtep -j MARK --set-xmark 0x%s/0xffffffff", tag))))
-			Expect(rules).ToNot(ContainElement(ContainSubstring("-A istio-ingress -o silk-vtep -j ACCEPT")))
+			Expect(rules).NotTo(ContainElement(ContainSubstring("-N istio-ingress")))
+			Expect(rules).NotTo(ContainElement(ContainSubstring("-A OUTPUT -j istio-ingress")))
+			Expect(rules).NotTo(ContainElement(ContainSubstring(fmt.Sprintf("-A istio-ingress -o silk-vtep -j MARK --set-xmark 0x%s/0xffffffff", tag))))
+			Expect(rules).NotTo(ContainElement(ContainSubstring("-A istio-ingress -o silk-vtep -j ACCEPT")))
 		})
 	})
 
