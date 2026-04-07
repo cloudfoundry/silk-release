@@ -1953,6 +1953,12 @@ var _ = Describe("CniWrapperPlugin", func() {
 			// Stale Deleting entries block silk-daemon shutdown and IP allocation for new containers.
 			// Verify that store.Delete is always called, even when cleanup fails, by using defer.
 			It("still removes the container from the datastore even when cleanup fails", func() {
+				By("adding the container to the datastore")
+				addCmd := cniCommand("ADD", input)
+				addSession, err := gexec.Start(addCmd, GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(addSession).Should(gexec.Exit(0))
+
 				By("ensuring the container is in the datastore before DEL")
 				stateFileBytes, err := os.ReadFile(datastorePath)
 				Expect(err).NotTo(HaveOccurred())
@@ -1966,6 +1972,9 @@ var _ = Describe("CniWrapperPlugin", func() {
 				stateFileBytes, err = os.ReadFile(datastorePath)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(stateFileBytes)).NotTo(ContainSubstring(containerID))
+
+				// Reset the mock so JustAfterEach cleanup succeeds
+				policyAgentServer.CleanupOrphanedASGsReturnCode = 200
 			})
 		})
 	})
