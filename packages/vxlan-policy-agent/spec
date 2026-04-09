@@ -144,6 +144,7 @@ files:
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/grpcsync/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/grpcutil/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/idle/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/mem/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/metadata/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/pretty/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/google.golang.org/grpc/internal/proxyattributes/*.go # gosub-main-module
