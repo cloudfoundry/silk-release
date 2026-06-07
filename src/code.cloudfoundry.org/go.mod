@@ -1,21 +1,21 @@
 module code.cloudfoundry.org
 
-go 1.25.1
+go 1.25.8
 
 replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
 require (
-	code.cloudfoundry.org/cf-networking-helpers v0.87.0
-	code.cloudfoundry.org/debugserver v0.98.0
-	code.cloudfoundry.org/diego-logging-client v0.108.0
+	code.cloudfoundry.org/cf-networking-helpers v0.88.0
+	code.cloudfoundry.org/debugserver v0.100.0
+	code.cloudfoundry.org/diego-logging-client v0.110.0
 	code.cloudfoundry.org/executor v0.0.0-20241029001947-f0c9d0265505
-	code.cloudfoundry.org/filelock v0.66.0
-	code.cloudfoundry.org/garden v0.0.0-20260527025323-7fe1cefbd6e8
+	code.cloudfoundry.org/filelock v0.67.0
+	code.cloudfoundry.org/garden v0.0.0-20260605151806-250ac484dd9a
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
-	code.cloudfoundry.org/lager/v3 v3.71.0
-	code.cloudfoundry.org/policy_client v0.103.0
+	code.cloudfoundry.org/lager/v3 v3.72.0
+	code.cloudfoundry.org/policy_client v0.106.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.3.0
@@ -42,12 +42,12 @@ require (
 )
 
 require (
-	code.cloudfoundry.org/bbs v0.0.0-20260507155651-045cbe358842 // indirect
+	code.cloudfoundry.org/bbs v0.0.0-20260601194358-002fe939f0da // indirect
 	code.cloudfoundry.org/clock v1.1.0 // indirect
 	code.cloudfoundry.org/go-diodes v0.0.0-20260526122959-0284fcb5ac88 // indirect
 	code.cloudfoundry.org/locket v0.0.0-20230406154009-5e8522d975d2 // indirect
-	code.cloudfoundry.org/routing-info v0.0.0-20260501183949-5c4a4b8481be // indirect
-	code.cloudfoundry.org/tlsconfig v0.56.0 // indirect
+	code.cloudfoundry.org/routing-info v0.0.0-20260604155426-aa8a760bf6df // indirect
+	code.cloudfoundry.org/tlsconfig v0.58.0 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/alexflint/go-filemutex v1.3.0 // indirect
@@ -59,7 +59,7 @@ require (
 	github.com/go-test/deep v1.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20260507013755-92041b743c96 // indirect
+	github.com/google/pprof v0.0.0-20260604005048-7023385849c0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/jackc/pgx/v5 v5.5.5 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
@@ -67,7 +67,7 @@ require (
 	github.com/safchain/ethtool v0.7.0 // indirect
 	github.com/square/certstrap v1.3.0 // indirect
 	github.com/vishvananda/netns v0.0.5 // indirect
-	go.step.sm/crypto v0.81.1 // indirect
+	go.step.sm/crypto v0.82.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.52.0 // indirect
 	golang.org/x/mod v0.36.0 // indirect
