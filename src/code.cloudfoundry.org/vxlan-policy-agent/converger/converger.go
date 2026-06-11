@@ -8,7 +8,7 @@ import (
 	"time"
 
 	loggingclient "code.cloudfoundry.org/diego-logging-client"
-	"code.cloudfoundry.org/executor"
+	"code.cloudfoundry.org/bbs/models"
 	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
 	"github.com/hashicorp/go-multierror"
@@ -363,7 +363,7 @@ func (m *SinglePollCycle) CurrentlyAppliedChainNames() []string {
 	return chains
 }
 
-func (m *SinglePollCycle) sendAppLog(logConfig executor.LogConfig) {
+func (m *SinglePollCycle) sendAppLog(logConfig models.LogConfig) {
 	if logConfig.Guid == "" {
 		return
 	}
