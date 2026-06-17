@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
-	"code.cloudfoundry.org/executor"
+	"code.cloudfoundry.org/bbs/models"
 	"code.cloudfoundry.org/lib/datastore"
 	libfakes "code.cloudfoundry.org/lib/fakes"
 	"code.cloudfoundry.org/lib/rules"
@@ -1033,7 +1033,7 @@ var _ = Describe("Planner", func() {
 							rulesWithChain, err := policyPlanner.GetASGRulesAndChains("container-id-2")
 							Expect(err).NotTo(HaveOccurred())
 							Expect(rulesWithChain).To(HaveLen(1))
-							Expect(rulesWithChain[0].LogConfig).To(Equal(executor.LogConfig{}))
+							Expect(rulesWithChain[0].LogConfig).To(Equal(models.LogConfig{}))
 						})
 					})
 

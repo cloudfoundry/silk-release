@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
-	"code.cloudfoundry.org/executor"
+	"code.cloudfoundry.org/bbs/models"
 	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/lib/datastore"
 	"code.cloudfoundry.org/lib/rules"
@@ -21,7 +21,7 @@ type container struct {
 	Ports     string
 	IP        string
 	Purpose   string
-	LogConfig executor.LogConfig
+	LogConfig models.LogConfig
 }
 
 type VxlanPolicyPlanner struct {
@@ -117,7 +117,7 @@ func (p *VxlanPolicyPlanner) readFile(specifiedContainers ...string) ([]containe
 			purpose = ""
 		}
 
-		var logConfig executor.LogConfig
+		var logConfig models.LogConfig
 		logConfigStr, ok := containerMeta.Metadata["log_config"].(string)
 		if ok {
 			err := json.Unmarshal([]byte(logConfigStr), &logConfig)

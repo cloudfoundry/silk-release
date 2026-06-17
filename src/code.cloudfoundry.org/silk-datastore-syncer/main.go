@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"code.cloudfoundry.org/executor"
+	"code.cloudfoundry.org/bbs/models"
 	"code.cloudfoundry.org/filelock"
 	"code.cloudfoundry.org/garden"
 	"code.cloudfoundry.org/garden/client"
@@ -157,32 +157,32 @@ func makeDatastore() *datastore.Store {
 	return store
 }
 
-func getGardenLogConfig(c garden.Container) (executor.LogConfig, error) {
+func getGardenLogConfig(c garden.Container) (models.LogConfig, error) {
 	props, err := c.Properties()
 	if err != nil {
 		err = fmt.Errorf("Garden container: %s: error retrieving properties: %w", c.Handle(), err)
-		return executor.LogConfig{}, err
+		return models.LogConfig{}, err
 	}
 	logConfigStr, ok := props["log_config"]
-	var desiredLogConfig executor.LogConfig
+	var desiredLogConfig models.LogConfig
 	if ok {
 		err := json.Unmarshal([]byte(logConfigStr), &desiredLogConfig)
 		if err != nil {
 			err = fmt.Errorf("Garden container: %s unmarshalling container log config from datastore: %w", c.Handle(), err)
-			return executor.LogConfig{}, err
+			return models.LogConfig{}, err
 		}
 	}
 	return desiredLogConfig, nil
 }
 
-func getSilkLogConfig(sc datastore.Container) (executor.LogConfig, error) {
-	var actualLogConfig executor.LogConfig
+func getSilkLogConfig(sc datastore.Container) (models.LogConfig, error) {
+	var actualLogConfig models.LogConfig
 	logConfigStr, ok := sc.Metadata["log_config"].(string)
 	if ok {
 		err := json.Unmarshal([]byte(logConfigStr), &actualLogConfig)
 		if err != nil {
 			err = fmt.Errorf("Datastore container: %s: error unmarshalling container log config from datastore: %w", sc.Handle, err)
-			return executor.LogConfig{}, err
+			return models.LogConfig{}, err
 		}
 	}
 	return actualLogConfig, nil

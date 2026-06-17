@@ -6,7 +6,7 @@ import (
 	"regexp"
 
 	diegologgingclientfakes "code.cloudfoundry.org/diego-logging-client/testhelpers"
-	"code.cloudfoundry.org/executor"
+	"code.cloudfoundry.org/bbs/models"
 	"code.cloudfoundry.org/lib/rules"
 	"code.cloudfoundry.org/vxlan-policy-agent/converger"
 	"code.cloudfoundry.org/vxlan-policy-agent/converger/fakes"
@@ -348,7 +348,7 @@ var _ = Describe("Single Poll Cycle", func() {
 						ParentChain: "netout-1",
 						Name:        "asg-1234",
 					},
-					LogConfig: executor.LogConfig{
+					LogConfig: models.LogConfig{
 						Guid:       "some-app-guid-1",
 						Index:      1,
 						SourceName: "some-source-name",
@@ -361,7 +361,7 @@ var _ = Describe("Single Poll Cycle", func() {
 						ParentChain: "netout-2",
 						Name:        "asg-2345",
 					},
-					LogConfig: executor.LogConfig{
+					LogConfig: models.LogConfig{
 						Guid:       "some-app-guid-2",
 						Index:      2,
 						SourceName: "some-source-name",
@@ -374,7 +374,7 @@ var _ = Describe("Single Poll Cycle", func() {
 						ParentChain: "netout-3",
 						Name:        "asg-3456",
 					},
-					LogConfig: executor.LogConfig{
+					LogConfig: models.LogConfig{
 						Guid:       "some-app-guid-3",
 						Index:      3,
 						SourceName: "some-source-name",

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"code.cloudfoundry.org/executor"
+	"code.cloudfoundry.org/bbs/models"
 	"code.cloudfoundry.org/lib/rules"
 
 	"code.cloudfoundry.org/lager/v3"
@@ -99,7 +99,7 @@ type LiveChain struct {
 type RulesWithChain struct {
 	Chain     Chain
 	Rules     []rules.IPTablesRule
-	LogConfig executor.LogConfig
+	LogConfig models.LogConfig
 }
 
 type CleanupErr struct {
