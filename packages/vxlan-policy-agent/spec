@@ -23,7 +23,6 @@ files:
   - code.cloudfoundry.org/cni-wrapper-plugin/netrules/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/debugserver/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/diego-logging-client/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/executor/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/filelock/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/garden/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/go-diodes/*.go # gosub-main-module
@@ -40,7 +39,6 @@ files:
   - code.cloudfoundry.org/lib/rules/*.go # gosub-main-module
   - code.cloudfoundry.org/lib/serial/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/policy_client/*.go # gosub-main-module
-  - code.cloudfoundry.org/vendor/code.cloudfoundry.org/routing-info/internalroutes/*.go # gosub-main-module
   - code.cloudfoundry.org/silk/daemon/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/code.cloudfoundry.org/tlsconfig/*.go # gosub-main-module
   - code.cloudfoundry.org/vxlan-policy-agent/cmd/pre-start/*.go # gosub-main-module
