@@ -1,12 +1,15 @@
 package common
 
 import (
-	"code.cloudfoundry.org/lager/v3/lagerflags"
+	"errors"
 	"fmt"
-	"github.com/pkg/errors"
 	"math"
 	"net"
 	"time"
+
+	"code.cloudfoundry.org/lager/v3/lagerflags"
+	"github.com/vishvananda/netlink"
+	"golang.org/x/sys/unix"
 )
 
 type temporaryError interface {
@@ -52,12 +55,13 @@ func RetryWithBackoff[T any](interval int, maxRetries int, fn RetryableFunc[T]) 
 }
 
 func isRetryableError(err error) bool {
+	if errors.Is(err, netlink.ErrDumpInterrupted) || errors.Is(err, unix.EINTR) {
+		return true
+	}
 	var tempErr temporaryError
-
 	if errors.As(err, &tempErr) {
 		return tempErr.Temporary()
 	}
-
 	return false
 }
 
