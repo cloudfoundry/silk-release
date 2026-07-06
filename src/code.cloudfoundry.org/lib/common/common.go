@@ -1,15 +1,14 @@
 package common
 
 import (
-	"errors"
+	"code.cloudfoundry.org/lager/v3/lagerflags"
 	"fmt"
+	"github.com/pkg/errors"
+	"github.com/vishvananda/netlink"
+	"golang.org/x/sys/unix"
 	"math"
 	"net"
 	"time"
-
-	"code.cloudfoundry.org/lager/v3/lagerflags"
-	"github.com/vishvananda/netlink"
-	"golang.org/x/sys/unix"
 )
 
 type temporaryError interface {
