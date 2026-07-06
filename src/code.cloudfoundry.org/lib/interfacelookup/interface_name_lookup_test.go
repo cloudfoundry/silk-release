@@ -116,6 +116,24 @@ var _ = Describe("InterfaceNameLookup", func() {
 					Expect(netlinkAdapter.LinkListCallCount()).To(Equal(4))
 				})
 			})
+
+			Context("and the error is netlink ErrDumpInterrupted (does not implement Temporary()) the first 3 tries", func() {
+				BeforeEach(func() {
+					netlinkAdapter.LinkListReturnsOnCall(0, nil, netlink.ErrDumpInterrupted)
+					netlinkAdapter.LinkListReturnsOnCall(1, nil, netlink.ErrDumpInterrupted)
+					netlinkAdapter.LinkListReturnsOnCall(2, nil, netlink.ErrDumpInterrupted)
+					netlinkAdapter.LinkListReturnsOnCall(3, []netlink.Link{
+						netlinkLinkEth0,
+						netlinkLinkEth1,
+					}, nil)
+				})
+
+				It("succeeds after 4 retries", func() {
+					_, err := interfaceNameLookup.GetNameFromIP("10.0.0.0")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(netlinkAdapter.LinkListCallCount()).To(Equal(4))
+				})
+			})
 		})
 
 		Context("when it fails to fetch the AddrList", func() {
