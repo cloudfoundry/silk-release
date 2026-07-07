@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	loggingclient "code.cloudfoundry.org/diego-logging-client"
 	"code.cloudfoundry.org/bbs/models"
+	loggingclient "code.cloudfoundry.org/diego-logging-client"
 	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
 	"github.com/hashicorp/go-multierror"

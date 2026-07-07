@@ -5,8 +5,8 @@ import (
 	"sort"
 	"time"
 
-	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
 	"code.cloudfoundry.org/bbs/models"
+	"code.cloudfoundry.org/cni-wrapper-plugin/netrules"
 	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/lib/datastore"
 	"code.cloudfoundry.org/lib/rules"
