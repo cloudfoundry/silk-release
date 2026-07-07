@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"regexp"
 
-	diegologgingclientfakes "code.cloudfoundry.org/diego-logging-client/testhelpers"
 	"code.cloudfoundry.org/bbs/models"
+	diegologgingclientfakes "code.cloudfoundry.org/diego-logging-client/testhelpers"
 	"code.cloudfoundry.org/lib/rules"
 	"code.cloudfoundry.org/vxlan-policy-agent/converger"
 	"code.cloudfoundry.org/vxlan-policy-agent/converger/fakes"

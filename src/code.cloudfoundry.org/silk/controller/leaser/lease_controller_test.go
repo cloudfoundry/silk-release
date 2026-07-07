@@ -1,3 +1,7 @@
+// @AI-Generated
+// Generated in whole or in part by Cursor with a mix of different LLM models (Auto select mode)
+// Description:
+// 2026-07-07: Add regression test for RenewSubnetLease missing CIDR pool membership check (TNZGOV-12052)
 package leaser_test
 
 import (
@@ -384,6 +388,7 @@ var _ = Describe("LeaseController", func() {
 		var leaseToRenew controller.Lease
 		var lastRenewedAt int64
 		BeforeEach(func() {
+			leaseController.CIDRPool = cidrPool
 			leaseToRenew = controller.Lease{
 				UnderlayIP:          "10.244.11.22",
 				OverlaySubnet:       "10.255.33.0/24",
@@ -433,6 +438,7 @@ var _ = Describe("LeaseController", func() {
 		Context("when the existing lease does not exist", func() {
 			BeforeEach(func() {
 				databaseHandler.LeaseForUnderlayIPReturns(nil, nil)
+				cidrPool.IsMemberReturns(true)
 			})
 			It("adds the entry and logs the success", func() {
 				err := leaseController.RenewSubnetLease(leaseToRenew)
@@ -455,6 +461,19 @@ var _ = Describe("LeaseController", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(loggedLease).To(MatchJSON(`{"underlay_ip":"10.244.11.22","overlay_subnet":"10.255.33.0/24","overlay_hardware_addr":"ee:ee:0a:ff:21:00"}`))
 				Expect(int64(logger.Logs()[0].Data["last_renewed_at"].(float64))).To(Equal(lastRenewedAt))
+			})
+
+			Context("when the overlay subnet is not in the CIDR pool", func() {
+				BeforeEach(func() {
+					cidrPool.IsMemberReturns(false)
+				})
+				It("returns a non-retriable error and does not add an entry", func() {
+					err := leaseController.RenewSubnetLease(leaseToRenew)
+					Expect(err).To(HaveOccurred())
+					Expect(err).To(BeAssignableToTypeOf(controller.NonRetriableError("")))
+					Expect(err).To(MatchError("overlay subnet not in pool"))
+					Expect(databaseHandler.AddEntryCallCount()).To(Equal(0))
+				})
 			})
 
 			Context("when adding the entry fails", func() {

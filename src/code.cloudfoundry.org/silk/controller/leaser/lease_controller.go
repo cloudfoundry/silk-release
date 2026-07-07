@@ -1,3 +1,7 @@
+// @AI-Generated
+// Generated in whole or in part by Cursor with a mix of different LLM models (Auto select mode)
+// Description:
+// 2026-07-07: Add CIDRPool.IsMember guard in RenewSubnetLease to fix TNZGOV-12052 overlay subnet pool check bypass
 package leaser
 
 import (
@@ -112,6 +116,9 @@ func (c *LeaseController) RenewSubnetLease(lease controller.Lease) error {
 		return fmt.Errorf("getting lease for underlay ip: %s", err)
 	}
 	if existingLease == nil {
+		if !c.CIDRPool.IsMember(lease.OverlaySubnet) {
+			return controller.NonRetriableError("overlay subnet not in pool")
+		}
 		err := c.DatabaseHandler.AddEntry(lease)
 		if err != nil {
 			return controller.NonRetriableError(err.Error())
