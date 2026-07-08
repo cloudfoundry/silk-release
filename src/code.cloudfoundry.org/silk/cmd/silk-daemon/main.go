@@ -229,7 +229,10 @@ func mainWithError() error {
 	monitor := ifrit.Invoke(sigmon.New(group))
 
 	err = <-monitor.Wait()
-	return err
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func acquireLease(logger lager.Logger, client *controller.Client, vtepConfigCreator *vtep.ConfigCreator, vtepFactory *vtep.Factory, cfg config.Config) (controller.Lease, error) {
