@@ -8,14 +8,14 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
 require (
 	code.cloudfoundry.org/bbs/models v1.8.0
-	code.cloudfoundry.org/cf-networking-helpers v0.94.0
-	code.cloudfoundry.org/debugserver v0.106.0
-	code.cloudfoundry.org/diego-logging-client v0.116.0
-	code.cloudfoundry.org/filelock v0.73.0
-	code.cloudfoundry.org/garden v0.0.0-20260715020742-79c9837591af
+	code.cloudfoundry.org/cf-networking-helpers v0.95.0
+	code.cloudfoundry.org/debugserver v0.107.0
+	code.cloudfoundry.org/diego-logging-client v0.117.0
+	code.cloudfoundry.org/filelock v0.74.0
+	code.cloudfoundry.org/garden v0.0.0-20260722020902-0d62a2590a0f
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
-	code.cloudfoundry.org/lager/v3 v3.78.0
-	code.cloudfoundry.org/policy_client v0.112.0
+	code.cloudfoundry.org/lager/v3 v3.79.0
+	code.cloudfoundry.org/policy_client v0.113.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.3.0
@@ -44,21 +44,24 @@ require (
 require (
 	code.cloudfoundry.org/bbs/encryption v1.9.0 // indirect
 	code.cloudfoundry.org/bbs/format v1.9.0 // indirect
-	code.cloudfoundry.org/go-diodes v0.0.0-20260706112827-32a910f327a2 // indirect
-	code.cloudfoundry.org/tlsconfig v0.62.0 // indirect
+	code.cloudfoundry.org/go-diodes v0.0.0-20260720065427-59f65622c841 // indirect
+	code.cloudfoundry.org/tlsconfig v0.63.0 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/alexflint/go-filemutex v1.3.0 // indirect
 	github.com/bmizerany/pat v0.0.0-20210406213842-e4b6760bdd6f // indirect
-	github.com/cloudfoundry/sonde-go v0.0.0-20260706112804-cd2c61a47573 // indirect
+	github.com/cloudfoundry/sonde-go v0.0.0-20260720065356-6728909ed72b // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
-	github.com/go-logr/logr v1.4.3 // indirect
+	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
+	github.com/google/nftables v0.3.0 // indirect
 	github.com/google/pprof v0.0.0-20260709232956-b9395ee17fa0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
+	github.com/mdlayher/netlink v1.11.2 // indirect
+	github.com/mdlayher/socket v0.6.1 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/openzipkin/zipkin-go v0.4.3 // indirect
 	github.com/safchain/ethtool v0.7.0 // indirect
@@ -72,11 +75,11 @@ require (
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
 	golang.org/x/tools v0.48.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260715232425-e75dac1f907d // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260724162435-b2f20204f0df // indirect
 	google.golang.org/grpc v1.82.1 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	sigs.k8s.io/knftables v0.0.21 // indirect
+	sigs.k8s.io/knftables v0.0.22 // indirect
 )
