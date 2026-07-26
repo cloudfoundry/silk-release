@@ -63,10 +63,21 @@ files:
   - code.cloudfoundry.org/vendor/github.com/containernetworking/plugins/plugins/ipam/host-local/backend/disk/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/plugins/plugins/meta/bandwidth/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/coreos/go-iptables/iptables/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/google/nftables/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/google/nftables/alignedbuff/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/google/nftables/binaryutil/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/google/nftables/expr/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/google/nftables/internal/parseexprfunc/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/google/nftables/userdata/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/google/nftables/xt/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/google/shlex/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/google/uuid/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/hashicorp/errwrap/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/hashicorp/go-multierror/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/mdlayher/netlink/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/mdlayher/netlink/nlenc/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/mdlayher/netlink/nltest/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/mdlayher/socket/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/openzipkin/zipkin-go/idgenerator/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/openzipkin/zipkin-go/model/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/pkg/errors/*.go # gosub-main-module
@@ -74,6 +85,8 @@ files:
   - code.cloudfoundry.org/vendor/github.com/vishvananda/netlink/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/vishvananda/netlink/nl/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/vishvananda/netns/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/golang.org/x/net/bpf/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/golang.org/x/sync/errgroup/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sys/unix/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sys/unix/*.s # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sys/windows/*.go # gosub-main-module
