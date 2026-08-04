@@ -6,5 +6,12 @@ source /var/vcap/packages/silk-ctl-utils/ctl_util.sh
 
 URL=127.0.0.1:<%= p("listen_port") %>
 TIMEOUT=20
-exit $(wait_for_server_to_become_healthy "${URL}" "${TIMEOUT}")
+wait_for_server_to_become_healthy "${URL}" "${TIMEOUT}"
+exit_code=$?
+
+<% if p('disable_checksum_offloading') %>
+/usr/sbin/ethtool -K silk-vtep tx-checksum-ip-generic off
+<% end %>
+
+exit $exit_code
 <% end %>
