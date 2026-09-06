@@ -40,6 +40,8 @@ files:
   - code.cloudfoundry.org/silk/lib/hwaddr/*.go # gosub-main-module
   - code.cloudfoundry.org/silk/lib/serial/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/alexflint/go-filemutex/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/cespare/xxhash/v2/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/github.com/cespare/xxhash/v2/*.s # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/cni/pkg/invoke/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/cni/pkg/ns/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/containernetworking/cni/pkg/skel/*.go # gosub-main-module
@@ -85,6 +87,18 @@ files:
   - code.cloudfoundry.org/vendor/github.com/vishvananda/netlink/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/vishvananda/netlink/nl/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/github.com/vishvananda/netns/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/go.opentelemetry.io/otel/attribute/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/go.opentelemetry.io/otel/attribute/internal/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/go.opentelemetry.io/otel/attribute/internal/xxhash/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/go.opentelemetry.io/otel/baggage/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/go.opentelemetry.io/otel/codes/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/go.opentelemetry.io/otel/internal/baggage/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/go.opentelemetry.io/otel/internal/errorhandler/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/go.opentelemetry.io/otel/propagation/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/go.opentelemetry.io/otel/semconv/v1.43.0/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/go.opentelemetry.io/otel/trace/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/go.opentelemetry.io/otel/trace/embedded/*.go # gosub-main-module
+  - code.cloudfoundry.org/vendor/go.opentelemetry.io/otel/trace/internal/telemetry/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/net/bpf/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sync/errgroup/*.go # gosub-main-module
   - code.cloudfoundry.org/vendor/golang.org/x/sys/unix/*.go # gosub-main-module
