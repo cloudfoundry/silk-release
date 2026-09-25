@@ -59,14 +59,14 @@ var _ = Describe("Force Orphanded ASGs Cleanup", func() {
 		Expect(response.Code).To(Equal(400))
 		Expect(io.ReadAll(response.Body)).To(Equal([]byte("no container specified")))
 	})
-	It("returns 500 response when the poll cycle func returns an error", func() {
+	It("returns 200 response when the poll cycle func returns an error", func() {
 		handler.ASGCleanupFunc = func(container string) error {
 			return errors.New("failure")
 		}
 
 		handler.ServeHTTP(response, request)
-		Expect(response.Code).To(Equal(500))
-		Expect(io.ReadAll(response.Body)).To(Equal([]byte("failed to cleanup ASGs for container some-guid: failure")))
+		Expect(response.Code).To(Equal(200))
+		Expect(io.ReadAll(response.Body)).To(Equal([]byte("deferred cleanup of ASGs for container some-guid: will retry on next poll cycle (failure)")))
 	})
 
 	Context("when the ASGCleanupFunc returns multierror", func() {
@@ -81,9 +81,9 @@ var _ = Describe("Force Orphanded ASGs Cleanup", func() {
 			handler.ServeHTTP(response, request)
 		})
 
-		It("returns 500 response with all errors", func() {
-			Expect(response.Code).To(Equal(500))
-			Expect(io.ReadAll(response.Body)).To(Equal([]byte("failed to cleanup ASGs for container some-guid: 2 errors occurred:\n\t* failure1\n\t* failure2\n\n")))
+		It("returns 200 response with all errors", func() {
+			Expect(response.Code).To(Equal(200))
+			Expect(io.ReadAll(response.Body)).To(Equal([]byte("deferred cleanup of ASGs for container some-guid: will retry on next poll cycle (2 errors occurred:\n\t* failure1\n\t* failure2\n\n)")))
 		})
 	})
 })
