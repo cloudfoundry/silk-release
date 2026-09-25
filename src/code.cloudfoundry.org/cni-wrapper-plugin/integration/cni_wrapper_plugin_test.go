@@ -1859,20 +1859,19 @@ var _ = Describe("CniWrapperPlugin", func() {
 			})
 		})
 
-		Context("when the policy agent asg updater returns an error", func() {
+		Context("when the policy agent asg updater returns a cleanup error (deferred retry)", func() {
 			JustAfterEach(func() {
 				policyAgentServer.CleanupOrphanedASGsReturnCode = 200
 				policyAgentServer.CleanupOrphanedASGsReturnErrorMessage = ""
 			})
 
-			It("returns an error", func() {
-				policyAgentServer.CleanupOrphanedASGsReturnCode = 500
-				policyAgentServer.CleanupOrphanedASGsReturnErrorMessage = "an error occurred in the vpa"
+			It("succeeds (exit 0) because the handler defers cleanup and always returns 200", func() {
+				policyAgentServer.CleanupOrphanedASGsReturnCode = 200
+				policyAgentServer.CleanupOrphanedASGsReturnErrorMessage = "deferred cleanup of ASGs for container some-container-id: will retry on next poll cycle (an error occurred in the vpa)"
 
 				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 				Expect(err).NotTo(HaveOccurred())
-				Eventually(session).Should(gexec.Exit(1))
-				Expect(session.Out).Should(gbytes.Say(".*asg cleanup returned 500 with message: an error occurred in the vpa.*"))
+				Eventually(session).Should(gexec.Exit(0))
 
 				Expect(policyAgentServer.CleanupOrphanedASGsEndpointCallCount).To(Equal(1))
 			})

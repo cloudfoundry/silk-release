@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"code.cloudfoundry.org/bbs/models"
@@ -19,6 +20,12 @@ const (
 	ContainerPrefixToStrip = `check-`
 	JumpRuleRegex          = `-A\s+%s\s+.*-[gj]\s+([^\s]+)`
 	chainAlreadyExistsMsg  = "chain already exists"
+
+	// consecutiveFailuresErrorThreshold is the number of consecutive deleteChain
+	// failures on the same chain after which the log level escalates to Error, so
+	// operators on Error-only log pipelines get a signal without polling the
+	// Info-level consecutive-failures field.
+	consecutiveFailuresErrorThreshold = 10
 )
 
 type Timestamper struct{}
@@ -32,20 +39,60 @@ type TimeStamper interface {
 	CurrentTime() int64
 }
 
+type chainFailureState struct {
+	FirstFailedAt       int64 // microseconds, from TimeStamper.CurrentTime()
+	ConsecutiveFailures int
+}
+
 type Enforcer struct {
-	Logger      lager.Logger
-	timestamper TimeStamper
-	iptables    rules.IPTablesAdapter
-	conf        EnforcerConfig
+	Logger          lager.Logger
+	timestamper     TimeStamper
+	iptables        rules.IPTablesAdapter
+	conf            EnforcerConfig
+	chainFailuresMu sync.Mutex
+	// chainFailures is in-process state only; it resets to empty on every agent restart.
+	chainFailures map[LiveChain]*chainFailureState
 }
 
 func NewEnforcer(logger lager.Logger, timestamper TimeStamper, ipt rules.IPTablesAdapter, conf EnforcerConfig) *Enforcer {
 	return &Enforcer{
-		Logger:      logger,
-		timestamper: timestamper,
-		iptables:    ipt,
-		conf:        conf,
+		Logger:        logger,
+		timestamper:   timestamper,
+		iptables:      ipt,
+		conf:          conf,
+		chainFailures: make(map[LiveChain]*chainFailureState),
 	}
+}
+
+func (e *Enforcer) recordChainFailure(chain LiveChain) (firstFailedAt int64, consecutiveFailures int) {
+	e.chainFailuresMu.Lock()
+	defer e.chainFailuresMu.Unlock()
+	state, ok := e.chainFailures[chain]
+	if !ok {
+		state = &chainFailureState{FirstFailedAt: e.timestamper.CurrentTime()}
+		e.chainFailures[chain] = state
+	}
+	state.ConsecutiveFailures++
+	return state.FirstFailedAt, state.ConsecutiveFailures
+}
+
+func (e *Enforcer) clearChainFailure(chain LiveChain) {
+	e.chainFailuresMu.Lock()
+	defer e.chainFailuresMu.Unlock()
+	delete(e.chainFailures, chain)
+}
+
+func (e *Enforcer) logChainFailure(logger lager.Logger, session string, err error, firstFailedAt int64, consecutiveFailures int) {
+	data := lager.Data{
+		"error":                err,
+		"first-failed-at":      firstFailedAt,
+		"consecutive-failures": consecutiveFailures,
+	}
+	if consecutiveFailures >= consecutiveFailuresErrorThreshold {
+		logger.Error(session, err, data)
+		return
+	}
+	logger.Info(session, data)
 }
 
 type EnforcerConfig struct {
@@ -173,8 +220,11 @@ func (e *Enforcer) CleanChainsMatching(regex *regexp.Regexp, desiredChains []Liv
 		e.Logger.Debug("deleting-chain-in-enforce-chains-matching", lager.Data{"chain": chain})
 		err = e.deleteChain(e.Logger, chain, "")
 		if err != nil {
-			e.Logger.Error(fmt.Sprintf("delete-chain-%s-from-%s", chain.Name, chain.Table), err)
+			firstFailedAt, consecutiveFailures := e.recordChainFailure(chain)
+			e.logChainFailure(e.Logger, fmt.Sprintf("delete-chain-%s-from-%s", chain.Name, chain.Table), err, firstFailedAt, consecutiveFailures)
 			return []LiveChain{}, fmt.Errorf("deleting chain %s from table %s: %s", chain.Name, chain.Table, err)
+		} else {
+			e.clearChainFailure(chain)
 		}
 	}
 
@@ -188,8 +238,11 @@ func (e *Enforcer) CleanupChain(chain LiveChain) error {
 		e.Logger.Debug("deleting-chain", lager.Data{"name": chain.Name, "table": chain.Table})
 		err := e.deleteChain(e.Logger, LiveChain{Table: chain.Table, Name: chain.Name}, "")
 		if err != nil {
-			e.Logger.Error(fmt.Sprintf("delete-chain-%s-from-%s", chain.Name, chain.Table), err)
+			firstFailedAt, consecutiveFailures := e.recordChainFailure(chain)
+			e.logChainFailure(e.Logger, fmt.Sprintf("delete-chain-%s-from-%s", chain.Name, chain.Table), err, firstFailedAt, consecutiveFailures)
 			return fmt.Errorf("deleting chain %s from table %s: %s", chain.Name, chain.Table, err)
+		} else {
+			e.clearChainFailure(chain)
 		}
 	}
 
@@ -199,8 +252,11 @@ func (e *Enforcer) CleanupChain(chain LiveChain) error {
 		e.Logger.Debug("deleting-chain", lager.Data{"name": candidateChainName, "table": chain.Table})
 		err := e.deleteChain(e.Logger, LiveChain{Table: chain.Table, Name: candidateChainName}, "")
 		if err != nil {
-			e.Logger.Error(fmt.Sprintf("delete-chain-%s-from-%s", candidateChainName, chain.Table), err)
+			firstFailedAt, consecutiveFailures := e.recordChainFailure(chain)
+			e.logChainFailure(e.Logger, fmt.Sprintf("delete-chain-%s-from-%s", candidateChainName, chain.Table), err, firstFailedAt, consecutiveFailures)
 			return fmt.Errorf("deleting chain %s from table %s: %s", candidateChainName, chain.Table, err)
+		} else {
+			e.clearChainFailure(chain)
 		}
 	}
 
