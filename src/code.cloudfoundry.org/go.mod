@@ -10,15 +10,15 @@ replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimesche
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
 require (
-	code.cloudfoundry.org/bbs/models v1.13.0
-	code.cloudfoundry.org/cf-networking-helpers v0.96.0
-	code.cloudfoundry.org/debugserver v0.115.0
-	code.cloudfoundry.org/diego-logging-client v0.125.0
-	code.cloudfoundry.org/filelock v0.81.0
-	code.cloudfoundry.org/garden v0.4.0
+	code.cloudfoundry.org/bbs/models v1.14.0
+	code.cloudfoundry.org/cf-networking-helpers v0.98.0
+	code.cloudfoundry.org/debugserver v0.116.0
+	code.cloudfoundry.org/diego-logging-client v0.126.0
+	code.cloudfoundry.org/filelock v0.82.0
+	code.cloudfoundry.org/garden v0.5.0
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
-	code.cloudfoundry.org/lager/v3 v3.87.0
-	code.cloudfoundry.org/policy_client v0.120.0
+	code.cloudfoundry.org/lager/v3 v3.88.0
+	code.cloudfoundry.org/policy_client v0.121.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.3.1
@@ -32,7 +32,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.12.3
 	github.com/onsi/ginkgo/v2 v2.33.0
-	github.com/onsi/gomega v1.43.1
+	github.com/onsi/gomega v1.44.0
 	github.com/pivotal-cf-experimental/gomegamatchers v0.0.0-20180326192815-e36bfcc98c3a
 	github.com/pkg/errors v0.9.1
 	github.com/rubenv/sql-migrate v1.8.1
@@ -45,10 +45,10 @@ require (
 )
 
 require (
-	code.cloudfoundry.org/bbs/encryption v1.14.0 // indirect
-	code.cloudfoundry.org/bbs/format v1.12.0 // indirect
-	code.cloudfoundry.org/go-diodes v0.0.0-20260914115851-7fd03ae06e34 // indirect
-	code.cloudfoundry.org/tlsconfig v0.67.0 // indirect
+	code.cloudfoundry.org/bbs/encryption v1.16.0 // indirect
+	code.cloudfoundry.org/bbs/format v1.13.0 // indirect
+	code.cloudfoundry.org/go-diodes v0.0.0-20260921100641-e75e32521ad8 // indirect
+	code.cloudfoundry.org/tlsconfig v0.68.0 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/alexflint/go-filemutex v1.3.0 // indirect
@@ -61,7 +61,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/nftables v0.3.0 // indirect
-	github.com/google/pprof v0.0.0-20260906184651-6331bc6350fe // indirect
+	github.com/google/pprof v0.0.0-20260926063103-aaccee046517 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/mdlayher/netlink v1.11.2 // indirect
 	github.com/mdlayher/socket v0.7.0 // indirect
@@ -80,7 +80,7 @@ require (
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
 	golang.org/x/tools v0.50.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260918162117-cecb64721679 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260921155816-b14227669459 // indirect
 	google.golang.org/grpc v1.84.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
