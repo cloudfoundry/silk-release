@@ -25,11 +25,13 @@ func (h *ForceOrphanedASGsCleanup) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		w.Write([]byte("no container specified"))
 		return
 	}
+	// Deliberately return 200 on cleanup error: cni-wrapper-plugin's cmdDel must not be blocked
+	// by a transient cleanup failure — the periodic SyncASGsForContainers poll cycle retries and
+	// eventually clears it.
 	if err := h.ASGCleanupFunc(container); err != nil {
-		errorMessage := fmt.Sprintf("failed to cleanup ASGs for container %s: %s", container, err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusOK)
 		// #nosec G104 - ignore errors when writing HTTP responses so we don't spam our logs during a DoS
-		w.Write([]byte(errorMessage))
+		w.Write([]byte(fmt.Sprintf("deferred cleanup of ASGs for container %s: will retry on next poll cycle (%s)", container, err)))
 		return
 	}
 
