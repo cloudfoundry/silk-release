@@ -10,11 +10,16 @@ import (
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer/fakes"
 
+	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/lager/v3/lagertest"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 )
+
+// escalationWindowMicros is the 5 minute escalation window, in the microseconds the
+// TimeStamper reports. It is spelled out here so a change to the window fails these tests.
+const escalationWindowMicros int64 = 5 * 60 * 1000 * 1000
 
 var _ = Describe("Enforcer", func() {
 	Describe("EnforceOnChain", func() {
@@ -1228,6 +1233,511 @@ var _ = Describe("Enforcer", func() {
 			handle = "check-65708531-85b6-4e27-4435-eacf293475c7"
 			asgChainName = enforcer.ASGChainName(handle)
 			Expect(asgChainName).To(Equal("asg-6570853185b64e274435"))
+		})
+	})
+
+	// Tasks 9–11: per-chain failure tracking driven through CleanChainsMatching
+	Describe("chain failure tracking via CleanChainsMatching", func() {
+		var (
+			iptables     *libfakes.IPTablesAdapter
+			timestamper  *fakes.TimeStamper
+			logger       *lagertest.TestLogger
+			ruleEnforcer *enforcer.Enforcer
+			asgRegex     *regexp.Regexp
+			orphanChain  string
+		)
+
+		BeforeEach(func() {
+			timestamper = &fakes.TimeStamper{}
+			logger = lagertest.NewTestLogger("test")
+			iptables = &libfakes.IPTablesAdapter{}
+			timestamper.CurrentTimeReturns(42)
+			ruleEnforcer = enforcer.NewEnforcer(logger, timestamper, iptables, enforcer.EnforcerConfig{
+				DisableContainerNetworkPolicy: false,
+				OverlayNetwork:                []string{"10.10.0.0/16"},
+			})
+			asgRegex = regexp.MustCompile(enforcer.ASGChainRegex)
+			// Return no rules so deleteChain has no jump-target recursion.
+			iptables.ListReturns([]string{}, nil)
+			orphanChain = "asg-eeeee01645708469990518"
+		})
+
+		// Task 9 — recordChainFailure: first-failed-at set on first failure, consecutive-failures increments
+		Context("when deleteChain fails repeatedly for the same chain", func() {
+			BeforeEach(func() {
+				iptables.ListChainsReturns([]string{orphanChain}, nil)
+				iptables.DeleteChainReturns(errors.New("delete-failed"))
+			})
+
+			It("records first-failed-at once and increments consecutive-failures on each repeated failure", func() {
+				msg := fmt.Sprintf("test.delete-chain-%s-from-filter", orphanChain)
+
+				By("first failure: consecutive-failures=1, first-failed-at=42")
+				_, err := ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+				Expect(err).To(HaveOccurred())
+
+				var firstFailedAt, consecutiveFailures interface{}
+				for _, l := range logger.Logs() {
+					if l.Message == msg {
+						firstFailedAt = l.Data["first-failed-at"]
+						consecutiveFailures = l.Data["consecutive-failures"]
+					}
+				}
+				Expect(firstFailedAt).To(BeEquivalentTo(42))
+				Expect(consecutiveFailures).To(BeEquivalentTo(1))
+
+				By("second failure for same chain: consecutive-failures=2, first-failed-at still 42")
+				_, err = ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+				Expect(err).To(HaveOccurred())
+
+				for _, l := range logger.Logs() {
+					if l.Message == msg {
+						firstFailedAt = l.Data["first-failed-at"]
+						consecutiveFailures = l.Data["consecutive-failures"]
+					}
+				}
+				Expect(firstFailedAt).To(BeEquivalentTo(42))
+				Expect(consecutiveFailures).To(BeEquivalentTo(2))
+			})
+		})
+
+		Context("when deleteChain keeps failing for the same chain up to the escalation window", func() {
+			BeforeEach(func() {
+				iptables.ListChainsReturns([]string{orphanChain}, nil)
+				iptables.DeleteChainReturns(errors.New("delete-failed"))
+			})
+
+			It("returns a deferred error within the window and a plain error once the window has elapsed", func() {
+				for i, now := range []int64{42, 42 + 1000, escalationWindowMicros + 41} {
+					timestamper.CurrentTimeReturns(now)
+					_, err := ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+					Expect(err).To(HaveOccurred(), "failure %d", i+1)
+					Expect(enforcer.IsChainDeleteDeferred(err)).To(BeTrue(), "failure %d", i+1)
+					Expect(err).To(MatchError(ContainSubstring("delete-failed")))
+				}
+
+				timestamper.CurrentTimeReturns(42 + escalationWindowMicros)
+				_, err := ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+				Expect(err).To(HaveOccurred())
+				Expect(enforcer.IsChainDeleteDeferred(err)).To(BeFalse())
+				Expect(err).To(MatchError(ContainSubstring("delete-failed")))
+			})
+		})
+
+		// Task 10 — clearChainFailure: failure state cleared on success; subsequent failure starts fresh
+		Context("when deleteChain fails, then succeeds, then fails again for the same chain", func() {
+			BeforeEach(func() {
+				iptables.ListChainsReturns([]string{orphanChain}, nil)
+				iptables.DeleteChainReturnsOnCall(0, errors.New("delete-failed")) // first call: fail
+				// second call (index 1): default nil → success
+				iptables.DeleteChainReturnsOnCall(2, errors.New("delete-failed")) // third call: fail
+			})
+
+			It("clears failure state on success and restarts fresh on a subsequent failure", func() {
+				msg := fmt.Sprintf("test.delete-chain-%s-from-filter", orphanChain)
+
+				By("first failure: consecutive-failures=1, first-failed-at=42")
+				_, _ = ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+
+				var firstFailedAt, consecutiveFailures interface{}
+				for _, l := range logger.Logs() {
+					if l.Message == msg {
+						firstFailedAt = l.Data["first-failed-at"]
+						consecutiveFailures = l.Data["consecutive-failures"]
+					}
+				}
+				Expect(firstFailedAt).To(BeEquivalentTo(42))
+				Expect(consecutiveFailures).To(BeEquivalentTo(1))
+
+				By("success: failure state cleared (no new Info log)")
+				_, err := ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("subsequent failure with new timestamp: consecutive-failures resets to 1, first-failed-at=100")
+				timestamper.CurrentTimeReturns(100)
+				_, _ = ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+
+				for _, l := range logger.Logs() {
+					if l.Message == msg {
+						firstFailedAt = l.Data["first-failed-at"]
+						consecutiveFailures = l.Data["consecutive-failures"]
+					}
+				}
+				Expect(firstFailedAt).To(BeEquivalentTo(100))
+				Expect(consecutiveFailures).To(BeEquivalentTo(1))
+			})
+		})
+
+		// Task 11 — CleanChainsMatching multi-chain: a chain that fails to delete does not block the others
+		Context("when one of two orphaned chains cannot be deleted", func() {
+			var chain2 string
+
+			BeforeEach(func() {
+				chain2 = "asg-fffff01645708469990518"
+				iptables.ListChainsReturns([]string{orphanChain, chain2}, nil)
+				iptables.DeleteChainStub = func(table, chain string) error {
+					if chain == orphanChain {
+						return errors.New("delete-failed")
+					}
+					return nil
+				}
+			})
+
+			It("still deletes the other chain and returns it alongside a deferred error", func() {
+				deleted, err := ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+
+				Expect(err).To(MatchError(fmt.Sprintf("deleting chain %s from table filter: delete old chain: delete-failed", orphanChain)))
+				Expect(enforcer.IsChainDeleteDeferred(err)).To(BeTrue())
+				Expect(deleted).To(Equal([]enforcer.LiveChain{{Table: "filter", Name: chain2}}))
+				Expect(iptables.DeleteChainCallCount()).To(Equal(2))
+			})
+
+			It("tracks failures per chain across cycles and clears the chain that succeeded", func() {
+				msg := fmt.Sprintf("test.delete-chain-%s-from-filter", orphanChain)
+
+				for i := 1; i <= 2; i++ {
+					_, _ = ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+				}
+
+				var consecutiveFailures, loggedErr interface{}
+				for _, l := range logger.Logs() {
+					if l.Message == msg {
+						consecutiveFailures = l.Data["consecutive-failures"]
+						loggedErr = l.Data["error"]
+					}
+				}
+				Expect(consecutiveFailures).To(BeEquivalentTo(2))
+				Expect(loggedErr).To(ContainSubstring("delete-failed"), "the Info log must carry the error text")
+
+				for _, l := range logger.Logs() {
+					Expect(l.Message).NotTo(Equal(fmt.Sprintf("test.delete-chain-%s-from-filter", chain2)))
+				}
+			})
+		})
+
+		Context("when several orphaned chains cannot be deleted", func() {
+			BeforeEach(func() {
+				iptables.ListChainsReturns([]string{orphanChain, "asg-fffff01645708469990518"}, nil)
+				iptables.DeleteChainReturns(errors.New("delete-failed"))
+			})
+
+			It("reports every failed chain and returns nothing as deleted", func() {
+				deleted, err := ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+
+				Expect(err).To(MatchError(ContainSubstring(orphanChain)))
+				Expect(err).To(MatchError(ContainSubstring("asg-fffff01645708469990518")))
+				Expect(enforcer.IsChainDeleteDeferred(err)).To(BeTrue())
+				Expect(deleted).To(BeEmpty())
+			})
+		})
+
+		Context("when one failing chain has been failing past the escalation window and another fails for the first time", func() {
+			var newChain string
+
+			BeforeEach(func() {
+				newChain = "asg-fffff01645708469990518"
+				iptables.ListChainsReturns([]string{orphanChain}, nil)
+				iptables.DeleteChainReturns(errors.New("delete-failed"))
+			})
+
+			It("returns a plain error for the escalated chain only", func() {
+				_, err := ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+				Expect(enforcer.IsChainDeleteDeferred(err)).To(BeTrue())
+
+				timestamper.CurrentTimeReturns(42 + escalationWindowMicros)
+				iptables.ListChainsReturns([]string{orphanChain, newChain}, nil)
+				_, err = ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+
+				Expect(err).To(HaveOccurred())
+				Expect(enforcer.IsChainDeleteDeferred(err)).To(BeFalse())
+				Expect(err).To(MatchError(ContainSubstring(orphanChain)))
+				Expect(err.Error()).NotTo(ContainSubstring(newChain))
+
+				By("still logging the first failure of the new chain at Info")
+				var level lager.LogLevel
+				for _, l := range logger.Logs() {
+					if l.Message == fmt.Sprintf("test.delete-chain-%s-from-filter", newChain) {
+						level = l.LogLevel
+					}
+				}
+				Expect(level).To(Equal(lager.INFO))
+			})
+		})
+
+		// Escalation: once a chain has been failing for the whole escalation window, the log level escalates to Error
+		Context("when deleteChain keeps failing past the escalation window", func() {
+			BeforeEach(func() {
+				iptables.ListChainsReturns([]string{orphanChain}, nil)
+				iptables.DeleteChainReturns(errors.New("delete-failed"))
+			})
+
+			It("logs at Info within the window and escalates to Error once the window has elapsed", func() {
+				msg := fmt.Sprintf("test.delete-chain-%s-from-filter", orphanChain)
+
+				lastLog := func() lager.LogFormat {
+					var last lager.LogFormat
+					for _, l := range logger.Logs() {
+						if l.Message == msg {
+							last = l
+						}
+					}
+					return last
+				}
+
+				By("failures within the window: logged at Info, however many there are")
+				for i := 1; i <= 20; i++ {
+					timestamper.CurrentTimeReturns(42 + int64(i-1)*1000)
+					_, err := ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+					Expect(err).To(HaveOccurred())
+
+					l := lastLog()
+					Expect(l.Data["consecutive-failures"]).To(BeEquivalentTo(i))
+					Expect(l.LogLevel).To(Equal(lager.INFO), "failure %d", i)
+				}
+
+				By("one microsecond short of the window: still Info")
+				timestamper.CurrentTimeReturns(42 + escalationWindowMicros - 1)
+				_, err := ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+				Expect(err).To(HaveOccurred())
+				Expect(lastLog().LogLevel).To(Equal(lager.INFO))
+
+				By("window elapsed: escalates to Error")
+				timestamper.CurrentTimeReturns(42 + escalationWindowMicros)
+				_, err = ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+				Expect(err).To(HaveOccurred())
+				l := lastLog()
+				Expect(l.LogLevel).To(Equal(lager.ERROR))
+				Expect(l.Data["error"]).To(ContainSubstring("delete-failed"))
+
+				By("later failures: remain at Error")
+				timestamper.CurrentTimeReturns(42 + escalationWindowMicros + 60*1000*1000)
+				_, err = ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+				Expect(err).To(HaveOccurred())
+				Expect(lastLog().LogLevel).To(Equal(lager.ERROR))
+			})
+
+			It("starts a fresh window after a successful delete", func() {
+				timestamper.CurrentTimeReturns(42)
+				_, err := ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+				Expect(err).To(HaveOccurred())
+
+				iptables.DeleteChainReturns(nil)
+				timestamper.CurrentTimeReturns(1000)
+				_, err = ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+				Expect(err).NotTo(HaveOccurred())
+
+				iptables.DeleteChainReturns(errors.New("delete-failed"))
+				timestamper.CurrentTimeReturns(42 + escalationWindowMicros)
+				_, err = ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+				Expect(enforcer.IsChainDeleteDeferred(err)).To(BeTrue())
+			})
+		})
+	})
+
+	// Task 12 — CleanupChain: both deleteChain sites keyed by outer chain argument
+	Describe("CleanupChain", func() {
+		var (
+			iptables     *libfakes.IPTablesAdapter
+			timestamper  *fakes.TimeStamper
+			logger       *lagertest.TestLogger
+			ruleEnforcer *enforcer.Enforcer
+			outerChain   enforcer.LiveChain
+		)
+
+		BeforeEach(func() {
+			timestamper = &fakes.TimeStamper{}
+			logger = lagertest.NewTestLogger("test")
+			iptables = &libfakes.IPTablesAdapter{}
+			timestamper.CurrentTimeReturns(42)
+			ruleEnforcer = enforcer.NewEnforcer(logger, timestamper, iptables, enforcer.EnforcerConfig{
+				DisableContainerNetworkPolicy: false,
+				OverlayNetwork:                []string{"10.10.0.0/16"},
+			})
+			outerChain = enforcer.LiveChain{Table: "filter", Name: "asg-eeeee01645708469990518"}
+			// Return no rules so deleteChain has no jump-target recursion.
+			iptables.ListReturns([]string{}, nil)
+		})
+
+		Context("when the main chain's deleteChain fails", func() {
+			BeforeEach(func() {
+				iptables.ChainExistsReturnsOnCall(0, true, nil)
+				iptables.DeleteChainReturnsOnCall(0, errors.New("delete-failed"))
+			})
+
+			It("logs first-failed-at and consecutive-failures=1, with the main chain name in the message", func() {
+				err := ruleEnforcer.CleanupChain(outerChain)
+				Expect(err).To(HaveOccurred())
+
+				msg := fmt.Sprintf("test.delete-chain-%s-from-filter", outerChain.Name)
+				var firstFailedAt, consecutiveFailures interface{}
+				for _, l := range logger.Logs() {
+					if l.Message == msg {
+						firstFailedAt = l.Data["first-failed-at"]
+						consecutiveFailures = l.Data["consecutive-failures"]
+					}
+				}
+				Expect(firstFailedAt).To(BeEquivalentTo(42))
+				Expect(consecutiveFailures).To(BeEquivalentTo(1))
+			})
+		})
+
+		Context("when the main chain's deleteChain keeps failing", func() {
+			BeforeEach(func() {
+				iptables.ChainExistsReturns(true, nil)
+				iptables.DeleteChainReturns(errors.New("delete-failed"))
+			})
+
+			It("logs the error text at Info within the window and escalates to Error once it has elapsed", func() {
+				msg := fmt.Sprintf("test.delete-chain-%s-from-filter", outerChain.Name)
+
+				lastLog := func() lager.LogFormat {
+					var last lager.LogFormat
+					for _, l := range logger.Logs() {
+						if l.Message == msg {
+							last = l
+						}
+					}
+					return last
+				}
+
+				for i := 1; i <= 3; i++ {
+					timestamper.CurrentTimeReturns(42 + int64(i-1)*1000)
+					Expect(ruleEnforcer.CleanupChain(outerChain)).To(HaveOccurred())
+					l := lastLog()
+					Expect(l.Data["consecutive-failures"]).To(BeEquivalentTo(i))
+					Expect(l.LogLevel).To(Equal(lager.INFO), "failure %d", i)
+					Expect(l.Data["error"]).To(ContainSubstring("delete-failed"), "failure %d", i)
+				}
+
+				timestamper.CurrentTimeReturns(42 + escalationWindowMicros)
+				Expect(ruleEnforcer.CleanupChain(outerChain)).To(HaveOccurred())
+				l := lastLog()
+				Expect(l.Data["consecutive-failures"]).To(BeEquivalentTo(4))
+				Expect(l.LogLevel).To(Equal(lager.ERROR))
+				Expect(l.Data["error"]).To(ContainSubstring("delete-failed"))
+			})
+		})
+
+		Context("when the main chain's deleteChain succeeds and the candidate chain's deleteChain fails in the same call", func() {
+			BeforeEach(func() {
+				// Pre-call (call 1): main chain absent, candidate chain fails → drives counter to 1
+				iptables.ChainExistsReturnsOnCall(0, false, nil)                  // pre-call: main chain absent
+				iptables.ChainExistsReturnsOnCall(1, true, nil)                   // pre-call: candidate chain exists
+				iptables.DeleteChainReturnsOnCall(0, errors.New("delete-failed")) // pre-call: candidate fails
+
+				// Test call (call 2): main chain succeeds (fires clearChainFailure for chain key),
+				// then candidate fails again.
+				iptables.ChainExistsReturnsOnCall(2, true, nil)                   // test call: main chain exists
+				iptables.DeleteChainReturnsOnCall(1, nil)                         // test call: main chain succeeds (clears failure state)
+				iptables.ChainExistsReturnsOnCall(3, true, nil)                   // test call: candidate chain exists
+				iptables.DeleteChainReturnsOnCall(2, errors.New("delete-failed")) // test call: candidate chain fails
+			})
+
+			It("keeps counting the candidate's failures; a main-chain success does not reset them", func() {
+				candidateName := "casg-eeeee01645708469990518"
+				candidateMsg := fmt.Sprintf("test.delete-chain-%s-from-filter", candidateName)
+
+				// Pre-call: candidate chain fails, driving the shared chain-key counter to 1.
+				firstErr := ruleEnforcer.CleanupChain(outerChain)
+				Expect(firstErr).To(HaveOccurred())
+
+				// Test call: main chain succeeds (clears only the main chain's state),
+				// then candidate fails again, so its own counter reaches 2.
+				err := ruleEnforcer.CleanupChain(outerChain)
+				Expect(err).To(HaveOccurred())
+
+				// logger.Logs() is ordered; the loop's last assignment captures the test-call entry.
+				var consecutiveFailures interface{}
+				for _, l := range logger.Logs() {
+					if l.Message == candidateMsg {
+						consecutiveFailures = l.Data["consecutive-failures"]
+					}
+				}
+				Expect(consecutiveFailures).To(BeEquivalentTo(2),
+					"candidate failures are tracked under the candidate chain key, independent of the main chain")
+			})
+		})
+
+		Context("when the candidate chain's deleteChain fails, then the main chain's deleteChain fails on a second call", func() {
+			BeforeEach(func() {
+				// First CleanupChain call: main chain absent, candidate exists and fails
+				iptables.ChainExistsReturnsOnCall(0, false, nil)                  // main chain absent
+				iptables.ChainExistsReturnsOnCall(1, true, nil)                   // candidate exists
+				iptables.DeleteChainReturnsOnCall(0, errors.New("delete-failed")) // candidate fails
+
+				// Second CleanupChain call: main chain now exists and fails
+				iptables.ChainExistsReturnsOnCall(2, true, nil)                   // main chain exists
+				iptables.DeleteChainReturnsOnCall(1, errors.New("delete-failed")) // main chain fails
+			})
+
+			It("tracks the candidate and main chains independently, each starting at consecutive-failures=1", func() {
+				candidateName := "casg-eeeee01645708469990518"
+				candidateMsg := fmt.Sprintf("test.delete-chain-%s-from-filter", candidateName)
+				mainMsg := fmt.Sprintf("test.delete-chain-%s-from-filter", outerChain.Name)
+
+				By("first call: candidate chain fails; log message references candidate name; consecutive-failures=1")
+				err := ruleEnforcer.CleanupChain(outerChain)
+				Expect(err).To(HaveOccurred())
+
+				var consecutiveFailures interface{}
+				for _, l := range logger.Logs() {
+					if l.Message == candidateMsg {
+						consecutiveFailures = l.Data["consecutive-failures"]
+					}
+				}
+				Expect(consecutiveFailures).To(BeEquivalentTo(1))
+
+				By("second call: main chain fails; its own counter starts at 1, not shared with the candidate")
+				err = ruleEnforcer.CleanupChain(outerChain)
+				Expect(err).To(HaveOccurred())
+
+				for _, l := range logger.Logs() {
+					if l.Message == mainMsg {
+						consecutiveFailures = l.Data["consecutive-failures"]
+					}
+				}
+				Expect(consecutiveFailures).To(BeEquivalentTo(1))
+			})
+		})
+	})
+
+	Describe("pruning stale chain failure state", func() {
+		It("drops state for chains that no longer exist so a later failure starts fresh", func() {
+			timestamper := &fakes.TimeStamper{}
+			logger := lagertest.NewTestLogger("test")
+			iptables := &libfakes.IPTablesAdapter{}
+			iptables.ListReturns([]string{}, nil)
+			ruleEnforcer := enforcer.NewEnforcer(logger, timestamper, iptables, enforcer.EnforcerConfig{OverlayNetwork: []string{"10.10.0.0/16"}})
+			asgRegex := regexp.MustCompile(enforcer.ASGChainRegex)
+			orphan := "asg-eeeee01645708469990518"
+			msg := fmt.Sprintf("test.delete-chain-%s-from-filter", orphan)
+
+			timestamper.CurrentTimeReturns(42)
+			iptables.ListChainsReturns([]string{orphan}, nil)
+			iptables.DeleteChainReturns(errors.New("delete-failed"))
+			_, err := ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+			Expect(err).To(HaveOccurred())
+
+			By("the chain vanishes externally")
+			iptables.ListChainsReturns([]string{}, nil)
+			_, err = ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+			Expect(err).NotTo(HaveOccurred())
+
+			By("the chain reappears and fails: state starts fresh")
+			timestamper.CurrentTimeReturns(100)
+			iptables.ListChainsReturns([]string{orphan}, nil)
+			_, err = ruleEnforcer.CleanChainsMatching(asgRegex, []enforcer.LiveChain{})
+			Expect(err).To(HaveOccurred())
+
+			var firstFailedAt, consecutiveFailures interface{}
+			for _, l := range logger.Logs() {
+				if l.Message == msg {
+					firstFailedAt = l.Data["first-failed-at"]
+					consecutiveFailures = l.Data["consecutive-failures"]
+				}
+			}
+			Expect(firstFailedAt).To(BeEquivalentTo(100))
+			Expect(consecutiveFailures).To(BeEquivalentTo(1))
 		})
 	})
 })

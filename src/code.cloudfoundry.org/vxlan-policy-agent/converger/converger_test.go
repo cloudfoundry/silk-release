@@ -12,6 +12,7 @@ import (
 	"code.cloudfoundry.org/vxlan-policy-agent/converger/fakes"
 	"code.cloudfoundry.org/vxlan-policy-agent/enforcer"
 
+	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/lager/v3/lagertest"
 
 	"github.com/hashicorp/go-multierror"
@@ -631,6 +632,56 @@ var _ = Describe("Single Poll Cycle", func() {
 					Expect(errors).To(HaveLen(1))
 					Expect(errors[0]).To(MatchError("clean-up-asg-chains-matching: eggplant"))
 					Expect(metricsSender.SendDurationCallCount()).To(Equal(metricsCount + 3))
+				})
+			})
+
+			Context("when some orphaned chains were deleted and another failed", func() {
+				BeforeEach(func() {
+					fakeEnforcer.CleanChainsMatchingReturns(
+						[]enforcer.LiveChain{{Table: "asg-table-orphan", Name: "asg-orphaned"}},
+						fmt.Errorf("eggplant"),
+					)
+				})
+
+				It("drops the bookkeeping for the deleted chains and still returns the error", func() {
+					err := p.DoASGCycle()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("clean-up-asg-chains-matching: eggplant"))
+					Expect(p.CurrentlyAppliedChainNames()).To(ConsistOf([]string{
+						"asg-1234",
+						"asg-2345",
+						"asg-3456",
+					}))
+				})
+			})
+
+			Context("when deleting an orphaned chain is deferred within the escalation window", func() {
+				var metricsCount int
+				BeforeEach(func() {
+					fakeEnforcer.CleanChainsMatchingReturns([]enforcer.LiveChain{}, &enforcer.ChainDeleteDeferredErr{
+						Err:                 fmt.Errorf("eggplant"),
+						ConsecutiveFailures: 1,
+					})
+					metricsCount = metricsSender.SendDurationCallCount()
+				})
+
+				It("does not return an error, so the poller does not log at Error", func() {
+					Expect(p.DoASGCycle()).To(Succeed())
+					Expect(metricsSender.SendDurationCallCount()).To(Equal(metricsCount + 3))
+				})
+
+				It("logs the deferral at Info and never at Error", func() {
+					Expect(p.DoASGCycle()).To(Succeed())
+					Expect(logger.Buffer()).To(gbytes.Say("deferred cleanup of orphaned ASG chains"))
+					deferralLogged := false
+					for _, entry := range logger.Logs() {
+						Expect(entry.LogLevel).NotTo(Equal(lager.ERROR))
+						if entry.Message == "test.poll-cycle-asg" && entry.LogLevel == lager.INFO {
+							Expect(entry.Data["error"]).To(ContainSubstring("eggplant"))
+							deferralLogged = true
+						}
+					}
+					Expect(deferralLogged).To(BeTrue())
 				})
 			})
 		})
