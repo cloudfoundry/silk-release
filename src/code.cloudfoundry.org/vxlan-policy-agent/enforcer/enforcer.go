@@ -1,10 +1,12 @@
 package enforcer
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"code.cloudfoundry.org/bbs/models"
@@ -19,6 +21,13 @@ const (
 	ContainerPrefixToStrip = `check-`
 	JumpRuleRegex          = `-A\s+%s\s+.*-[gj]\s+([^\s]+)`
 	chainAlreadyExistsMsg  = "chain already exists"
+
+	// failureEscalationWindow is how long deleteChain may keep failing on the same
+	// chain before the failure is escalated to Error, so operators on Error-only log
+	// pipelines get a signal without polling the Info-level fields. It is a duration
+	// rather than an attempt count because cleanup only runs when the ASG poll cycle
+	// is not skipped, so the number of attempts per minute is not predictable.
+	failureEscalationWindow = 5 * time.Minute
 )
 
 type Timestamper struct{}
@@ -32,20 +41,83 @@ type TimeStamper interface {
 	CurrentTime() int64
 }
 
+type chainFailureState struct {
+	FirstFailedAt       int64 // microseconds, from TimeStamper.CurrentTime()
+	ConsecutiveFailures int
+}
+
 type Enforcer struct {
-	Logger      lager.Logger
-	timestamper TimeStamper
-	iptables    rules.IPTablesAdapter
-	conf        EnforcerConfig
+	Logger          lager.Logger
+	timestamper     TimeStamper
+	iptables        rules.IPTablesAdapter
+	conf            EnforcerConfig
+	chainFailuresMu sync.Mutex
+	// chainFailures is in-process state only; it resets to empty on every agent restart.
+	chainFailures map[LiveChain]*chainFailureState
 }
 
 func NewEnforcer(logger lager.Logger, timestamper TimeStamper, ipt rules.IPTablesAdapter, conf EnforcerConfig) *Enforcer {
 	return &Enforcer{
-		Logger:      logger,
-		timestamper: timestamper,
-		iptables:    ipt,
-		conf:        conf,
+		Logger:        logger,
+		timestamper:   timestamper,
+		iptables:      ipt,
+		conf:          conf,
+		chainFailures: make(map[LiveChain]*chainFailureState),
 	}
+}
+
+// recordChainFailure notes a failed delete of chain. escalate is true once the chain has
+// been failing continuously, since its first failure, for at least failureEscalationWindow.
+func (e *Enforcer) recordChainFailure(chain LiveChain) (firstFailedAt int64, consecutiveFailures int, escalate bool) {
+	e.chainFailuresMu.Lock()
+	defer e.chainFailuresMu.Unlock()
+	now := e.timestamper.CurrentTime()
+	state, ok := e.chainFailures[chain]
+	if !ok {
+		state = &chainFailureState{FirstFailedAt: now}
+		e.chainFailures[chain] = state
+	}
+	state.ConsecutiveFailures++
+	escalate = now-state.FirstFailedAt >= failureEscalationWindow.Microseconds()
+	return state.FirstFailedAt, state.ConsecutiveFailures, escalate
+}
+
+func (e *Enforcer) clearChainFailure(chain LiveChain) {
+	e.chainFailuresMu.Lock()
+	defer e.chainFailuresMu.Unlock()
+	delete(e.chainFailures, chain)
+}
+
+// pruneChainFailures drops failure state for chains in table that no longer exist,
+// so entries for chains removed by other means do not accumulate.
+func (e *Enforcer) pruneChainFailures(table string, existing []string) {
+	exists := make(map[string]struct{}, len(existing))
+	for _, name := range existing {
+		exists[name] = struct{}{}
+	}
+	e.chainFailuresMu.Lock()
+	defer e.chainFailuresMu.Unlock()
+	for chain := range e.chainFailures {
+		if chain.Table != table {
+			continue
+		}
+		if _, ok := exists[chain.Name]; !ok {
+			delete(e.chainFailures, chain)
+		}
+	}
+}
+
+func (e *Enforcer) logChainFailure(logger lager.Logger, session string, err error, firstFailedAt int64, consecutiveFailures int, escalate bool) {
+	data := lager.Data{
+		"error":                err.Error(),
+		"first-failed-at":      firstFailedAt,
+		"consecutive-failures": consecutiveFailures,
+	}
+	if escalate {
+		logger.Error(session, err, data)
+		return
+	}
+	logger.Info(session, data)
 }
 
 type EnforcerConfig struct {
@@ -110,6 +182,28 @@ func (e *CleanupErr) Error() string {
 	return fmt.Sprintf("cleaning up: %s", e.Err)
 }
 
+// ChainDeleteDeferredErr is returned by CleanChainsMatching when a chain could not be
+// deleted but has not yet been failing for failureEscalationWindow.
+// Callers that run on a retry loop can log it below Error and try again next cycle.
+type ChainDeleteDeferredErr struct {
+	Err                 error
+	ConsecutiveFailures int
+}
+
+func (e *ChainDeleteDeferredErr) Error() string {
+	return e.Err.Error()
+}
+
+func (e *ChainDeleteDeferredErr) Unwrap() error {
+	return e.Err
+}
+
+// IsChainDeleteDeferred reports whether err is, or wraps, a ChainDeleteDeferredErr.
+func IsChainDeleteDeferred(err error) bool {
+	var deferred *ChainDeleteDeferredErr
+	return errors.As(err, &deferred)
+}
+
 type ParentChainNotReadyErr struct {
 	ParentChain string
 }
@@ -160,6 +254,7 @@ func (e *Enforcer) CleanChainsMatching(regex *regexp.Regexp, desiredChains []Liv
 	}
 
 	e.Logger.Debug("allchains", lager.Data{"chains": allChains})
+	e.pruneChainFailures(FilterTable, allChains)
 
 	for _, chainName := range allChains {
 		if regex.MatchString(chainName) {
@@ -169,16 +264,49 @@ func (e *Enforcer) CleanChainsMatching(regex *regexp.Regexp, desiredChains []Liv
 		}
 	}
 
+	// A chain that cannot be deleted must not block cleanup of the chains after it, so
+	// keep going and report the failures at the end alongside what was deleted.
+	var deletedChains []LiveChain
+	var deferredErrs, escalatedErrs []error
+	maxDeferredFailures := 0
 	for _, chain := range chainsToDelete {
 		e.Logger.Debug("deleting-chain-in-enforce-chains-matching", lager.Data{"chain": chain})
 		err = e.deleteChain(e.Logger, chain, "")
 		if err != nil {
-			e.Logger.Error(fmt.Sprintf("delete-chain-%s-from-%s", chain.Name, chain.Table), err)
-			return []LiveChain{}, fmt.Errorf("deleting chain %s from table %s: %s", chain.Name, chain.Table, err)
+			firstFailedAt, consecutiveFailures, escalate := e.recordChainFailure(chain)
+			e.logChainFailure(e.Logger, fmt.Sprintf("delete-chain-%s-from-%s", chain.Name, chain.Table), err, firstFailedAt, consecutiveFailures, escalate)
+			chainErr := fmt.Errorf("deleting chain %s from table %s: %s", chain.Name, chain.Table, err)
+			if escalate {
+				escalatedErrs = append(escalatedErrs, chainErr)
+			} else {
+				deferredErrs = append(deferredErrs, chainErr)
+				if consecutiveFailures > maxDeferredFailures {
+					maxDeferredFailures = consecutiveFailures
+				}
+			}
+			continue
 		}
+		e.clearChainFailure(chain)
+		deletedChains = append(deletedChains, chain)
 	}
 
-	return chainsToDelete, nil
+	// Chains that have failed often enough to escalate are returned as a real error. Chains
+	// still inside the escalation window are left out of it, so their first failures are not reported
+	// at Error level just because another chain is stuck.
+	if len(escalatedErrs) > 0 {
+		return deletedChains, joinErrors(escalatedErrs)
+	}
+	if len(deferredErrs) > 0 {
+		return deletedChains, &ChainDeleteDeferredErr{Err: joinErrors(deferredErrs), ConsecutiveFailures: maxDeferredFailures}
+	}
+	return deletedChains, nil
+}
+
+func joinErrors(errs []error) error {
+	if len(errs) == 1 {
+		return errs[0]
+	}
+	return errors.Join(errs...)
 }
 
 func (e *Enforcer) CleanupChain(chain LiveChain) error {
@@ -188,20 +316,25 @@ func (e *Enforcer) CleanupChain(chain LiveChain) error {
 		e.Logger.Debug("deleting-chain", lager.Data{"name": chain.Name, "table": chain.Table})
 		err := e.deleteChain(e.Logger, LiveChain{Table: chain.Table, Name: chain.Name}, "")
 		if err != nil {
-			e.Logger.Error(fmt.Sprintf("delete-chain-%s-from-%s", chain.Name, chain.Table), err)
+			firstFailedAt, consecutiveFailures, escalate := e.recordChainFailure(chain)
+			e.logChainFailure(e.Logger, fmt.Sprintf("delete-chain-%s-from-%s", chain.Name, chain.Table), err, firstFailedAt, consecutiveFailures, escalate)
 			return fmt.Errorf("deleting chain %s from table %s: %s", chain.Name, chain.Table, err)
 		}
+		e.clearChainFailure(chain)
 	}
 
 	candidateChainName := e.candidateChainName(chain.Name)
 	candidateChainExists, _ := e.iptables.ChainExists(chain.Table, candidateChainName)
 	if candidateChainExists {
 		e.Logger.Debug("deleting-chain", lager.Data{"name": candidateChainName, "table": chain.Table})
-		err := e.deleteChain(e.Logger, LiveChain{Table: chain.Table, Name: candidateChainName}, "")
+		candidate := LiveChain{Table: chain.Table, Name: candidateChainName}
+		err := e.deleteChain(e.Logger, candidate, "")
 		if err != nil {
-			e.Logger.Error(fmt.Sprintf("delete-chain-%s-from-%s", candidateChainName, chain.Table), err)
+			firstFailedAt, consecutiveFailures, escalate := e.recordChainFailure(candidate)
+			e.logChainFailure(e.Logger, fmt.Sprintf("delete-chain-%s-from-%s", candidateChainName, chain.Table), err, firstFailedAt, consecutiveFailures, escalate)
 			return fmt.Errorf("deleting chain %s from table %s: %s", candidateChainName, chain.Table, err)
 		}
+		e.clearChainFailure(candidate)
 	}
 
 	return nil

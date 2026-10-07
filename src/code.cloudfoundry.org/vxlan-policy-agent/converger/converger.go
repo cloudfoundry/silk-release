@@ -287,7 +287,15 @@ func (m *SinglePollCycle) SyncASGsForContainers(containers ...string) error {
 	if pollingLoop {
 		cleanupStart := time.Now()
 		err := m.cleanupASGsChainsMatching(enforcer.ASGChainRegex, desiredChains)
-		if err != nil {
+		if enforcer.IsChainDeleteDeferred(err) {
+			// The enforcer already logged this failure; returning it would make the poller
+			// log "poll-cycle" at Error. The chain is retried next cycle and the enforcer
+			// returns a real error once it has kept failing for long enough.
+			m.logger.Info("poll-cycle-asg", lager.Data{
+				"message": "deferred cleanup of orphaned ASG chains, will retry on next poll cycle",
+				"error":   err.Error(),
+			})
+		} else if err != nil {
 			errors = multierror.Append(errors, err)
 		}
 		cleanupDuration = time.Since(cleanupStart)
@@ -332,10 +340,9 @@ func (m *SinglePollCycle) updateRuleSet(chainKey enforcer.LiveChain, chain strin
 }
 
 func (m *SinglePollCycle) cleanupASGsChainsMatching(prefix string, desiredChains []enforcer.LiveChain) error {
+	// deletedChains can be non-empty alongside an error: the enforcer keeps going past a
+	// chain it cannot delete, so drop the bookkeeping for those that were deleted either way.
 	deletedChains, err := m.enforcer.CleanChainsMatching(regexp.MustCompile(prefix), desiredChains)
-	if err != nil {
-		return fmt.Errorf("clean-up-asg-chains-matching: %s", err)
-	}
 
 	m.logger.Debug("policy-cycle-asg", lager.Data{
 		"message": "deleted-orphaned-chains",
@@ -351,6 +358,9 @@ func (m *SinglePollCycle) cleanupASGsChainsMatching(prefix string, desiredChains
 		}
 	}
 
+	if err != nil {
+		return fmt.Errorf("clean-up-asg-chains-matching: %w", err)
+	}
 	return nil
 }
 
