@@ -11,14 +11,14 @@ replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
 require (
 	code.cloudfoundry.org/bbs/models v1.19.0
-	code.cloudfoundry.org/cf-networking-helpers v0.99.0
+	code.cloudfoundry.org/cf-networking-helpers v0.100.0
 	code.cloudfoundry.org/debugserver v0.118.0
 	code.cloudfoundry.org/diego-logging-client v0.128.0
 	code.cloudfoundry.org/filelock v0.84.0
 	code.cloudfoundry.org/garden v0.7.0
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
 	code.cloudfoundry.org/lager/v3 v3.90.0
-	code.cloudfoundry.org/policy_client v0.122.0
+	code.cloudfoundry.org/policy_client v0.123.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.3.1
@@ -31,7 +31,7 @@ require (
 	github.com/hpcloud/tail v1.0.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.12.3
-	github.com/onsi/ginkgo/v2 v2.33.0
+	github.com/onsi/ginkgo/v2 v2.33.1
 	github.com/onsi/gomega v1.44.0
 	github.com/pivotal-cf-experimental/gomegamatchers v0.0.0-20180326192815-e36bfcc98c3a
 	github.com/pkg/errors v0.9.1
@@ -40,7 +40,7 @@ require (
 	github.com/tedsuo/rata v1.0.0
 	github.com/vishvananda/netlink v1.3.1
 	github.com/ziutek/utils v0.0.0-20190626152656-eb2a3b364d6c
-	golang.org/x/sys v0.48.0
+	golang.org/x/sys v0.49.0
 	gopkg.in/validator.v2 v2.0.1
 )
 
@@ -74,12 +74,12 @@ require (
 	go.opentelemetry.io/otel/trace v1.47.0 // indirect
 	go.step.sm/crypto v0.91.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/crypto v0.57.0 // indirect
-	golang.org/x/mod v0.41.0 // indirect
-	golang.org/x/net v0.59.0 // indirect
-	golang.org/x/sync v0.23.0 // indirect
-	golang.org/x/text v0.42.0 // indirect
-	golang.org/x/tools v0.51.0 // indirect
+	golang.org/x/crypto v0.58.0 // indirect
+	golang.org/x/mod v0.42.0 // indirect
+	golang.org/x/net v0.61.0 // indirect
+	golang.org/x/sync v0.24.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
+	golang.org/x/tools v0.52.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20261005182115-fad411399dd8 // indirect
 	google.golang.org/grpc v1.84.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
