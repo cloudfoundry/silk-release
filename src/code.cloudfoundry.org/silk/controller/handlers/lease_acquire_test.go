@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 
 	hfakes "code.cloudfoundry.org/cf-networking-helpers/fakes"
+	"code.cloudfoundry.org/cf-networking-helpers/httperror"
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport"
 	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/lager/v3/lagertest"
@@ -61,6 +62,54 @@ var _ = Describe("LeasesAcquire", func() {
 			OverlayHardwareAddr: "ee:ee:0a:ff:11:00",
 		}
 		leaseAcquirer.AcquireSubnetLeaseReturns(lease, nil)
+	})
+
+	Context("when the request body is at the size limit", func() {
+		It("accepts a 4096-byte request body", func() {
+			body := append([]byte(`{"underlay_ip":"10.244.16.11"}`), bytes.Repeat([]byte(" "), 4096-len(`{"underlay_ip":"10.244.16.11"}`))...)
+			request := unknownLengthRequest("PUT", "/leases/acquire", body)
+
+			handler.ServeHTTP(logger, resp, request)
+
+			Expect(resp.Code).To(Equal(http.StatusOK))
+			Expect(unmarshaler.UnmarshalCallCount()).To(Equal(1))
+			Expect(leaseAcquirer.AcquireSubnetLeaseCallCount()).To(Equal(1))
+		})
+	})
+
+	Context("when the request body exceeds the size limit", func() {
+		BeforeEach(func() {
+			realErrorResponse := &httperror.ErrorResponse{MetricsSender: &hfakes.MetricsSender{}}
+			fakeErrorResponse.BadRequestStub = realErrorResponse.BadRequest
+		})
+
+		It("rejects a 4097-byte request body", func() {
+			body := append([]byte(`{"underlay_ip":"10.244.16.11"}`), bytes.Repeat([]byte(" "), 4097-len(`{"underlay_ip":"10.244.16.11"}`))...)
+			request := unknownLengthRequest("PUT", "/leases/acquire", body)
+
+			handler.ServeHTTP(logger, resp, request)
+
+			Expect(resp.Code).To(Equal(http.StatusBadRequest))
+			Expect(fakeErrorResponse.BadRequestCallCount()).To(Equal(1))
+			_, _, _, description := fakeErrorResponse.BadRequestArgsForCall(0)
+			Expect(description).To(HavePrefix("read-body:"))
+			Expect(unmarshaler.UnmarshalCallCount()).To(Equal(0))
+			Expect(leaseAcquirer.AcquireSubnetLeaseCallCount()).To(Equal(0))
+		})
+
+		It("rejects a 1 MiB request body", func() {
+			body := append([]byte(`{"underlay_ip":"10.244.16.11"}`), bytes.Repeat([]byte(" "), 1024*1024-len(`{"underlay_ip":"10.244.16.11"}`))...)
+			request := unknownLengthRequest("PUT", "/leases/acquire", body)
+
+			handler.ServeHTTP(logger, resp, request)
+
+			Expect(resp.Code).To(Equal(http.StatusBadRequest))
+			Expect(fakeErrorResponse.BadRequestCallCount()).To(Equal(1))
+			_, _, _, description := fakeErrorResponse.BadRequestArgsForCall(0)
+			Expect(description).To(HavePrefix("read-body:"))
+			Expect(unmarshaler.UnmarshalCallCount()).To(Equal(0))
+			Expect(leaseAcquirer.AcquireSubnetLeaseCallCount()).To(Equal(0))
+		})
 	})
 
 	It("acquires a lease for subnet", func() {
@@ -212,3 +261,10 @@ var _ = Describe("LeasesAcquire", func() {
 		})
 	})
 })
+
+func unknownLengthRequest(method, path string, body []byte) *http.Request {
+	request, err := http.NewRequest(method, path, io.NopCloser(bytes.NewReader(body)))
+	Expect(err).NotTo(HaveOccurred())
+	request.ContentLength = -1
+	return request
+}

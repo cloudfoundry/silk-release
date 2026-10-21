@@ -31,6 +31,7 @@ type RenewLease struct {
 func (l *RenewLease) ServeHTTP(logger lager.Logger, w http.ResponseWriter, req *http.Request) {
 	logger = logger.Session("leases-renew")
 
+	req.Body = http.MaxBytesReader(w, req.Body, maxRequestBodyBytes)
 	bodyBytes, err := io.ReadAll(req.Body)
 	if err != nil {
 		l.ErrorResponse.BadRequest(logger, w, err, fmt.Sprintf("read-body: %s", err.Error()))

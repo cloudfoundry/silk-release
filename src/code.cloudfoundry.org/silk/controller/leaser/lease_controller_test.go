@@ -2,6 +2,7 @@
 // Generated in whole or in part by Cursor with a mix of different LLM models (Auto select mode)
 // Description:
 // 2026-07-07: Add regression test for RenewSubnetLease missing CIDR pool membership check (TNZGOV-12052)
+// 2026-10-21: Verify deterministic VTEP hardware address on RenewSubnetLease restore path (TNZGOV-14732)
 package leaser_test
 
 import (
@@ -439,6 +440,9 @@ var _ = Describe("LeaseController", func() {
 			BeforeEach(func() {
 				databaseHandler.LeaseForUnderlayIPReturns(nil, nil)
 				cidrPool.IsMemberReturns(true)
+				hardwareAddressGenerator.GenerateForVTEPReturns(
+					net.HardwareAddr{0xee, 0xee, 0x0a, 0xff, 0x21, 0x00}, nil,
+				)
 			})
 			It("adds the entry and logs the success", func() {
 				err := leaseController.RenewSubnetLease(leaseToRenew)
@@ -461,6 +465,56 @@ var _ = Describe("LeaseController", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(loggedLease).To(MatchJSON(`{"underlay_ip":"10.244.11.22","overlay_subnet":"10.255.33.0/24","overlay_hardware_addr":"ee:ee:0a:ff:21:00"}`))
 				Expect(int64(logger.Logs()[0].Data["last_renewed_at"].(float64))).To(Equal(lastRenewedAt))
+			})
+
+			Context("when checking the overlay hardware address", func() {
+				It("accepts a matching hardware address and adds the entry", func() {
+					err := leaseController.RenewSubnetLease(leaseToRenew)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(databaseHandler.AddEntryCallCount()).To(Equal(1))
+					Expect(databaseHandler.AddEntryArgsForCall(0)).To(Equal(leaseToRenew))
+					Expect(hardwareAddressGenerator.GenerateForVTEPCallCount()).To(Equal(1))
+					vtepIP := hardwareAddressGenerator.GenerateForVTEPArgsForCall(0)
+					Expect(vtepIP.Equal(net.ParseIP("10.255.33.0"))).To(BeTrue())
+				})
+
+				It("accepts a matching hardware address in a different notation", func() {
+					leaseToRenew.OverlayHardwareAddr = "EE-EE-0A-FF-21-00"
+					err := leaseController.RenewSubnetLease(leaseToRenew)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(databaseHandler.AddEntryCallCount()).To(Equal(1))
+					Expect(databaseHandler.AddEntryArgsForCall(0).OverlayHardwareAddr).To(Equal("EE-EE-0A-FF-21-00"))
+				})
+
+				It("rejects a mismatched hardware address", func() {
+					leaseToRenew.OverlayHardwareAddr = "ee:ee:0a:ff:4c:00"
+					err := leaseController.RenewSubnetLease(leaseToRenew)
+					Expect(err).To(BeAssignableToTypeOf(controller.NonRetriableError("")))
+					Expect(err).To(MatchError("overlay hardware address mismatch: underlay_ip 10.244.11.22, overlay_subnet 10.255.33.0/24, got ee:ee:0a:ff:4c:00, expected ee:ee:0a:ff:21:00"))
+					Expect(databaseHandler.AddEntryCallCount()).To(Equal(0))
+					Expect(databaseHandler.RenewLeaseForUnderlayIPCallCount()).To(Equal(0))
+				})
+
+				It("returns a retriable error when generating the hardware address fails", func() {
+					hardwareAddressGenerator.GenerateForVTEPReturns(nil, errors.New("guava"))
+					err := leaseController.RenewSubnetLease(leaseToRenew)
+					Expect(err).To(MatchError("generate hardware address: guava"))
+					Expect(err).NotTo(BeAssignableToTypeOf(controller.NonRetriableError("")))
+					Expect(databaseHandler.AddEntryCallCount()).To(Equal(0))
+				})
+
+				It("uses the host IP to derive the hardware address for a /32 lease", func() {
+					leaseToRenew.OverlaySubnet = "10.255.33.7/32"
+					leaseToRenew.OverlayHardwareAddr = "ee:ee:0a:ff:21:07"
+					hardwareAddressGenerator.GenerateForVTEPReturns(
+						net.HardwareAddr{0xee, 0xee, 0x0a, 0xff, 0x21, 0x07}, nil,
+					)
+					err := leaseController.RenewSubnetLease(leaseToRenew)
+					Expect(err).NotTo(HaveOccurred())
+					vtepIP := hardwareAddressGenerator.GenerateForVTEPArgsForCall(0)
+					Expect(vtepIP.Equal(net.ParseIP("10.255.33.7"))).To(BeTrue())
+					Expect(databaseHandler.AddEntryCallCount()).To(Equal(1))
+				})
 			})
 
 			Context("when the overlay subnet is not in the CIDR pool", func() {
