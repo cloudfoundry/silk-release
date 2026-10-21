@@ -2,9 +2,11 @@
 // Generated in whole or in part by Cursor with a mix of different LLM models (Auto select mode)
 // Description:
 // 2026-07-07: Add CIDRPool.IsMember guard in RenewSubnetLease to fix TNZGOV-12052 overlay subnet pool check bypass
+// 2026-10-21: Verify deterministic VTEP hardware address on RenewSubnetLease restore path (TNZGOV-14732)
 package leaser
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 
@@ -119,7 +121,22 @@ func (c *LeaseController) RenewSubnetLease(lease controller.Lease) error {
 		if !c.CIDRPool.IsMember(lease.OverlaySubnet) {
 			return controller.NonRetriableError("overlay subnet not in pool")
 		}
-		err := c.DatabaseHandler.AddEntry(lease)
+		vtepIP, _, err := net.ParseCIDR(lease.OverlaySubnet)
+		if err != nil {
+			return controller.NonRetriableError(fmt.Sprintf("parse overlay subnet: %s", err))
+		}
+		expected, err := c.HardwareAddressGenerator.GenerateForVTEP(vtepIP)
+		if err != nil {
+			return fmt.Errorf("generate hardware address: %s", err)
+		}
+		submitted, err := net.ParseMAC(lease.OverlayHardwareAddr)
+		if err != nil {
+			return controller.NonRetriableError(fmt.Sprintf("parse overlay hardware address: %s", err))
+		}
+		if !bytes.Equal(submitted, expected) {
+			return controller.NonRetriableError(fmt.Sprintf("overlay hardware address mismatch: underlay_ip %s, overlay_subnet %s, got %s, expected %s", lease.UnderlayIP, lease.OverlaySubnet, submitted, expected))
+		}
+		err = c.DatabaseHandler.AddEntry(lease)
 		if err != nil {
 			return controller.NonRetriableError(err.Error())
 		}

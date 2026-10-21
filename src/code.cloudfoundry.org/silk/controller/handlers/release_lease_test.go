@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 
 	hfakes "code.cloudfoundry.org/cf-networking-helpers/fakes"
+	"code.cloudfoundry.org/cf-networking-helpers/httperror"
 	"code.cloudfoundry.org/cf-networking-helpers/testsupport"
 	"code.cloudfoundry.org/lager/v3"
 	"code.cloudfoundry.org/lager/v3/lagertest"
@@ -60,6 +61,57 @@ var _ = Describe("ReleaseLease", func() {
 		request, err = http.NewRequest("PUT", "/leases/release", requestBody)
 		Expect(err).NotTo(HaveOccurred())
 		request.RemoteAddr = "some-host:some-port"
+	})
+
+	Context("when the request body is at the size limit", func() {
+		It("accepts a 4096-byte request body", func() {
+			validJSON := `{"underlay_ip":"10.244.16.11"}`
+			body := append([]byte(validJSON), bytes.Repeat([]byte(" "), 4096-len(validJSON))...)
+			request := unknownLengthRequest("PUT", "/leases/release", body)
+
+			handler.ServeHTTP(logger, resp, request)
+
+			Expect(resp.Code).To(Equal(http.StatusOK))
+			Expect(unmarshaler.UnmarshalCallCount()).To(Equal(1))
+			Expect(leaseReleaser.ReleaseSubnetLeaseCallCount()).To(Equal(1))
+		})
+	})
+
+	Context("when the request body exceeds the size limit", func() {
+		BeforeEach(func() {
+			realErrorResponse := &httperror.ErrorResponse{MetricsSender: &hfakes.MetricsSender{}}
+			fakeErrorResponse.BadRequestStub = realErrorResponse.BadRequest
+		})
+
+		It("rejects a 4097-byte request body", func() {
+			validJSON := `{"underlay_ip":"10.244.16.11"}`
+			body := append([]byte(validJSON), bytes.Repeat([]byte(" "), 4097-len(validJSON))...)
+			request := unknownLengthRequest("PUT", "/leases/release", body)
+
+			handler.ServeHTTP(logger, resp, request)
+
+			Expect(resp.Code).To(Equal(http.StatusBadRequest))
+			Expect(fakeErrorResponse.BadRequestCallCount()).To(Equal(1))
+			_, _, _, description := fakeErrorResponse.BadRequestArgsForCall(0)
+			Expect(description).To(HavePrefix("read-body:"))
+			Expect(unmarshaler.UnmarshalCallCount()).To(Equal(0))
+			Expect(leaseReleaser.ReleaseSubnetLeaseCallCount()).To(Equal(0))
+		})
+
+		It("rejects a 1 MiB request body", func() {
+			validJSON := `{"underlay_ip":"10.244.16.11"}`
+			body := append([]byte(validJSON), bytes.Repeat([]byte(" "), 1024*1024-len(validJSON))...)
+			request := unknownLengthRequest("PUT", "/leases/release", body)
+
+			handler.ServeHTTP(logger, resp, request)
+
+			Expect(resp.Code).To(Equal(http.StatusBadRequest))
+			Expect(fakeErrorResponse.BadRequestCallCount()).To(Equal(1))
+			_, _, _, description := fakeErrorResponse.BadRequestArgsForCall(0)
+			Expect(description).To(HavePrefix("read-body:"))
+			Expect(unmarshaler.UnmarshalCallCount()).To(Equal(0))
+			Expect(leaseReleaser.ReleaseSubnetLeaseCallCount()).To(Equal(0))
+		})
 	})
 
 	It("releases a lease for subnet", func() {

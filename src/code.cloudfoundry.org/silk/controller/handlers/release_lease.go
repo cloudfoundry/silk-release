@@ -24,6 +24,7 @@ type ReleaseLease struct {
 func (l *ReleaseLease) ServeHTTP(logger lager.Logger, w http.ResponseWriter, req *http.Request) {
 	logger = logger.Session("leases-release")
 
+	req.Body = http.MaxBytesReader(w, req.Body, maxRequestBodyBytes)
 	bodyBytes, err := io.ReadAll(req.Body)
 	if err != nil {
 		l.ErrorResponse.BadRequest(logger, w, err, fmt.Sprintf("read-body: %s", err.Error()))
