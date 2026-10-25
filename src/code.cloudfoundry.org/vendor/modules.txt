@@ -1,10 +1,10 @@
-# code.cloudfoundry.org/bbs/encryption v1.21.0
+# code.cloudfoundry.org/bbs/encryption v1.23.0
 ## explicit; go 1.26.2
 code.cloudfoundry.org/bbs/encryption
-# code.cloudfoundry.org/bbs/format v1.16.0
+# code.cloudfoundry.org/bbs/format v1.17.0
 ## explicit; go 1.26.2
 code.cloudfoundry.org/bbs/format
-# code.cloudfoundry.org/bbs/models v1.21.0
+# code.cloudfoundry.org/bbs/models v1.22.0
 ## explicit; go 1.26.2
 code.cloudfoundry.org/bbs/models
 # code.cloudfoundry.org/cf-networking-helpers v0.101.0
@@ -23,24 +23,24 @@ code.cloudfoundry.org/cf-networking-helpers/runner
 code.cloudfoundry.org/cf-networking-helpers/testsupport
 code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics
 code.cloudfoundry.org/cf-networking-helpers/testsupport/ports
-# code.cloudfoundry.org/debugserver v0.119.0
+# code.cloudfoundry.org/debugserver v0.120.0
 ## explicit; go 1.26.0
 code.cloudfoundry.org/debugserver
-# code.cloudfoundry.org/diego-logging-client v0.129.0
+# code.cloudfoundry.org/diego-logging-client v0.130.0
 ## explicit; go 1.26.0
 code.cloudfoundry.org/diego-logging-client
 code.cloudfoundry.org/diego-logging-client/testhelpers
-# code.cloudfoundry.org/filelock v0.85.0
+# code.cloudfoundry.org/filelock v0.86.0
 ## explicit; go 1.26.0
 code.cloudfoundry.org/filelock
-# code.cloudfoundry.org/garden v0.8.0
+# code.cloudfoundry.org/garden v0.9.0
 ## explicit; go 1.26.0
 code.cloudfoundry.org/garden
 code.cloudfoundry.org/garden/client
 code.cloudfoundry.org/garden/client/connection
 code.cloudfoundry.org/garden/routes
 code.cloudfoundry.org/garden/transport
-# code.cloudfoundry.org/go-diodes v0.0.0-20260928063035-f81ac938b818
+# code.cloudfoundry.org/go-diodes v0.0.0-20261019063924-5f5277928191
 ## explicit; go 1.25.0
 code.cloudfoundry.org/go-diodes
 # code.cloudfoundry.org/go-loggregator/v9 v9.2.1
@@ -48,14 +48,14 @@ code.cloudfoundry.org/go-diodes
 code.cloudfoundry.org/go-loggregator/v9
 code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2
 code.cloudfoundry.org/go-loggregator/v9/runtimeemitter
-# code.cloudfoundry.org/lager/v3 v3.91.0
+# code.cloudfoundry.org/lager/v3 v3.92.0
 ## explicit; go 1.26.0
 code.cloudfoundry.org/lager/v3
 code.cloudfoundry.org/lager/v3/internal/truncate
 code.cloudfoundry.org/lager/v3/lagerctx
 code.cloudfoundry.org/lager/v3/lagerflags
 code.cloudfoundry.org/lager/v3/lagertest
-# code.cloudfoundry.org/policy_client v0.124.0
+# code.cloudfoundry.org/policy_client v0.125.0
 ## explicit; go 1.26.0
 code.cloudfoundry.org/policy_client
 # code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
@@ -274,8 +274,8 @@ github.com/rubenv/sql-migrate/sqlparse
 # github.com/safchain/ethtool v0.7.0
 ## explicit; go 1.24.0
 github.com/safchain/ethtool
-# github.com/square/certstrap v1.4.0
-## explicit; go 1.24
+# github.com/square/certstrap v1.4.1
+## explicit; go 1.27.3
 github.com/square/certstrap/depot
 github.com/square/certstrap/pkix
 # github.com/tedsuo/ifrit v0.0.0-20260908181113-dd353a7daa27 => github.com/tedsuo/ifrit v0.0.0-20260418191334-846868129986
@@ -413,7 +413,7 @@ golang.org/x/tools/internal/pkgbits
 golang.org/x/tools/internal/stdlib
 golang.org/x/tools/internal/typesinternal
 golang.org/x/tools/internal/versions
-# google.golang.org/genproto/googleapis/rpc v0.0.0-20261012220534-4341edf3f941
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20261019180522-ce908d29299b
 ## explicit; go 1.26.0
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.84.0
