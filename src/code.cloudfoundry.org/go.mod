@@ -10,15 +10,15 @@ replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimesche
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 
 require (
-	code.cloudfoundry.org/bbs/models v1.22.0
+	code.cloudfoundry.org/bbs/models v1.25.0
 	code.cloudfoundry.org/cf-networking-helpers v0.101.0
-	code.cloudfoundry.org/debugserver v0.120.0
-	code.cloudfoundry.org/diego-logging-client v0.130.0
-	code.cloudfoundry.org/filelock v0.86.0
-	code.cloudfoundry.org/garden v0.9.0
+	code.cloudfoundry.org/debugserver v0.121.0
+	code.cloudfoundry.org/diego-logging-client v0.131.0
+	code.cloudfoundry.org/filelock v0.87.0
+	code.cloudfoundry.org/garden v0.10.0
 	code.cloudfoundry.org/go-loggregator/v9 v9.2.1
-	code.cloudfoundry.org/lager/v3 v3.92.0
-	code.cloudfoundry.org/policy_client v0.125.0
+	code.cloudfoundry.org/lager/v3 v3.93.0
+	code.cloudfoundry.org/policy_client v0.126.0
 	code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf
 	github.com/cloudfoundry/dropsonde v1.1.0
 	github.com/containernetworking/cni v1.3.1
@@ -45,10 +45,10 @@ require (
 )
 
 require (
-	code.cloudfoundry.org/bbs/encryption v1.23.0 // indirect
-	code.cloudfoundry.org/bbs/format v1.17.0 // indirect
+	code.cloudfoundry.org/bbs/encryption v1.25.0 // indirect
+	code.cloudfoundry.org/bbs/format v1.18.0 // indirect
 	code.cloudfoundry.org/go-diodes v0.0.0-20261019063924-5f5277928191 // indirect
-	code.cloudfoundry.org/tlsconfig v0.69.0 // indirect
+	code.cloudfoundry.org/tlsconfig v0.70.0 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/alexflint/go-filemutex v1.3.0 // indirect
@@ -61,7 +61,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/nftables v0.3.0 // indirect
-	github.com/google/pprof v0.0.0-20261016150608-1facf8f91b50 // indirect
+	github.com/google/pprof v0.0.0-20261026192309-dbd0ed30aa88 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/mdlayher/netlink v1.11.2 // indirect
 	github.com/mdlayher/socket v0.8.0 // indirect
@@ -72,16 +72,16 @@ require (
 	github.com/vishvananda/netns v0.0.5 // indirect
 	go.opentelemetry.io/otel v1.47.0 // indirect
 	go.opentelemetry.io/otel/trace v1.47.0 // indirect
-	go.step.sm/crypto v0.91.0 // indirect
-	go.yaml.in/yaml/v3 v3.0.5 // indirect
+	go.step.sm/crypto v0.91.1 // indirect
+	go.yaml.in/yaml/v3 v3.0.6 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/mod v0.42.0 // indirect
-	golang.org/x/net v0.61.0 // indirect
+	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 	golang.org/x/tools v0.52.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20261019180522-ce908d29299b // indirect
-	google.golang.org/grpc v1.84.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20261026165753-2ffab32bce7e // indirect
+	google.golang.org/grpc v1.85.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
