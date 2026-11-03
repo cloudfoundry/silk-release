@@ -143,6 +143,33 @@ var _ = Describe("Single Poll Cycle", func() {
 					})
 				})
 			})
+
+			Context("when the cycle fails", func() {
+				BeforeEach(func() {
+					fakePolicyClient.GetPoliciesLastUpdatedReturns(10, nil)
+					fakeEnforcer.EnforceRulesAndChainReturns("some-chain", errors.New("enforce-failed"))
+					err := p.DoPolicyCycleWithLastUpdatedCheck()
+					Expect(err).To(HaveOccurred())
+				})
+
+				It("retries on the next poll even though last updated is unchanged", func() {
+					Expect(fakeLocalPlanner.GetPolicyRulesAndChainCallCount()).To(Equal(1))
+					err := p.DoPolicyCycleWithLastUpdatedCheck()
+					Expect(err).To(HaveOccurred())
+					Expect(fakeLocalPlanner.GetPolicyRulesAndChainCallCount()).To(Equal(2))
+				})
+
+				It("advances the watermark once a retry succeeds", func() {
+					fakeEnforcer.EnforceRulesAndChainReturns("some-chain", nil)
+					err := p.DoPolicyCycleWithLastUpdatedCheck()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakeLocalPlanner.GetPolicyRulesAndChainCallCount()).To(Equal(2))
+
+					err = p.DoPolicyCycleWithLastUpdatedCheck()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakeLocalPlanner.GetPolicyRulesAndChainCallCount()).To(Equal(2))
+				})
+			})
 		})
 
 		Describe("DoPolicyCycle", func() {
@@ -441,6 +468,37 @@ var _ = Describe("Single Poll Cycle", func() {
 						Expect(err).NotTo(HaveOccurred())
 						Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(1))
 					})
+				})
+			})
+
+			Context("when the cycle fails", func() {
+				BeforeEach(func() {
+					fakePolicyClient.GetSecurityGroupsLastUpdatedReturns(10, nil)
+					fakeEnforcer.EnforceRulesAndChainStub = func(chain enforcer.RulesWithChain) (string, error) {
+						return "", errors.New("enforce-failed")
+					}
+					err := p.DoASGCycleWithLastUpdatedCheck()
+					Expect(err).To(HaveOccurred())
+				})
+
+				It("retries on the next poll even though last updated is unchanged", func() {
+					Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(1))
+					err := p.DoASGCycleWithLastUpdatedCheck()
+					Expect(err).To(HaveOccurred())
+					Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(2))
+				})
+
+				It("advances the watermark once a retry succeeds", func() {
+					fakeEnforcer.EnforceRulesAndChainStub = func(chain enforcer.RulesWithChain) (string, error) {
+						return chain.Chain.Name, nil
+					}
+					err := p.DoASGCycleWithLastUpdatedCheck()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(2))
+
+					err = p.DoASGCycleWithLastUpdatedCheck()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakeASGPlanner.GetASGRulesAndChainsCallCount()).To(Equal(2))
 				})
 			})
 		})

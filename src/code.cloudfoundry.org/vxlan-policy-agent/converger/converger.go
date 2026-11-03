@@ -144,8 +144,12 @@ func (m *SinglePollCycle) DoPolicyCycleWithLastUpdatedCheck() error {
 	}
 	if m.lastUpdated == 0 || lastUpdated > m.lastUpdated {
 		m.logger.Debug("running-poll-cycle-for-updated-policies", lager.Data{"last-updated-remotely": lastUpdated, "last-updated-locally": m.lastUpdated})
+		// only advance the watermark once the cycle succeeds, so a failed enforce is retried on the next poll
+		if err := m.DoPolicyCycle(); err != nil {
+			return err
+		}
 		m.lastUpdated = lastUpdated
-		return m.DoPolicyCycle()
+		return nil
 	}
 
 	m.logger.Debug("skipping-poll-cycle", lager.Data{"last-updated-remotely": lastUpdated, "last-updated-locally": m.lastUpdated})
@@ -208,8 +212,12 @@ func (m *SinglePollCycle) DoASGCycleWithLastUpdatedCheck() error {
 	}
 	if m.asgLastUpdated == 0 || asgLastUpdated > m.asgLastUpdated {
 		m.logger.Debug("running-poll-cycle-for-updated-security-groups", lager.Data{"last-updated-remotely": asgLastUpdated, "last-updated-locally": m.asgLastUpdated})
+		// only advance the watermark once the cycle succeeds, so a failed enforce is retried on the next poll
+		if err := m.DoASGCycle(); err != nil {
+			return err
+		}
 		m.asgLastUpdated = asgLastUpdated
-		return m.DoASGCycle()
+		return nil
 	}
 
 	m.logger.Debug("skipping-asg-poll-cycle", lager.Data{"last-updated-remotely": asgLastUpdated, "last-updated-locally": m.asgLastUpdated})

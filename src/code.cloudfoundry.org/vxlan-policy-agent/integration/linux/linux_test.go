@@ -14,6 +14,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync/atomic"
 
 	"code.cloudfoundry.org/diego-logging-client/testhelpers"
 	"code.cloudfoundry.org/vxlan-policy-agent/config"
@@ -240,6 +241,38 @@ var _ = Describe("VXLAN Policy Agent", func() {
 				Consistently(session).ShouldNot(gexec.Exit())
 				session.Interrupt()
 				Eventually(session, DEFAULT_TIMEOUT).Should(gexec.Exit())
+			})
+
+			Describe("when a poll cycle fails and the policy server's lastUpdated does not change afterwards", func() {
+				BeforeEach(func() {
+					// A non-zero lastUpdated engages the agent's skip logic: a cycle only runs
+					// when this value increases (or when a previous cycle failed).
+					policiesLastUpdated.Store(10)
+				})
+
+				AfterEach(func() {
+					policiesLastUpdated.Store(0)
+					policiesFailing.Store(false)
+					policiesExtra.Store(false)
+				})
+
+				It("retries the failed cycle and applies the new policy once the failure clears", func() {
+					By("applying the initial policies")
+					Eventually(iptablesFilterRules, "10s", "1s").Should(MatchRegexp(`-A vpa--[0-9]+ -d 10.255.100.21/32 -p tcp -m tcp --dport 9999 -m mark --mark 0xc`))
+
+					By("changing the policies while the policy server is failing")
+					policiesExtra.Store(true)
+					policiesFailing.Store(true)
+					policiesLastUpdated.Store(11)
+					Eventually(session.Out, "5s").Should(Say("http status 500"))
+					Expect(iptablesFilterRules()).NotTo(ContainSubstring("--dport 4444"))
+
+					By("clearing the failure without changing lastUpdated")
+					policiesFailing.Store(false)
+
+					By("expecting a later poll to retry and apply the new policy")
+					Eventually(iptablesFilterRules, "10s", "1s").Should(MatchRegexp(`-A vpa--[0-9]+ -d 10.255.100.21/32 -p tcp -m tcp --dport 4444 -m mark --mark 0xc`))
+				})
 			})
 
 			Describe("the debug server", func() {
@@ -954,10 +987,40 @@ func startAgent(binaryPath, configPath string) *gexec.Session {
 	return session
 }
 
+// Knobs for the mock policy server. When policiesLastUpdated is 0 (the default) the server
+// 404s on the *_last_updated endpoints, so the agent runs every cycle. Tests that need the
+// lastUpdated skip logic set it to a non-zero value; policiesFailing makes the policies endpoint 500.
+var (
+	policiesLastUpdated atomic.Int64
+	policiesFailing     atomic.Bool
+	policiesExtra       atomic.Bool // adds a policy allowing another-app-guid -> some-very-very-long-app-guid on tcp/4444
+)
+
+const extraPolicyJSON = `,
+						{
+							"source": {"id":"another-app-guid", "tag":"C"},
+							"destination": {"id": "some-very-very-long-app-guid", "tag":"A", "protocol":"tcp", "ports":{"start":4444, "end":4444}}
+						}`
+
 func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/networking/v1/internal/policies_last_updated" && policiesLastUpdated.Load() != 0 {
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintf(w, "%d", policiesLastUpdated.Load())
+			return
+		}
+
+		if r.URL.Path == "/networking/v1/internal/policies" && policiesFailing.Load() {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		if r.URL.Path == "/networking/v1/internal/policies" {
 			w.WriteHeader(http.StatusOK)
+			extra := ""
+			if policiesExtra.Load() {
+				extra = extraPolicyJSON
+			}
 			w.Write([]byte(`{
 				"total_policies": 4,
 				"policies": [
@@ -976,7 +1039,7 @@ func startServer(serverListenAddr string, tlsConfig *tls.Config) ifrit.Process {
 					{
 						"source": {"id":"yet-another-app-guid", "tag":"D"},
 						"destination": {"id": "some-very-very-long-app-guid", "tag":"A", "protocol":"udp", "ports":{"start":7000, "end":8000}}
-					}
+					}` + extra + `
 				]
 			}`))
 			return
