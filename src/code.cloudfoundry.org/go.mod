@@ -2,9 +2,6 @@ module code.cloudfoundry.org
 
 go 1.27.3
 
-// pin ifrit until https://github.com/tedsuo/ifrit/pull/48 is merged
-replace github.com/tedsuo/ifrit => github.com/tedsuo/ifrit v0.0.0-20260418191334-846868129986
-
 replace code.cloudfoundry.org/runtimeschema => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 
 replace github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
