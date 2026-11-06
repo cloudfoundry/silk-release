@@ -204,6 +204,29 @@ func (d *DatabaseHandler) DeleteEntry(underlayIP string) error {
 	return nil
 }
 
+func (d *DatabaseHandler) DeleteExpiredEntry(underlayIP string, expirationSeconds int) error {
+	timestamp, err := timestampForDriver(d.db.DriverName())
+	if err != nil {
+		return err
+	}
+
+	deleteRows, err := d.db.Exec(d.db.Rebind(fmt.Sprintf("DELETE FROM subnets WHERE underlay_ip = ? AND last_renewed_at + %d <= %s", expirationSeconds, timestamp)), underlayIP)
+	if err != nil {
+		return fmt.Errorf("deleting expired entry: %s", err)
+	}
+
+	rowsAffected, err := deleteRows.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("parse result: %s", err)
+	}
+
+	if rowsAffected == 0 {
+		return RecordNotAffectedError
+	}
+
+	return nil
+}
+
 func (d *DatabaseHandler) LeaseForUnderlayIP(underlayIP string) (*controller.Lease, error) {
 	var overlaySubnet, overlayHWAddr string
 	result := d.db.QueryRow(d.db.Rebind("SELECT overlay_subnet, overlay_hwaddr FROM subnets WHERE underlay_ip = ?"), underlayIP)

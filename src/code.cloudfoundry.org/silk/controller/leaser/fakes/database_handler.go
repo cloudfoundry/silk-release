@@ -10,10 +10,8 @@ import (
 type DatabaseHandler struct {
 	AddEntryStub        func(controller.Lease) error
 	addEntryMutex       sync.RWMutex
-	addEntryArgsForCall []struct {
-		arg1 controller.Lease
-	}
-	addEntryReturns struct {
+	addEntryArgsForCall []DatabaseHandlerAddEntryArgs
+	addEntryReturns     struct {
 		result1 error
 	}
 	addEntryReturnsOnCall map[int]struct {
@@ -21,9 +19,8 @@ type DatabaseHandler struct {
 	}
 	AllStub        func() ([]controller.Lease, error)
 	allMutex       sync.RWMutex
-	allArgsForCall []struct {
-	}
-	allReturns struct {
+	allArgsForCall []struct{}
+	allReturns     struct {
 		result1 []controller.Lease
 		result2 error
 	}
@@ -33,10 +30,8 @@ type DatabaseHandler struct {
 	}
 	AllActiveStub        func(int) ([]controller.Lease, error)
 	allActiveMutex       sync.RWMutex
-	allActiveArgsForCall []struct {
-		arg1 int
-	}
-	allActiveReturns struct {
+	allActiveArgsForCall []DatabaseHandlerAllActiveArgs
+	allActiveReturns     struct {
 		result1 []controller.Lease
 		result2 error
 	}
@@ -46,9 +41,8 @@ type DatabaseHandler struct {
 	}
 	AllBlockSubnetsStub        func() ([]controller.Lease, error)
 	allBlockSubnetsMutex       sync.RWMutex
-	allBlockSubnetsArgsForCall []struct {
-	}
-	allBlockSubnetsReturns struct {
+	allBlockSubnetsArgsForCall []struct{}
+	allBlockSubnetsReturns     struct {
 		result1 []controller.Lease
 		result2 error
 	}
@@ -58,9 +52,8 @@ type DatabaseHandler struct {
 	}
 	AllSingleIPSubnetsStub        func() ([]controller.Lease, error)
 	allSingleIPSubnetsMutex       sync.RWMutex
-	allSingleIPSubnetsArgsForCall []struct {
-	}
-	allSingleIPSubnetsReturns struct {
+	allSingleIPSubnetsArgsForCall []struct{}
+	allSingleIPSubnetsReturns     struct {
 		result1 []controller.Lease
 		result2 error
 	}
@@ -70,21 +63,26 @@ type DatabaseHandler struct {
 	}
 	DeleteEntryStub        func(string) error
 	deleteEntryMutex       sync.RWMutex
-	deleteEntryArgsForCall []struct {
-		arg1 string
-	}
-	deleteEntryReturns struct {
+	deleteEntryArgsForCall []DatabaseHandlerDeleteEntryArgs
+	deleteEntryReturns     struct {
 		result1 error
 	}
 	deleteEntryReturnsOnCall map[int]struct {
 		result1 error
 	}
+	DeleteExpiredEntryStub        func(string, int) error
+	deleteExpiredEntryMutex       sync.RWMutex
+	deleteExpiredEntryArgsForCall []DatabaseHandlerDeleteExpiredEntryArgs
+	deleteExpiredEntryReturns     struct {
+		result1 error
+	}
+	deleteExpiredEntryReturnsOnCall map[int]struct {
+		result1 error
+	}
 	LastRenewedAtForUnderlayIPStub        func(string) (int64, error)
 	lastRenewedAtForUnderlayIPMutex       sync.RWMutex
-	lastRenewedAtForUnderlayIPArgsForCall []struct {
-		arg1 string
-	}
-	lastRenewedAtForUnderlayIPReturns struct {
+	lastRenewedAtForUnderlayIPArgsForCall []DatabaseHandlerLastRenewedAtForUnderlayIPArgs
+	lastRenewedAtForUnderlayIPReturns     struct {
 		result1 int64
 		result2 error
 	}
@@ -94,10 +92,8 @@ type DatabaseHandler struct {
 	}
 	LeaseForUnderlayIPStub        func(string) (*controller.Lease, error)
 	leaseForUnderlayIPMutex       sync.RWMutex
-	leaseForUnderlayIPArgsForCall []struct {
-		arg1 string
-	}
-	leaseForUnderlayIPReturns struct {
+	leaseForUnderlayIPArgsForCall []DatabaseHandlerLeaseForUnderlayIPArgs
+	leaseForUnderlayIPReturns     struct {
 		result1 *controller.Lease
 		result2 error
 	}
@@ -107,10 +103,8 @@ type DatabaseHandler struct {
 	}
 	OldestExpiredBlockSubnetStub        func(int) (*controller.Lease, error)
 	oldestExpiredBlockSubnetMutex       sync.RWMutex
-	oldestExpiredBlockSubnetArgsForCall []struct {
-		arg1 int
-	}
-	oldestExpiredBlockSubnetReturns struct {
+	oldestExpiredBlockSubnetArgsForCall []DatabaseHandlerOldestExpiredBlockSubnetArgs
+	oldestExpiredBlockSubnetReturns     struct {
 		result1 *controller.Lease
 		result2 error
 	}
@@ -120,10 +114,8 @@ type DatabaseHandler struct {
 	}
 	OldestExpiredSingleIPStub        func(int) (*controller.Lease, error)
 	oldestExpiredSingleIPMutex       sync.RWMutex
-	oldestExpiredSingleIPArgsForCall []struct {
-		arg1 int
-	}
-	oldestExpiredSingleIPReturns struct {
+	oldestExpiredSingleIPArgsForCall []DatabaseHandlerOldestExpiredSingleIPArgs
+	oldestExpiredSingleIPReturns     struct {
 		result1 *controller.Lease
 		result2 error
 	}
@@ -133,25 +125,68 @@ type DatabaseHandler struct {
 	}
 	RenewLeaseForUnderlayIPStub        func(string) error
 	renewLeaseForUnderlayIPMutex       sync.RWMutex
-	renewLeaseForUnderlayIPArgsForCall []struct {
-		arg1 string
-	}
-	renewLeaseForUnderlayIPReturns struct {
+	renewLeaseForUnderlayIPArgsForCall []DatabaseHandlerRenewLeaseForUnderlayIPArgs
+	renewLeaseForUnderlayIPReturns     struct {
 		result1 error
 	}
 	renewLeaseForUnderlayIPReturnsOnCall map[int]struct {
 		result1 error
 	}
 	invocations      map[string][][]interface{}
+	callOrder        []string
 	invocationsMutex sync.RWMutex
+}
+
+// DatabaseHandlerAddEntryArgs holds the arguments of one call to AddEntry.
+type DatabaseHandlerAddEntryArgs struct {
+	Arg1 controller.Lease
+}
+
+// DatabaseHandlerAllActiveArgs holds the arguments of one call to AllActive.
+type DatabaseHandlerAllActiveArgs struct {
+	Arg1 int
+}
+
+// DatabaseHandlerDeleteEntryArgs holds the arguments of one call to DeleteEntry.
+type DatabaseHandlerDeleteEntryArgs struct {
+	Arg1 string
+}
+
+// DatabaseHandlerDeleteExpiredEntryArgs holds the arguments of one call to DeleteExpiredEntry.
+type DatabaseHandlerDeleteExpiredEntryArgs struct {
+	Arg1 string
+	Arg2 int
+}
+
+// DatabaseHandlerLastRenewedAtForUnderlayIPArgs holds the arguments of one call to LastRenewedAtForUnderlayIP.
+type DatabaseHandlerLastRenewedAtForUnderlayIPArgs struct {
+	Arg1 string
+}
+
+// DatabaseHandlerLeaseForUnderlayIPArgs holds the arguments of one call to LeaseForUnderlayIP.
+type DatabaseHandlerLeaseForUnderlayIPArgs struct {
+	Arg1 string
+}
+
+// DatabaseHandlerOldestExpiredBlockSubnetArgs holds the arguments of one call to OldestExpiredBlockSubnet.
+type DatabaseHandlerOldestExpiredBlockSubnetArgs struct {
+	Arg1 int
+}
+
+// DatabaseHandlerOldestExpiredSingleIPArgs holds the arguments of one call to OldestExpiredSingleIP.
+type DatabaseHandlerOldestExpiredSingleIPArgs struct {
+	Arg1 int
+}
+
+// DatabaseHandlerRenewLeaseForUnderlayIPArgs holds the arguments of one call to RenewLeaseForUnderlayIP.
+type DatabaseHandlerRenewLeaseForUnderlayIPArgs struct {
+	Arg1 string
 }
 
 func (fake *DatabaseHandler) AddEntry(arg1 controller.Lease) error {
 	fake.addEntryMutex.Lock()
 	ret, specificReturn := fake.addEntryReturnsOnCall[len(fake.addEntryArgsForCall)]
-	fake.addEntryArgsForCall = append(fake.addEntryArgsForCall, struct {
-		arg1 controller.Lease
-	}{arg1})
+	fake.addEntryArgsForCall = append(fake.addEntryArgsForCall, DatabaseHandlerAddEntryArgs{arg1})
 	stub := fake.AddEntryStub
 	fakeReturns := fake.addEntryReturns
 	fake.recordInvocation("AddEntry", []interface{}{arg1})
@@ -181,7 +216,15 @@ func (fake *DatabaseHandler) AddEntryArgsForCall(i int) controller.Lease {
 	fake.addEntryMutex.RLock()
 	defer fake.addEntryMutex.RUnlock()
 	argsForCall := fake.addEntryArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.Arg1
+}
+
+func (fake *DatabaseHandler) AddEntryArgs() []DatabaseHandlerAddEntryArgs {
+	fake.addEntryMutex.RLock()
+	defer fake.addEntryMutex.RUnlock()
+	args := make([]DatabaseHandlerAddEntryArgs, len(fake.addEntryArgsForCall))
+	copy(args, fake.addEntryArgsForCall)
+	return args
 }
 
 func (fake *DatabaseHandler) AddEntryReturns(result1 error) {
@@ -210,8 +253,7 @@ func (fake *DatabaseHandler) AddEntryReturnsOnCall(i int, result1 error) {
 func (fake *DatabaseHandler) All() ([]controller.Lease, error) {
 	fake.allMutex.Lock()
 	ret, specificReturn := fake.allReturnsOnCall[len(fake.allArgsForCall)]
-	fake.allArgsForCall = append(fake.allArgsForCall, struct {
-	}{})
+	fake.allArgsForCall = append(fake.allArgsForCall, struct{}{})
 	stub := fake.AllStub
 	fakeReturns := fake.allReturns
 	fake.recordInvocation("All", []interface{}{})
@@ -266,9 +308,7 @@ func (fake *DatabaseHandler) AllReturnsOnCall(i int, result1 []controller.Lease,
 func (fake *DatabaseHandler) AllActive(arg1 int) ([]controller.Lease, error) {
 	fake.allActiveMutex.Lock()
 	ret, specificReturn := fake.allActiveReturnsOnCall[len(fake.allActiveArgsForCall)]
-	fake.allActiveArgsForCall = append(fake.allActiveArgsForCall, struct {
-		arg1 int
-	}{arg1})
+	fake.allActiveArgsForCall = append(fake.allActiveArgsForCall, DatabaseHandlerAllActiveArgs{arg1})
 	stub := fake.AllActiveStub
 	fakeReturns := fake.allActiveReturns
 	fake.recordInvocation("AllActive", []interface{}{arg1})
@@ -298,7 +338,15 @@ func (fake *DatabaseHandler) AllActiveArgsForCall(i int) int {
 	fake.allActiveMutex.RLock()
 	defer fake.allActiveMutex.RUnlock()
 	argsForCall := fake.allActiveArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.Arg1
+}
+
+func (fake *DatabaseHandler) AllActiveArgs() []DatabaseHandlerAllActiveArgs {
+	fake.allActiveMutex.RLock()
+	defer fake.allActiveMutex.RUnlock()
+	args := make([]DatabaseHandlerAllActiveArgs, len(fake.allActiveArgsForCall))
+	copy(args, fake.allActiveArgsForCall)
+	return args
 }
 
 func (fake *DatabaseHandler) AllActiveReturns(result1 []controller.Lease, result2 error) {
@@ -330,8 +378,7 @@ func (fake *DatabaseHandler) AllActiveReturnsOnCall(i int, result1 []controller.
 func (fake *DatabaseHandler) AllBlockSubnets() ([]controller.Lease, error) {
 	fake.allBlockSubnetsMutex.Lock()
 	ret, specificReturn := fake.allBlockSubnetsReturnsOnCall[len(fake.allBlockSubnetsArgsForCall)]
-	fake.allBlockSubnetsArgsForCall = append(fake.allBlockSubnetsArgsForCall, struct {
-	}{})
+	fake.allBlockSubnetsArgsForCall = append(fake.allBlockSubnetsArgsForCall, struct{}{})
 	stub := fake.AllBlockSubnetsStub
 	fakeReturns := fake.allBlockSubnetsReturns
 	fake.recordInvocation("AllBlockSubnets", []interface{}{})
@@ -386,8 +433,7 @@ func (fake *DatabaseHandler) AllBlockSubnetsReturnsOnCall(i int, result1 []contr
 func (fake *DatabaseHandler) AllSingleIPSubnets() ([]controller.Lease, error) {
 	fake.allSingleIPSubnetsMutex.Lock()
 	ret, specificReturn := fake.allSingleIPSubnetsReturnsOnCall[len(fake.allSingleIPSubnetsArgsForCall)]
-	fake.allSingleIPSubnetsArgsForCall = append(fake.allSingleIPSubnetsArgsForCall, struct {
-	}{})
+	fake.allSingleIPSubnetsArgsForCall = append(fake.allSingleIPSubnetsArgsForCall, struct{}{})
 	stub := fake.AllSingleIPSubnetsStub
 	fakeReturns := fake.allSingleIPSubnetsReturns
 	fake.recordInvocation("AllSingleIPSubnets", []interface{}{})
@@ -442,9 +488,7 @@ func (fake *DatabaseHandler) AllSingleIPSubnetsReturnsOnCall(i int, result1 []co
 func (fake *DatabaseHandler) DeleteEntry(arg1 string) error {
 	fake.deleteEntryMutex.Lock()
 	ret, specificReturn := fake.deleteEntryReturnsOnCall[len(fake.deleteEntryArgsForCall)]
-	fake.deleteEntryArgsForCall = append(fake.deleteEntryArgsForCall, struct {
-		arg1 string
-	}{arg1})
+	fake.deleteEntryArgsForCall = append(fake.deleteEntryArgsForCall, DatabaseHandlerDeleteEntryArgs{arg1})
 	stub := fake.DeleteEntryStub
 	fakeReturns := fake.deleteEntryReturns
 	fake.recordInvocation("DeleteEntry", []interface{}{arg1})
@@ -474,7 +518,15 @@ func (fake *DatabaseHandler) DeleteEntryArgsForCall(i int) string {
 	fake.deleteEntryMutex.RLock()
 	defer fake.deleteEntryMutex.RUnlock()
 	argsForCall := fake.deleteEntryArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.Arg1
+}
+
+func (fake *DatabaseHandler) DeleteEntryArgs() []DatabaseHandlerDeleteEntryArgs {
+	fake.deleteEntryMutex.RLock()
+	defer fake.deleteEntryMutex.RUnlock()
+	args := make([]DatabaseHandlerDeleteEntryArgs, len(fake.deleteEntryArgsForCall))
+	copy(args, fake.deleteEntryArgsForCall)
+	return args
 }
 
 func (fake *DatabaseHandler) DeleteEntryReturns(result1 error) {
@@ -500,12 +552,77 @@ func (fake *DatabaseHandler) DeleteEntryReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *DatabaseHandler) DeleteExpiredEntry(arg1 string, arg2 int) error {
+	fake.deleteExpiredEntryMutex.Lock()
+	ret, specificReturn := fake.deleteExpiredEntryReturnsOnCall[len(fake.deleteExpiredEntryArgsForCall)]
+	fake.deleteExpiredEntryArgsForCall = append(fake.deleteExpiredEntryArgsForCall, DatabaseHandlerDeleteExpiredEntryArgs{arg1, arg2})
+	stub := fake.DeleteExpiredEntryStub
+	fakeReturns := fake.deleteExpiredEntryReturns
+	fake.recordInvocation("DeleteExpiredEntry", []interface{}{arg1, arg2})
+	fake.deleteExpiredEntryMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *DatabaseHandler) DeleteExpiredEntryCallCount() int {
+	fake.deleteExpiredEntryMutex.RLock()
+	defer fake.deleteExpiredEntryMutex.RUnlock()
+	return len(fake.deleteExpiredEntryArgsForCall)
+}
+
+func (fake *DatabaseHandler) DeleteExpiredEntryCalls(stub func(string, int) error) {
+	fake.deleteExpiredEntryMutex.Lock()
+	defer fake.deleteExpiredEntryMutex.Unlock()
+	fake.DeleteExpiredEntryStub = stub
+}
+
+func (fake *DatabaseHandler) DeleteExpiredEntryArgsForCall(i int) (string, int) {
+	fake.deleteExpiredEntryMutex.RLock()
+	defer fake.deleteExpiredEntryMutex.RUnlock()
+	argsForCall := fake.deleteExpiredEntryArgsForCall[i]
+	return argsForCall.Arg1, argsForCall.Arg2
+}
+
+func (fake *DatabaseHandler) DeleteExpiredEntryArgs() []DatabaseHandlerDeleteExpiredEntryArgs {
+	fake.deleteExpiredEntryMutex.RLock()
+	defer fake.deleteExpiredEntryMutex.RUnlock()
+	args := make([]DatabaseHandlerDeleteExpiredEntryArgs, len(fake.deleteExpiredEntryArgsForCall))
+	copy(args, fake.deleteExpiredEntryArgsForCall)
+	return args
+}
+
+func (fake *DatabaseHandler) DeleteExpiredEntryReturns(result1 error) {
+	fake.deleteExpiredEntryMutex.Lock()
+	defer fake.deleteExpiredEntryMutex.Unlock()
+	fake.DeleteExpiredEntryStub = nil
+	fake.deleteExpiredEntryReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *DatabaseHandler) DeleteExpiredEntryReturnsOnCall(i int, result1 error) {
+	fake.deleteExpiredEntryMutex.Lock()
+	defer fake.deleteExpiredEntryMutex.Unlock()
+	fake.DeleteExpiredEntryStub = nil
+	if fake.deleteExpiredEntryReturnsOnCall == nil {
+		fake.deleteExpiredEntryReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.deleteExpiredEntryReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *DatabaseHandler) LastRenewedAtForUnderlayIP(arg1 string) (int64, error) {
 	fake.lastRenewedAtForUnderlayIPMutex.Lock()
 	ret, specificReturn := fake.lastRenewedAtForUnderlayIPReturnsOnCall[len(fake.lastRenewedAtForUnderlayIPArgsForCall)]
-	fake.lastRenewedAtForUnderlayIPArgsForCall = append(fake.lastRenewedAtForUnderlayIPArgsForCall, struct {
-		arg1 string
-	}{arg1})
+	fake.lastRenewedAtForUnderlayIPArgsForCall = append(fake.lastRenewedAtForUnderlayIPArgsForCall, DatabaseHandlerLastRenewedAtForUnderlayIPArgs{arg1})
 	stub := fake.LastRenewedAtForUnderlayIPStub
 	fakeReturns := fake.lastRenewedAtForUnderlayIPReturns
 	fake.recordInvocation("LastRenewedAtForUnderlayIP", []interface{}{arg1})
@@ -535,7 +652,15 @@ func (fake *DatabaseHandler) LastRenewedAtForUnderlayIPArgsForCall(i int) string
 	fake.lastRenewedAtForUnderlayIPMutex.RLock()
 	defer fake.lastRenewedAtForUnderlayIPMutex.RUnlock()
 	argsForCall := fake.lastRenewedAtForUnderlayIPArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.Arg1
+}
+
+func (fake *DatabaseHandler) LastRenewedAtForUnderlayIPArgs() []DatabaseHandlerLastRenewedAtForUnderlayIPArgs {
+	fake.lastRenewedAtForUnderlayIPMutex.RLock()
+	defer fake.lastRenewedAtForUnderlayIPMutex.RUnlock()
+	args := make([]DatabaseHandlerLastRenewedAtForUnderlayIPArgs, len(fake.lastRenewedAtForUnderlayIPArgsForCall))
+	copy(args, fake.lastRenewedAtForUnderlayIPArgsForCall)
+	return args
 }
 
 func (fake *DatabaseHandler) LastRenewedAtForUnderlayIPReturns(result1 int64, result2 error) {
@@ -567,9 +692,7 @@ func (fake *DatabaseHandler) LastRenewedAtForUnderlayIPReturnsOnCall(i int, resu
 func (fake *DatabaseHandler) LeaseForUnderlayIP(arg1 string) (*controller.Lease, error) {
 	fake.leaseForUnderlayIPMutex.Lock()
 	ret, specificReturn := fake.leaseForUnderlayIPReturnsOnCall[len(fake.leaseForUnderlayIPArgsForCall)]
-	fake.leaseForUnderlayIPArgsForCall = append(fake.leaseForUnderlayIPArgsForCall, struct {
-		arg1 string
-	}{arg1})
+	fake.leaseForUnderlayIPArgsForCall = append(fake.leaseForUnderlayIPArgsForCall, DatabaseHandlerLeaseForUnderlayIPArgs{arg1})
 	stub := fake.LeaseForUnderlayIPStub
 	fakeReturns := fake.leaseForUnderlayIPReturns
 	fake.recordInvocation("LeaseForUnderlayIP", []interface{}{arg1})
@@ -599,7 +722,15 @@ func (fake *DatabaseHandler) LeaseForUnderlayIPArgsForCall(i int) string {
 	fake.leaseForUnderlayIPMutex.RLock()
 	defer fake.leaseForUnderlayIPMutex.RUnlock()
 	argsForCall := fake.leaseForUnderlayIPArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.Arg1
+}
+
+func (fake *DatabaseHandler) LeaseForUnderlayIPArgs() []DatabaseHandlerLeaseForUnderlayIPArgs {
+	fake.leaseForUnderlayIPMutex.RLock()
+	defer fake.leaseForUnderlayIPMutex.RUnlock()
+	args := make([]DatabaseHandlerLeaseForUnderlayIPArgs, len(fake.leaseForUnderlayIPArgsForCall))
+	copy(args, fake.leaseForUnderlayIPArgsForCall)
+	return args
 }
 
 func (fake *DatabaseHandler) LeaseForUnderlayIPReturns(result1 *controller.Lease, result2 error) {
@@ -631,9 +762,7 @@ func (fake *DatabaseHandler) LeaseForUnderlayIPReturnsOnCall(i int, result1 *con
 func (fake *DatabaseHandler) OldestExpiredBlockSubnet(arg1 int) (*controller.Lease, error) {
 	fake.oldestExpiredBlockSubnetMutex.Lock()
 	ret, specificReturn := fake.oldestExpiredBlockSubnetReturnsOnCall[len(fake.oldestExpiredBlockSubnetArgsForCall)]
-	fake.oldestExpiredBlockSubnetArgsForCall = append(fake.oldestExpiredBlockSubnetArgsForCall, struct {
-		arg1 int
-	}{arg1})
+	fake.oldestExpiredBlockSubnetArgsForCall = append(fake.oldestExpiredBlockSubnetArgsForCall, DatabaseHandlerOldestExpiredBlockSubnetArgs{arg1})
 	stub := fake.OldestExpiredBlockSubnetStub
 	fakeReturns := fake.oldestExpiredBlockSubnetReturns
 	fake.recordInvocation("OldestExpiredBlockSubnet", []interface{}{arg1})
@@ -663,7 +792,15 @@ func (fake *DatabaseHandler) OldestExpiredBlockSubnetArgsForCall(i int) int {
 	fake.oldestExpiredBlockSubnetMutex.RLock()
 	defer fake.oldestExpiredBlockSubnetMutex.RUnlock()
 	argsForCall := fake.oldestExpiredBlockSubnetArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.Arg1
+}
+
+func (fake *DatabaseHandler) OldestExpiredBlockSubnetArgs() []DatabaseHandlerOldestExpiredBlockSubnetArgs {
+	fake.oldestExpiredBlockSubnetMutex.RLock()
+	defer fake.oldestExpiredBlockSubnetMutex.RUnlock()
+	args := make([]DatabaseHandlerOldestExpiredBlockSubnetArgs, len(fake.oldestExpiredBlockSubnetArgsForCall))
+	copy(args, fake.oldestExpiredBlockSubnetArgsForCall)
+	return args
 }
 
 func (fake *DatabaseHandler) OldestExpiredBlockSubnetReturns(result1 *controller.Lease, result2 error) {
@@ -695,9 +832,7 @@ func (fake *DatabaseHandler) OldestExpiredBlockSubnetReturnsOnCall(i int, result
 func (fake *DatabaseHandler) OldestExpiredSingleIP(arg1 int) (*controller.Lease, error) {
 	fake.oldestExpiredSingleIPMutex.Lock()
 	ret, specificReturn := fake.oldestExpiredSingleIPReturnsOnCall[len(fake.oldestExpiredSingleIPArgsForCall)]
-	fake.oldestExpiredSingleIPArgsForCall = append(fake.oldestExpiredSingleIPArgsForCall, struct {
-		arg1 int
-	}{arg1})
+	fake.oldestExpiredSingleIPArgsForCall = append(fake.oldestExpiredSingleIPArgsForCall, DatabaseHandlerOldestExpiredSingleIPArgs{arg1})
 	stub := fake.OldestExpiredSingleIPStub
 	fakeReturns := fake.oldestExpiredSingleIPReturns
 	fake.recordInvocation("OldestExpiredSingleIP", []interface{}{arg1})
@@ -727,7 +862,15 @@ func (fake *DatabaseHandler) OldestExpiredSingleIPArgsForCall(i int) int {
 	fake.oldestExpiredSingleIPMutex.RLock()
 	defer fake.oldestExpiredSingleIPMutex.RUnlock()
 	argsForCall := fake.oldestExpiredSingleIPArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.Arg1
+}
+
+func (fake *DatabaseHandler) OldestExpiredSingleIPArgs() []DatabaseHandlerOldestExpiredSingleIPArgs {
+	fake.oldestExpiredSingleIPMutex.RLock()
+	defer fake.oldestExpiredSingleIPMutex.RUnlock()
+	args := make([]DatabaseHandlerOldestExpiredSingleIPArgs, len(fake.oldestExpiredSingleIPArgsForCall))
+	copy(args, fake.oldestExpiredSingleIPArgsForCall)
+	return args
 }
 
 func (fake *DatabaseHandler) OldestExpiredSingleIPReturns(result1 *controller.Lease, result2 error) {
@@ -759,9 +902,7 @@ func (fake *DatabaseHandler) OldestExpiredSingleIPReturnsOnCall(i int, result1 *
 func (fake *DatabaseHandler) RenewLeaseForUnderlayIP(arg1 string) error {
 	fake.renewLeaseForUnderlayIPMutex.Lock()
 	ret, specificReturn := fake.renewLeaseForUnderlayIPReturnsOnCall[len(fake.renewLeaseForUnderlayIPArgsForCall)]
-	fake.renewLeaseForUnderlayIPArgsForCall = append(fake.renewLeaseForUnderlayIPArgsForCall, struct {
-		arg1 string
-	}{arg1})
+	fake.renewLeaseForUnderlayIPArgsForCall = append(fake.renewLeaseForUnderlayIPArgsForCall, DatabaseHandlerRenewLeaseForUnderlayIPArgs{arg1})
 	stub := fake.RenewLeaseForUnderlayIPStub
 	fakeReturns := fake.renewLeaseForUnderlayIPReturns
 	fake.recordInvocation("RenewLeaseForUnderlayIP", []interface{}{arg1})
@@ -791,7 +932,15 @@ func (fake *DatabaseHandler) RenewLeaseForUnderlayIPArgsForCall(i int) string {
 	fake.renewLeaseForUnderlayIPMutex.RLock()
 	defer fake.renewLeaseForUnderlayIPMutex.RUnlock()
 	argsForCall := fake.renewLeaseForUnderlayIPArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.Arg1
+}
+
+func (fake *DatabaseHandler) RenewLeaseForUnderlayIPArgs() []DatabaseHandlerRenewLeaseForUnderlayIPArgs {
+	fake.renewLeaseForUnderlayIPMutex.RLock()
+	defer fake.renewLeaseForUnderlayIPMutex.RUnlock()
+	args := make([]DatabaseHandlerRenewLeaseForUnderlayIPArgs, len(fake.renewLeaseForUnderlayIPArgsForCall))
+	copy(args, fake.renewLeaseForUnderlayIPArgsForCall)
+	return args
 }
 
 func (fake *DatabaseHandler) RenewLeaseForUnderlayIPReturns(result1 error) {
@@ -820,28 +969,6 @@ func (fake *DatabaseHandler) RenewLeaseForUnderlayIPReturnsOnCall(i int, result1
 func (fake *DatabaseHandler) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.addEntryMutex.RLock()
-	defer fake.addEntryMutex.RUnlock()
-	fake.allMutex.RLock()
-	defer fake.allMutex.RUnlock()
-	fake.allActiveMutex.RLock()
-	defer fake.allActiveMutex.RUnlock()
-	fake.allBlockSubnetsMutex.RLock()
-	defer fake.allBlockSubnetsMutex.RUnlock()
-	fake.allSingleIPSubnetsMutex.RLock()
-	defer fake.allSingleIPSubnetsMutex.RUnlock()
-	fake.deleteEntryMutex.RLock()
-	defer fake.deleteEntryMutex.RUnlock()
-	fake.lastRenewedAtForUnderlayIPMutex.RLock()
-	defer fake.lastRenewedAtForUnderlayIPMutex.RUnlock()
-	fake.leaseForUnderlayIPMutex.RLock()
-	defer fake.leaseForUnderlayIPMutex.RUnlock()
-	fake.oldestExpiredBlockSubnetMutex.RLock()
-	defer fake.oldestExpiredBlockSubnetMutex.RUnlock()
-	fake.oldestExpiredSingleIPMutex.RLock()
-	defer fake.oldestExpiredSingleIPMutex.RUnlock()
-	fake.renewLeaseForUnderlayIPMutex.RLock()
-	defer fake.renewLeaseForUnderlayIPMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
@@ -849,9 +976,18 @@ func (fake *DatabaseHandler) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
+func (fake *DatabaseHandler) CallOrder() []string {
+	fake.invocationsMutex.RLock()
+	defer fake.invocationsMutex.RUnlock()
+	order := make([]string, len(fake.callOrder))
+	copy(order, fake.callOrder)
+	return order
+}
+
 func (fake *DatabaseHandler) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
+	fake.callOrder = append(fake.callOrder, key)
 	if fake.invocations == nil {
 		fake.invocations = map[string][][]interface{}{}
 	}
