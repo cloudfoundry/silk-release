@@ -19,6 +19,7 @@ import (
 type databaseHandler interface {
 	AddEntry(controller.Lease) error
 	DeleteEntry(string) error
+	DeleteExpiredEntry(string, int) error
 	LeaseForUnderlayIP(string) (*controller.Lease, error)
 	LastRenewedAtForUnderlayIP(string) (int64, error)
 	RenewLeaseForUnderlayIP(string) error
@@ -227,7 +228,10 @@ func (c *LeaseController) tryAcquireAvailableSingleIPSubnet(underlayIP string) (
 		} else if lease == nil {
 			return "", nil
 		} else {
-			err := c.DatabaseHandler.DeleteEntry(lease.UnderlayIP)
+			err := c.DatabaseHandler.DeleteExpiredEntry(lease.UnderlayIP, c.LeaseExpirationSeconds)
+			if err == database.RecordNotAffectedError {
+				return "", nil
+			}
 			if err != nil {
 				return "", fmt.Errorf("delete expired subnet: %s", err)
 			}
@@ -257,7 +261,10 @@ func (c *LeaseController) tryAcquireAvailableBlockSubnet(underlayIP string) (str
 		} else if lease == nil {
 			return "", nil
 		} else {
-			err := c.DatabaseHandler.DeleteEntry(lease.UnderlayIP)
+			err := c.DatabaseHandler.DeleteExpiredEntry(lease.UnderlayIP, c.LeaseExpirationSeconds)
+			if err == database.RecordNotAffectedError {
+				return "", nil
+			}
 			if err != nil {
 				return "", fmt.Errorf("delete expired subnet: %s", err) // test
 			}

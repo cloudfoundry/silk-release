@@ -3,6 +3,8 @@ package rules_test
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"code.cloudfoundry.org/lib/fakes"
 	"code.cloudfoundry.org/lib/rules"
@@ -300,7 +302,7 @@ var _ = Describe("LockedIptables", func() {
 			}, nil)
 		})
 
-		It("locks and passes the correct parameters to iptables", func() {
+		It("locks, inserts a REJECT at ruleNum, then deletes the rest", func() {
 			err := lockedIPT.DeleteAfterRuleNumKeepReject("some-table", "some-chain", 2)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -308,29 +310,145 @@ var _ = Describe("LockedIptables", func() {
 			Expect(lock.UnlockCallCount()).To(Equal(1))
 			Expect(ipt.DeleteCallCount()).To(Equal(3))
 			Expect(ipt.ListCallCount()).To(Equal(1))
+			Expect(ipt.InsertCallCount()).To(Equal(1))
+			Expect(ipt.AppendUniqueCallCount()).To(Equal(0))
 
 			table, chain := ipt.ListArgsForCall(0)
 			Expect(table).To(Equal("some-table"))
 			Expect(chain).To(Equal("some-chain"))
 
-			table, chain, ruleNum := ipt.DeleteArgsForCall(0)
+			table, chain, pos, rulespec := ipt.InsertArgsForCall(0)
 			Expect(table).To(Equal("some-table"))
 			Expect(chain).To(Equal("some-chain"))
-			Expect(ruleNum).To(Equal([]string{"2", "--wait"}))
-			table, chain, ruleNum = ipt.DeleteArgsForCall(1)
-			Expect(table).To(Equal("some-table"))
-			Expect(chain).To(Equal("some-chain"))
-			Expect(ruleNum).To(Equal([]string{"2", "--wait"}))
-			table, chain, ruleNum = ipt.DeleteArgsForCall(2)
-			Expect(table).To(Equal("some-table"))
-			Expect(chain).To(Equal("some-chain"))
-			Expect(ruleNum).To(Equal([]string{"2", "--wait"}))
+			Expect(pos).To(Equal(2))
+			Expect(rulespec).To(Equal([]string{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"}))
 
-			Expect(ipt.AppendUniqueCallCount()).To(Equal(1))
-			table, chain, rules := ipt.AppendUniqueArgsForCall(0)
-			Expect(table).To(Equal("some-table"))
-			Expect(chain).To(Equal("some-chain"))
-			Expect(rules).To(Equal([]string{"--jump", "REJECT", "--reject-with", "icmp-port-unreachable"}))
+			for i := 0; i < 3; i++ {
+				table, chain, ruleNum := ipt.DeleteArgsForCall(i)
+				Expect(table).To(Equal("some-table"))
+				Expect(chain).To(Equal("some-chain"))
+				Expect(ruleNum).To(Equal([]string{"3", "--wait"}))
+			}
+		})
+
+		Context("ordering and chain state", func() {
+			var (
+				callLog               []string
+				chainState            []string
+				rejectPresentAtDelete []bool
+			)
+
+			hasReject := func(chain []string) bool {
+				for _, r := range chain {
+					if strings.Contains(r, "REJECT") {
+						return true
+					}
+				}
+				return false
+			}
+
+			// listed includes the "-N chain" header at index 0, as iptables -S does
+			setup := func(listed []string) {
+				callLog = nil
+				rejectPresentAtDelete = nil
+				chainState = append([]string{}, listed[1:]...)
+				ipt.ListReturns(listed, nil)
+				ipt.InsertStub = func(_, _ string, pos int, rulespec ...string) error {
+					callLog = append(callLog, fmt.Sprintf("insert:%d", pos))
+					idx := pos - 1
+					newRule := "-A c " + strings.Join(rulespec, " ")
+					chainState = append(chainState[:idx], append([]string{newRule}, chainState[idx:]...)...)
+					return nil
+				}
+				ipt.DeleteStub = func(_, _ string, args ...string) error {
+					callLog = append(callLog, "delete:"+strings.Join(args, " "))
+					n, err := strconv.Atoi(args[0])
+					Expect(err).NotTo(HaveOccurred())
+					chainState = append(chainState[:n-1], chainState[n:]...)
+					rejectPresentAtDelete = append(rejectPresentAtDelete, hasReject(chainState))
+					return nil
+				}
+			}
+
+			Context("with more rules than ruleNum", func() {
+				BeforeEach(func() {
+					setup([]string{
+						"-N c",
+						"-A c A",
+						"-A c B",
+						"-A c X",
+						"-A c Y",
+						"-A c -j REJECT --reject-with icmp-port-unreachable",
+					})
+				})
+
+				It("inserts at ruleNum before any delete", func() {
+					Expect(lockedIPT.DeleteAfterRuleNumKeepReject("t", "c", 2)).To(Succeed())
+					Expect(callLog).NotTo(BeEmpty())
+					Expect(callLog[0]).To(Equal("insert:2"))
+					for _, entry := range callLog[1:] {
+						Expect(entry).To(HavePrefix("delete:"))
+					}
+				})
+
+				It("deletes only position ruleNum+1 with --wait", func() {
+					Expect(lockedIPT.DeleteAfterRuleNumKeepReject("t", "c", 2)).To(Succeed())
+					Expect(callLog).To(Equal([]string{
+						"insert:2",
+						"delete:3 --wait",
+						"delete:3 --wait",
+						"delete:3 --wait",
+						"delete:3 --wait",
+					}))
+				})
+
+				It("keeps a REJECT in the chain after every delete", func() {
+					Expect(lockedIPT.DeleteAfterRuleNumKeepReject("t", "c", 2)).To(Succeed())
+					Expect(rejectPresentAtDelete).To(HaveLen(4))
+					Expect(rejectPresentAtDelete).To(Equal([]bool{true, true, true, true}))
+				})
+
+				It("ends with the first ruleNum-1 rules followed by the new REJECT", func() {
+					Expect(lockedIPT.DeleteAfterRuleNumKeepReject("t", "c", 2)).To(Succeed())
+					Expect(chainState).To(Equal([]string{
+						"-A c A",
+						"-A c --jump REJECT --reject-with icmp-port-unreachable",
+					}))
+				})
+			})
+
+			Context("when the insert fails", func() {
+				BeforeEach(func() {
+					setup([]string{"-N c", "-A c A", "-A c B", "-A c C"})
+					ipt.InsertStub = func(_, _ string, pos int, _ ...string) error {
+						callLog = append(callLog, fmt.Sprintf("insert:%d", pos))
+						return errors.New("insert-boom")
+					}
+				})
+
+				It("does not delete anything, returns the error and unlocks", func() {
+					err := lockedIPT.DeleteAfterRuleNumKeepReject("t", "c", 2)
+					Expect(err).To(MatchError("iptables call: insert-boom and unlock: <nil>"))
+					Expect(callLog).To(Equal([]string{"insert:2"}))
+					Expect(ipt.DeleteCallCount()).To(Equal(0))
+					Expect(lock.UnlockCallCount()).To(Equal(1))
+				})
+			})
+
+			Context("when the list has no more rules than ruleNum", func() {
+				BeforeEach(func() {
+					setup([]string{"-N c", "-A c A"})
+				})
+
+				It("inserts at len(rules) and does not delete", func() {
+					Expect(func() {
+						Expect(lockedIPT.DeleteAfterRuleNumKeepReject("t", "c", 5)).To(Succeed())
+					}).NotTo(Panic())
+					Expect(callLog).To(Equal([]string{"insert:2"}))
+					Expect(ipt.DeleteCallCount()).To(Equal(0))
+					Expect(lock.UnlockCallCount()).To(Equal(1))
+				})
+			})
 		})
 
 		Context("when locking fails", func() {
@@ -398,37 +516,24 @@ var _ = Describe("LockedIptables", func() {
 				restorer.IsIPv6Returns(true)
 			})
 
-			It("locks and passes the correct parameters to iptables", func() {
+			It("inserts an IPv6 REJECT at ruleNum then deletes the rest", func() {
 				err := lockedIPT.DeleteAfterRuleNumKeepReject("some-table", "some-chain", 2)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(lock.LockCallCount()).To(Equal(1))
 				Expect(lock.UnlockCallCount()).To(Equal(1))
+				Expect(ipt.AppendUniqueCallCount()).To(Equal(0))
+				Expect(ipt.InsertCallCount()).To(Equal(1))
+				table, chain, pos, rulespec := ipt.InsertArgsForCall(0)
+				Expect(table).To(Equal("some-table"))
+				Expect(chain).To(Equal("some-chain"))
+				Expect(pos).To(Equal(2))
+				Expect(rulespec).To(Equal([]string{"--jump", "REJECT", "--reject-with", "icmp6-port-unreachable"}))
+
 				Expect(ipt.DeleteCallCount()).To(Equal(3))
-				Expect(ipt.ListCallCount()).To(Equal(1))
-
-				table, chain := ipt.ListArgsForCall(0)
-				Expect(table).To(Equal("some-table"))
-				Expect(chain).To(Equal("some-chain"))
-
-				table, chain, ruleNum := ipt.DeleteArgsForCall(0)
-				Expect(table).To(Equal("some-table"))
-				Expect(chain).To(Equal("some-chain"))
-				Expect(ruleNum).To(Equal([]string{"2", "--wait"}))
-				table, chain, ruleNum = ipt.DeleteArgsForCall(1)
-				Expect(table).To(Equal("some-table"))
-				Expect(chain).To(Equal("some-chain"))
-				Expect(ruleNum).To(Equal([]string{"2", "--wait"}))
-				table, chain, ruleNum = ipt.DeleteArgsForCall(2)
-				Expect(table).To(Equal("some-table"))
-				Expect(chain).To(Equal("some-chain"))
-				Expect(ruleNum).To(Equal([]string{"2", "--wait"}))
-
-				Expect(ipt.AppendUniqueCallCount()).To(Equal(1))
-				table, chain, rules := ipt.AppendUniqueArgsForCall(0)
-				Expect(table).To(Equal("some-table"))
-				Expect(chain).To(Equal("some-chain"))
-				Expect(rules).To(Equal([]string{"--jump", "REJECT", "--reject-with", "icmp6-port-unreachable"}))
+				for i := 0; i < 3; i++ {
+					_, _, ruleNum := ipt.DeleteArgsForCall(i)
+					Expect(ruleNum).To(Equal([]string{"3", "--wait"}))
+				}
 			})
 		})
 	})
