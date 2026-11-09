@@ -235,7 +235,7 @@ var _ = Describe("LockedIptables", func() {
 				Entry("empty list", []string{}, 2, 0),
 				Entry("header-only list", []string{"-N some-chain"}, 2, 0),
 				Entry("boundary: len == ruleNum (no-panic boundary, valid empty slice)", []string{"-N some-chain", "-A some-chain rule-1"}, 2, 0),
-				Entry("header, jump and obsolete rule", []string{"-N some-chain", "-A some-chain rule-1", "-A some-chain rule-2"}, 2, 1),
+				Entry("len == ruleNum+1 (one rule deleted)", []string{"-N some-chain", "-A some-chain rule-1", "-A some-chain rule-2"}, 2, 1),
 				Entry("negative ruleNum with a non-empty list", []string{"-N some-chain", "-A some-chain rule-1", "-A some-chain rule-2"}, -1, 0),
 			)
 
@@ -251,7 +251,7 @@ var _ = Describe("LockedIptables", func() {
 			})
 		})
 
-		Context("when the chain list has four entries", func() {
+		Context("with a populated chain list", func() {
 			BeforeEach(func() {
 				ipt.ListReturns([]string{"-N some-chain", "-A some-chain rule-1", "-A some-chain rule-2", "-A some-chain rule-3"}, nil)
 			})
