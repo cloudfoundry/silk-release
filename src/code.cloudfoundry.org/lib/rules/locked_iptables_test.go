@@ -215,6 +215,38 @@ var _ = Describe("LockedIptables", func() {
 		BeforeEach(func() {
 			ipt.ListReturns([]string{"-N some-chain", "-A some-chain rule-1", "-A some-chain rule-2", "-A some-chain rule-3"}, nil)
 		})
+		DescribeTable("deletes rules after ruleNum only when present",
+			func(list []string, expectedDeletes int) {
+				ipt.ListReturns(list, nil)
+
+				err := lockedIPT.DeleteAfterRuleNum("some-table", "some-chain", 2)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ipt.DeleteCallCount()).To(Equal(expectedDeletes))
+				if expectedDeletes == 1 {
+					table, chain, ruleNum := ipt.DeleteArgsForCall(0)
+					Expect(table).To(Equal("some-table"))
+					Expect(chain).To(Equal("some-chain"))
+					Expect(ruleNum).To(Equal([]string{"2", "--wait"}))
+				}
+			},
+			Entry("nil list", nil, 0),
+			Entry("empty list", []string{}, 0),
+			Entry("header-only list", []string{"-N some-chain"}, 0),
+			Entry("header and jump", []string{"-N some-chain", "-A some-chain rule-1"}, 0),
+			Entry("header, jump and obsolete rule", []string{"-N some-chain", "-A some-chain rule-1", "-A some-chain rule-2"}, 1),
+		)
+
+		It("returns an unlock error for a short list", func() {
+			ipt.ListReturns([]string{"-N some-chain"}, nil)
+			lock.UnlockReturns(errors.New("banana"))
+
+			err := lockedIPT.DeleteAfterRuleNum("some-table", "some-chain", 2)
+
+			Expect(err).To(MatchError("banana"))
+			Expect(lock.UnlockCallCount()).To(Equal(1))
+			Expect(ipt.DeleteCallCount()).To(Equal(0))
+		})
+
 		It("locks and passes the correct parameters to iptables", func() {
 			err := lockedIPT.DeleteAfterRuleNum("some-table", "some-chain", 2)
 			Expect(err).NotTo(HaveOccurred())
@@ -298,6 +330,59 @@ var _ = Describe("LockedIptables", func() {
 				"-A some-chain -j REJECT --reject-with icmp-port-unreachable",
 				"-A some-chain rule-3",
 			}, nil)
+		})
+		DescribeTable("preserves the reject rule and deletes only rules after ruleNum",
+			func(list []string, expectedDeletes int) {
+				ipt.ListReturns(list, nil)
+
+				err := lockedIPT.DeleteAfterRuleNumKeepReject("some-table", "some-chain", 2)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ipt.DeleteCallCount()).To(Equal(expectedDeletes))
+				Expect(ipt.AppendUniqueCallCount()).To(Equal(1))
+				table, chain, rejectRule := ipt.AppendUniqueArgsForCall(0)
+				Expect(table).To(Equal("some-table"))
+				Expect(chain).To(Equal("some-chain"))
+				Expect(rejectRule).To(Equal([]string(rules.NewInputDefaultRejectRule(restorer.IsIPv6()))))
+			},
+			Entry("nil list", nil, 0),
+			Entry("empty list", []string{}, 0),
+			Entry("header-only list", []string{"-N some-chain"}, 0),
+			Entry("header and jump", []string{"-N some-chain", "-A some-chain rule-1"}, 0),
+			Entry("header, jump and obsolete rule", []string{"-N some-chain", "-A some-chain rule-1", "-A some-chain rule-2"}, 1),
+		)
+
+		It("returns an unlock error for a short list", func() {
+			ipt.ListReturns([]string{"-N some-chain"}, nil)
+			lock.UnlockReturns(errors.New("banana"))
+
+			err := lockedIPT.DeleteAfterRuleNumKeepReject("some-table", "some-chain", 2)
+
+			Expect(err).To(MatchError("banana"))
+			Expect(lock.UnlockCallCount()).To(Equal(1))
+			Expect(ipt.DeleteCallCount()).To(Equal(0))
+		})
+
+		It("returns an AppendUnique error for a short list", func() {
+			ipt.ListReturns([]string{"-N some-chain"}, nil)
+			ipt.AppendUniqueReturns(errors.New("banana"))
+
+			err := lockedIPT.DeleteAfterRuleNumKeepReject("some-table", "some-chain", 2)
+
+			Expect(err).To(MatchError("iptables call: banana and unlock: <nil>"))
+			Expect(lock.UnlockCallCount()).To(Equal(1))
+			Expect(ipt.DeleteCallCount()).To(Equal(0))
+		})
+
+		It("returns AppendUnique and unlock errors for a short list", func() {
+			ipt.ListReturns([]string{"-N some-chain"}, nil)
+			ipt.AppendUniqueReturns(errors.New("banana"))
+			lock.UnlockReturns(errors.New("potato"))
+
+			err := lockedIPT.DeleteAfterRuleNumKeepReject("some-table", "some-chain", 2)
+
+			Expect(err).To(MatchError("iptables call: banana and unlock: potato"))
+			Expect(lock.UnlockCallCount()).To(Equal(1))
+			Expect(ipt.DeleteCallCount()).To(Equal(0))
 		})
 
 		It("locks and passes the correct parameters to iptables", func() {
