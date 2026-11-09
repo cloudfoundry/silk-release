@@ -127,6 +127,8 @@ builds:
     version: 2.8.0
   631ab307-7e12-4027-6928-7f30bf59d457:
     version: 2.9.0
+  63bdd532-ecff-4351-61a1-de4898592d32:
+    version: 3.130.0
   65ab2239-a64a-4422-66c6-2dadf605e5ef:
     version: 2.0.0
   65d7d823-a491-441e-52a8-ab7e2ff51e3f:

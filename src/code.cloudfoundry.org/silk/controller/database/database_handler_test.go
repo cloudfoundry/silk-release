@@ -281,6 +281,45 @@ var _ = Describe("DatabaseHandler", func() {
 		})
 	})
 
+	Describe("DeleteExpiredEntry", func() {
+		BeforeEach(func() {
+			databaseHandler = database.NewDatabaseHandler(realMigrateAdapter, realDb)
+			_, err := databaseHandler.Migrate()
+			Expect(err).NotTo(HaveOccurred())
+			err = databaseHandler.AddEntry(lease)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		Context("when the lease is expired", func() {
+			It("deletes the entry", func() {
+				err := databaseHandler.DeleteExpiredEntry("10.244.11.22", 0)
+				Expect(err).NotTo(HaveOccurred())
+
+				leases, err := databaseHandler.All()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(leases).NotTo(ContainElement(lease))
+			})
+		})
+
+		Context("when the lease was renewed within the expiration window", func() {
+			It("does not delete the entry and returns a RecordNotAffectedError", func() {
+				err := databaseHandler.DeleteExpiredEntry("10.244.11.22", 3600)
+				Expect(err).To(Equal(database.RecordNotAffectedError))
+
+				leases, err := databaseHandler.All()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(leases).To(ContainElement(lease))
+			})
+		})
+
+		Context("when no entry exists", func() {
+			It("returns a RecordNotAffectedError", func() {
+				err := databaseHandler.DeleteExpiredEntry("8.8.8.8", 0)
+				Expect(err).To(Equal(database.RecordNotAffectedError))
+			})
+		})
+	})
+
 	Describe("LeaseForUnderlayIP", func() {
 		BeforeEach(func() {
 			databaseHandler = database.NewDatabaseHandler(realMigrateAdapter, realDb)
