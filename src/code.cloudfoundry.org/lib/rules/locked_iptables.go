@@ -218,18 +218,19 @@ func (l *LockedIPTables) DeleteAfterRuleNumKeepReject(table, chain string, ruleN
 	}
 
 	//iptables rule numbers are 1-indexed, but the list will include the create-chainline.
-	//so this takes the place of the '0' index of rules, and we don't need to offset anything
-	for range rules[ruleNum:] {
+	//so list index equals the iptables rule number, and len(rules) counts the header
+	pos := min(ruleNum, len(rules))
+	err = l.IPTables.Insert(table, chain, pos, NewNetOutDefaultRejectRule(l.Restorer.IsIPv6())...)
+	if err != nil {
+		return handleIPTablesError(err, l.Locker.Unlock())
+	}
+
+	for range max(0, len(rules)-ruleNum) {
 		// rule numbers adjust after each deletion, so always delete the same number each time
-		err := l.IPTables.Delete(table, chain, fmt.Sprintf("%d", ruleNum), "--wait")
+		err := l.IPTables.Delete(table, chain, fmt.Sprintf("%d", pos+1), "--wait")
 		if err != nil {
 			return handleIPTablesError(err, l.Locker.Unlock())
 		}
-	}
-
-	err = l.IPTables.AppendUnique(table, chain, NewInputDefaultRejectRule(l.Restorer.IsIPv6())...)
-	if err != nil {
-		return handleIPTablesError(err, l.Locker.Unlock())
 	}
 
 	return l.Locker.Unlock()
