@@ -196,11 +196,13 @@ func (l *LockedIPTables) DeleteAfterRuleNum(table, chain string, ruleNum int) er
 
 	//iptables rule numbers are 1-indexed, but the list will include the create-chainline.
 	//so this takes the place of the '0' index of rules, and we don't need to offset anything
-	for range rules[ruleNum:] {
-		// rule numbers adjust after each deletion, so always delete the same number each time
-		err := l.IPTables.Delete(table, chain, fmt.Sprintf("%d", ruleNum), "--wait")
-		if err != nil {
-			return handleIPTablesError(err, l.Locker.Unlock())
+	if ruleNum >= 0 && ruleNum < len(rules) {
+		for range rules[ruleNum:] {
+			// rule numbers adjust after each deletion, so always delete the same number each time
+			err := l.IPTables.Delete(table, chain, fmt.Sprintf("%d", ruleNum), "--wait")
+			if err != nil {
+				return handleIPTablesError(err, l.Locker.Unlock())
+			}
 		}
 	}
 
