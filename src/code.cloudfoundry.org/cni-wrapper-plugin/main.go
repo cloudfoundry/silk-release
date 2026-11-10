@@ -696,7 +696,7 @@ func newPluginController(config *lib.WrapperConfig, enableIPv6 bool) (*lib.Plugi
 	if enableIPv6 {
 		ip6t, err := iptables.New(iptables.IPFamily(iptables.ProtocolIPv6))
 		if err != nil {
-			return nil, fmt.Errorf("%w: %s", errIP6TablesInit, err)
+			return nil, fmt.Errorf("%w: %w", errIP6TablesInit, err)
 		}
 
 		restorer6 := &rules.Restorer{
