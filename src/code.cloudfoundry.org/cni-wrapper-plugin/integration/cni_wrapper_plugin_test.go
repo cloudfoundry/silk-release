@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -592,6 +593,52 @@ var _ = Describe("CniWrapperPlugin", func() {
 		Eventually(session).Should(gexec.Exit(0))
 		Expect(session.Err.Contents()).NotTo(ContainSubstring("panic"))
 		Expect(AllIP6TablesRules("raw")).NotTo(ContainElement(ContainSubstring("ip6g--")))
+	})
+
+	It("IPv6-config DEL skips guard cleanup when ip6tables is unavailable", func() {
+		if !testIPv6 {
+			Skip("IPv6-config only")
+		}
+		if !common.IsIPv6Enabled() {
+			Skip("IPv6-host only")
+		}
+
+		inputStruct.EnableIPv6 = true
+		input = GetInput(inputStruct)
+		session, err := gexec.Start(cniCommand("ADD", input), GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(0))
+
+		pathDir, err := os.MkdirTemp("", "cni-wrapper-ipv4-tools")
+		Expect(err).NotTo(HaveOccurred())
+		DeferCleanup(func() {
+			Expect(os.RemoveAll(pathDir)).To(Succeed())
+		})
+		tools, err := filepath.Glob("/sbin/iptables*")
+		Expect(err).NotTo(HaveOccurred())
+		for _, tool := range tools {
+			if strings.HasPrefix(filepath.Base(tool), "ip6") {
+				continue
+			}
+			resolvedTool, err := filepath.EvalSymlinks(tool)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(os.Symlink(resolvedTool, filepath.Join(pathDir, filepath.Base(tool)))).To(Succeed())
+		}
+
+		delCmd := cniCommand("DEL", input)
+		for i, env := range delCmd.Env {
+			if strings.HasPrefix(env, "PATH=") {
+				delCmd.Env[i] = "PATH=" + pathDir
+			}
+		}
+		session, err = gexec.Start(delCmd, GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(0))
+		Expect(session.Err.Contents()).To(ContainSubstring("ipv6 anti-spoof guard: cleanup skipped"))
+
+		debug, err := noop_debug.ReadDebug(debugFileName)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(debug.Command).To(Equal("DEL"))
 	})
 
 	It("DEL after enable_ipv6 true→false removes raw guard", func() {

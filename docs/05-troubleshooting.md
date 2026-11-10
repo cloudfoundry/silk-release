@@ -105,3 +105,7 @@ an overlay network configured which conflicts with the entire CF subnet.
 With `ipv6.enable`, silk CNI installs per-container chains in the ip6tables `raw` table, named `ip6g--<container-handle-prefix>`, with a PREROUTING jump matching the host veth. Packets from the container with any other IPv6 source are dropped.
 
 The chains are removed on CNI DEL. If a chain remains after a failed ADD or DEL, a later ADD for the same handle reconciles it. Inspect guards with `ip6tables -t raw -S | grep ip6g--`. To remove one by hand, delete its PREROUTING jump, then run `ip6tables -t raw -F <chain>` and `ip6tables -t raw -X <chain>`.
+
+If an ADD fails while reconciling stale guards on the same veth, a guard chain for a different, old handle can remain; remove it by hand using the commands above.
+
+After rolling back to a silk-release version without the guard, its older CNI DEL does not remove `ip6g--*` chains; remove them by hand using the commands above.

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -27,6 +28,8 @@ import (
 	"github.com/containernetworking/cni/pkg/version"
 	"github.com/coreos/go-iptables/iptables"
 )
+
+var errIP6TablesInit = errors.New("ip6tables init")
 
 func cmdAdd(args *skel.CmdArgs) error {
 	cfg, err := lib.LoadWrapperConfig(args.StdinData)
@@ -172,21 +175,21 @@ func cmdAdd(args *skel.CmdArgs) error {
 	// cleanupChains is defined before they are set, so it reads their final values at call time.
 	cleanupChains := func() {
 		if cleanupErr := netOutProvider.Cleanup(); cleanupErr != nil {
-			fmt.Fprintf(os.Stderr, "during cleanup: net out: %s", cleanupErr)
+			fmt.Fprintf(os.Stderr, "during cleanup: net out: %s\n", cleanupErr)
 		}
 		if netinInitialized {
 			if cleanupErr := netinProvider.Cleanup(args.ContainerID); cleanupErr != nil {
-				fmt.Fprintf(os.Stderr, "during cleanup: net in: %s", cleanupErr)
+				fmt.Fprintf(os.Stderr, "during cleanup: net in: %s\n", cleanupErr)
 			}
 		}
 		if enableIPv6 && netOutProviderIPv6 != nil {
 			if cleanupErr := netOutProviderIPv6.Cleanup(); cleanupErr != nil {
-				fmt.Fprintf(os.Stderr, "during cleanup: net out ipv6: %s", cleanupErr)
+				fmt.Fprintf(os.Stderr, "during cleanup: net out ipv6: %s\n", cleanupErr)
 			}
 		}
 		if antiSpoof != nil {
 			if cleanupErr := antiSpoof.Cleanup(args.ContainerID); cleanupErr != nil {
-				fmt.Fprintf(os.Stderr, "during cleanup: ipv6 anti-spoof guard: %s", cleanupErr)
+				fmt.Fprintf(os.Stderr, "during cleanup: ipv6 anti-spoof guard: %s\n", cleanupErr)
 			}
 		}
 	}
@@ -476,7 +479,7 @@ func cmdDel(args *skel.CmdArgs) error {
 	guardCleanup := ipv6Configured || enableIPv6
 	pluginController, err := newPluginController(cfg, guardCleanup)
 	if err != nil {
-		if !enableIPv6 && ipv6Configured {
+		if !enableIPv6 && ipv6Configured && errors.Is(err, errIP6TablesInit) {
 			fmt.Fprintf(os.Stderr, "ipv6 anti-spoof guard: cleanup skipped: %s\n", err)
 			guardCleanup = false
 			pluginController, err = newPluginController(cfg, false)
@@ -693,7 +696,7 @@ func newPluginController(config *lib.WrapperConfig, enableIPv6 bool) (*lib.Plugi
 	if enableIPv6 {
 		ip6t, err := iptables.New(iptables.IPFamily(iptables.ProtocolIPv6))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %s", errIP6TablesInit, err)
 		}
 
 		restorer6 := &rules.Restorer{
