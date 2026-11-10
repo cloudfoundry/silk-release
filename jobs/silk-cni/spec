@@ -177,5 +177,5 @@ properties:
       EXPERIMENTAL: When set to true negates the effect of `outbound_connections.limit`. Enables the specific DENY_ORL entries to the kernel log.
 
   ipv6.enable:
-    description: "Experimental feature. Enable IPv6 support, the host must also support and be configured for IPv6"
+    description: "Experimental feature. Enable IPv6 support, the host must also support and be configured for IPv6. When enabled, each container's host veth drops IPv6 packets whose source is not the container's assigned /128 (including link-local fe80::/10 and :: sources)."
     default: false

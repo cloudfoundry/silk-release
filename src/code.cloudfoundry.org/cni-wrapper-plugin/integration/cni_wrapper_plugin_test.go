@@ -8,10 +8,12 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"code.cloudfoundry.org/cni-wrapper-plugin/lib"
+	"code.cloudfoundry.org/lib/common"
 
 	"code.cloudfoundry.org/garden"
 
@@ -62,6 +64,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 		inputChainName         string
 		overlayChainName       string
 		netoutLoggingChainName string
+		antiSpoofChainName     string
 		underlayName1          string
 		underlayName2          string
 		underlayIpAddr1        string
@@ -129,6 +132,10 @@ var _ = Describe("CniWrapperPlugin", func() {
 
 		cniResult = &current.Result{
 			CNIVersion: "1.0.0",
+			Interfaces: []*current.Interface{
+				{Name: "s-010255010002"},
+				{Name: "eth0", Sandbox: "/some/netns"},
+			},
 			IPs: []*current.IPConfig{
 				{
 					Address: net.IPNet{
@@ -284,6 +291,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 		inputChainName = ("input--" + containerID)[:28]
 		overlayChainName = ("overlay--" + containerID)[:28]
 		netoutLoggingChainName = fmt.Sprintf("%s--log", netoutChainName[:23])
+		antiSpoofChainName = ("ip6g--" + containerID)[:28]
 	})
 
 	JustBeforeEach(func() {
@@ -390,6 +398,13 @@ var _ = Describe("CniWrapperPlugin", func() {
 				})
 			})
 
+			AfterEach(func() {
+				session, err := gexec.Start(cniCommand("DEL", input), GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+				Expect(AllIP6TablesRules("raw")).NotTo(ContainElement(ContainSubstring("ip6g--")))
+			})
+
 			It("stores and removes metadata with the lifetime of the container", func() {
 				By("calling ADD")
 				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
@@ -415,6 +430,249 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(string(stateFileBytes)).NotTo(ContainSubstring("value1"))
 			})
 		})
+	})
+
+	Context("when IPv6 anti-spoof is under test", func() {
+		BeforeEach(func() {
+			skipIfIPv4()
+
+			inputStruct.EnableIPv6 = true
+			cniResult.IPs = append(cniResult.IPs, &current.IPConfig{
+				Address: net.IPNet{
+					IP:   net.ParseIP("2001:db8::1"),
+					Mask: net.CIDRMask(128, 128),
+				},
+				Interface: intPtr(-1),
+			})
+		})
+
+		AfterEach(func() {
+			session, err := gexec.Start(cniCommand("DEL", input), GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			Expect(AllIP6TablesRules("raw")).NotTo(ContainElement(ContainSubstring("ip6g--")))
+		})
+
+		It("IPv6 anti-spoof fails ADD when host interface missing/ambiguous - missing", func() {
+			cniResult.Interfaces = nil
+			noopOutput, err := json.Marshal(cniResult)
+			Expect(err).NotTo(HaveOccurred())
+			debug.ReportResult = string(noopOutput)
+			Expect(debug.WriteDebug(debugFileName)).To(Succeed())
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(1))
+			Expect(session.Out.Contents()).To(ContainSubstring("ipv6 anti-spoof guard: expected exactly 1 host interface in delegate result, found 0"))
+			Expect(AllIP6TablesRules("raw")).NotTo(ContainElement(ContainSubstring("ip6g--")))
+		})
+
+		It("IPv6 anti-spoof fails ADD when host interface missing/ambiguous - ambiguous", func() {
+			cniResult.Interfaces = []*current.Interface{{Name: "s-010255010002"}, {Name: "s-010255010003"}}
+			noopOutput, err := json.Marshal(cniResult)
+			Expect(err).NotTo(HaveOccurred())
+			debug.ReportResult = string(noopOutput)
+			Expect(debug.WriteDebug(debugFileName)).To(Succeed())
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(1))
+			Expect(session.Out.Contents()).To(ContainSubstring("ipv6 anti-spoof guard: expected exactly 1 host interface in delegate result, found 2"))
+			Expect(AllIP6TablesRules("raw")).NotTo(ContainElement(ContainSubstring("ip6g--")))
+		})
+
+		It("IPv6 anti-spoof ADD installs raw guard", func() {
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+
+			rules := AllIP6TablesRules("raw")
+			Expect(rules).To(ContainElement("-N " + antiSpoofChainName))
+			Expect(rules).To(ContainElement("-A " + antiSpoofChainName + " ! -s 2001:db8::1/128 -m comment --comment ip6_anti-spoof -j DROP"))
+			jump := "-A PREROUTING -i s-010255010002 -m comment --comment ip6_anti-spoof -j " + antiSpoofChainName
+			Expect(rules).To(ContainElement(jump))
+			var firstPrerouting string
+			for _, rule := range rules {
+				if strings.HasPrefix(rule, "-A PREROUTING") {
+					firstPrerouting = rule
+					break
+				}
+			}
+			Expect(firstPrerouting).To(Equal(jump))
+		})
+
+		It("IPv6 anti-spoof DEL removes raw guard", func() {
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			Expect(AllIP6TablesRules("raw")).To(ContainElement("-N " + antiSpoofChainName))
+
+			cmd = cniCommand("DEL", input)
+			session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			Expect(AllIP6TablesRules("raw")).NotTo(ContainElement(ContainSubstring(antiSpoofChainName)))
+			Expect(session.Err.Contents()).NotTo(ContainSubstring("ipv6 anti-spoof guard: cleanup:"))
+		})
+
+		It("IPv6 anti-spoof DEL removes guard when datastore entry missing", func() {
+			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			datastoreContents, err := os.ReadFile(datastorePath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(os.Remove(datastorePath)).To(Succeed())
+
+			cmd = cniCommand("DEL", input)
+			session, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(session).Should(gexec.Exit(0))
+			Expect(AllIP6TablesRules("raw")).NotTo(ContainElement(ContainSubstring(antiSpoofChainName)))
+			Expect(os.WriteFile(datastorePath, datastoreContents, 0600)).To(Succeed())
+		})
+	})
+
+	It("IPv4-only ADD creates no raw rules", func() {
+		if testIPv6 {
+			Skip("IPv4-config only")
+		}
+
+		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(0))
+		Expect(AllIP6TablesRules("raw")).NotTo(ContainElement(ContainSubstring("ip6g--")))
+
+		session, err = gexec.Start(cniCommand("DEL", input), GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(0))
+	})
+
+	It("IPv4-only DEL leaves ip6tables raw table untouched", func() {
+		if testIPv6 {
+			Skip("IPv4-config only")
+		}
+
+		Expect(common.IsIPv6Enabled()).To(BeTrue())
+
+		chain := "ip6g--some-container-id-that"
+		createChain, err := gexec.Start(exec.Command("ip6tables", "-t", "raw", "-N", chain), GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(createChain).Should(gexec.Exit(0))
+		DeferCleanup(func() {
+			deleteChain, err := gexec.Start(exec.Command("ip6tables", "-t", "raw", "-X", chain), GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(deleteChain).Should(gexec.Exit(0))
+		})
+
+		session, err := gexec.Start(cniCommand("DEL", input), GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(0))
+		Expect(AllIP6TablesRules("raw")).To(ContainElement("-N " + chain))
+	})
+
+	It("IPv4-config DEL with stale IPv6 datastore entry does not panic", func() {
+		if testIPv6 {
+			Skip("IPv4-config only")
+		}
+
+		Expect(common.IsIPv6Enabled()).To(BeTrue())
+
+		session, err := gexec.Start(cniCommand("ADD", input), GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(0))
+
+		datastoreContents, err := os.ReadFile(datastorePath)
+		Expect(err).NotTo(HaveOccurred())
+		var containers map[string]map[string]interface{}
+		Expect(json.Unmarshal(datastoreContents, &containers)).To(Succeed())
+		containers[containerID]["ipv6"] = "fd00::5"
+		datastoreContents, err = json.Marshal(containers)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(os.WriteFile(datastorePath, datastoreContents, 0600)).To(Succeed())
+
+		session, err = gexec.Start(cniCommand("DEL", input), GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(0))
+		Expect(session.Err.Contents()).NotTo(ContainSubstring("panic"))
+		Expect(AllIP6TablesRules("raw")).NotTo(ContainElement(ContainSubstring("ip6g--")))
+	})
+
+	It("IPv6-config DEL skips guard cleanup when ip6tables is unavailable", func() {
+		if !testIPv6 {
+			Skip("IPv6-config only")
+		}
+		if !common.IsIPv6Enabled() {
+			Skip("IPv6-host only")
+		}
+
+		inputStruct.EnableIPv6 = true
+		input = GetInput(inputStruct)
+		session, err := gexec.Start(cniCommand("ADD", input), GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(0))
+
+		pathDir, err := os.MkdirTemp("", "cni-wrapper-ipv4-tools")
+		Expect(err).NotTo(HaveOccurred())
+		DeferCleanup(func() {
+			Expect(os.RemoveAll(pathDir)).To(Succeed())
+		})
+		tools, err := filepath.Glob("/sbin/iptables*")
+		Expect(err).NotTo(HaveOccurred())
+		for _, tool := range tools {
+			if strings.HasPrefix(filepath.Base(tool), "ip6") {
+				continue
+			}
+			resolvedTool, err := filepath.EvalSymlinks(tool)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(os.Symlink(resolvedTool, filepath.Join(pathDir, filepath.Base(tool)))).To(Succeed())
+		}
+
+		delCmd := cniCommand("DEL", input)
+		for i, env := range delCmd.Env {
+			if strings.HasPrefix(env, "PATH=") {
+				delCmd.Env[i] = "PATH=" + pathDir
+			}
+		}
+		session, err = gexec.Start(delCmd, GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(0))
+		Expect(session.Err.Contents()).To(ContainSubstring("ipv6 anti-spoof guard: cleanup skipped"))
+
+		debug, err := noop_debug.ReadDebug(debugFileName)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(debug.Command).To(Equal("DEL"))
+	})
+
+	It("DEL after enable_ipv6 true→false removes raw guard", func() {
+		if !testIPv6 {
+			Skip("IPv6-config only")
+		}
+
+		addInputStruct := inputStruct
+		addInputStruct.EnableIPv6 = true
+		addInput := GetInput(addInputStruct)
+		cniResult.IPs = append(cniResult.IPs, &current.IPConfig{
+			Address: net.IPNet{
+				IP:   net.ParseIP("2001:db8::1"),
+				Mask: net.CIDRMask(128, 128),
+			},
+			Interface: intPtr(-1),
+		})
+		noopOutput, err := json.Marshal(cniResult)
+		Expect(err).NotTo(HaveOccurred())
+		debug.ReportResult = string(noopOutput)
+		Expect(debug.WriteDebug(debugFileName)).To(Succeed())
+
+		session, err := gexec.Start(cniCommand("ADD", addInput), GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(0))
+		Expect(AllIP6TablesRules("raw")).To(ContainElement(ContainSubstring("ip6g--")))
+
+		delInputStruct := addInputStruct
+		delInputStruct.EnableIPv6 = false
+		delInput := GetInput(delInputStruct)
+		session, err = gexec.Start(cniCommand("DEL", delInput), GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(0))
+		Expect(AllIP6TablesRules("raw")).NotTo(ContainElement(ContainSubstring("ip6g--")))
 	})
 
 	Describe("iptables lifecycle", func() {
@@ -443,7 +701,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
-			Expect(session.Out.Contents()).To(MatchJSON(`{ "cniVersion": "1.0.0", "ips": [{ "interface": -1, "address": "1.2.3.4/32" }] }`))
+			Expect(session.Out.Contents()).To(MatchJSON(`{ "cniVersion": "1.0.0", "interfaces": [{ "name": "s-010255010002" }, { "name": "eth0", "sandbox": "/some/netns" }], "ips": [{ "interface": -1, "address": "1.2.3.4/32" }] }`))
 		})
 
 		It("passes the correct stdin to the delegate plugin", func() {
@@ -468,7 +726,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(0))
-			Expect(session.Out.Contents()).To(MatchJSON(`{ "cniVersion": "1.0.0", "ips": [{ "interface": -1, "address": "1.2.3.4/32" }] }`))
+			Expect(session.Out.Contents()).To(MatchJSON(`{ "cniVersion": "1.0.0", "interfaces": [{ "name": "s-010255010002" }, { "name": "eth0", "sandbox": "/some/netns" }], "ips": [{ "interface": -1, "address": "1.2.3.4/32" }] }`))
 			Expect(AllIPTablesRules("nat")).To(ContainElement("-A POSTROUTING -s 1.2.3.4/32 ! -d 10.255.30.0/24 ! -o some-device -j MASQUERADE"))
 		})
 
@@ -569,6 +827,36 @@ var _ = Describe("CniWrapperPlugin", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(stateFileBytes)).NotTo(ContainSubstring(containerID))
 			})
+
+			Context("when IPv6 is enabled", func() {
+				BeforeEach(func() {
+					skipIfIPv4()
+					inputStruct.EnableIPv6 = true
+					cniResult.IPs = append(cniResult.IPs, &current.IPConfig{
+						Address: net.IPNet{
+							IP:   net.ParseIP("2001:db8::1"),
+							Mask: net.CIDRMask(128, 128),
+						},
+						Interface: intPtr(-1),
+					})
+				})
+
+				AfterEach(func() {
+					session, err := gexec.Start(cniCommand("DEL", input), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(0))
+					Expect(AllIP6TablesRules("raw")).NotTo(ContainElement(ContainSubstring("ip6g--")))
+				})
+
+				It("IPv6 anti-spoof rolls back guard when policy agent poll fails", func() {
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(1))
+					Expect(session.Out).Should(gbytes.Say(".*vpa response code: 500 with message: an error occurred in the vpa.*"))
+					Expect(policyAgentServer.PolicyPollEndpointCallCount).To(Equal(1))
+					Expect(AllIP6TablesRules("raw")).NotTo(ContainElement(ContainSubstring(antiSpoofChainName)))
+				})
+			})
 		})
 
 		Context("when the policy agent asg updater returns a 405", func() {
@@ -607,16 +895,40 @@ var _ = Describe("CniWrapperPlugin", func() {
 		})
 
 		Context("when the policy agent asg updater returns an error", func() {
-			It("returns an error", func() {
+			BeforeEach(func() {
 				policyAgentServer.ASGReturnCode = 500
 				policyAgentServer.ASGReturnErrorMessage = "an error occurred in the vpa"
+			})
 
+			It("returns an error", func() {
 				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1))
 				Expect(session.Out).Should(gbytes.Say(".*asg sync returned 500 with message: an error occurred in the vpa.*"))
 
 				Expect(policyAgentServer.PolicyPollEndpointCallCount).To(Equal(1))
+			})
+
+			Context("when IPv6 is enabled", func() {
+				BeforeEach(func() {
+					skipIfIPv4()
+					inputStruct.EnableIPv6 = true
+					cniResult.IPs = append(cniResult.IPs, &current.IPConfig{
+						Address: net.IPNet{
+							IP:   net.ParseIP("2001:db8::1"),
+							Mask: net.CIDRMask(128, 128),
+						},
+						Interface: intPtr(-1),
+					})
+				})
+
+				It("IPv6 anti-spoof rolls back guard when asg sync fails", func() {
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(1))
+					Expect(session.Out).Should(gbytes.Say(".*asg sync returned 500 with message: an error occurred in the vpa.*"))
+					Expect(AllIP6TablesRules("raw")).NotTo(ContainElement(ContainSubstring(antiSpoofChainName)))
+				})
 			})
 		})
 
@@ -659,6 +971,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 				By("returning all DNS servers")
 				Expect(session.Out.Contents()).To(MatchJSON(`{
 						"cniVersion": "1.0.0",
+						"interfaces": [{ "name": "s-010255010002" }, { "name": "eth0", "sandbox": "/some/netns" }],
 						"ips": [{ "interface": -1, "address": "1.2.3.4/32" }],
 						"dns": {"nameservers": ["169.254.0.1", "8.8.4.4", "169.254.0.2"]}
 					}`))
@@ -1353,11 +1666,18 @@ var _ = Describe("CniWrapperPlugin", func() {
 					}...)
 			})
 
+			AfterEach(func() {
+				session, err := gexec.Start(cniCommand("DEL", input), GinkgoWriter, GinkgoWriter)
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(session).Should(gexec.Exit(0))
+				Expect(AllIP6TablesRules("raw")).NotTo(ContainElement(ContainSubstring("ip6g--")))
+			})
+
 			It("passes the delegate result back to the caller", func() {
 				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(0))
-				Expect(session.Out.Contents()).To(MatchJSON(`{ "cniVersion": "1.0.0", "ips": [{ "interface": -1, "address": "1.2.3.4/32" }, { "interface": -1, "address": "2001:db8::1/128" }] }`))
+				Expect(session.Out.Contents()).To(MatchJSON(`{ "cniVersion": "1.0.0", "interfaces": [{ "name": "s-010255010002" }, { "name": "eth0", "sandbox": "/some/netns" }], "ips": [{ "interface": -1, "address": "1.2.3.4/32" }, { "interface": -1, "address": "2001:db8::1/128" }] }`))
 			})
 
 			It("writes default deny input chain rules to prevent connecting to things on the host", func() {
@@ -1507,6 +1827,10 @@ var _ = Describe("CniWrapperPlugin", func() {
 				BeforeEach(func() {
 					cniResult = &current.Result{
 						CNIVersion: "1.0.0",
+						Interfaces: []*current.Interface{
+							{Name: "s-010255010002"},
+							{Name: "eth0", Sandbox: "/some/netns"},
+						},
 						IPs: []*current.IPConfig{
 							{
 								Address: net.IPNet{

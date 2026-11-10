@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -27,6 +28,8 @@ import (
 	"github.com/containernetworking/cni/pkg/version"
 	"github.com/coreos/go-iptables/iptables"
 )
+
+var errIP6TablesInit = errors.New("ip6tables init")
 
 func cmdAdd(args *skel.CmdArgs) error {
 	cfg, err := lib.LoadWrapperConfig(args.StdinData)
@@ -157,6 +160,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 
 	var netOutProviderIPv6 *netrules.NetOut
 	var netinInitialized bool
+	var antiSpoof *netrules.AntiSpoof
 
 	netinProvider := netrules.NetIn{
 		ChainNamer: &netrules.ChainNamer{
@@ -171,16 +175,21 @@ func cmdAdd(args *skel.CmdArgs) error {
 	// cleanupChains is defined before they are set, so it reads their final values at call time.
 	cleanupChains := func() {
 		if cleanupErr := netOutProvider.Cleanup(); cleanupErr != nil {
-			fmt.Fprintf(os.Stderr, "during cleanup: net out: %s", cleanupErr)
+			fmt.Fprintf(os.Stderr, "during cleanup: net out: %s\n", cleanupErr)
 		}
 		if netinInitialized {
 			if cleanupErr := netinProvider.Cleanup(args.ContainerID); cleanupErr != nil {
-				fmt.Fprintf(os.Stderr, "during cleanup: net in: %s", cleanupErr)
+				fmt.Fprintf(os.Stderr, "during cleanup: net in: %s\n", cleanupErr)
 			}
 		}
 		if enableIPv6 && netOutProviderIPv6 != nil {
 			if cleanupErr := netOutProviderIPv6.Cleanup(); cleanupErr != nil {
-				fmt.Fprintf(os.Stderr, "during cleanup: net out ipv6: %s", cleanupErr)
+				fmt.Fprintf(os.Stderr, "during cleanup: net out ipv6: %s\n", cleanupErr)
+			}
+		}
+		if antiSpoof != nil {
+			if cleanupErr := antiSpoof.Cleanup(args.ContainerID); cleanupErr != nil {
+				fmt.Fprintf(os.Stderr, "during cleanup: ipv6 anti-spoof guard: %s\n", cleanupErr)
 			}
 		}
 	}
@@ -208,6 +217,18 @@ func cmdAdd(args *skel.CmdArgs) error {
 	var netOutChainIPv6 *netrules.NetOutChain
 
 	if enableIPv6 {
+		var hostInterfaces []*current.Interface
+		for _, iface := range resultActual.Interfaces {
+			if iface.Sandbox == "" {
+				hostInterfaces = append(hostInterfaces, iface)
+			}
+		}
+		if len(hostInterfaces) != 1 {
+			cleanupChains()
+			return fmt.Errorf("ipv6 anti-spoof guard: expected exactly 1 host interface in delegate result, found %d", len(hostInterfaces))
+		}
+		hostVeth := hostInterfaces[0].Name
+
 		netOutChainIPv6 = &netrules.NetOutChain{
 			ChainNamer:       chainNamer,
 			Converter:        &netrules.RuleConverter{LogWriter: os.Stderr},
@@ -245,6 +266,12 @@ func cmdAdd(args *skel.CmdArgs) error {
 		if err != nil {
 			cleanupChains()
 			return fmt.Errorf("initialize net out ipv6: %s", err)
+		}
+
+		antiSpoof = &netrules.AntiSpoof{ChainNamer: chainNamer, IPTables: pluginController.IP6Tables}
+		if err := antiSpoof.Install(args.ContainerID, hostVeth, containerIPv6.String()); err != nil {
+			cleanupChains()
+			return fmt.Errorf("ipv6 anti-spoof guard: %s", err)
 		}
 	}
 
@@ -421,6 +448,7 @@ func cmdDel(args *skel.CmdArgs) error {
 	}
 
 	enableIPv6 := common.IsIPv6Enabled()
+	ipv6Configured := cfg.EnableIPv6 && enableIPv6
 
 	store := &datastore.Store{
 		Serializer: &serial.Serial{},
@@ -448,13 +476,33 @@ func cmdDel(args *skel.CmdArgs) error {
 
 	enableIPv6 = enableIPv6 && container.IPv6 != ""
 
-	pluginController, err := newPluginController(cfg, enableIPv6)
+	guardCleanup := ipv6Configured || enableIPv6
+	pluginController, err := newPluginController(cfg, guardCleanup)
 	if err != nil {
-		return err
+		if !enableIPv6 && ipv6Configured && errors.Is(err, errIP6TablesInit) {
+			fmt.Fprintf(os.Stderr, "ipv6 anti-spoof guard: cleanup skipped: %s\n", err)
+			guardCleanup = false
+			pluginController, err = newPluginController(cfg, false)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
 	}
 
 	if err := pluginController.DelegateDel(cfg.Delegate); err != nil {
 		fmt.Fprintf(os.Stderr, "delegate delete: %s", err)
+	}
+
+	if guardCleanup {
+		antiSpoof := &netrules.AntiSpoof{
+			ChainNamer: &netrules.ChainNamer{MaxLength: 28},
+			IPTables:   pluginController.IP6Tables,
+		}
+		if err := antiSpoof.Cleanup(args.ContainerID); err != nil {
+			fmt.Fprintf(os.Stderr, "ipv6 anti-spoof guard: cleanup: handle %s: %s\n", args.ContainerID, err)
+		}
 	}
 
 	netInProvider := netrules.NetIn{
@@ -648,7 +696,7 @@ func newPluginController(config *lib.WrapperConfig, enableIPv6 bool) (*lib.Plugi
 	if enableIPv6 {
 		ip6t, err := iptables.New(iptables.IPFamily(iptables.ProtocolIPv6))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %w", errIP6TablesInit, err)
 		}
 
 		restorer6 := &rules.Restorer{
