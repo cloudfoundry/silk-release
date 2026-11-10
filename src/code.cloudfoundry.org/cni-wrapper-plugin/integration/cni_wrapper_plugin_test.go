@@ -530,10 +530,18 @@ var _ = Describe("CniWrapperPlugin", func() {
 	})
 
 	It("IPv4-only ADD creates no raw rules", func() {
+		if testIPv6 {
+			Skip("IPv4-config only")
+		}
+
 		session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 		Expect(err).NotTo(HaveOccurred())
 		Eventually(session).Should(gexec.Exit(0))
 		Expect(AllIP6TablesRules("raw")).NotTo(ContainElement(ContainSubstring("ip6g--")))
+
+		session, err = gexec.Start(cniCommand("DEL", input), GinkgoWriter, GinkgoWriter)
+		Expect(err).NotTo(HaveOccurred())
+		Eventually(session).Should(gexec.Exit(0))
 	})
 
 	It("IPv4-only DEL leaves ip6tables raw table untouched", func() {
@@ -586,7 +594,7 @@ var _ = Describe("CniWrapperPlugin", func() {
 		Expect(AllIP6TablesRules("raw")).NotTo(ContainElement(ContainSubstring("ip6g--")))
 	})
 
-	It("IPv4-config DEL after IPv6-disable transition removes raw guard", func() {
+	It("DEL after enable_ipv6 true→false removes raw guard", func() {
 		if !testIPv6 {
 			Skip("IPv6-config only")
 		}
@@ -840,16 +848,40 @@ var _ = Describe("CniWrapperPlugin", func() {
 		})
 
 		Context("when the policy agent asg updater returns an error", func() {
-			It("returns an error", func() {
+			BeforeEach(func() {
 				policyAgentServer.ASGReturnCode = 500
 				policyAgentServer.ASGReturnErrorMessage = "an error occurred in the vpa"
+			})
 
+			It("returns an error", func() {
 				session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 				Expect(err).NotTo(HaveOccurred())
 				Eventually(session).Should(gexec.Exit(1))
 				Expect(session.Out).Should(gbytes.Say(".*asg sync returned 500 with message: an error occurred in the vpa.*"))
 
 				Expect(policyAgentServer.PolicyPollEndpointCallCount).To(Equal(1))
+			})
+
+			Context("when IPv6 is enabled", func() {
+				BeforeEach(func() {
+					skipIfIPv4()
+					inputStruct.EnableIPv6 = true
+					cniResult.IPs = append(cniResult.IPs, &current.IPConfig{
+						Address: net.IPNet{
+							IP:   net.ParseIP("2001:db8::1"),
+							Mask: net.CIDRMask(128, 128),
+						},
+						Interface: intPtr(-1),
+					})
+				})
+
+				It("IPv6 anti-spoof rolls back guard when asg sync fails", func() {
+					session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					Eventually(session).Should(gexec.Exit(1))
+					Expect(session.Out).Should(gbytes.Say(".*asg sync returned 500 with message: an error occurred in the vpa.*"))
+					Expect(AllIP6TablesRules("raw")).NotTo(ContainElement(ContainSubstring(antiSpoofChainName)))
+				})
 			})
 		})
 
