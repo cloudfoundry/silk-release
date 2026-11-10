@@ -51,8 +51,9 @@ func NewTLSServer(address string, handler http.Handler, tlsConfig *tls.Config) i
 
 func (s *httpServer) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
 	server := http.Server{
-		Handler:   s.handler,
-		TLSConfig: s.tlsConfig,
+		Handler:           s.handler,
+		TLSConfig:         s.tlsConfig,
+		ReadHeaderTimeout: 2 * time.Second,
 	}
 
 	listener, err := s.getListener(server.TLSConfig)
@@ -73,12 +74,9 @@ func (s *httpServer) Run(signals <-chan os.Signal, ready chan<- struct{}) error 
 			return err
 
 		case <-signals:
-			listener.Close()
-
-			ctx, _ := context.WithTimeout(context.Background(), 1*time.Minute)
-			server.Shutdown(ctx)
-
-			return nil
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+			defer cancel()
+			return server.Shutdown(ctx)
 		}
 	}
 }
@@ -110,7 +108,14 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	if err != nil {
 		return
 	}
-	tc.SetKeepAlive(true)
-	tc.SetKeepAlivePeriod(3 * time.Minute)
+	err = tc.SetKeepAlive(true)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tc.SetKeepAlivePeriod(3 * time.Minute)
+	if err != nil {
+		return nil, err
+	}
 	return tc, nil
 }
