@@ -53,6 +53,9 @@ func (r *Range) Canonicalize() error {
 		if err := canonicalizeIP(&r.Gateway); err != nil {
 			return err
 		}
+		if len(r.Gateway) != len(r.Subnet.IP) || !(*net.IPNet)(&r.Subnet).Contains(r.Gateway) {
+			return fmt.Errorf("gateway %s not in network %s", r.Gateway.String(), (*net.IPNet)(&r.Subnet).String())
+		}
 	}
 
 	// RangeStart: If specified, make sure it's sane (inside the subnet),
@@ -84,6 +87,11 @@ func (r *Range) Canonicalize() error {
 		r.RangeEnd = lastIP(r.Subnet)
 	}
 
+	// RangeEnd may have just been defaulted, so check the ordering now.
+	if ip.Cmp(r.RangeStart, r.RangeEnd) > 0 {
+		return fmt.Errorf("RangeStart %s is after RangeEnd %s in network %s", r.RangeStart.String(), r.RangeEnd.String(), (*net.IPNet)(&r.Subnet).String())
+	}
+
 	return nil
 }
 
@@ -93,7 +101,7 @@ func (r *Range) Contains(addr net.IP) bool {
 		return false
 	}
 
-	subnet := (net.IPNet)(r.Subnet)
+	subnet := net.IPNet(r.Subnet)
 
 	// Not the same address family
 	if len(addr) != len(r.Subnet.IP) {
