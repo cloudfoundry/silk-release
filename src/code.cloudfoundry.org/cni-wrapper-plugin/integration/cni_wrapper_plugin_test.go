@@ -550,7 +550,9 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Skip("IPv4-config only")
 		}
 
-		Expect(common.IsIPv6Enabled()).To(BeTrue())
+		if !common.IsIPv6Enabled() {
+			Skip("IPv6-host only")
+		}
 
 		chain := "ip6g--some-container-id-that"
 		createChain, err := gexec.Start(exec.Command("ip6tables", "-t", "raw", "-N", chain), GinkgoWriter, GinkgoWriter)
@@ -573,7 +575,9 @@ var _ = Describe("CniWrapperPlugin", func() {
 			Skip("IPv4-config only")
 		}
 
-		Expect(common.IsIPv6Enabled()).To(BeTrue())
+		if !common.IsIPv6Enabled() {
+			Skip("IPv6-host only")
+		}
 
 		session, err := gexec.Start(cniCommand("ADD", input), GinkgoWriter, GinkgoWriter)
 		Expect(err).NotTo(HaveOccurred())
