@@ -1,13 +1,13 @@
-# code.cloudfoundry.org/bbs/encryption v1.28.0
+# code.cloudfoundry.org/bbs/encryption v1.30.0
 ## explicit; go 1.26.2
 code.cloudfoundry.org/bbs/encryption
-# code.cloudfoundry.org/bbs/format v1.20.0
+# code.cloudfoundry.org/bbs/format v1.21.0
 ## explicit; go 1.26.2
 code.cloudfoundry.org/bbs/format
-# code.cloudfoundry.org/bbs/models v1.29.0
+# code.cloudfoundry.org/bbs/models v1.30.0
 ## explicit; go 1.26.2
 code.cloudfoundry.org/bbs/models
-# code.cloudfoundry.org/cf-networking-helpers v0.102.0
+# code.cloudfoundry.org/cf-networking-helpers v0.104.0
 ## explicit; go 1.27.3
 code.cloudfoundry.org/cf-networking-helpers/db
 code.cloudfoundry.org/cf-networking-helpers/db/monitor
@@ -23,17 +23,17 @@ code.cloudfoundry.org/cf-networking-helpers/runner
 code.cloudfoundry.org/cf-networking-helpers/testsupport
 code.cloudfoundry.org/cf-networking-helpers/testsupport/metrics
 code.cloudfoundry.org/cf-networking-helpers/testsupport/ports
-# code.cloudfoundry.org/debugserver v0.123.0
+# code.cloudfoundry.org/debugserver v0.124.0
 ## explicit; go 1.26.0
 code.cloudfoundry.org/debugserver
-# code.cloudfoundry.org/diego-logging-client v0.133.0
+# code.cloudfoundry.org/diego-logging-client v0.134.0
 ## explicit; go 1.27.3
 code.cloudfoundry.org/diego-logging-client
 code.cloudfoundry.org/diego-logging-client/testhelpers
-# code.cloudfoundry.org/filelock v0.89.0
+# code.cloudfoundry.org/filelock v0.90.0
 ## explicit; go 1.26.0
 code.cloudfoundry.org/filelock
-# code.cloudfoundry.org/garden v0.12.0
+# code.cloudfoundry.org/garden v0.13.0
 ## explicit; go 1.26.0
 code.cloudfoundry.org/garden
 code.cloudfoundry.org/garden/client
@@ -48,20 +48,20 @@ code.cloudfoundry.org/go-diodes
 code.cloudfoundry.org/go-loggregator/v9
 code.cloudfoundry.org/go-loggregator/v9/rpc/loggregator_v2
 code.cloudfoundry.org/go-loggregator/v9/runtimeemitter
-# code.cloudfoundry.org/lager/v3 v3.95.0
+# code.cloudfoundry.org/lager/v3 v3.96.0
 ## explicit; go 1.26.0
 code.cloudfoundry.org/lager/v3
 code.cloudfoundry.org/lager/v3/internal/truncate
 code.cloudfoundry.org/lager/v3/lagerctx
 code.cloudfoundry.org/lager/v3/lagerflags
 code.cloudfoundry.org/lager/v3/lagertest
-# code.cloudfoundry.org/policy_client v0.128.0
+# code.cloudfoundry.org/policy_client v0.129.0
 ## explicit; go 1.27.3
 code.cloudfoundry.org/policy_client
 # code.cloudfoundry.org/runtimeschema v0.0.0-20240514235758-31be7684c5bf => code.cloudfoundry.org/runtimeschema v0.0.0-20180622181441-7dcd19348be6
 ## explicit
 code.cloudfoundry.org/runtimeschema/metric
-# code.cloudfoundry.org/tlsconfig v0.72.0
+# code.cloudfoundry.org/tlsconfig v0.73.0
 ## explicit; go 1.27.3
 code.cloudfoundry.org/tlsconfig
 # filippo.io/edwards25519 v1.2.0
@@ -137,7 +137,7 @@ github.com/go-gorp/gorp/v3
 ## explicit; go 1.18
 github.com/go-logr/logr
 github.com/go-logr/logr/funcr
-# github.com/go-sql-driver/mysql v1.10.1
+# github.com/go-sql-driver/mysql v1.10.2
 ## explicit; go 1.24.0
 github.com/go-sql-driver/mysql
 # github.com/go-task/slim-sprig/v3 v3.0.0
@@ -165,7 +165,7 @@ github.com/google/nftables/expr
 github.com/google/nftables/internal/parseexprfunc
 github.com/google/nftables/userdata
 github.com/google/nftables/xt
-# github.com/google/pprof v0.0.0-20261111200114-fac431ef4d26
+# github.com/google/pprof v0.0.0-20261118010117-084b33a85f63
 ## explicit; go 1.26.0
 github.com/google/pprof/profile
 # github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
@@ -314,7 +314,7 @@ go.opentelemetry.io/otel/semconv/v1.43.0
 go.opentelemetry.io/otel/trace
 go.opentelemetry.io/otel/trace/embedded
 go.opentelemetry.io/otel/trace/internal/telemetry
-# go.step.sm/crypto v0.92.0
+# go.step.sm/crypto v0.92.1
 ## explicit; go 1.26.0
 go.step.sm/crypto/fingerprint
 go.step.sm/crypto/internal/bcrypt_pbkdf
@@ -348,7 +348,7 @@ golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 # golang.org/x/mod v0.43.0
 ## explicit; go 1.26.0
 golang.org/x/mod/semver
-# golang.org/x/net v0.62.0
+# golang.org/x/net v0.63.0
 ## explicit; go 1.26.0
 golang.org/x/net/bpf
 golang.org/x/net/context
@@ -393,7 +393,7 @@ golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
-# golang.org/x/tools v0.52.0
+# golang.org/x/tools v0.53.0
 ## explicit; go 1.26.0
 golang.org/x/tools/cover
 golang.org/x/tools/go/ast/edge
@@ -413,7 +413,7 @@ golang.org/x/tools/internal/pkgbits
 golang.org/x/tools/internal/stdlib
 golang.org/x/tools/internal/typesinternal
 golang.org/x/tools/internal/versions
-# google.golang.org/genproto/googleapis/rpc v0.0.0-20261110000943-09e21b237f2c
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20261118221215-c8830f628b3f
 ## explicit; go 1.26.0
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.85.0
